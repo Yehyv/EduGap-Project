@@ -17,7 +17,7 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="bg-primary py-2 fixed start-0 end-0 z-50" dir="ltr">
+    <header className="bg-primary py-2" dir="ltr">
       <div className="container mx-auto flex items-center justify-between gap-4 px-4">
         {/* Logo */}
         <LogoSm className="w-24" />
@@ -67,7 +67,7 @@ const Header = () => {
           className="md:hidden flex items-center cursor-pointer p-1"
           onClick={() => setMenuOpen(!menuOpen)}
         >
-          <NavListIcon className="h-5 w-5" />
+          <NavListIcon className="h-5 w-5 text-white" />
         </button>
       </div>
 

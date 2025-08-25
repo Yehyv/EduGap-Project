@@ -1,23 +1,14 @@
 import LogoSm from "@/assets/svgs/LogoSm.svg?react";
-import NavListIcon from "@/assets/svgs/NavListIcon.svg?react";
 import SearchIcon from "@/assets/svgs/SearchIcon.svg?react";
 import { Link } from "react-router";
 import DefaultButton from "./ui/DefaultButton";
 import { useState } from "react";
 
-const navLinks = [
-  { label: "الدورات التدريبية", to: "/" },
-  { label: "برامج التعلم", to: "/" },
-  { label: "الخبراء", to: "/" },
-];
-
-const authLinks = [{ label: "تسجيل الدخول", to: "/" }];
-
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="bg-primary py-2 fixed start-0 end-0 z-50" dir="ltr">
+    <header className="bg-primary py-2" dir="ltr">
       <div className="container mx-auto flex items-center justify-between gap-4 px-4">
         {/* Logo */}
         <LogoSm className="w-24" />
@@ -40,20 +31,14 @@ const Header = () => {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex gap-6">
-          {navLinks.map((link, idx) => (
-            <Link key={idx} to={link.to}>
-              {link.label}
-            </Link>
-          ))}
+          <Link to="/">الدورات التدريبية</Link>
+          <Link to="/">برامج التعلم</Link>
+          <Link to="/">الخبراء</Link>
         </nav>
 
         {/* Auth */}
         <div className="hidden md:flex gap-4 items-center">
-          {authLinks.map((link, idx) => (
-            <Link key={idx} to={link.to}>
-              {link.label}
-            </Link>
-          ))}
+          <Link to="/">تسجيل الدخول</Link>
           <DefaultButton
             text="اشتراك"
             type="reset"
@@ -64,10 +49,10 @@ const Header = () => {
 
         {/* Mobile Menu Toggle */}
         <button
-          className="md:hidden flex items-center cursor-pointer p-1"
+          className="md:hidden flex items-center cursor-pointer"
           onClick={() => setMenuOpen(!menuOpen)}
         >
-          <NavListIcon className="h-5 w-5" />
+          {menuOpen ? "-" : "|"}
         </button>
       </div>
 
@@ -75,18 +60,12 @@ const Header = () => {
       {menuOpen && (
         <div className="md:hidden bg-white shadow-md px-4 mt-2 pt-4 pb-6 space-y-4 text-right">
           <nav className="flex flex-col gap-3">
-            {navLinks.map((link, idx) => (
-              <Link key={idx} to={link.to}>
-                {link.label}
-              </Link>
-            ))}
+            <Link to="/">الدورات التدريبية</Link>
+            <Link to="/">برامج التعلم</Link>
+            <Link to="/">الخبراء</Link>
           </nav>
           <div className="flex flex-col gap-3">
-            {authLinks.map((link, idx) => (
-              <Link key={idx} to={link.to}>
-                {link.label}
-              </Link>
-            ))}
+            <Link to="/">تسجيل الدخول</Link>
             <DefaultButton
               text="اشتراك"
               type="reset"

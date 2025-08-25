@@ -4,7 +4,7 @@ import HeroSectionImage from "@/assets/imgs/HeroSectionImage.png";
 const HeroSection = () => {
   return (
     <div className="bg-primary">
-      <div className="container flex flex-col-reverse md:flex-row pt-20 max-md:pb-10 justify-between items-center md:items-start">
+      <div className="container flex flex-col-reverse md:flex-row pt-10 max-md:pb-10 justify-between items-center md:items-start">
         {/* Text Section */}
         <div className="w-full md:max-w-[680px] text-center md:text-start">
           <h1 className="text-text-first text-2xl md:text-3xl font-second font-medium leading-snug pt-6 pb-3">
