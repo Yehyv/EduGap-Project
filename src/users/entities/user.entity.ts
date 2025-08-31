@@ -1,3 +1,5 @@
+import { Educator } from 'src/educators/entities/educator.entity';
+import { Institute } from 'src/institutes/entities/institute.entity';
 import { Student } from 'src/students/entities/student.entity';
 import {
   Entity,
@@ -7,6 +9,8 @@ import {
   DeleteDateColumn,
   Column,
   OneToOne,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 @Entity()
@@ -28,13 +32,16 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['admin', 'student'],
+    enum: ['admin', 'student', 'educator'],
     default: ['student'],
   })
   role: string;
 
   @Column({ type: 'text', nullable: true })
   refreshToken: string | null;
+
+  @Column()
+  instituteId: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -47,4 +54,14 @@ export class User {
 
   @OneToOne(() => Student, (student) => student.user, { cascade: true })
   student: Student;
+
+  @ManyToOne(() => Institute, (institute) => institute.users)
+  @JoinColumn({ name: 'instituteId' })
+  institute: Institute;
+
+  @OneToOne(() => Educator, (educator) => educator.user, {
+    cascade: true,
+  })
+  @JoinColumn()
+  educator: Educator;
 }

@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { SignInDto } from './dto/signin';
 import { JwtService } from '@nestjs/jwt';
@@ -12,10 +16,32 @@ export class AuthService {
   ) {}
 
   async Signin(dto: SignInDto): Promise<Tokens> {
-    const user = await this.userService.findByEmail(dto.email);
-    if (!user || !(await bcrypt.hash(user.password, 10)))
+    // Better validation
+    if (
+      typeof dto.email !== 'string' ||
+      dto.email.trim() === '' ||
+      typeof dto.password !== 'string' ||
+      dto.password.trim() === ''
+    ) {
+      throw new BadRequestException('Email and password are required');
+    }
+
+    const user = await this.userService.findByEmail(dto.email.trim());
+    if (!user) {
       throw new ForbiddenException('Invalid credentials');
-    const tokens = await this.getTokens(user.id, user.email);
+    }
+
+    // Ensure password exists and is a string
+    if (!user.password || typeof user.password !== 'string') {
+      throw new ForbiddenException('Invalid credentials');
+    }
+
+    const passwordMatches = await bcrypt.compare(dto.password, user.password);
+    if (!passwordMatches) {
+      throw new ForbiddenException('Invalid credentials');
+    }
+
+    const tokens = await this.getTokens(user.id, user.email, user.instituteId);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
     return tokens;
   }
@@ -32,13 +58,17 @@ export class AuthService {
     const isMatch = await bcrypt.compare(rt, user.refreshToken);
     if (!isMatch) throw new ForbiddenException('Access Denied');
 
-    const tokens = await this.getTokens(user.id, user.email);
+    const tokens = await this.getTokens(user.id, user.email, user.instituteId);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
     return tokens;
   }
 
-  async getTokens(userId: number, email: string): Promise<Tokens> {
-    const payload = { sub: userId, email };
+  async getTokens(
+    userId: number,
+    email: string,
+    instituteId: number,
+  ): Promise<Tokens> {
+    const payload = { sub: userId, email, instituteId };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

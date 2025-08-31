@@ -5,10 +5,12 @@ import {
   MinLength,
   IsOptional,
   IsEnum,
+  IsNumber,
 } from 'class-validator';
 enum userRole {
   ADMIN = 'admin',
   STUDENT = 'student',
+  EDUCATOR = 'educator',
 }
 export class CreateUserDto {
   @IsNotEmpty()
@@ -27,4 +29,8 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(userRole)
   role?: userRole;
+
+  @IsNotEmpty()
+  @IsNumber()
+  instituteId: number;
 }

@@ -6,8 +6,12 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { CourseTranslation } from './course-translation.entity';
+import { Program } from 'src/programs/entities/program.entity';
+import { Content } from 'src/contents/entities/content.entity';
 @Entity()
 export class Course {
   @PrimaryGeneratedColumn()
@@ -24,4 +28,11 @@ export class Course {
     cascade: true,
   })
   translations: CourseTranslation[];
+  @ManyToMany(() => Program, (program) => program.courses)
+  programs: Program[];
+  @ManyToMany(() => Content, (content) => content.courses)
+  @JoinTable({
+    name: 'course_contents',
+  })
+  contents: Content[];
 }

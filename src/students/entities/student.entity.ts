@@ -8,7 +8,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToOne,
 } from 'typeorm';
+import { Program } from 'src/programs/entities/program.entity';
 @Entity()
 export class Student {
   @PrimaryGeneratedColumn()
@@ -30,4 +32,9 @@ export class Student {
   @OneToOne(() => User, (user) => user.student)
   @JoinColumn()
   user: User;
+
+  @ManyToOne(() => Program, {
+    onDelete: 'CASCADE',
+  })
+  program: Program;
 }

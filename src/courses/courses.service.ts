@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +11,9 @@ import { Course } from './entities/course.entity';
 import { Repository } from 'typeorm';
 import { Language } from 'src/languages/entities/language.entity';
 import { CourseTranslation } from './entities/course-translation.entity';
+import { Program } from 'src/programs/entities/program.entity';
+import { In } from 'typeorm';
+import { Student } from 'src/students/entities/student.entity';
 
 @Injectable()
 export class CoursesService {
@@ -16,13 +24,41 @@ export class CoursesService {
     private languageRepository: Repository<Language>,
     @InjectRepository(CourseTranslation)
     private courseTranslationRepository: Repository<CourseTranslation>,
+    @InjectRepository(Program)
+    private programRepository: Repository<Program>,
+    @InjectRepository(Student)
+    private studentRepository: Repository<Student>,
   ) {}
 
-  async create(createCourseDto: CreateCourseDto) {
+  async create(createCourseDto: CreateCourseDto, userInstituteId: number) {
+    let programs: Program[] = [];
+    if (createCourseDto.programIds.length > 0) {
+      // تأكد إن البرامج تنتمي لمعهد الـ user
+      programs = await this.programRepository
+        .createQueryBuilder('program')
+        .leftJoin('program.institutes', 'institute')
+        .where('program.id IN (:...programIds)', {
+          programIds: createCourseDto.programIds,
+        })
+        .andWhere('institute.id = :instituteId', {
+          instituteId: userInstituteId,
+        })
+        .getMany();
+
+      if (programs.length !== createCourseDto.programIds.length) {
+        throw new NotFoundException(
+          'One or more programs not found or not accessible',
+        );
+      }
+    }
+
     const course = this.courseRepository.create({
       image: createCourseDto.image,
+      programs: programs,
     });
+
     const savedCourse = await this.courseRepository.save(course);
+
     const translations = await Promise.all(
       createCourseDto.translations.map(async (translation) => {
         const language = await this.languageRepository.findOne({
@@ -42,65 +78,157 @@ export class CoursesService {
         return this.courseTranslationRepository.save(courseTranslation);
       }),
     );
-    return { ...savedCourse, translations };
+    return { savedCourse, translations };
   }
 
-  async findAll(languageId?: number) {
-    const courses = await this.courseRepository.find({
-      relations: ['translations', 'translations.language'],
-    });
+  async findAll(
+    userInstituteId: number,
+    languageId?: number,
+    page: number = 1,
+    limit = 8,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const courses = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoinAndSelect(
+        'course.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('translation.language', 'language')
+      .leftJoinAndSelect('course.programs', 'programs')
+      .where('institute.id = :instituteId', { instituteId: userInstituteId })
+      .skip(skip)
+      .take(limit)
+      .getMany();
+
     return courses.map((course) => {
-      const selectedTranslations =
-        course.translations.find(
-          (translation) => translation.language.id == languageId,
-        ) || course.translations[0];
+      let selectedTranslation: CourseTranslation;
+
+      if (languageId) {
+        selectedTranslation = course.translations[0] || null;
+      } else {
+        selectedTranslation = course.translations[0] || null;
+      }
+
       return {
         id: course.id,
         image: course.image,
-        name: selectedTranslations.name,
-        description: selectedTranslations.description,
+        name: selectedTranslation?.name || '',
+        description: selectedTranslation?.description || '',
+        programs: course.programs || [],
       };
     });
   }
 
-  async findOne(id: number, languageId?: number) {
-    const course = await this.courseRepository.findOne({
-      where: { id: id },
-      relations: ['translations', 'translations.language'],
-    });
+  async findOne(id: number, userInstituteId: number, languageId?: number) {
+    const course = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoinAndSelect('course.translations', 'translations')
+      .leftJoinAndSelect('translations.language', 'language')
+      .leftJoinAndSelect('course.programs', 'programs')
+      .where('course.id = :id', { id })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
+      .getOne();
 
     if (!course) {
-      throw new NotFoundException(`Course ${id} not found`);
+      throw new NotFoundException(`Course ${id} not found or not accessible`);
     }
 
     const selectedTranslation =
       course.translations.find((t) => t.language.id === languageId) ||
-      course.translations[0]; // Fallback to first translation
+      course.translations[0];
 
     return {
       id: course.id,
       image: course.image,
       name: selectedTranslation?.name,
       description: selectedTranslation?.description,
+      programs: course.programs || [],
     };
   }
 
-  async update(id: number, UpdateCourseDto: UpdateCourseDto) {
-    const course = await this.courseRepository.findOne({
-      where: { id: id },
-      relations: ['translations', 'translations.language'],
-    });
-    if (!course) throw new NotFoundException(`Bundle ${id} not found`);
-    if (UpdateCourseDto.translations) {
-      for (const t of UpdateCourseDto.translations) {
+  async update(
+    id: number,
+    updateCourseDto: UpdateCourseDto,
+    userInstituteId: number,
+  ) {
+    // تأكد إن الكورس ينتمي لمعهد الـ user
+    const course = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoinAndSelect('course.translations', 'translations')
+      .leftJoinAndSelect('translations.language', 'language')
+      .leftJoinAndSelect('course.programs', 'programs')
+      .where('course.id = :id', { id })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
+      .getOne();
+
+    if (!course) {
+      throw new NotFoundException(`Course ${id} not found or not accessible`);
+    }
+
+    // Update image if provided
+    if (updateCourseDto.image) {
+      course.image = updateCourseDto.image;
+    }
+
+    // Update program assignments (تأكد إن البرامج تنتمي لنفس المعهد)
+    if (updateCourseDto.programIds !== undefined) {
+      if (updateCourseDto.programIds.length > 0) {
+        const programs = await this.programRepository
+          .createQueryBuilder('program')
+          .leftJoin('program.institutes', 'institute')
+          .where('program.id IN (:...programIds)', {
+            programIds: updateCourseDto.programIds,
+          })
+          .andWhere('institute.id = :instituteId', {
+            instituteId: userInstituteId,
+          })
+          .getMany();
+
+        if (programs.length !== updateCourseDto.programIds.length) {
+          throw new NotFoundException(
+            'One or more programs not found or not accessible',
+          );
+        }
+
+        course.programs = programs;
+      } else {
+        course.programs = [];
+      }
+    }
+
+    // Update translations
+    if (updateCourseDto.translations) {
+      for (const t of updateCourseDto.translations) {
         const language = await this.languageRepository.findOne({
           where: { id: t.languageId },
         });
-        if (!language)
+        if (!language) {
           throw new NotFoundException(`Language ${t.languageId} not found`);
+        }
+
         const translation = await this.courseTranslationRepository.findOne({
-          where: { course: { id }, language: { id: t.languageId } },
+          where: {
+            course: { id },
+            language: { id: t.languageId },
+          },
         });
+
+        if (!t.name || !t.description) {
+          throw new BadRequestException(
+            'Name and description are required for translations',
+          );
+        }
+
         if (translation) {
           translation.name = t.name;
           translation.description = t.description;
@@ -116,13 +244,158 @@ export class CoursesService {
         }
       }
     }
-    return this.findOne(id);
+
+    await this.courseRepository.save(course);
+    return this.findOne(id, userInstituteId);
   }
 
-  async remove(id: number) {
-    const course = await this.courseRepository.findOne({ where: { id: id } });
-    if (!course) throw new NotFoundException(`Bundle ${id} not found`);
+  async remove(id: number, userInstituteId: number) {
+    const course = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .where('course.id = :id', { id })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
+      .getOne();
+
+    if (!course) {
+      throw new NotFoundException(`Course ${id} not found or not accessible`);
+    }
+
     await this.courseRepository.softDelete(id);
-    return { message: `Bundle ${id} removed` };
+    return { message: `Course ${id} removed` };
+  }
+
+  async assignToPrograms(
+    courseId: number,
+    programIds: number[],
+    userInstituteId: number,
+  ) {
+    const course = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoinAndSelect('course.programs', 'programs')
+      .where('course.id = :courseId', { courseId })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
+      .getOne();
+
+    if (!course) {
+      throw new NotFoundException(
+        `Course ${courseId} not found or not accessible`,
+      );
+    }
+
+    const programs = await this.programRepository
+      .createQueryBuilder('program')
+      .leftJoin('program.institutes', 'institute')
+      .where('program.id IN (:...programIds)', { programIds })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
+      .getMany();
+
+    if (programs.length !== programIds.length) {
+      throw new NotFoundException(
+        'One or more programs not found or not accessible',
+      );
+    }
+
+    course.programs = programs;
+    await this.courseRepository.save(course);
+
+    return this.findOne(courseId, userInstituteId);
+  }
+
+  async removeFromPrograms(
+    courseId: number,
+    programIds: number[],
+    userInstituteId: number,
+  ) {
+    const course = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoinAndSelect('course.programs', 'programs')
+      .where('course.id = :courseId', { courseId })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
+      .getOne();
+
+    if (!course) {
+      throw new NotFoundException(
+        `Course ${courseId} not found or not accessible`,
+      );
+    }
+
+    course.programs = course.programs.filter(
+      (program) => !programIds.includes(program.id),
+    );
+
+    await this.courseRepository.save(course);
+    return this.findOne(courseId, userInstituteId);
+  }
+
+  async findFirstEight(userInstituteId: number, languageId?: number) {
+    const courses = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoinAndSelect(
+        'course.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('translation.language', 'language')
+      .leftJoinAndSelect('course.programs', 'programs')
+      .where('institute.id = :instituteId', { instituteId: userInstituteId })
+      .take(8)
+      .getMany();
+
+    return courses.map((course) => {
+      const selectedTranslation = course.translations[0] || null;
+
+      return {
+        id: course.id,
+        image: course.image,
+        name: selectedTranslation?.name || '',
+        description: selectedTranslation?.description || '',
+        programs: course.programs || [],
+      };
+    });
+  }
+
+  async findByPrograms(
+    programIds: number[],
+    userInstituteId: number,
+    languageId?: number,
+  ) {
+    if (!programIds || programIds.length === 0) {
+      throw new BadRequestException('You must provide at least one programId');
+    }
+
+    const courses = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoinAndSelect('course.translations', 'translation')
+      .leftJoinAndSelect('translation.language', 'language')
+      .leftJoinAndSelect('course.programs', 'programs')
+      .where('program.id IN (:...programIds)', { programIds })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
+      .getMany();
+
+    return courses.map((course) => {
+      const selectedTranslation = languageId
+        ? course.translations.find((t) => t.language.id === languageId) ||
+          course.translations[0]
+        : course.translations[0];
+
+      return {
+        id: course.id,
+        image: course.image,
+        name: selectedTranslation?.name || '',
+        description: selectedTranslation?.description || '',
+        programs: course.programs || [],
+      };
+    });
   }
 }

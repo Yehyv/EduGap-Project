@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +11,9 @@ import { Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { AuthService } from 'src/auth/auth.service';
 import { Tokens } from 'src/auth/types/tokens.interface';
+import * as bcrypt from 'bcrypt';
+import { Institute } from 'src/institutes/entities/institute.entity';
+import { Program } from 'src/programs/entities/program.entity';
 
 @Injectable()
 export class StudentsService {
@@ -16,90 +23,109 @@ export class StudentsService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly authService: AuthService,
+    @InjectRepository(Institute)
+    private readonly instituteRepository: Repository<Institute>,
+    @InjectRepository(Program)
+    private readonly programRepository: Repository<Program>,
   ) {}
   async create(createStudentDto: CreateStudentDto): Promise<Tokens> {
+    const { programId, ...studentData } = createStudentDto;
+
+    // جلب الـ User
     const user = this.userRepository.create({
-      firstName: createStudentDto.firstName,
-      lastName: createStudentDto.lastName,
-      email: createStudentDto.email,
-      password: createStudentDto.password,
+      firstName: studentData.firstName,
+      lastName: studentData.lastName,
+      email: studentData.email,
+      password: await bcrypt.hash(studentData.password, 10),
       role: 'student',
+      instituteId: studentData.instituteId, // User مرتبط بالمعهد
     });
-    // Save the user first to get the id
+
+    // جلب البرنامج والتأكد أنه تابع لنفس المعهد
+    const program = await this.programRepository.findOne({
+      where: { id: programId },
+      relations: ['institutes'],
+    });
+    if (!program) throw new NotFoundException(`Program ${programId} not found`);
+    const isRelated = program.institutes.some(
+      (inst) => inst.id === savedUser.instituteId,
+    );
+    if (!isRelated)
+      throw new BadRequestException(
+        'Program does not belong to this institute',
+      );
     const savedUser = await this.userRepository.save(user);
+    // إنشاء الطالب وربطه بالـ User والبرنامج
+    const student = this.studentRepository.create({
+      major: studentData.major,
+      skills: studentData.skills,
+      user: savedUser,
+      program,
+    });
+    await this.studentRepository.save(student);
+
+    // توليد التوكنز
     const tokens = await this.authService.getTokens(
       savedUser.id,
       savedUser.email,
+      savedUser.instituteId,
     );
     await this.authService.updateRefreshToken(
       savedUser.id,
       tokens.refreshToken,
     );
 
-    const student = this.studentRepository.create({
-      major: createStudentDto.major,
-      skills: createStudentDto.skills,
-      user: savedUser,
-    });
-    await this.studentRepository.save(student);
     return tokens;
   }
 
   async findAll() {
-    try {
-      const students = await this.studentRepository.find({
-        relations: ['user'],
-      });
-      return { message: 'List of students', students };
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      throw new Error('Could not fetch students');
-    }
+    return this.studentRepository.find({
+      relations: ['user', 'program'],
+    });
   }
 
   async findById(id: number) {
-    try {
-      const student = await this.studentRepository.findOne({
-        where: { id },
-        relations: ['user'],
-      });
-      if (!student) {
-        throw new Error(`Student with ID ${id} not found`);
-      }
-      return student;
-    } catch (error) {
-      console.error('Error fetching student by ID:', error);
-      throw new Error(`Could not fetch student with ID ${id}`);
-    }
+    const student = await this.studentRepository.findOne({
+      where: { id },
+      relations: ['user', 'program'],
+    });
+    if (!student)
+      throw new NotFoundException(`Student with ID ${id} not found`);
+    return student;
   }
 
   async update(id: number, updateStudentDto: UpdateStudentDto) {
-    try {
-      const student = await this.studentRepository.preload({
-        id,
-        ...updateStudentDto,
+    const student = await this.studentRepository.findOne({
+      where: { id },
+      relations: ['user', 'program'],
+    });
+    if (!student)
+      throw new NotFoundException(`Student with ID ${id} not found`);
+
+    if (updateStudentDto.programId) {
+      const program = await this.programRepository.findOne({
+        where: { id: updateStudentDto.programId },
+        relations: ['institutes'],
       });
-      if (!student) {
-        throw new Error(`Student with ID ${id} not found`);
-      }
-      return this.studentRepository.save(student);
-    } catch (error) {
-      console.error('Error updating student:', error);
-      throw new Error(`Could not update student with ID ${id}`);
+      if (!program) throw new NotFoundException(`Program not found`);
+      if (
+        !program.institutes.some((inst) => inst.id === student.user.instituteId)
+      )
+        throw new BadRequestException(
+          'Program does not belong to student institute',
+        );
+
+      student.program = program;
     }
+
+    if (updateStudentDto.major) student.major = updateStudentDto.major;
+    if (updateStudentDto.skills) student.skills = updateStudentDto.skills;
+
+    return this.studentRepository.save(student);
   }
 
-  async remove(id: number): Promise<{ message: string }> {
-    try {
-      const student = await this.studentRepository.findOne({ where: { id } });
-      if (!student) {
-        throw new Error(`Student with ID ${id} not found`);
-      }
-      await this.studentRepository.softDelete(id);
-      return { message: 'Student deleted successfully' };
-    } catch (error) {
-      console.error('Error deleting student:', error);
-      throw new Error(`Could not delete student with ID ${id}`);
-    }
+  async remove(id: number) {
+    await this.studentRepository.softDelete(id);
+    return { message: 'Student deleted successfully' };
   }
 }

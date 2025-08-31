@@ -18,6 +18,7 @@ interface MyCustomRequest extends Request {
   user: {
     sub: number;
     email: string;
+    instituteId: number;
     refreshToken?: string;
   };
 }
@@ -28,7 +29,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  signin(@Body() dto: SignInDto) {
+  signin(@Req() req: MyCustomRequest, @Body() dto: SignInDto) {
     return this.authService.Signin(dto);
   }
 

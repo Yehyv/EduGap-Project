@@ -1,5 +1,5 @@
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 export class CreateStudentDto extends CreateUserDto {
   @IsNotEmpty()
   @IsString()
@@ -8,4 +8,8 @@ export class CreateStudentDto extends CreateUserDto {
   @IsNotEmpty()
   @IsString()
   skills: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  programId: number;
 }

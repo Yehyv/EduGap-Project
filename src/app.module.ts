@@ -10,6 +10,12 @@ import { StudentsModule } from './students/students.module';
 import { AuthModule } from './auth/auth.module';
 import { LanguagesModule } from './languages/languages.module';
 import { CoursesModule } from './courses/courses.module';
+import { ProgramsModule } from './programs/programs.module';
+import { ContentsModule } from './contents/contents.module';
+import { TopicsModule } from './topics/topics.module';
+import { InstitutesModule } from './institutes/institutes.module';
+import { LessonsModule } from './lessons/lessons.module';
+import { EducatorsModule } from './educators/educators.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -24,6 +30,12 @@ import { CoursesModule } from './courses/courses.module';
     AuthModule,
     LanguagesModule,
     CoursesModule,
+    ProgramsModule,
+    ContentsModule,
+    TopicsModule,
+    InstitutesModule,
+    LessonsModule,
+    EducatorsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -4,6 +4,7 @@ import {
   IsArray,
   ValidateNested,
   IsNumber,
+  ArrayNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 export class CourseTranslationDto {
@@ -29,4 +30,9 @@ export class CreateCourseDto {
   @ValidateNested({ each: true })
   @Type(() => CourseTranslationDto)
   translations: CourseTranslationDto[];
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsNumber({}, { each: true })
+  programIds: number[];
 }
