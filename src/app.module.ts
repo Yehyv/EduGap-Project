@@ -16,6 +16,7 @@ import { TopicsModule } from './topics/topics.module';
 import { InstitutesModule } from './institutes/institutes.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { EducatorsModule } from './educators/educators.module';
+import { ProgressModule } from './progress/progress.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -36,6 +37,7 @@ import { EducatorsModule } from './educators/educators.module';
     InstitutesModule,
     LessonsModule,
     EducatorsModule,
+    ProgressModule,
   ],
   controllers: [AppController],
   providers: [AppService],

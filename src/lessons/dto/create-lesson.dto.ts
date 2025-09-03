@@ -8,6 +8,7 @@ import {
   ArrayNotEmpty,
 } from 'class-validator';
 import { TopicTranslationDto } from 'src/topics/dto/create-topic.dto';
+
 export class LessonTranslationDto {
   @IsString()
   @IsNotEmpty()

@@ -9,10 +9,12 @@ import {
   Req,
   Headers,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -22,7 +24,7 @@ interface AuthenticatedRequest extends Request {
     refreshToken?: string;
   };
 }
-
+@UseGuards(JwtAuthGuard)
 @Controller('lessons')
 export class LessonsController {
   constructor(private readonly lessonsService: LessonsService) {}
@@ -42,17 +44,48 @@ export class LessonsController {
   ) {
     const langId = languageId !== undefined ? +languageId : 0;
     if (langId) {
-      return this.lessonsService.findAll(req.user.instituteId, langId);
+      return this.lessonsService.findAll(langId, req.user.instituteId);
     }
     return this.lessonsService.findAll(req.user.instituteId);
   }
+  @Get('in-progress')
+  getLessonsInProgress(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+  ) {
+    console.log('test');
+    const langId = languageId !== undefined ? +languageId : 0; // غير undefined لـ 0
+    console.log({
+      sub: req.user.sub,
+      instituteId: req.user.instituteId,
+      languageId,
+    });
 
+    if (langId) {
+      return this.lessonsService.findAllInProgress(
+        req.user.sub,
+        req.user.instituteId,
+        langId,
+      );
+    } else {
+      return this.lessonsService.findAllInProgress(
+        req.user.sub,
+        req.user.instituteId,
+      );
+    }
+  }
   @Get(':id')
   findOne(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
+    @Headers('languageId') languageId?: string,
   ) {
-    return this.lessonsService.findOne(id, req.user.instituteId);
+    const langId = languageId !== undefined ? +languageId : 0;
+    if (langId) {
+      return this.lessonsService.findOne(id, langId, req.user.instituteId);
+    } else {
+      return this.lessonsService.findOne(id, req.user.instituteId);
+    }
   }
 
   @Patch(':id')

@@ -48,7 +48,7 @@ export class StudentsService {
     });
     if (!program) throw new NotFoundException(`Program ${programId} not found`);
     const isRelated = program.institutes.some(
-      (inst) => inst.id === savedUser.instituteId,
+      (inst) => inst.id === user.instituteId,
     );
     if (!isRelated)
       throw new BadRequestException(

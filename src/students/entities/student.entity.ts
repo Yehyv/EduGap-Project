@@ -9,8 +9,10 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { Program } from 'src/programs/entities/program.entity';
+import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 @Entity()
 export class Student {
   @PrimaryGeneratedColumn()
@@ -37,4 +39,7 @@ export class Student {
     onDelete: 'CASCADE',
   })
   program: Program;
+
+  @OneToMany(() => LessonProgress, (progress) => progress.student)
+  lessonProgresses: LessonProgress[];
 }

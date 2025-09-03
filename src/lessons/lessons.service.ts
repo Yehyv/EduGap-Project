@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { Language } from 'src/languages/entities/language.entity';
 import { LessonTranslation } from './entities/lesson-translation.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
+import { Student } from 'src/students/entities/student.entity';
 
 @Injectable()
 export class LessonsService {
@@ -19,8 +20,10 @@ export class LessonsService {
     private lessonTranslationRepository: Repository<LessonTranslation>,
     @InjectRepository(Topic)
     private topicRepository: Repository<Topic>,
+    @InjectRepository(Student)
+    private studentRepository: Repository<Student>,
   ) {}
-  async create(createLessonDto: CreateLessonDto, userInstituteId: number) {
+  async create(createLessonDto: CreateLessonDto, userInstituteId?: number) {
     const topic = await this.topicRepository
       .createQueryBuilder('topic')
       .leftJoin('topic.content', 'content')
@@ -58,16 +61,23 @@ export class LessonsService {
   async findAll(languageId?: number, userInstituteId?: number) {
     const query = this.lessonRepository
       .createQueryBuilder('lesson')
-      .leftJoin('lesson.topic', 'topic')
+      .leftJoinAndSelect('lesson.topic', 'topic')
+      .leftJoinAndSelect('lesson.translations', 'lessonTranslation')
       .leftJoin('topic.content', 'content')
       .leftJoin('content.courses', 'course')
-      .leftJoin('courses.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('lesson.translations', 'translation')
-      .where('institute.id = :instituteId', { instituteId: userInstituteId });
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute');
+
+    if (userInstituteId) {
+      query.andWhere('institute.id = :instituteId', {
+        instituteId: userInstituteId,
+      });
+    }
 
     if (languageId) {
-      query.andWhere('translation.languageId = :languageId', { languageId });
+      query.andWhere('lessonTranslation.languageId = :languageId', {
+        languageId,
+      });
     }
 
     return query.getMany();
@@ -174,5 +184,48 @@ export class LessonsService {
       .getOne();
     if (!lesson) throw new NotFoundException(`Lesson not found`);
     await this.lessonRepository.softDelete(id);
+  }
+  async findAllInProgress(
+    userId: number,
+    userInstituteId?: number,
+    languageId?: number,
+  ) {
+    const query = this.lessonRepository
+      .createQueryBuilder('lesson')
+      .leftJoinAndSelect('lesson.topic', 'topic')
+      .leftJoin('topic.content', 'content')
+      .leftJoin('content.courses', 'course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoin(
+        'lesson.progresses',
+        'lessonProgress',
+        'lessonProgress.studentId = :userId',
+        {
+          userId,
+        },
+      )
+      .leftJoin('lesson.translations', 'translation') // لازم عشان languageId
+      .where('lessonProgress.status = :status', { status: 'in progress' });
+
+    // لو فيه معهد
+    if (userInstituteId) {
+      query.andWhere('institute.id = :instituteId', {
+        instituteId: userInstituteId,
+      });
+    }
+
+    // لو فيه لغة
+    if (languageId) {
+      query.andWhere('translation.languageId = :languageId', { languageId });
+    }
+
+    const lessons = await query.getMany();
+
+    if (!lessons.length) {
+      throw new NotFoundException('No lessons in progress found');
+    }
+
+    return lessons;
   }
 }

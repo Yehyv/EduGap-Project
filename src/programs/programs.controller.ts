@@ -14,7 +14,7 @@ import {
 import { ProgramsService } from './programs.service';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+// import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Request } from 'express';
 
 // اضافة الـ interface للـ Request
@@ -27,7 +27,7 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-@UseGuards(JwtAuthGuard) // فعّل الـ Guard
+// @UseGuards(JwtAuthGuard) // فعّل الـ Guard
 @Controller('programs')
 export class ProgramsController {
   constructor(private readonly programsService: ProgramsService) {}
@@ -79,7 +79,6 @@ export class ProgramsController {
   assignToInstitutes(
     @Param('id', ParseIntPipe) programId: number,
     @Body('instituteIds') instituteIds: number[],
-    @Req() req: AuthenticatedRequest,
   ) {
     return this.programsService.assignToInstitutes(programId, instituteIds);
   }
@@ -88,7 +87,6 @@ export class ProgramsController {
   removeFromInstitutes(
     @Param('id', ParseIntPipe) programId: number,
     @Body('instituteIds') instituteIds: number[],
-    @Req() req: AuthenticatedRequest,
   ) {
     return this.programsService.removeFromInstitutes(programId, instituteIds);
   }

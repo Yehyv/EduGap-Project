@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { LessonTranslation } from './lesson-translation.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
+import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 @Entity()
 export class Lesson {
   @PrimaryGeneratedColumn()
@@ -27,4 +28,6 @@ export class Lesson {
     onDelete: 'CASCADE',
   })
   topic: Topic;
+  @OneToMany(() => LessonProgress, (progress) => progress.lesson)
+  progresses: LessonProgress[];
 }
