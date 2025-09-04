@@ -7,17 +7,18 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToOne,
+  JoinColumn,
 } from 'typeorm';
 @Entity()
 export class Educator {
   @PrimaryGeneratedColumn()
   id: number;
   @Column()
-  name: string;
-  @Column()
   title: string;
   @Column()
   bio: string;
+  @Column()
+  image: string;
   @CreateDateColumn()
   createdAt: Date;
   @UpdateDateColumn()
@@ -27,5 +28,6 @@ export class Educator {
   @OneToOne(() => User, (user) => user.educator, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn()
   user: User;
 }

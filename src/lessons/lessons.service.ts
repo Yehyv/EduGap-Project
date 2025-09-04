@@ -7,7 +7,7 @@ import { Repository } from 'typeorm';
 import { Language } from 'src/languages/entities/language.entity';
 import { LessonTranslation } from './entities/lesson-translation.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
-import { Student } from 'src/students/entities/student.entity';
+import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 
 @Injectable()
 export class LessonsService {
@@ -20,8 +20,8 @@ export class LessonsService {
     private lessonTranslationRepository: Repository<LessonTranslation>,
     @InjectRepository(Topic)
     private topicRepository: Repository<Topic>,
-    @InjectRepository(Student)
-    private studentRepository: Repository<Student>,
+    @InjectRepository(LessonProgress)
+    private lessonProgressRepository: Repository<LessonProgress>,
   ) {}
   async create(createLessonDto: CreateLessonDto, userInstituteId?: number) {
     const topic = await this.topicRepository
@@ -192,30 +192,26 @@ export class LessonsService {
   ) {
     const query = this.lessonRepository
       .createQueryBuilder('lesson')
+      .leftJoinAndSelect('lesson.translations', 'translation')
+      .leftJoinAndSelect('translation.language', 'language')
       .leftJoinAndSelect('lesson.topic', 'topic')
       .leftJoin('topic.content', 'content')
       .leftJoin('content.courses', 'course')
       .leftJoin('course.programs', 'program')
       .leftJoin('program.institutes', 'institute')
-      .leftJoin(
-        'lesson.progresses',
-        'lessonProgress',
-        'lessonProgress.studentId = :userId',
-        {
-          userId,
-        },
-      )
-      .leftJoin('lesson.translations', 'translation') // لازم عشان languageId
-      .where('lessonProgress.status = :status', { status: 'in progress' });
+      .innerJoin('lesson.progresses', 'lessonProgress')
+      .innerJoin('lessonProgress.enrollment', 'enrollment')
+      .where('lessonProgress.status = :progressStatus', {
+        progressStatus: 'in progress',
+      })
+      .andWhere('enrollment.userId = :userId', { userId });
 
-    // لو فيه معهد
     if (userInstituteId) {
       query.andWhere('institute.id = :instituteId', {
         instituteId: userInstituteId,
       });
     }
 
-    // لو فيه لغة
     if (languageId) {
       query.andWhere('translation.languageId = :languageId', { languageId });
     }

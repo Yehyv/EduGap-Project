@@ -6,9 +6,20 @@ import { User } from './entities/user.entity';
 import { Student } from 'src/students/entities/student.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Student, Institute, Educator])],
+  imports: [
+    TypeOrmModule.forFeature([
+      User,
+      Student,
+      Institute,
+      Educator,
+      Enrollment,
+      SavedCourse,
+    ]),
+  ],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],

@@ -1,0 +1,57 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { EnrollmentsService } from './enrollments.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+  };
+}
+@UseGuards(JwtAuthGuard)
+@Controller('enrollments')
+export class EnrollmentsController {
+  constructor(private readonly enrollmentsService: EnrollmentsService) {}
+  @Post(':courseId/enroll')
+  enrollStudentCourse(
+    @Req() req: AuthenticatedRequest,
+    @Param('courseId') courseId: number,
+  ) {
+    return this.enrollmentsService.enrollStudentCourse(
+      courseId,
+      req.user.sub,
+      req.user.instituteId,
+    );
+  }
+  @Delete(':courseId/unenroll')
+  unenrollStudentCourse(
+    @Req() req: AuthenticatedRequest,
+    @Param('courseId') courseId: number,
+  ) {
+    return this.enrollmentsService.unenrollStudentCourse(
+      courseId,
+      req.user.sub,
+    );
+  }
+
+  @Get('my-courses')
+  getUserEnrollments(@Req() req: AuthenticatedRequest) {
+    return this.enrollmentsService.getUserEnrollments(req.user.sub);
+  }
+
+  // Get all users enrolled in a course
+  @Get(':courseId/users')
+  getCourseEnrollments(@Param('courseId') courseId: number) {
+    return this.enrollmentsService.getCourseEnrollments(courseId);
+  }
+}

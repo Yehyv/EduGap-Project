@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
-import { Student } from 'src/students/entities/student.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 
 @Entity()
 export class LessonProgress {
@@ -26,10 +26,10 @@ export class LessonProgress {
   })
   lesson: Lesson;
 
-  @ManyToOne(() => Student, (student) => student.lessonProgresses, {
+  @ManyToOne(() => Enrollment, (enrollment) => enrollment.progress, {
     onDelete: 'CASCADE',
   })
-  student: Student;
+  enrollment: Enrollment;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -1,4 +1,5 @@
 import { Educator } from 'src/educators/entities/educator.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { Student } from 'src/students/entities/student.entity';
 import {
@@ -11,8 +12,9 @@ import {
   OneToOne,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
-
+import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -64,4 +66,10 @@ export class User {
   })
   @JoinColumn()
   educator: Educator;
+  @OneToMany(() => Enrollment, (enrollment) => enrollment.user, {
+    cascade: true,
+  })
+  enrollments: Enrollment;
+  @OneToMany(() => SavedCourse, (savedCourse) => savedCourse.user)
+  savedCourses: SavedCourse[];
 }

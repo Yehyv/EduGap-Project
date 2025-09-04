@@ -126,6 +126,7 @@ export class StudentsService {
 
   async remove(id: number) {
     await this.studentRepository.softDelete(id);
+    await this.userRepository.softDelete(id);
     return { message: 'Student deleted successfully' };
   }
 }

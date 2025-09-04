@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { EducatorsService } from './educators.service';
 import { CreateEducatorDto } from './dto/create-educator.dto';
@@ -21,10 +22,17 @@ export class EducatorsController {
   }
 
   @Get()
-  findAll() {
-    return this.educatorsService.findAll();
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const pageNumber = page ? parseInt(page, 10) : 1;
+    const limitNumber = limit ? parseInt(limit, 10) : 8;
+
+    return this.educatorsService.findAll(pageNumber, limitNumber);
   }
 
+  @Get('first-8')
+  findFirst8Educators() {
+    return this.educatorsService.findFirst8Educators();
+  }
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.educatorsService.findOne(+id);

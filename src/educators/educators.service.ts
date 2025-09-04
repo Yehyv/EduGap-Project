@@ -26,11 +26,13 @@ export class EducatorsService {
       email: createEducatorDto.email,
       password: await bcrypt.hash(createEducatorDto.password, 10),
       role: 'educator',
+      instituteId: createEducatorDto.instituteId,
     });
     const savedUser = await this.userRepository.save(user);
     const educator = this.educatorRepository.create({
       title: createEducatorDto.title,
       bio: createEducatorDto.bio,
+      image: createEducatorDto.image,
       user: savedUser,
     });
     await this.educatorRepository.save(educator);
@@ -48,12 +50,35 @@ export class EducatorsService {
     return tokens;
   }
 
-  async findAll() {
+  async findAll(page: number = 1, limit: number = 8) {
+    const skip = (page - 1) * limit;
+
+    const [educators, total] = await this.educatorRepository.findAndCount({
+      relations: ['user'],
+      skip,
+      take: limit,
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: educators,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
+  }
+  async findFirst8Educators() {
     return this.educatorRepository.find({
       relations: ['user'],
+      take: 8,
     });
   }
-
   async findOne(id: number) {
     const educator = await this.educatorRepository.findOne({
       where: { id },

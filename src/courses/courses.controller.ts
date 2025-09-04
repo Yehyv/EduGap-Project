@@ -28,12 +28,25 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-@UseGuards(JwtAuthGuard) // فعّل الـ Guard
 @Controller('courses')
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
-
+  @Get('visitors/first-8')
+  findFirstEightForVisitors(@Headers('languageId') languageId?: string) {
+    const langId = languageId !== undefined ? +languageId : 0;
+    return this.coursesService.findFirstEightForVisitors(langId);
+  }
+  @Get('visitors')
+  findAllForVisitors(
+    @Headers('languageId') languageId?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 8,
+  ) {
+    const langId = languageId !== undefined ? +languageId : 0;
+    return this.coursesService.findAllForVisitors(langId, page, limit);
+  }
   @Post()
+  @UseGuards(JwtAuthGuard) // فعّل الـ Guard
   create(
     @Body() createCourseDto: CreateCourseDto,
     @Req() req: AuthenticatedRequest,
@@ -42,6 +55,7 @@ export class CoursesController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard) // فعّل الـ Guard
   findAll(
     @Req() req: AuthenticatedRequest,
     @Headers('languageId') languageId?: string,
@@ -58,14 +72,16 @@ export class CoursesController {
   }
 
   @Get('first-eight') // هذا لازم يجي قبل :id
+  @UseGuards(JwtAuthGuard) // فعّل الـ Guard
   findFirstEight(
     @Req() req: AuthenticatedRequest,
     @Query('languageId') languageId?: number,
   ) {
     return this.coursesService.findFirstEight(req.user.instituteId, languageId);
   }
-
+  
   @Get('filter') // هذا كمان لازم يجي قبل :id
+  @UseGuards(JwtAuthGuard) // فعّل الـ Guard
   findByPrograms(
     @Req() req: AuthenticatedRequest,
     @Query('programIds') programIds: string, // programIds=1,2,3
@@ -78,8 +94,14 @@ export class CoursesController {
       languageId,
     );
   }
+  @Get('popular')
+  async getPopularCourses(@Query('limit') limit?: number) {
+    const parsedLimit = limit ? Number(limit) : 10;
+    return this.coursesService.getPopularCourses(parsedLimit);
+  }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard) // فعّل الـ Guard
   findOne(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
@@ -93,6 +115,7 @@ export class CoursesController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard) // فعّل الـ Guard
   update(
     @Param('id') id: string,
     @Body() updateCourseDto: UpdateCourseDto,
@@ -106,6 +129,7 @@ export class CoursesController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard) // فعّل الـ Guard
   remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.coursesService.remove(+id, req.user.instituteId);
   }

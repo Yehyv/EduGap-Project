@@ -398,4 +398,74 @@ export class CoursesService {
       };
     });
   }
+  async getPopularCourses(limit = 10) {
+    return this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin('course.enrollments', 'enrollment')
+      .leftJoinAndSelect('course.translations', 'translations')
+      .groupBy('course.id')
+      .addGroupBy('translations.id')
+      .orderBy('COUNT(enrollment.id)', 'DESC')
+      .limit(limit)
+      .getMany();
+  }
+  async findAllForVisitors(
+    languageId?: number,
+    page: number = 1,
+    limit: number = 8,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const courses = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoinAndSelect(
+        'course.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('translation.language', 'language')
+      .leftJoinAndSelect('course.programs', 'programs')
+      .skip(skip)
+      .take(limit)
+      .getMany();
+
+    return courses.map((course) => {
+      const selectedTranslation = course.translations[0] || null;
+
+      return {
+        id: course.id,
+        image: course.image,
+        name: selectedTranslation?.name || '',
+        description: selectedTranslation?.description || '',
+        programs: course.programs || [],
+      };
+    });
+  }
+  async findFirstEightForVisitors(languageId?: number) {
+    const courses = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoinAndSelect(
+        'course.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('translation.language', 'language')
+      .leftJoinAndSelect('course.programs', 'programs')
+      .take(8) // أول 8 كورسات فقط
+      .getMany();
+
+    return courses.map((course) => {
+      const selectedTranslation = course.translations[0] || null;
+
+      return {
+        id: course.id,
+        image: course.image,
+        name: selectedTranslation?.name || '',
+        description: selectedTranslation?.description || '',
+        programs: course.programs || [],
+      };
+    });
+  }
 }

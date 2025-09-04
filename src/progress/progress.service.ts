@@ -1,84 +1,111 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Student } from 'src/students/entities/student.entity';
 import { Repository } from 'typeorm';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { LessonProgress } from './entities/lesson-progress.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 
 @Injectable()
 export class ProgressService {
   constructor(
-    @InjectRepository(Student)
-    private studentRepository: Repository<Student>,
     @InjectRepository(Lesson)
     private lessonRepository: Repository<Lesson>,
     @InjectRepository(LessonProgress)
     private lessonProgressRepository: Repository<LessonProgress>,
+    @InjectRepository(Enrollment)
+    private enrollmentRepository: Repository<Enrollment>,
   ) {}
+
   async startLesson(
     lessonId: number,
     userId: number,
     userInstituteId?: number,
   ) {
-    // نجيب الطالب اللي يخص اليوزر ده
-    const student = await this.studentRepository.findOne({
-      where: { user: { id: userId } },
-      relations: ['user'],
-    });
-    if (!student) throw new NotFoundException('Student not found');
-
-    // نجيب الدرس ونتأكد إنه تابع لمعهد الطالب
+    // نجيب الدرس ونتأكد إنه تابع لمعهد المستخدم
     const lesson = await this.lessonRepository
       .createQueryBuilder('lesson')
       .leftJoinAndSelect('lesson.topic', 'topic')
-      .leftJoin('topic.content', 'content')
-      .leftJoin('content.courses', 'course')
+      .leftJoinAndSelect('topic.content', 'content')
+      .leftJoinAndSelect('content.courses', 'course')
       .leftJoin('course.programs', 'program')
       .leftJoin('program.institutes', 'institute')
       .where('lesson.id = :lessonId', { lessonId })
-      .andWhere('institute.id = :instituteId', {
-        instituteId: userInstituteId,
-      })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
       .getOne();
 
-    if (!lesson) throw new NotFoundException('Lesson not found');
-
-    // نجيب أو ننشئ progress
-    let progress = await this.lessonProgressRepository.findOne({
-      where: {
-        lesson: { id: lesson.id },
-        student: { id: student.id },
-      },
-      relations: ['lesson', 'student'],
-    });
-
-    if (!progress) {
-      progress = this.lessonProgressRepository.create({
-        lesson,
-        student,
-        status: 'in progress',
-      });
-    } else {
-      progress.status = 'in progress';
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found or not accessible');
     }
 
-    return this.lessonProgressRepository.save(progress);
+    // التحقق من وجود courses
+    if (
+      !lesson.topic.content.courses ||
+      lesson.topic.content.courses.length === 0
+    ) {
+      throw new BadRequestException('Lesson is not associated with any course');
+    }
+
+    // نتأكد إن اليوزر عامل enrollment للكورس بتاع الدرس
+    const courseId = lesson.topic.content.courses[0].id;
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: {
+        course: { id: courseId },
+        user: { id: userId },
+        status: 'in progress', // التأكد من أن الـ enrollment نشط
+      },
+      relations: ['course', 'user'],
+    });
+
+    if (!enrollment) {
+      throw new BadRequestException(
+        'User is not enrolled in this course or enrollment is not active',
+      );
+    }
+
+    // التحقق من وجود progress مسبق
+    let progress = await this.lessonProgressRepository.findOne({
+      where: {
+        lesson: { id: lessonId },
+        enrollment: { id: enrollment.id },
+      },
+      relations: ['lesson', 'enrollment'],
+    });
+
+    if (progress) {
+      // لو موجود بالفعل ولكن مكتمل، نسمح بإعادة البداية
+      if (progress.status === 'completed') {
+        throw new BadRequestException(
+          'Lesson already completed. Cannot restart.',
+        );
+      }
+      // لو في progress وحالته in progress، نرجعه زي ما هو
+      return progress;
+    }
+
+    // إنشاء progress جديد
+    progress = this.lessonProgressRepository.create({
+      lesson,
+      enrollment,
+      status: 'in progress',
+    });
+
+    return await this.lessonProgressRepository.save(progress);
   }
+
   async completeLesson(
     lessonId: number,
     userId: number,
     userInstituteId?: number,
   ) {
-    const student = await this.studentRepository.findOne({
-      where: { user: { id: userId } },
-      relations: ['user'],
-    });
-    if (!student) throw new NotFoundException('Student not found');
     const lesson = await this.lessonRepository
       .createQueryBuilder('lesson')
       .leftJoinAndSelect('lesson.topic', 'topic')
-      .leftJoin('topic.content', 'content')
-      .leftJoin('content.courses', 'course')
+      .leftJoinAndSelect('topic.content', 'content')
+      .leftJoinAndSelect('content.courses', 'course')
       .leftJoin('course.programs', 'program')
       .leftJoin('program.institutes', 'institute')
       .leftJoinAndSelect('topic.translations', 'translation')
@@ -88,24 +115,201 @@ export class ProgressService {
         instituteId: userInstituteId,
       })
       .getOne();
-    if (!lesson) throw new NotFoundException('Lesson not found');
+
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found or not accessible');
+    }
+
+    // التحقق من وجود courses
+    if (
+      !lesson.topic.content.courses ||
+      lesson.topic.content.courses.length === 0
+    ) {
+      throw new BadRequestException('Lesson is not associated with any course');
+    }
+
+    // نتأكد من enrollment
+    const courseId = lesson.topic.content.courses[0].id;
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: {
+        course: { id: courseId },
+        user: { id: userId },
+        status: 'in progress',
+      },
+      relations: ['course', 'user'],
+    });
+
+    if (!enrollment) {
+      throw new BadRequestException(
+        'User is not enrolled in this course or enrollment is not active',
+      );
+    }
+
+    // البحث عن الـ progress الموجود
     let progress = await this.lessonProgressRepository.findOne({
       where: {
-        lesson: { id: lesson.id },
-        student: { id: student.id },
+        lesson: { id: lessonId },
+        enrollment: { id: enrollment.id },
       },
-      relations: ['lesson', 'student'],
+      relations: ['lesson', 'enrollment'],
     });
 
     if (!progress) {
-      progress = this.lessonProgressRepository.create({
-        lesson,
-        student,
-      });
+      throw new BadRequestException(
+        'Lesson not started yet. Please start the lesson first.',
+      );
     }
 
-    progress.status = 'completed';
+    if (progress.status === 'completed') {
+      throw new BadRequestException('Lesson already completed');
+    }
 
-    return this.lessonProgressRepository.save(progress);
+    // تحديث الحالة إلى completed
+    progress.status = 'completed';
+    progress = await this.lessonProgressRepository.save(progress);
+
+    // التحقق من اكتمال جميع الدروس في الكورس
+    await this.checkAndUpdateCourseCompletion(enrollment.id, courseId);
+
+    return progress;
+  }
+
+  async getLessonProgress(
+    lessonId: number,
+    userId: number,
+    userInstituteId?: number,
+  ): Promise<LessonProgress | null> {
+    const lesson = await this.lessonRepository
+      .createQueryBuilder('lesson')
+      .leftJoinAndSelect('lesson.topic', 'topic')
+      .leftJoinAndSelect('topic.content', 'content')
+      .leftJoinAndSelect('content.courses', 'course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .where('lesson.id = :lessonId', { lessonId })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
+      .getOne();
+
+    if (!lesson || !lesson.topic.content.courses?.length) {
+      return null;
+    }
+
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: {
+        course: { id: lesson.topic.content.courses[0].id },
+        user: { id: userId },
+      },
+    });
+
+    if (!enrollment) {
+      return null;
+    }
+
+    return await this.lessonProgressRepository.findOne({
+      where: {
+        lesson: { id: lessonId },
+        enrollment: { id: enrollment.id },
+      },
+      relations: ['lesson', 'enrollment'],
+    });
+  }
+
+  async getCourseProgress(
+    courseId: number,
+    userId: number,
+  ): Promise<{
+    totalLessons: number;
+    completedLessons: number;
+    progressPercentage: number;
+    lessonProgresses: LessonProgress[];
+  }> {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: {
+        course: { id: courseId },
+        user: { id: userId },
+      },
+      relations: ['progress', 'progress.lesson'],
+    });
+
+    if (!enrollment) {
+      throw new NotFoundException('User is not enrolled in this course');
+    }
+
+    // حساب إجمالي الدروس في الكورس
+    const totalLessons = await this.lessonRepository
+      .createQueryBuilder('lesson')
+      .leftJoin('lesson.topic', 'topic')
+      .leftJoin('topic.content', 'content')
+      .leftJoin('content.courses', 'course')
+      .where('course.id = :courseId', { courseId })
+      .getCount();
+
+    const completedLessons = enrollment.progress.filter(
+      (progress) => progress.status === 'completed',
+    ).length;
+
+    const progressPercentage =
+      totalLessons > 0
+        ? Math.round((completedLessons / totalLessons) * 100)
+        : 0;
+
+    return {
+      totalLessons,
+      completedLessons,
+      progressPercentage,
+      lessonProgresses: enrollment.progress,
+    };
+  }
+
+  private async checkAndUpdateCourseCompletion(
+    enrollmentId: number,
+    courseId: number,
+  ): Promise<void> {
+    // حساب إجمالي الدروس في الكورس
+    const totalLessons = await this.lessonRepository
+      .createQueryBuilder('lesson')
+      .leftJoin('lesson.topic', 'topic')
+      .leftJoin('topic.content', 'content')
+      .leftJoin('content.courses', 'course')
+      .where('course.id = :courseId', { courseId })
+      .getCount();
+
+    // حساب الدروس المكتملة للطالب
+    const completedLessons = await this.lessonProgressRepository
+      .createQueryBuilder('progress')
+      .leftJoin('progress.lesson', 'lesson')
+      .leftJoin('lesson.topic', 'topic')
+      .leftJoin('topic.content', 'content')
+      .leftJoin('content.courses', 'course')
+      .where('progress.enrollment.id = :enrollmentId', { enrollmentId })
+      .andWhere('progress.status = :status', { status: 'completed' })
+      .andWhere('course.id = :courseId', { courseId })
+      .getCount();
+
+    // لو جميع الدروس اكتملت، نحديث حالة الـ enrollment
+    if (totalLessons > 0 && completedLessons === totalLessons) {
+      await this.enrollmentRepository.update(
+        { id: enrollmentId },
+        { status: 'completed' },
+      );
+    }
+  }
+
+  async resetLessonProgress(
+    lessonId: number,
+    userId: number,
+    userInstituteId?: number,
+  ): Promise<void> {
+    const progress = await this.getLessonProgress(
+      lessonId,
+      userId,
+      userInstituteId,
+    );
+
+    if (!progress) {
+      throw new NotFoundException('Lesson progress not found');
+    }
+
+    await this.lessonProgressRepository.remove(progress);
   }
 }

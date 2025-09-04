@@ -17,6 +17,8 @@ import { InstitutesModule } from './institutes/institutes.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { EducatorsModule } from './educators/educators.module';
 import { ProgressModule } from './progress/progress.module';
+import { EnrollmentsModule } from './enrollments/enrollments.module';
+import { SavedCoursesModule } from './saved-courses/saved-courses.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -38,6 +40,8 @@ import { ProgressModule } from './progress/progress.module';
     LessonsModule,
     EducatorsModule,
     ProgressModule,
+    EnrollmentsModule,
+    SavedCoursesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
