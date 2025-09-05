@@ -1,11 +1,11 @@
 import SectionTitle from "../SectionTitle";
 import Slider from "react-slick";
-import CourseCard from "./CourseCard";
-import type { CourseTypes } from "@/shared/types/courses";
+import type { CourseTypes } from "@/shared/types/sharedTypes";
 import ArrowButton from "../ui/ArrowButton";
+import TestimonialsCard from "./TestimonialsCard";
 import GhostButton from "../ui/GhostButton";
-
-const PopularCourses = () => {
+import ExpertsCard from "./ExpertsCard";
+const Experts = () => {
   // fake data
   const data: CourseTypes[] = [
     {
@@ -73,60 +73,55 @@ const PopularCourses = () => {
     dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 4,
-    slidesToScroll: 2,
-    accessibility: true,
+    slidesToShow: 5,
+    slidesToScroll: 1,
     nextArrow: <ArrowButton direction="right" />,
     prevArrow: <ArrowButton direction="left" />,
     responsive: [
       {
-        breakpoint: 1180,
+        breakpoint: 1124,
         settings: {
           slidesToShow: 3,
           slidesToScroll: 1,
-          dots: true,
-          centerMode: true,
         },
       },
-
       {
         breakpoint: 1000,
         settings: {
           slidesToShow: 2,
           slidesToScroll: 1,
+          initialSlide: 1,
           dots: true,
           nextArrow: <></>,
           prevArrow: <></>,
-          centerMode: true,
         },
       },
       {
-        breakpoint: 600,
+        breakpoint: 480,
         settings: {
+          dots: true,
           slidesToShow: 1,
           slidesToScroll: 1,
-          dots: true,
           nextArrow: <></>,
           prevArrow: <></>,
-          centerMode: true,
         },
       },
     ],
   };
 
   return (
-    <div className="mb-5 container">
+    <div className="container mb-20">
       <div className="flex justify-between items-start">
-        <SectionTitle textTitle="الدورات الاكثر شيوعا" />
+        <SectionTitle textTitle="الخبراء" lineWidth="w-22" />
         <GhostButton buttonText="المزيد" to="" />
       </div>
       <Slider {...settings}>
-        {data?.map((courseData, idx) => (
-          <CourseCard key={idx} course={courseData} />
+        {data?.map((expertsData, index) => (
+          <ExpertsCard key={index} experts={expertsData} />
         ))}
       </Slider>
     </div>
   );
 };
 
-export default PopularCourses;
+export default Experts;
