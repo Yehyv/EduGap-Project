@@ -1,0 +1,10 @@
+import Swal from "sweetalert2";
+
+export function showMessagesAlert(messages: string[]) {
+  return Swal.fire({
+    title: "تنبيه",
+    text: messages.join("\n"), // كل رسالة في سطر جديد
+    icon: "info",
+    confirmButtonText: "حسناً",
+  });
+}

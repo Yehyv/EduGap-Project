@@ -1,0 +1,18 @@
+import HIMSLogo from "@/assets/imgs/ForDev/HIMSLogo.png";
+const InstituteHeader = () => {
+  return (
+    <div className="p-4 bg-gradient-to-r from-header-gradient-start to-header-gradient-end">
+      <div className="relative container">
+        <h4 className="text-center text-[18px]">
+          المعهد العالي للعلوم الإدارية - القطامية
+        </h4>
+        <img
+          src={HIMSLogo}
+          className="w-15 absolute end-4 top-1/2 -translate-y-1/2"
+        ></img>
+      </div>
+    </div>
+  );
+};
+
+export default InstituteHeader;
