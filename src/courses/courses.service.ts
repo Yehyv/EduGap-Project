@@ -54,7 +54,13 @@ export class CoursesService {
 
     const course = this.courseRepository.create({
       image: createCourseDto.image,
-      programs: programs,
+      translations: createCourseDto.translations,
+      programs,
+      durateionTime: createCourseDto.durationTime,
+      lessonNumber: createCourseDto.lessonsNumber ?? 0,
+      level: createCourseDto.level ?? 'Beginner',
+      rate: createCourseDto.rate ?? 0,
+      numberOfReviewers: createCourseDto.numberOfReviewers ?? 0,
     });
 
     const savedCourse = await this.courseRepository.save(course);
@@ -72,6 +78,8 @@ export class CoursesService {
         const courseTranslation = this.courseTranslationRepository.create({
           name: translation.name,
           description: translation.description,
+          levelName: translation.levelName,
+          whatToLearn: translation.whatToLearn,
           course: savedCourse,
           language: language,
         });

@@ -102,14 +102,14 @@ export class ProgramsService {
     return {
       formattedPrograms,
       pagination: {
-          page,
-          limit,
-          total,
-          totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1,
-        },
-    }
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
 
   async findOne(id: number, userInstituteId: number, languageId?: number) {
