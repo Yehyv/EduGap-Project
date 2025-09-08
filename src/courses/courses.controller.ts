@@ -79,7 +79,7 @@ export class CoursesController {
   ) {
     return this.coursesService.findFirstEight(req.user.instituteId, languageId);
   }
-  
+
   @Get('filter') // هذا كمان لازم يجي قبل :id
   @UseGuards(JwtAuthGuard) // فعّل الـ Guard
   findByPrograms(

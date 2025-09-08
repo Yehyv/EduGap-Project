@@ -416,7 +416,7 @@ export class CoursesService {
   ) {
     const skip = (page - 1) * limit;
 
-    const courses = await this.courseRepository
+    const [courses, total] = await this.courseRepository
       .createQueryBuilder('course')
       .leftJoinAndSelect(
         'course.translations',
@@ -428,9 +428,10 @@ export class CoursesService {
       .leftJoinAndSelect('course.programs', 'programs')
       .skip(skip)
       .take(limit)
-      .getMany();
+      .getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
 
-    return courses.map((course) => {
+    const formattedCourses = courses.map((course) => {
       const selectedTranslation = course.translations[0] || null;
 
       return {
@@ -441,6 +442,17 @@ export class CoursesService {
         programs: course.programs || [],
       };
     });
+    return {
+      formattedCourses,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
   async findFirstEightForVisitors(languageId?: number) {
     const courses = await this.courseRepository

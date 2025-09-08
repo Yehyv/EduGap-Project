@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -60,9 +56,14 @@ export class ProgramsService {
     );
     return { ...savedProgram, translations };
   }
-  async findAll(userInstituteId: number, languageId?: number) {
-    // جيب البرامج الخاصة بمعهد الـ user فقط
-    const programs = await this.programRepository
+  async findAll(
+    userInstituteId?: number,
+    languageId?: number,
+    page: number = 1,
+    limit: number = 8,
+  ) {
+    const skip = (page - 1) * limit;
+    const query = this.programRepository
       .createQueryBuilder('program')
       .leftJoinAndSelect('program.institutes', 'institute')
       .leftJoinAndSelect(
@@ -72,10 +73,16 @@ export class ProgramsService {
         { languageId },
       )
       .leftJoinAndSelect('translation.language', 'language')
-      .where('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getMany();
-
-    return programs.map((program) => {
+      .skip(skip)
+      .take(limit);
+    if (userInstituteId) {
+      query.where('institute.id = :instituteId', {
+        instituteId: userInstituteId,
+      });
+    }
+    const [programs, total] = await query.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
+    const formattedPrograms = programs.map((program) => {
       let selectedTranslation: ProgramTranslation;
       if (languageId) {
         selectedTranslation = program.translations[0] || null;
@@ -92,6 +99,17 @@ export class ProgramsService {
         institutes: program.institutes || [],
       };
     });
+    return {
+      formattedPrograms,
+      pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+    }
   }
 
   async findOne(id: number, userInstituteId: number, languageId?: number) {
@@ -235,5 +253,36 @@ export class ProgramsService {
       programId,
       remainingInstitute ? remainingInstitute.id : 1,
     );
+  }
+  async findFirstEigh(languageId?: number) {
+    const query = this.programRepository
+      .createQueryBuilder('program')
+      .leftJoinAndSelect('program.institutes', 'institute')
+      .leftJoinAndSelect(
+        'program.translations',
+        'translation',
+        languageId ? 'translation.language.id = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('translation.language', 'language')
+      .take(8);
+    const programs = await query.getMany();
+    return programs.map((program) => {
+      let selectedTranslation: ProgramTranslation;
+      if (languageId) {
+        selectedTranslation = program.translations[0] || null;
+      } else {
+        selectedTranslation = program.translations[0] || null;
+      }
+      return {
+        id: program.id,
+        logo: program.logo,
+        name: selectedTranslation ? selectedTranslation.name : null,
+        description: selectedTranslation
+          ? selectedTranslation.description
+          : null,
+        institutes: program.institutes || [],
+      };
+    });
   }
 }

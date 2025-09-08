@@ -21,6 +21,20 @@ export class Course {
   id: number;
   @Column()
   image: string;
+  @Column()
+  durateionTime: string;
+  @Column({ default: 0 })
+  lessonNumber: number;
+  @Column({
+    type: 'enum',
+    enum: ['Beginner', 'Intermediate', 'advanced'],
+    default: ['Beginner'],
+  })
+  level: string;
+  @Column({ type: 'float', default: 0 })
+  rate: number;
+  @Column({ default: 0 })
+  numberOfReviewers: number;
   @CreateDateColumn()
   createdAt: Date;
   @UpdateDateColumn()
