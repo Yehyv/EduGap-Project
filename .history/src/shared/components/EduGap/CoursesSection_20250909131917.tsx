@@ -3,6 +3,7 @@ import Slider from "react-slick";
 import ArrowButton from "../ui/ArrowButton";
 import CoursesSectionCard from "./CoursesSectionCard";
 import GhostButton from "../ui/GhostButton";
+import { useLanguage } from "@/shared/localization/useLanguage";
 const settings = {
   dots: false,
   infinite: true,
@@ -43,10 +44,11 @@ const settings = {
   ],
 };
 const CoursesSection = () => {
+  const { t } = useLanguage();
   return (
     <div className="mb-5 container">
       <div className="flex justify-between items-start">
-        <SectionTitle textTitle="البرامج التعليمية" />
+        <SectionTitle textTitle={t("programs_title")} />
         <GhostButton buttonText="المزيد" to="" />
       </div>
       <Slider {...settings}>
