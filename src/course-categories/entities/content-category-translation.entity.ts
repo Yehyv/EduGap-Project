@@ -1,38 +1,39 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
+  PrimaryGeneratedColumn,
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  Unique,
 } from 'typeorm';
-import { Content } from './content.entity';
+import { ContentCategory } from './content-category.entity';
 import { Language } from 'src/languages/entities/language.entity';
 @Entity()
-export class ContentTranslation {
+@Unique(['contentCategory', 'language'])
+export class ContentCategoryTranslation {
   @PrimaryGeneratedColumn()
   id: number;
   @Column()
   name: string;
   @Column()
   description: string;
-  @Column()
-  levelName: string;
-  @Column()
-  durationTime: string;
-  @Column('simple-json', { nullable: true })
-  whatToLearn: string[];
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date;
-  @ManyToOne(() => Content, (content) => content.translations, {
-    onDelete: 'CASCADE',
-  })
-  content: Content;
+  @ManyToOne(
+    () => ContentCategory,
+    (contentCategory) => contentCategory.translations,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
+  contentCategory: ContentCategory;
+
   @ManyToOne(() => Language, {
     onDelete: 'CASCADE',
   })

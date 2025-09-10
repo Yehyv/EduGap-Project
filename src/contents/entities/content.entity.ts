@@ -7,26 +7,36 @@ import {
   DeleteDateColumn,
   ManyToMany,
   OneToMany,
+  ManyToOne,
+  JoinTable,
 } from 'typeorm';
 import { ContentTranslation } from './content-translation.entity';
 import { Course } from 'src/courses/entities/course.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
+import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
+import { Educator } from 'src/educators/entities/educator.entity';
 @Entity()
 export class Content {
   @PrimaryGeneratedColumn()
   id: number;
   @Column()
   image: string;
-  @Column()
-  price: number;
+  @Column({
+    type: 'enum',
+    enum: ['Beginner', 'Intermediate', 'advanced'],
+    default: ['Beginner'],
+  })
+  level: string;
+  @Column({ default: 0 })
+  numberOfReviewers: number;
   @CreateDateColumn()
   createdAt: Date;
   @UpdateDateColumn()
   updatedAt: Date;
   @DeleteDateColumn()
   deletedAt: Date;
-  @Column()
-  rating: number;
+  @Column({ type: 'float', default: 0 })
+  rate: number;
   @OneToMany(() => ContentTranslation, (translation) => translation.content, {
     cascade: true,
   })
@@ -35,6 +45,16 @@ export class Content {
     cascade: true,
   })
   topics: Topic[];
+  lessonsCount?: number;
   @ManyToMany(() => Course, (course) => course.contents)
   courses: Course[];
+  @ManyToOne(() => ContentCategory, (category) => category.contents, {
+    onDelete: 'CASCADE',
+  })
+  contentCategory: ContentCategory;
+  @ManyToMany(() => Educator, (educators) => educators.contents)
+  @JoinTable({
+    name: 'content_educators',
+  })
+  educators: Educator[];
 }

@@ -28,12 +28,12 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-@UseGuards(JwtAuthGuard) // فعّل الـ Guard
 @Controller('contents')
 export class ContentsController {
   constructor(private readonly contentsService: ContentsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard) // فعّل الـ Guard
   create(
     @Body() createContentDto: CreateContentDto,
     @Req() req: AuthenticatedRequest,
@@ -47,8 +47,14 @@ export class ContentsController {
     @Headers('languageId') languageId?: string,
   ) {
     const langId = languageId !== undefined ? +languageId : 0;
-    console.log('institute id: ', req.user.instituteId);
-    return this.contentsService.findAll(req.user.instituteId, langId);
+    const userInstituteId = req.user ? req.user.instituteId : undefined;
+
+    return this.contentsService.findAll(userInstituteId, langId);
+  }
+  @Get('first-8')
+  findFirestEight(@Headers('languageId') languageId?: string) {
+    const langId = languageId !== undefined ? +languageId : 0;
+    return this.contentsService.findFirstEight(langId);
   }
 
   @Get('filter') // هذا لازم يجي قبل :id
@@ -92,6 +98,7 @@ export class ContentsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.contentsService.remove(+id, req.user.instituteId);
   }

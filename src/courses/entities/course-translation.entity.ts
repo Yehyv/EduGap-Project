@@ -19,10 +19,7 @@ export class CourseTranslation {
 
   @Column()
   description: string;
-  @Column()
-  levelName: string;
-  @Column('simple-json', { nullable: true })
-  whatToLearn: string[];
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
   @UpdateDateColumn({ type: 'timestamp' })

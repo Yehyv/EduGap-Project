@@ -1,3 +1,4 @@
+import { Content } from 'src/contents/entities/content.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Entity,
@@ -8,6 +9,7 @@ import {
   DeleteDateColumn,
   OneToOne,
   JoinColumn,
+  ManyToMany,
 } from 'typeorm';
 @Entity()
 export class Educator {
@@ -30,4 +32,6 @@ export class Educator {
   })
   @JoinColumn()
   user: User;
+  @ManyToMany(() => Content, (contents) => contents.educators)
+  contents: Content[];
 }

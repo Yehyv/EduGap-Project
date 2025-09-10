@@ -19,6 +19,7 @@ import { EducatorsModule } from './educators/educators.module';
 import { ProgressModule } from './progress/progress.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { SavedCoursesModule } from './saved-courses/saved-courses.module';
+import { CourseCategoriesModule } from './course-categories/content-categories.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -42,6 +43,7 @@ import { SavedCoursesModule } from './saved-courses/saved-courses.module';
     ProgressModule,
     EnrollmentsModule,
     SavedCoursesModule,
+    CourseCategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

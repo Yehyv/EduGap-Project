@@ -20,15 +20,6 @@ export class CourseTranslationDto {
   @IsNotEmpty()
   description: string;
 
-  @IsString()
-  @IsNotEmpty()
-  levelName: string;
-
-  @IsArray()
-  @IsOptional()
-  @IsString({ each: true })
-  whatToLearn?: string[];
-
   @IsNumber()
   @IsNotEmpty()
   languageId: number;
@@ -48,30 +39,4 @@ export class CreateCourseDto {
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   programIds: number[];
-
-  @IsString()
-  @IsNotEmpty()
-  durationTime: string;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  lessonsNumber?: number;
-
-  @IsEnum(['Beginner', 'Intermediate', 'Advanced'], {
-    message: 'level must be Beginner, Intermediate, or Advanced',
-  })
-  @IsOptional()
-  level?: string;
-
-  @IsNumber()
-  @Min(0)
-  @Max(5)
-  @IsOptional()
-  rate?: number;
-
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  numberOfReviewers?: number;
 }

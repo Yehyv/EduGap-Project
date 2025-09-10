@@ -12,5 +12,5 @@ export const getDatabaseConfig = (
   database: configService.get<string>('DB_NAME'),
   autoLoadEntities: true,
   synchronize: true,
-  // dropSchema: true, // Use with caution in production
+  dropSchema: true, // Use with caution in production
 });

@@ -24,6 +24,7 @@ export class Program {
   updatedAt: Date;
   @DeleteDateColumn()
   deletedAt: Date;
+  coursesCount?: number;
   @OneToMany(() => ProgramTranslation, (translation) => translation.program, {
     cascade: true,
   })

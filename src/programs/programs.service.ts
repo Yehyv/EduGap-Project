@@ -73,6 +73,7 @@ export class ProgramsService {
         { languageId },
       )
       .leftJoinAndSelect('translation.language', 'language')
+      .loadRelationCountAndMap('program.coursesCount', 'program.courses')
       .skip(skip)
       .take(limit);
     if (userInstituteId) {
@@ -97,6 +98,7 @@ export class ProgramsService {
           ? selectedTranslation.description
           : null,
         institutes: program.institutes || [],
+        coursesCount: program.coursesCount ?? 0,
       };
     });
     return {
@@ -118,6 +120,7 @@ export class ProgramsService {
       .leftJoinAndSelect('program.institutes', 'institute')
       .leftJoinAndSelect('program.translations', 'translations')
       .leftJoinAndSelect('translations.language', 'language')
+      .loadRelationCountAndMap('program.coursesCount', 'program.courses')
       .where('program.id = :id', { id })
       .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
       .getOne();
@@ -136,6 +139,7 @@ export class ProgramsService {
     return {
       id: program.id,
       logo: program.logo,
+      coursesCount: program.coursesCount,
       name: selectedTranslation ? selectedTranslation.name : null,
       description: selectedTranslation ? selectedTranslation.description : null,
       institutes: program.institutes || [],
@@ -265,6 +269,7 @@ export class ProgramsService {
         { languageId },
       )
       .leftJoinAndSelect('translation.language', 'language')
+      .loadRelationCountAndMap('program.coursesCount', 'program.courses')
       .take(8);
     const programs = await query.getMany();
     return programs.map((program) => {
@@ -281,6 +286,7 @@ export class ProgramsService {
         description: selectedTranslation
           ? selectedTranslation.description
           : null,
+        coursesCount: program.coursesCount,
         institutes: program.institutes || [],
       };
     });

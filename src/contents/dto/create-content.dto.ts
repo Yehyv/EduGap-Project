@@ -6,6 +6,8 @@ import {
   IsNumber,
   Min,
   Max,
+  IsNotEmpty,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -18,6 +20,19 @@ export class ContentTranslationDto {
   @IsOptional()
   description?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  levelName: string;
+
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  whatToLearn?: string[];
+
+  @IsString()
+  @IsNotEmpty()
+  durationTime: string;
+
   @IsNumber()
   @IsOptional()
   languageId?: number;
@@ -26,16 +41,6 @@ export class CreateContentDto {
   @IsString()
   @IsOptional()
   image?: string;
-
-  @IsNumber()
-  @IsOptional()
-  price?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  @Max(5)
-  rating?: number;
 
   @IsArray()
   @ArrayNotEmpty()
@@ -46,4 +51,29 @@ export class CreateContentDto {
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   courseIds: number[];
+
+  @IsEnum(['Beginner', 'Intermediate', 'Advanced'], {
+    message: 'level must be Beginner, Intermediate, or Advanced',
+  })
+  @IsOptional()
+  level?: string;
+
+  @IsNumber()
+  @Min(0)
+  @Max(5)
+  @IsOptional()
+  rate?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  numberOfReviewers?: number;
+
+  @IsNumber()
+  categoryId: number;
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsNumber({}, { each: true })
+  educatorIds: number[];
 }

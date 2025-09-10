@@ -14,9 +14,7 @@ async function bootstrap() {
   );
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.enableCors({
-    origin: 'http://localhost:5173',
-  });
+  app.enableCors({ origin: 'http://72.60.39.170' });
 
   await app.listen(process.env.PORT ?? 3000);
 }

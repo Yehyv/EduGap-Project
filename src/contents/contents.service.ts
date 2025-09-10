@@ -11,6 +11,8 @@ import { In, Repository } from 'typeorm';
 import { ContentTranslation } from './entities/content-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Course } from 'src/courses/entities/course.entity';
+import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
+import { Educator } from 'src/educators/entities/educator.entity';
 
 @Injectable()
 export class ContentsService {
@@ -23,10 +25,24 @@ export class ContentsService {
     private languageRepository: Repository<Language>,
     @InjectRepository(Course)
     private courseRepository: Repository<Course>,
+    @InjectRepository(ContentCategory)
+    private categoryRepository: Repository<ContentCategory>,
+    @InjectRepository(Educator)
+    private educatorRepository: Repository<Educator>,
   ) {}
 
   async create(createContentDto: CreateContentDto, userInstituteId: number) {
     let courses: Course[] = [];
+    const category = await this.categoryRepository.findOne({
+      where: { id: createContentDto.categoryId },
+    });
+    const educators = await this.educatorRepository
+      .createQueryBuilder('educator')
+      .where('educator.id IN (:...educatorIds)', {
+        educatorIds: createContentDto.educatorIds,
+      })
+      .getMany();
+    if (!category) throw new NotFoundException('category not found ');
     if (createContentDto.courseIds.length > 0) {
       // تأكد إن الكورسات تنتمي لمعهد الـ user عبر الـ programs
       courses = await this.courseRepository
@@ -50,9 +66,10 @@ export class ContentsService {
 
     const content = this.contentRepository.create({
       image: createContentDto.image,
-      price: createContentDto.price,
-      rating: createContentDto.rating,
+      rate: createContentDto.rate ?? 0,
       courses: courses,
+      educators: educators,
+      contentCategory: category,
     });
 
     const savedContent = await this.contentRepository.save(content);
@@ -70,6 +87,9 @@ export class ContentsService {
         const contentTranslation = this.contentTranslationRepository.create({
           name: translation.name,
           description: translation.description,
+          whatToLearn: translation.whatToLearn,
+          levelName: translation.levelName,
+          durationTime: translation.durationTime,
           content: savedContent,
           language: language,
         });
@@ -79,9 +99,14 @@ export class ContentsService {
     return { savedContent, translations };
   }
 
-  async findAll(userInstituteId: number, languageId?: number) {
-    // جلب المحتوى اللي ينتمي لكورسات معهد الـ user فقط
-    const contents = await this.contentRepository
+  async findAll(
+    userInstituteId?: number,
+    languageId?: number,
+    page: number = 1,
+    limit: number = 8,
+  ) {
+    const skip = (page - 1) * limit;
+    const query = this.contentRepository
       .createQueryBuilder('content')
       .leftJoin('content.courses', 'course')
       .leftJoin('course.programs', 'program')
@@ -94,10 +119,24 @@ export class ContentsService {
       )
       .leftJoinAndSelect('translation.language', 'language')
       .leftJoinAndSelect('content.courses', 'courses')
-      .where('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getMany();
-
-    return contents.map((content) => {
+      .leftJoinAndSelect('content.educators', 'educators')
+      .leftJoinAndSelect('educators.user', 'user')
+      .loadRelationCountAndMap(
+        'content.lessonsCount',
+        'content.topics',
+        'topic',
+        (qb) => qb.leftJoin('topic.lessons', 'lesson'),
+      )
+      .skip(skip)
+      .take(limit);
+    if (userInstituteId) {
+      query.where('institute.id = :instituteId', {
+        instituteId: userInstituteId,
+      });
+    }
+    const [contents, total] = await query.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
+    const formattedContents = contents.map((content) => {
       let selectedTranslation: ContentTranslation;
 
       if (languageId) {
@@ -109,13 +148,34 @@ export class ContentsService {
       return {
         id: content.id,
         image: content.image,
-        price: content.price,
-        rating: content.rating,
+        rate: content.rate,
+        lessonsCount: content.lessonsCount ?? 0,
+        levelName: selectedTranslation?.levelName || '',
+        whatToLearn: selectedTranslation?.whatToLearn || '',
         name: selectedTranslation?.name || '',
         description: selectedTranslation?.description || '',
-        courses: content.courses || [],
+        durationTime: selectedTranslation?.durationTime || '',
+        educators: content.educators.map((e) => ({
+          id: e.id,
+          title: e.title,
+          bio: e.bio,
+          image: e.image,
+          firstName: e.user.firstName,
+          lastName: e.user.lastName,
+        })),
       };
     });
+    return {
+      formattedContents,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
 
   async findOne(id: number, userInstituteId: number, languageId?: number) {
@@ -127,6 +187,14 @@ export class ContentsService {
       .leftJoinAndSelect('content.translations', 'translations')
       .leftJoinAndSelect('translations.language', 'language')
       .leftJoinAndSelect('content.courses', 'courses')
+      .leftJoinAndSelect('content.educators', 'educators')
+      .leftJoinAndSelect('educators.user', 'user')
+      .loadRelationCountAndMap(
+        'content.lessonsCount',
+        'content.topics',
+        'topic',
+        (qb) => qb.leftJoin('topic.lessons', 'lesson'),
+      )
       .where('content.id = :id', { id })
       .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
       .getOne();
@@ -144,11 +212,21 @@ export class ContentsService {
     return {
       id: content.id,
       image: content.image,
-      price: content.price,
-      rating: content.rating,
+      rate: content.rate,
+      lessonsCount: content.lessonsCount ?? 0,
+      levelName: selectedTranslation?.levelName || '',
+      whatToLearn: selectedTranslation?.whatToLearn || '',
       name: selectedTranslation?.name || '',
       description: selectedTranslation?.description || '',
-      courses: content.courses || [],
+      durationTime: selectedTranslation.durationTime,
+      educators: content.educators.map((e) => ({
+        id: e.id,
+        title: e.title,
+        bio: e.bio,
+        image: e.image,
+        firstName: e.user.firstName,
+        lastName: e.user.lastName,
+      })),
     };
   }
 
@@ -180,12 +258,20 @@ export class ContentsService {
       content.image = updateContentDto.image;
     }
 
-    if (updateContentDto.price !== undefined) {
-      content.price = updateContentDto.price;
+    if (updateContentDto.rate !== undefined) {
+      content.rate = updateContentDto.rate;
     }
 
-    if (updateContentDto.rating !== undefined) {
-      content.rating = updateContentDto.rating;
+    if (updateContentDto.level !== undefined) {
+      content.level = updateContentDto.level;
+    }
+
+    if (updateContentDto.numberOfReviewers !== undefined) {
+      content.numberOfReviewers = updateContentDto.numberOfReviewers;
+    }
+
+    if (updateContentDto.rate !== undefined) {
+      content.rate = updateContentDto.rate;
     }
 
     if (updateContentDto.courseIds !== undefined) {
@@ -246,6 +332,9 @@ export class ContentsService {
           const newTranslation = this.contentTranslationRepository.create({
             name: t.name,
             description: t.description,
+            levelName: t.levelName,
+            whatToLearn: t.whatToLearn,
+            durationTime: t.durationTime,
             language,
             content,
           });
@@ -258,7 +347,7 @@ export class ContentsService {
     return this.findOne(id, userInstituteId);
   }
 
-  async remove(id: number, userInstituteId: number) {
+  async remove(id: number, userInstituteId?: number) {
     const content = await this.contentRepository
       .createQueryBuilder('content')
       .leftJoin('content.courses', 'course')
@@ -381,11 +470,68 @@ export class ContentsService {
       return {
         id: content.id,
         image: content.image,
-        price: content.price,
-        rating: content.rating,
+        rate: content.rate,
+        levelName: selectedTranslation?.levelName || '',
+        whatToLearn: selectedTranslation?.whatToLearn || '',
         name: selectedTranslation?.name || '',
         description: selectedTranslation?.description || '',
+        durationTime: selectedTranslation?.durationTime || '',
         courses: content.courses || [],
+      };
+    });
+  }
+  async findFirstEight(languageId?: number) {
+    const contents = await this.contentRepository
+      .createQueryBuilder('content')
+      .leftJoin('content.courses', 'course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoinAndSelect(
+        'content.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('translation.language', 'language')
+      .leftJoinAndSelect('content.courses', 'courses')
+      .leftJoinAndSelect('content.educators', 'educators')
+      .leftJoinAndSelect('educators.user', 'user')
+      .loadRelationCountAndMap(
+        'content.lessonsCount',
+        'content.topics',
+        'topic',
+        (qb) => qb.leftJoin('topic.lessons', 'lesson'),
+      )
+      .orderBy('content.id', 'ASC')
+      .take(8)
+      .getMany();
+    return contents.map((content) => {
+      let selectedTranslation: ContentTranslation;
+
+      if (languageId) {
+        selectedTranslation = content.translations[0] || null;
+      } else {
+        selectedTranslation = content.translations[0] || null;
+      }
+
+      return {
+        id: content.id,
+        image: content.image,
+        rate: content.rate,
+        lessonsCount: content.lessonsCount ?? 0,
+        levelName: selectedTranslation?.levelName || '',
+        whatToLearn: selectedTranslation?.whatToLearn || '',
+        name: selectedTranslation?.name || '',
+        description: selectedTranslation?.description || '',
+        durationTime: selectedTranslation.durationTime || '',
+        educators: content.educators.map((e) => ({
+          id: e.id,
+          title: e.title,
+          bio: e.bio,
+          image: e.image,
+          firstName: e.user.firstName,
+          lastName: e.user.lastName,
+        })),
       };
     });
   }
