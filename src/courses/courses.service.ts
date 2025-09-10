@@ -53,7 +53,6 @@ export class CoursesService {
 
     const course = this.courseRepository.create({
       image: createCourseDto.image,
-      translations: createCourseDto.translations,
       programs,
     });
 
