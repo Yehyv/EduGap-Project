@@ -18,8 +18,8 @@ import { LessonsModule } from './lessons/lessons.module';
 import { EducatorsModule } from './educators/educators.module';
 import { ProgressModule } from './progress/progress.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
-import { SavedCoursesModule } from './saved-courses/saved-courses.module';
-import { CourseCategoriesModule } from './course-categories/content-categories.module';
+import { ContentCategoriesModule } from './course-categories/content-categories.module';
+import { SavedContentsModule } from './saved-courses/saved-contents.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -42,8 +42,8 @@ import { CourseCategoriesModule } from './course-categories/content-categories.m
     EducatorsModule,
     ProgressModule,
     EnrollmentsModule,
-    SavedCoursesModule,
-    CourseCategoriesModule,
+    SavedContentsModule,
+    ContentCategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

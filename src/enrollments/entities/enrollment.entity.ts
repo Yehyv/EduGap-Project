@@ -1,4 +1,4 @@
-import { Course } from 'src/courses/entities/course.entity';
+import { Content } from 'src/contents/entities/content.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
@@ -27,8 +27,8 @@ export class Enrollment {
     onDelete: 'CASCADE',
   })
   progress: LessonProgress[];
-  @ManyToOne(() => Course, (course) => course.enrollments, {
+  @ManyToOne(() => Content, (content) => content.enrollments, {
     onDelete: 'CASCADE',
   })
-  course: Course;
+  content: Content;
 }

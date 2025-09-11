@@ -19,4 +19,4 @@ import { Content } from 'src/contents/entities/content.entity';
   controllers: [ContentCategoriesController],
   providers: [ContentCategoriesService],
 })
-export class CourseCategoriesModule {}
+export class ContentCategoriesModule {}

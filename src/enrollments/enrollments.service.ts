@@ -6,63 +6,63 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from './entities/enrollment.entity';
 import { Repository } from 'typeorm';
-import { Course } from 'src/courses/entities/course.entity';
 import { User } from 'src/users/entities/user.entity';
+import { Content } from 'src/contents/entities/content.entity';
 
 @Injectable()
 export class EnrollmentsService {
   constructor(
     @InjectRepository(Enrollment)
     private enrollmentRepository: Repository<Enrollment>,
-    @InjectRepository(Course)
-    private courseRepository: Repository<Course>,
+    @InjectRepository(Content)
+    private contentRepository: Repository<Content>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {}
-  async enrollStudentCourse(
-    courseId: number,
+  async enrollStudentContent(
+    contentId: number,
     userId: number,
     userInstituteId?: number,
   ) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    const course = await this.courseRepository.findOne({
-      where: {
-        id: courseId,
-        programs: { institutes: { id: userInstituteId } },
-      },
-      relations: ['programs', 'programs.institutes'],
-    });
-
-    if (!course) {
-      throw new NotFoundException(
-        `Course ${courseId} not found or not accessible`,
+    const content = await this.contentRepository
+      .createQueryBuilder('content')
+      .leftJoin('content.courses', 'course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .where('content.id = :contentId', { contentId })
+      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
+      .getOne();
+    if (!content) {
+      throw new BadRequestException(
+        `Content ${contentId} not found or not accessible`,
       );
     }
 
     const existingEnrollment = await this.enrollmentRepository.findOne({
       where: {
-        course: { id: courseId },
+        content: { id: contentId },
         user: { id: userId },
       },
     });
 
     if (existingEnrollment) {
-      throw new BadRequestException('Course already enrolled');
+      throw new BadRequestException('Content already enrolled');
     }
 
     const enrollment = this.enrollmentRepository.create({
-      course,
+      content,
       user,
       status: 'in progress', // enum
     });
 
     return this.enrollmentRepository.save(enrollment);
   }
-  async unenrollStudentCourse(courseId: number, userId: number) {
+  async unenrollStudentContent(contentId: number, userId: number) {
     const enrollment = await this.enrollmentRepository.findOne({
-      where: { course: { id: courseId }, user: { id: userId } },
+      where: { content: { id: contentId }, user: { id: userId } },
     });
 
     if (!enrollment) {
@@ -72,16 +72,16 @@ export class EnrollmentsService {
     return this.enrollmentRepository.remove(enrollment);
   }
   async getUserEnrollments(userId: number) {
-    //student list all his courses
+    //student list all his content
     return this.enrollmentRepository.find({
       where: { user: { id: userId } },
-      relations: ['course', 'course.translations'],
+      relations: ['content', 'content.translations'],
     });
   }
-  async getCourseEnrollments(courseId: number) {
+  async getContentEnrollments(contentId: number) {
     //who enrolled to this course
     return this.enrollmentRepository.find({
-      where: { course: { id: courseId } },
+      where: { content: { id: contentId } },
       relations: ['user'],
     });
   }

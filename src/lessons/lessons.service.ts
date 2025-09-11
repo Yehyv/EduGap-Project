@@ -186,25 +186,35 @@ export class LessonsService {
     await this.lessonRepository.softDelete(id);
   }
   async findAllInProgress(
-    userId: number,
+    userId?: number, // لو guest يبقى undefined
     userInstituteId?: number,
     languageId?: number,
+    page: number = 1,
+    limit: number = 8,
   ) {
+    const skip = (page - 1) * limit;
     const query = this.lessonRepository
       .createQueryBuilder('lesson')
       .leftJoinAndSelect('lesson.translations', 'translation')
       .leftJoinAndSelect('translation.language', 'language')
       .leftJoinAndSelect('lesson.topic', 'topic')
-      .leftJoin('topic.content', 'content')
-      .leftJoin('content.courses', 'course')
+      .leftJoinAndSelect('topic.content', 'content')
+      .leftJoinAndSelect('content.courses', 'course')
       .leftJoin('course.programs', 'program')
       .leftJoin('program.institutes', 'institute')
-      .innerJoin('lesson.progresses', 'lessonProgress')
-      .innerJoin('lessonProgress.enrollment', 'enrollment')
-      .where('lessonProgress.status = :progressStatus', {
-        progressStatus: 'in progress',
-      })
-      .andWhere('enrollment.userId = :userId', { userId });
+      .leftJoin('lesson.progresses', 'lessonProgress')
+      .leftJoin('lessonProgress.enrollment', 'enrollment')
+      .skip(skip)
+      .take(limit);
+
+    // لو المستخدم مسجل نجيب الـ in progress فقط
+    if (userId) {
+      query
+        .andWhere('lessonProgress.status = :progressStatus', {
+          progressStatus: 'in progress',
+        })
+        .andWhere('enrollment.user.id = :userId', { userId });
+    }
 
     if (userInstituteId) {
       query.andWhere('institute.id = :instituteId', {
@@ -213,15 +223,61 @@ export class LessonsService {
     }
 
     if (languageId) {
-      query.andWhere('translation.languageId = :languageId', { languageId });
+      query.andWhere('translation.language.id = :languageId', { languageId });
+    }
+
+    const [lessons, total] = await query.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      lessons,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
+  }
+  async findFirstEight(
+    userId?: number, // لو guest يبقى undefined
+    userInstituteId?: number,
+    languageId?: number,
+  ) {
+    const query = this.lessonRepository
+      .createQueryBuilder('lesson')
+      .leftJoinAndSelect('lesson.translations', 'translation')
+      .leftJoinAndSelect('translation.language', 'language')
+      .leftJoinAndSelect('lesson.topic', 'topic')
+      .leftJoinAndSelect('topic.content', 'content')
+      .leftJoinAndSelect('content.courses', 'course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute')
+      .leftJoin('lesson.progresses', 'lessonProgress')
+      .leftJoin('lessonProgress.enrollment', 'enrollment')
+      .take(8);
+
+    if (userId) {
+      query
+        .andWhere('lessonProgress.status = :progressStatus', {
+          progressStatus: 'in progress',
+        })
+        .andWhere('enrollment.user.id = :userId', { userId });
+    }
+
+    if (userInstituteId) {
+      query.andWhere('institute.id = :instituteId', {
+        instituteId: userInstituteId,
+      });
+    }
+
+    if (languageId) {
+      query.andWhere('translation.language.id = :languageId', { languageId });
     }
 
     const lessons = await query.getMany();
-
-    if (!lessons.length) {
-      throw new NotFoundException('No lessons in progress found');
-    }
-
     return lessons;
   }
 }

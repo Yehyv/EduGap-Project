@@ -1,4 +1,4 @@
-import { Course } from 'src/courses/entities/course.entity';
+import { Content } from 'src/contents/entities/content.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Entity,
@@ -9,20 +9,20 @@ import {
 } from 'typeorm';
 
 @Entity()
-@Unique(['user', 'course']) // منع التكرار
-export class SavedCourse {
+@Unique(['user', 'content']) // منع التكرار
+export class SavedContent {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.savedCourses, {
+  @ManyToOne(() => User, (user) => user.savedContents, {
     onDelete: 'CASCADE',
   })
   user: User;
 
-  @ManyToOne(() => Course, (course) => course.savedByUsers, {
+  @ManyToOne(() => Content, (content) => content.savedByUsers, {
     onDelete: 'CASCADE',
   })
-  course: Course;
+  content: Content;
 
   @CreateDateColumn()
   savedAt: Date;

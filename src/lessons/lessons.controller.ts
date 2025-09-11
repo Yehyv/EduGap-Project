@@ -53,13 +53,7 @@ export class LessonsController {
     @Req() req: AuthenticatedRequest,
     @Headers('languageId') languageId?: string,
   ) {
-    console.log('test');
     const langId = languageId !== undefined ? +languageId : 0; // غير undefined لـ 0
-    console.log({
-      sub: req.user.sub,
-      instituteId: req.user.instituteId,
-      languageId,
-    });
 
     if (langId) {
       return this.lessonsService.findAllInProgress(
@@ -69,6 +63,26 @@ export class LessonsController {
       );
     } else {
       return this.lessonsService.findAllInProgress(
+        req.user.sub,
+        req.user.instituteId,
+      );
+    }
+  }
+  @Get('first-8')
+  getFirstEight(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const langId = languageId !== undefined ? +languageId : 0; // غير undefined لـ 0
+
+    if (langId) {
+      return this.lessonsService.findFirstEight(
+        req.user.sub,
+        req.user.instituteId,
+        langId,
+      );
+    } else {
+      return this.lessonsService.findFirstEight(
         req.user.sub,
         req.user.instituteId,
       );

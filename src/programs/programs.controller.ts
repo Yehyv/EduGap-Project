@@ -48,9 +48,13 @@ export class ProgramsController {
     return this.programsService.findAll(userInstituteId, langId);
   }
   @Get('first-8')
-  findfirstEight(@Headers('languageId') languageId?: string) {
+  findfirstEight(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+  ) {
     const langId = languageId !== undefined ? +languageId : 0;
-    return this.programsService.findFirstEigh(langId);
+    const userInstituteId = req.user ? req.user.instituteId : undefined;
+    return this.programsService.findFirstEigh(userInstituteId, langId);
   }
 
   @Get(':id')

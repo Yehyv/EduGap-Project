@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SavedCoursesController } from './saved-courses.controller';
-import { SavedCoursesService } from './saved-courses.service';
+import { SavedCoursesController } from './saved-contents.controller';
+import { SavedCoursesService } from './saved-contents.service';
 
 describe('SavedCoursesController', () => {
   let controller: SavedCoursesController;

@@ -52,9 +52,13 @@ export class ContentsController {
     return this.contentsService.findAll(userInstituteId, langId);
   }
   @Get('first-8')
-  findFirestEight(@Headers('languageId') languageId?: string) {
+  findFirestEight(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+  ) {
     const langId = languageId !== undefined ? +languageId : 0;
-    return this.contentsService.findFirstEight(langId);
+    const userInstituteId = req.user ? req.user.instituteId : undefined;
+    return this.contentsService.findFirstEight(userInstituteId, langId);
   }
 
   @Get('filter') // هذا لازم يجي قبل :id

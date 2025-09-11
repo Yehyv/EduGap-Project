@@ -15,6 +15,8 @@ import { Course } from 'src/courses/entities/course.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
 import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { SavedContent } from 'src/saved-courses/entities/saved-content.entity';
 @Entity()
 export class Content {
   @PrimaryGeneratedColumn()
@@ -46,6 +48,7 @@ export class Content {
   })
   topics: Topic[];
   lessonsCount?: number;
+  completedLessonsCount?: number;
   @ManyToMany(() => Course, (course) => course.contents)
   courses: Course[];
   @ManyToOne(() => ContentCategory, (category) => category.contents, {
@@ -57,4 +60,10 @@ export class Content {
     name: 'content_educators',
   })
   educators: Educator[];
+  @OneToMany(() => Enrollment, (enrollments) => enrollments.content, {
+    onDelete: 'CASCADE',
+  })
+  enrollments: Enrollment[];
+  @OneToMany(() => SavedContent, (savedContent) => savedContent.content)
+  savedByUsers: SavedContent[];
 }

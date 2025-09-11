@@ -7,7 +7,7 @@ import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Content } from './entities/content.entity';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ContentTranslation } from './entities/content-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Course } from 'src/courses/entities/course.entity';
@@ -102,6 +102,7 @@ export class ContentsService {
   async findAll(
     userInstituteId?: number,
     languageId?: number,
+    userId?: number,
     page: number = 1,
     limit: number = 8,
   ) {
@@ -127,6 +128,25 @@ export class ContentsService {
         'topic',
         (qb) => qb.leftJoin('topic.lessons', 'lesson'),
       )
+      .loadRelationCountAndMap(
+        'content.completedLessonsCount',
+        'content.topics',
+        'topic',
+        (qb) => {
+          if (!userId) return qb; // لو guest، ما نفلترش على progress
+          return qb
+            .leftJoin('topic.lessons', 'lesson')
+            .leftJoin(
+              'lesson.progresses',
+              'lessonProgress',
+              'lessonProgress.status = :status AND lessonProgress.enrollment.user.id = :userId',
+              {
+                status: 'completed',
+                userId,
+              },
+            );
+        },
+      )
       .skip(skip)
       .take(limit);
     if (userInstituteId) {
@@ -150,6 +170,7 @@ export class ContentsService {
         image: content.image,
         rate: content.rate,
         lessonsCount: content.lessonsCount ?? 0,
+        completedLessonsCount: content.completedLessonsCount ?? 0,
         levelName: selectedTranslation?.levelName || '',
         whatToLearn: selectedTranslation?.whatToLearn || '',
         name: selectedTranslation?.name || '',
@@ -480,8 +501,8 @@ export class ContentsService {
       };
     });
   }
-  async findFirstEight(languageId?: number) {
-    const contents = await this.contentRepository
+  async findFirstEight(languageId?: number, userInstituteId?: number) {
+    const query = this.contentRepository
       .createQueryBuilder('content')
       .leftJoin('content.courses', 'course')
       .leftJoin('course.programs', 'program')
@@ -503,8 +524,13 @@ export class ContentsService {
         (qb) => qb.leftJoin('topic.lessons', 'lesson'),
       )
       .orderBy('content.id', 'ASC')
-      .take(8)
-      .getMany();
+      .take(8);
+    if (userInstituteId) {
+      query.where('institute.id = :instituteId', {
+        instituteId: userInstituteId,
+      });
+    }
+    const contents = await query.getMany();
     return contents.map((content) => {
       let selectedTranslation: ContentTranslation;
 

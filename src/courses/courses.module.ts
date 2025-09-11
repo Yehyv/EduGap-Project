@@ -9,7 +9,6 @@ import { Program } from 'src/programs/entities/program.entity';
 import { Content } from 'src/contents/entities/content.entity';
 import { Student } from 'src/students/entities/student.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
-import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 
 @Module({
   imports: [
@@ -21,7 +20,6 @@ import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
       Content,
       Student,
       Enrollment,
-      SavedCourse,
     ]),
   ],
   controllers: [CoursesController],

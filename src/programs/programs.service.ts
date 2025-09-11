@@ -258,7 +258,7 @@ export class ProgramsService {
       remainingInstitute ? remainingInstitute.id : 1,
     );
   }
-  async findFirstEigh(languageId?: number) {
+  async findFirstEigh(languageId?: number, userInstituteId?: number) {
     const query = this.programRepository
       .createQueryBuilder('program')
       .leftJoinAndSelect('program.institutes', 'institute')
@@ -271,6 +271,11 @@ export class ProgramsService {
       .leftJoinAndSelect('translation.language', 'language')
       .loadRelationCountAndMap('program.coursesCount', 'program.courses')
       .take(8);
+    if (userInstituteId) {
+      query.where('institute.id = :instituteId', {
+        instituteId: userInstituteId,
+      });
+    }
     const programs = await query.getMany();
     return programs.map((program) => {
       let selectedTranslation: ProgramTranslation;

@@ -12,8 +12,6 @@ import {
 import { CourseTranslation } from './course-translation.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { Content } from 'src/contents/entities/content.entity';
-import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
-import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 
 @Entity()
 export class Course {
@@ -38,10 +36,4 @@ export class Course {
     name: 'course_contents',
   })
   contents: Content[];
-  @OneToMany(() => Enrollment, (enrollments) => enrollments.course, {
-    onDelete: 'CASCADE',
-  })
-  enrollments: Enrollment[];
-  @OneToMany(() => SavedCourse, (savedCourse) => savedCourse.course)
-  savedByUsers: SavedCourse[];
 }

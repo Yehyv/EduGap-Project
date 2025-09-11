@@ -14,7 +14,7 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
+import { SavedContent } from 'src/saved-courses/entities/saved-content.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -70,6 +70,6 @@ export class User {
     cascade: true,
   })
   enrollments: Enrollment;
-  @OneToMany(() => SavedCourse, (savedCourse) => savedCourse.user)
-  savedCourses: SavedCourse[];
+  @OneToMany(() => SavedContent, (savedContent) => savedContent.user)
+  savedContents: SavedContent[];
 }

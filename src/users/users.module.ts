@@ -7,7 +7,7 @@ import { Student } from 'src/students/entities/student.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
-import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
+import { SavedContent } from 'src/saved-courses/entities/saved-content.entity';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
       Institute,
       Educator,
       Enrollment,
-      SavedCourse,
+      SavedContent,
     ]),
   ],
   controllers: [UsersController],

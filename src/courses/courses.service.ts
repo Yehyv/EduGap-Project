@@ -11,7 +11,6 @@ import { Repository } from 'typeorm';
 import { Language } from 'src/languages/entities/language.entity';
 import { CourseTranslation } from './entities/course-translation.entity';
 import { Program } from 'src/programs/entities/program.entity';
-import { In } from 'typeorm';
 import { Student } from 'src/students/entities/student.entity';
 
 @Injectable()

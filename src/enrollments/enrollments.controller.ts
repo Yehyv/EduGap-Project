@@ -27,7 +27,7 @@ export class EnrollmentsController {
     @Req() req: AuthenticatedRequest,
     @Param('courseId') courseId: number,
   ) {
-    return this.enrollmentsService.enrollStudentCourse(
+    return this.enrollmentsService.enrollStudentContent(
       courseId,
       req.user.sub,
       req.user.instituteId,
@@ -38,7 +38,7 @@ export class EnrollmentsController {
     @Req() req: AuthenticatedRequest,
     @Param('courseId') courseId: number,
   ) {
-    return this.enrollmentsService.unenrollStudentCourse(
+    return this.enrollmentsService.unenrollStudentContent(
       courseId,
       req.user.sub,
     );
@@ -50,8 +50,8 @@ export class EnrollmentsController {
   }
 
   // Get all users enrolled in a course
-  @Get(':courseId/users')
-  getCourseEnrollments(@Param('courseId') courseId: number) {
-    return this.enrollmentsService.getCourseEnrollments(courseId);
+  @Get(':contentId/users')
+  getContentEnrollments(@Param('contentId') contentId: number) {
+    return this.enrollmentsService.getContentEnrollments(contentId);
   }
 }
