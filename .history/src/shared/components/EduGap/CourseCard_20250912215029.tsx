@@ -17,11 +17,11 @@ const CourseCard = ({ course }: { course: CourseType }) => {
      hover:-translate-y-2"
     >
       {/* Image Section */}
-      <div className="relative overflow-hidden rounded-xl">
+      <div className="relative rounded-xl">
         <img
           src={course.image || InstructorAvatar}
           alt={course?.name}
-          className="w-full h-[180px] object-contain"
+          className="w-full h-[180px] max-sm:object-cover object-contain"
           onError={(e) => {
             e.currentTarget.src = InstructorAvatar;
           }}

@@ -80,18 +80,18 @@ const Header = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
             <Link to="/">{t("nav_programs")}</Link>
             <Link to="/">{t("nav_experts")}</Link>
           </nav>
-          {!isLoggedIn && <Link to="/login">{t("auth_login")}</Link>}
-          <div className="flex justify-between mt-4 gap-3">
-            <LanguageDropdown currentLang={lang} onChange={setLang} />
-            {!isLoggedIn && (
+
+          {!isLoggedIn && (
+            <div className="flex flex-col gap-3">
+              <Link to="/login">{t("auth_login")}</Link>
               <DefaultButton
                 text={t("auth_register")}
                 type="reset"
                 moreStyle="w-[150px] ms-auto !py-1"
                 onClick={() => {}}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </header>

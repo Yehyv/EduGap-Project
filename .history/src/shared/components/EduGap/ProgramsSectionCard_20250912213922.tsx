@@ -13,7 +13,7 @@ const ProgramsSectionCard = ({ data }: { data: ProgramsType }) => {
     >
       {/* Image Section */}
       <div className="w-1/2 relative max-sm:w-full max-sm:h-[200px]">
-        <img className="w-full h-full object-contain" src={CourseSection} />
+        <img className="w-full h-full object-cover" src={CourseSection} />
         <div className="absolute start-2 bottom-2 bg-white rounded-lg px-1 py-0.5 text-sm">
           <VideoIcon className="inline-block" />
           <span>5 كورسات</span>

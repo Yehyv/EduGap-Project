@@ -81,7 +81,7 @@ const Header = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
             <Link to="/">{t("nav_experts")}</Link>
           </nav>
           {!isLoggedIn && <Link to="/login">{t("auth_login")}</Link>}
-          <div className="flex justify-between mt-4 gap-3">
+          <div className="flex justify-between">
             <LanguageDropdown currentLang={lang} onChange={setLang} />
             {!isLoggedIn && (
               <DefaultButton

@@ -4,11 +4,8 @@ const InnovaFooter = () => {
   const { t } = useLanguage();
   return (
     <footer className="text-[#E0DEDE] text-lg bg-[#016FA9] max-md:text-sm  text-center center items-center relative min-h-[60px]">
-      <InnovaLogo className="h-[50px] max-sm:h-[35px] absolute max-sm:static left-20 max-md:left-0" />
-      <div className="max-sm:mx-2">
-        {" "}
-        {t("footer_by_company")} Innovadigit Solutions App{" "}
-      </div>
+      <div> {t("footer_by_company")} Innovadigit Solutions App </div>
+      <InnovaLogo className="h-[50px] absolute max-sm:static left-20 max-md:left-0" />
     </footer>
   );
 };

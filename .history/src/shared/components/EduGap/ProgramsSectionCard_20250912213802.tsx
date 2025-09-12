@@ -12,7 +12,7 @@ const ProgramsSectionCard = ({ data }: { data: ProgramsType }) => {
       className={`bg-white flex max-sm:flex-col rounded-2xl shadow-custom overflow-hidden flex-row my-5 mx-1`}
     >
       {/* Image Section */}
-      <div className="w-1/2 relative max-sm:w-full max-sm:h-[200px]">
+      <div className="w-1/2 relative max-sm:w-full">
         <img className="w-full h-full object-contain" src={CourseSection} />
         <div className="absolute start-2 bottom-2 bg-white rounded-lg px-1 py-0.5 text-sm">
           <VideoIcon className="inline-block" />

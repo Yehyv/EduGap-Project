@@ -17,7 +17,7 @@ const Header = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
       className={`${
         isLoggedIn ? "bg-white" : "bg-primary"
       } py-2 z-50 sticky start-0 end-0 top-0`}
-      dir={lang === "ar" ? "rtl" : "ltr"}
+      dir="ltr"
     >
       <div className="container mx-auto flex items-center justify-between gap-4 px-4">
         {/* Logo */}
@@ -74,23 +74,26 @@ const Header = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden bg-white shadow-md px-4 mt-2 pt-4 pb-6 space-y-4">
+        <div className="md:hidden bg-white shadow-md px-4 mt-2 pt-4 pb-6 space-y-4 text-right">
           <nav className="flex flex-col gap-3">
             <Link to="/">{t("nav_courses")}</Link>
             <Link to="/">{t("nav_programs")}</Link>
             <Link to="/">{t("nav_experts")}</Link>
           </nav>
-          {!isLoggedIn && <Link to="/login">{t("auth_login")}</Link>}
-          <div className="flex justify-between mt-4 gap-3">
-            <LanguageDropdown currentLang={lang} onChange={setLang} />
+
+          <div className="flex justify-between">
             {!isLoggedIn && (
-              <DefaultButton
-                text={t("auth_register")}
-                type="reset"
-                moreStyle="w-[150px] ms-auto !py-1"
-                onClick={() => {}}
-              />
+              <div className="flex flex-col gap-3">
+                <Link to="/login">{t("auth_login")}</Link>
+                <DefaultButton
+                  text={t("auth_register")}
+                  type="reset"
+                  moreStyle="w-[150px] ms-auto !py-1"
+                  onClick={() => {}}
+                />
+              </div>
             )}
+            <LanguageDropdown currentLang={lang} onChange={setLang} />
           </div>
         </div>
       )}

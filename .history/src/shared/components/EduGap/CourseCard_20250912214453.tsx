@@ -11,17 +11,13 @@ import LevelBadge from "../ui/LevelBadge";
 const CourseCard = ({ course }: { course: CourseType }) => {
   const { t } = useLanguage();
   return (
-    <div
-      className="group relative bg-white rounded-xl shadow-custom overflow-hidden
-     w-full h-full my-5 transition-all duration-300 ease-in-out
-     hover:-translate-y-2"
-    >
+    <div className=" 2">
       {/* Image Section */}
       <div className="relative overflow-hidden rounded-xl">
         <img
           src={course.image || InstructorAvatar}
           alt={course?.name}
-          className="w-full h-[180px] object-contain"
+          className="w-full object-contain max-h-[180px]"
           onError={(e) => {
             e.currentTarget.src = InstructorAvatar;
           }}

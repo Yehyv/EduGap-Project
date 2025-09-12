@@ -14,43 +14,46 @@ const settings = {
   dots: false,
   infinite: true,
   speed: 500,
-  slidesToShow: 4,
+  slidesToShow: 1,
   slidesToScroll: 2,
   accessibility: true,
   nextArrow: <ArrowButton direction="right" />,
   prevArrow: <ArrowButton direction="left" />,
-  responsive: [
-    {
-      breakpoint: 1180,
-      settings: {
-        slidesToShow: 3,
-        slidesToScroll: 1,
-        dots: true,
-      },
-    },
-    {
-      breakpoint: 1000,
-      settings: {
-        slidesToShow: 2,
-        slidesToScroll: 1,
-        dots: true,
-        nextArrow: <></>,
-        prevArrow: <></>,
-      },
-    },
-    {
-      breakpoint: 600,
-      settings: {
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        dots: true,
-        nextArrow: <></>,
-        prevArrow: <></>,
-      },
-    },
-  ],
-};
+  // responsive: [
+  //   {
+  //     breakpoint: 1180,
+  //     settings: {
+  //       slidesToShow: 3,
+  //       slidesToScroll: 1,
+  //       dots: true,
+  //       centerMode: true,
+  //     },
+  //   },
 
+  //   {
+  //     breakpoint: 1000,
+  //     settings: {
+  //       slidesToShow: 2,
+  //       slidesToScroll: 1,
+  //       dots: true,
+  //       nextArrow: <></>,
+  //       prevArrow: <></>,
+  //       centerMode: true,
+  //     },
+  //   },
+  //   {
+  //     breakpoint: 600,
+  //     settings: {
+  //       slidesToShow: 1,
+  //       slidesToScroll: 1,
+  //       dots: true,
+  //       nextArrow: <></>,
+  //       prevArrow: <></>,
+  //       centerMode: true,
+  //     },
+  //   },
+  // ],
+};
 const GuestPopularCourses = () => {
   const { t } = useLanguage();
   const { data, isLoading, error } = useQuery<CourseType[]>({

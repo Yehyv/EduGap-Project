@@ -26,8 +26,10 @@ const settings = {
         slidesToShow: 3,
         slidesToScroll: 1,
         dots: true,
+        centerMode: true,
       },
     },
+
     {
       breakpoint: 1000,
       settings: {
@@ -36,6 +38,7 @@ const settings = {
         dots: true,
         nextArrow: <></>,
         prevArrow: <></>,
+        centerMode: true,
       },
     },
     {
@@ -46,11 +49,11 @@ const settings = {
         dots: true,
         nextArrow: <></>,
         prevArrow: <></>,
+        centerMode: true,
       },
     },
   ],
 };
-
 const GuestPopularCourses = () => {
   const { t } = useLanguage();
   const { data, isLoading, error } = useQuery<CourseType[]>({
@@ -66,7 +69,6 @@ const GuestPopularCourses = () => {
         <SectionTitle textTitle={t("courses_title")} />
         <GhostButton buttonText={t("more")} to="/guest-popular-courses" />
       </div>
-
       {isLoading ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 mb-8">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -74,14 +76,13 @@ const GuestPopularCourses = () => {
           ))}
         </div>
       ) : (
-        <div className="w-full">
-          <Slider {...settings}>
-            {data?.map((courseData, idx) => (
-              <CourseCard key={idx} course={courseData} />
-            ))}
-          </Slider>
-        </div>
+        <Slider {...settings}>
+          {data?.map((courseData, idx) => (
+            <CourseCard key={idx} course={courseData} />
+          ))}
+        </Slider>
       )}
+      ={" "}
     </div>
   );
 };

@@ -13,15 +13,15 @@ const CourseCard = ({ course }: { course: CourseType }) => {
   return (
     <div
       className="group relative bg-white rounded-xl shadow-custom overflow-hidden
-     w-full h-full my-5 transition-all duration-300 ease-in-out
-     hover:-translate-y-2"
+         w-full my-5 transition-all duration-300 ease-in-out
+        hover:-translate-y-2"
     >
       {/* Image Section */}
-      <div className="relative overflow-hidden rounded-xl">
+      <div className="relative overflow-hidden rounded-xl w-full">
         <img
           src={course.image || InstructorAvatar}
           alt={course?.name}
-          className="w-full h-[180px] object-contain"
+          className="w-full object-contain max-h-[180px]"
           onError={(e) => {
             e.currentTarget.src = InstructorAvatar;
           }}
@@ -32,7 +32,7 @@ const CourseCard = ({ course }: { course: CourseType }) => {
       </div>
 
       {/* Content Section */}
-      <div className="p-2 pt-2">
+      <div className="p-2 pt-2 w-full">
         <div className="flex justify-between items-start mb-2">
           <div className="w-full">
             <p className="text-sm font-semibold text-gray-400">

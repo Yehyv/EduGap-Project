@@ -26,8 +26,10 @@ const settings = {
         slidesToShow: 3,
         slidesToScroll: 1,
         dots: true,
+        centerMode: true,
       },
     },
+
     {
       breakpoint: 1000,
       settings: {
@@ -36,6 +38,7 @@ const settings = {
         dots: true,
         nextArrow: <></>,
         prevArrow: <></>,
+        centerMode: true,
       },
     },
     {
@@ -46,11 +49,11 @@ const settings = {
         dots: true,
         nextArrow: <></>,
         prevArrow: <></>,
+        centerMode: true,
       },
     },
   ],
 };
-
 const GuestPopularCourses = () => {
   const { t } = useLanguage();
   const { data, isLoading, error } = useQuery<CourseType[]>({
@@ -61,7 +64,7 @@ const GuestPopularCourses = () => {
   if (error) return <SliderErrorFallback componentTitle={t("courses_title")} />;
 
   return (
-    <div className="mb-5 container">
+    <div className="mb-5 container w-full">
       <div className="flex justify-between items-start">
         <SectionTitle textTitle={t("courses_title")} />
         <GhostButton buttonText={t("more")} to="/guest-popular-courses" />
@@ -74,7 +77,7 @@ const GuestPopularCourses = () => {
           ))}
         </div>
       ) : (
-        <div className="w-full">
+        <div className="w-full p-0">
           <Slider {...settings}>
             {data?.map((courseData, idx) => (
               <CourseCard key={idx} course={courseData} />

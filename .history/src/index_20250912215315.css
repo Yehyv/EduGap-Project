@@ -7,8 +7,9 @@
   --font-third: "Inria Serif", serif;
 }
 .slick-slide > div {
-  height: 100% !important;
+  height: 100%;
   width: 100% !important;
+  display: flex; /* ensures card stretches */
 }
 
 @theme {

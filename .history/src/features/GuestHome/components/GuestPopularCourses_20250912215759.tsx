@@ -26,8 +26,10 @@ const settings = {
         slidesToShow: 3,
         slidesToScroll: 1,
         dots: true,
+        centerMode: true,
       },
     },
+
     {
       breakpoint: 1000,
       settings: {
@@ -36,6 +38,7 @@ const settings = {
         dots: true,
         nextArrow: <></>,
         prevArrow: <></>,
+        centerMode: true,
       },
     },
     {
@@ -43,14 +46,14 @@ const settings = {
       settings: {
         slidesToShow: 1,
         slidesToScroll: 1,
-        dots: true,
-        nextArrow: <></>,
-        prevArrow: <></>,
+        // dots: true,
+        // nextArrow: <></>,
+        // prevArrow: <></>,
+        // centerMode: true,
       },
     },
   ],
 };
-
 const GuestPopularCourses = () => {
   const { t } = useLanguage();
   const { data, isLoading, error } = useQuery<CourseType[]>({
