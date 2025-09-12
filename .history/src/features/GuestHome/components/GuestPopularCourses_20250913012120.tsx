@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import SectionTitle from "@/shared/components/SectionTitle";
 import Slider from "react-slick";
 import CourseCard from "@/shared/components/EduGap/CourseCard";
@@ -9,7 +10,6 @@ import { getGuestPopularCourses } from "../services/GuestHomeApi";
 import CardSkeleton from "@/shared/components/ui/CardSkeleton";
 import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
 
 const GuestPopularCourses = () => {
   const { t } = useLanguage();
@@ -18,14 +18,25 @@ const GuestPopularCourses = () => {
     queryFn: getGuestPopularCourses,
   });
 
-  const slidesToShow = useResponsiveSlides(
-    [
-      { width: 600, slides: 1 },
-      { width: 1000, slides: 2 },
-      { width: 1180, slides: 3 },
-    ],
-    4 // default
-  );
+  const [slidesToShow, setSlidesToShow] = useState(4);
+
+  useEffect(() => {
+    const updateSlides = () => {
+      if (window.innerWidth < 600) {
+        setSlidesToShow(1);
+      } else if (window.innerWidth < 1000) {
+        setSlidesToShow(2);
+      } else if (window.innerWidth < 1180) {
+        setSlidesToShow(3);
+      } else {
+        setSlidesToShow(4);
+      }
+    };
+
+    updateSlides();
+    window.addEventListener("resize", updateSlides);
+    return () => window.removeEventListener("resize", updateSlides);
+  }, []);
 
   const settings = {
     dots: true,

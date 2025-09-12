@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import SectionTitle from "@/shared/components/SectionTitle";
 import Slider from "react-slick";
 import CourseCard from "@/shared/components/EduGap/CourseCard";
@@ -9,7 +10,53 @@ import { getGuestPopularCourses } from "../services/GuestHomeApi";
 import CardSkeleton from "@/shared/components/ui/CardSkeleton";
 import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
+
+const settings = {
+  dots: false,
+  infinite: true,
+  speed: 500,
+  slidesToShow: 4,
+  slidesToScroll: 2,
+  accessibility: true,
+  nextArrow: <ArrowButton direction="right" />,
+  prevArrow: <ArrowButton direction="left" />,
+  responsive: [
+    {
+      breakpoint: 1180,
+      settings: {
+        initialSlide: 0,
+
+        slidesToShow: 3,
+        slidesToScroll: 1,
+        dots: true,
+      },
+    },
+    {
+      breakpoint: 1000,
+      settings: {
+        initialSlide: 0,
+
+        slidesToShow: 2,
+        slidesToScroll: 1,
+        dots: true,
+        nextArrow: <></>,
+        prevArrow: <></>,
+      },
+    },
+    {
+      breakpoint: 600,
+      settings: {
+        initialSlide: 0,
+
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        dots: true,
+        nextArrow: <></>,
+        prevArrow: <></>,
+      },
+    },
+  ],
+};
 
 const GuestPopularCourses = () => {
   const { t } = useLanguage();
@@ -18,25 +65,13 @@ const GuestPopularCourses = () => {
     queryFn: getGuestPopularCourses,
   });
 
-  const slidesToShow = useResponsiveSlides(
-    [
-      { width: 600, slides: 1 },
-      { width: 1000, slides: 2 },
-      { width: 1180, slides: 3 },
-    ],
-    4 // default
-  );
+  const [sliderKey, setSliderKey] = useState(0);
 
-  const settings = {
-    dots: true,
-    infinite: true,
-    speed: 500,
-    slidesToShow,
-    slidesToScroll: 1,
-    accessibility: true,
-    nextArrow: <ArrowButton direction="right" />,
-    prevArrow: <ArrowButton direction="left" />,
-  };
+  useEffect(() => {
+    const handleResize = () => setSliderKey((prev) => prev + 1);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   if (error) return <SliderErrorFallback componentTitle={t("courses_title")} />;
 
@@ -55,7 +90,7 @@ const GuestPopularCourses = () => {
         </div>
       ) : (
         <div className="w-full">
-          <Slider {...settings}>
+          <Slider {...settings} key={sliderKey}>
             {data?.map((courseData, idx) => (
               <CourseCard key={idx} course={courseData} />
             ))}
