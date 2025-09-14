@@ -58,7 +58,7 @@ export class ContentsController {
   ) {
     const langId = languageId !== undefined ? +languageId : 0;
     const userInstituteId = req.user ? req.user.instituteId : undefined;
-    return this.contentsService.findFirstEight(userInstituteId, langId);
+    return this.contentsService.findFirstEight(langId, userInstituteId);
   }
 
   @Get('filter') // هذا لازم يجي قبل :id

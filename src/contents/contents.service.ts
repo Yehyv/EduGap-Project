@@ -120,6 +120,13 @@ export class ContentsService {
       )
       .leftJoinAndSelect('translation.language', 'language')
       .leftJoinAndSelect('content.courses', 'courses')
+      .leftJoinAndSelect('content.contentCategory', 'category')
+      .leftJoinAndSelect(
+        'category.categoryTranslation',
+        'categoryTranslation',
+        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .leftJoinAndSelect('content.educators', 'educators')
       .leftJoinAndSelect('educators.user', 'user')
       .loadRelationCountAndMap(
@@ -184,6 +191,10 @@ export class ContentsService {
           firstName: e.user.firstName,
           lastName: e.user.lastName,
         })),
+        category: {
+          id: content.contentCategory?.id,
+          name: content.contentCategory?.translations?.[0]?.name || '',
+        },
       };
     });
     return {
@@ -514,6 +525,15 @@ export class ContentsService {
         { languageId },
       )
       .leftJoinAndSelect('translation.language', 'language')
+      .leftJoinAndSelect('content.contentCategory', 'category')
+      .leftJoinAndSelect(
+        'category.translations',
+        'categoryTranslations',
+        languageId
+          ? 'categoryTranslations.languageId = :languageId'
+          : undefined,
+        { languageId },
+      )
       .leftJoinAndSelect('content.courses', 'courses')
       .leftJoinAndSelect('content.educators', 'educators')
       .leftJoinAndSelect('educators.user', 'user')
@@ -558,6 +578,10 @@ export class ContentsService {
           firstName: e.user.firstName,
           lastName: e.user.lastName,
         })),
+        category: {
+          id: content.contentCategory.id,
+          name: content.contentCategory?.translations?.[0]?.name || '',
+        },
       };
     });
   }
