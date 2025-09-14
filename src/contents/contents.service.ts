@@ -122,7 +122,7 @@ export class ContentsService {
       .leftJoinAndSelect('content.courses', 'courses')
       .leftJoinAndSelect('content.contentCategory', 'category')
       .leftJoinAndSelect(
-        'category.categoryTranslation',
+        'category.translations',
         'categoryTranslation',
         languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
         { languageId },
