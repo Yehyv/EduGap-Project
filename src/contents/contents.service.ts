@@ -13,6 +13,7 @@ import { Language } from 'src/languages/entities/language.entity';
 import { Course } from 'src/courses/entities/course.entity';
 import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 
 @Injectable()
 export class ContentsService {
@@ -29,6 +30,8 @@ export class ContentsService {
     private categoryRepository: Repository<ContentCategory>,
     @InjectRepository(Educator)
     private educatorRepository: Repository<Educator>,
+    @InjectRepository(Enrollment)
+    private enrollmentRepository: Repository<Enrollment>
   ) {}
 
   async create(createContentDto: CreateContentDto, userInstituteId: number) {
@@ -393,8 +396,12 @@ export class ContentsService {
         `Content with ID ${id} not found or not accessible`,
       );
     }
-
     await this.contentRepository.softDelete(id);
+    await this.enrollmentRepository
+      .createQueryBuilder()
+      .delete()
+      .where('contentId = :contentId', { contentId: id })
+      .execute();
     return { message: `Content with ID ${id} has been deleted` };
   }
 

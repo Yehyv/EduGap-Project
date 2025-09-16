@@ -63,7 +63,7 @@ export class Content {
   })
   educators: Educator[];
   @OneToMany(() => Enrollment, (enrollments) => enrollments.content, {
-    onDelete: 'CASCADE',
+    cascade: true,
   })
   enrollments: Enrollment[];
   @OneToMany(() => SavedContent, (savedContent) => savedContent.content)

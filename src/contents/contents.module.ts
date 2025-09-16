@@ -11,6 +11,7 @@ import { Educator } from 'src/educators/entities/educator.entity';
 import { ContentDetailsService } from './content-details.service';
 import { EnrollmentsModule } from 'src/enrollments/enrollments.module';
 import { EnrollmentsService } from 'src/enrollments/enrollments.service';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { EnrollmentsService } from 'src/enrollments/enrollments.service';
       Course,
       ContentCategory,
       Educator,
+      Enrollment,
     ]),
     EnrollmentsModule,
   ],
