@@ -7,7 +7,6 @@ import { Repository } from 'typeorm';
 import { Language } from 'src/languages/entities/language.entity';
 import { LessonTranslation } from './entities/lesson-translation.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
-import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 
 @Injectable()
 export class LessonsService {
@@ -20,8 +19,6 @@ export class LessonsService {
     private lessonTranslationRepository: Repository<LessonTranslation>,
     @InjectRepository(Topic)
     private topicRepository: Repository<Topic>,
-    @InjectRepository(LessonProgress)
-    private lessonProgressRepository: Repository<LessonProgress>,
   ) {}
   async create(createLessonDto: CreateLessonDto, userInstituteId?: number) {
     const topic = await this.topicRepository
@@ -34,7 +31,10 @@ export class LessonsService {
       .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
       .getOne();
     if (!topic) throw new Error(`Topic not found`);
-    const lesson = this.lessonRepository.create({ topic });
+    const lesson = this.lessonRepository.create({
+      imageUrl: createLessonDto.imageUrl,
+      topic,
+    });
     const savedLesson = await this.lessonRepository.save(lesson);
     const translations = await Promise.all(
       createLessonDto.translations.map(async (translation) => {

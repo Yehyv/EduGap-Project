@@ -26,6 +26,9 @@ export class CreateLessonDto {
   @IsNumber()
   topicId: number;
 
+  @IsString()
+  imageUrl: string;
+
   @IsArray()
   @ArrayNotEmpty()
   @Type(() => LessonTranslationDto)

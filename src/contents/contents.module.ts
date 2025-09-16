@@ -8,6 +8,9 @@ import { Language } from 'src/languages/entities/language.entity';
 import { Course } from 'src/courses/entities/course.entity';
 import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
+import { ContentDetailsService } from './content-details.service';
+import { EnrollmentsModule } from 'src/enrollments/enrollments.module';
+import { EnrollmentsService } from 'src/enrollments/enrollments.service';
 
 @Module({
   imports: [
@@ -19,8 +22,9 @@ import { Educator } from 'src/educators/entities/educator.entity';
       ContentCategory,
       Educator,
     ]),
+    EnrollmentsModule,
   ],
   controllers: [ContentsController],
-  providers: [ContentsService],
+  providers: [ContentsService, ContentDetailsService],
 })
 export class ContentsModule {}

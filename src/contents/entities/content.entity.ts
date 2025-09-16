@@ -31,6 +31,8 @@ export class Content {
   level: string;
   @Column({ default: 0 })
   numberOfReviewers: number;
+  @Column()
+  adVideo: string;
   @CreateDateColumn()
   createdAt: Date;
   @UpdateDateColumn()

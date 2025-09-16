@@ -85,4 +85,13 @@ export class EnrollmentsService {
       relations: ['user'],
     });
   }
+  async isUserEnrolled(contentId: number, userId: number) {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: {
+        content: { id: contentId },
+        user: { id: userId },
+      },
+    });
+    return !!enrollment;
+  }
 }

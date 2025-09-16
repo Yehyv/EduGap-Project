@@ -11,12 +11,15 @@ import {
   ParseIntPipe,
   Query,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
 import { ContentsService } from './contents.service';
 import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Request } from 'express';
+import { ContentDetailsService } from './content-details.service';
+import { EnrollmentsService } from 'src/enrollments/enrollments.service';
 
 // اضافة الـ interface للـ Request
 interface AuthenticatedRequest extends Request {
@@ -30,7 +33,11 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('contents')
 export class ContentsController {
-  constructor(private readonly contentsService: ContentsService) {}
+  constructor(
+    private readonly contentsService: ContentsService,
+    private readonly conentDetailsService: ContentDetailsService,
+    private readonly enrollmentService: EnrollmentsService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard) // فعّل الـ Guard
@@ -60,7 +67,40 @@ export class ContentsController {
     const userInstituteId = req.user ? req.user.instituteId : undefined;
     return this.contentsService.findFirstEight(langId, userInstituteId);
   }
-
+  @Get(':contentId/content-details/unenrolled')
+  contentDetailsBeforeEnroll(
+    @Param('contentId') contentId: number,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const langId = languageId !== undefined ? +languageId : 0;
+    return this.conentDetailsService.contentDetailsBeforeEnroll(
+      contentId,
+      langId,
+    );
+  }
+  @Get(':contentId/content-details/enrolled')
+  @UseGuards(JwtAuthGuard)
+  async contentDetailsAfterEnroll(
+    @Req() req: AuthenticatedRequest,
+    @Param('contentId') contentId: number,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const langId = languageId !== undefined ? +languageId : 0;
+    const userId = req.user?.sub;
+    const isEnrolled = await this.enrollmentService.isUserEnrolled(
+      contentId,
+      userId,
+    );
+    if (isEnrolled) {
+      return this.conentDetailsService.contentDetailsAfterEnroll(
+        contentId,
+        userId,
+        langId,
+      );
+    } else {
+      throw new BadRequestException('you not enrolled this content');
+    }
+  }
   @Get('filter') // هذا لازم يجي قبل :id
   findByCourses(
     @Req() req: AuthenticatedRequest,

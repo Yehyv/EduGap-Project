@@ -69,6 +69,9 @@ export class CreateContentDto {
   @IsOptional()
   numberOfReviewers?: number;
 
+  @IsString()
+  adVideo: string;
+
   @IsNumber()
   categoryId: number;
 

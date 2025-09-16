@@ -31,5 +31,5 @@ export class Topic {
   @OneToMany(() => Lesson, (lesson) => lesson.topic, {
     cascade: true,
   })
-  lessons: Lesson;
+  lessons: Lesson[];
 }

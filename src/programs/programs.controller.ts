@@ -54,7 +54,7 @@ export class ProgramsController {
   ) {
     const langId = languageId !== undefined ? +languageId : 0;
     const userInstituteId = req.user ? req.user.instituteId : undefined;
-    return this.programsService.findFirstEigh(userInstituteId, langId);
+    return this.programsService.findFirstEigh(langId, userInstituteId);
   }
 
   @Get(':id')

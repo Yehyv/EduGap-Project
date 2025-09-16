@@ -13,5 +13,6 @@ import { Content } from 'src/contents/entities/content.entity';
   ],
   controllers: [EnrollmentsController],
   providers: [EnrollmentsService],
+  exports: [EnrollmentsService],
 })
 export class EnrollmentsModule {}

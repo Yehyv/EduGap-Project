@@ -67,6 +67,9 @@ export class ContentsService {
     const content = this.contentRepository.create({
       image: createContentDto.image,
       rate: createContentDto.rate ?? 0,
+      level: createContentDto.level,
+      numberOfReviewers: createContentDto.numberOfReviewers ?? 0,
+      adVideo: createContentDto.adVideo,
       courses: courses,
       educators: educators,
       contentCategory: category,
@@ -164,20 +167,15 @@ export class ContentsService {
     const [contents, total] = await query.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
     const formattedContents = contents.map((content) => {
-      let selectedTranslation: ContentTranslation;
-
-      if (languageId) {
-        selectedTranslation = content.translations[0] || null;
-      } else {
-        selectedTranslation = content.translations[0] || null;
-      }
-
+      const selectedTranslation = content.translations[0] || null;
       return {
         id: content.id,
         image: content.image,
         rate: content.rate,
+        level: content.level,
         lessonsCount: content.lessonsCount ?? 0,
         completedLessonsCount: content.completedLessonsCount ?? 0,
+        numberOfReviewers: content.numberOfReviewers ?? 0,
         levelName: selectedTranslation?.levelName || '',
         whatToLearn: selectedTranslation?.whatToLearn || '',
         name: selectedTranslation?.name || '',
@@ -246,6 +244,7 @@ export class ContentsService {
       image: content.image,
       rate: content.rate,
       lessonsCount: content.lessonsCount ?? 0,
+      completedLessonsCount: content.completedLessonsCount ?? 0,
       levelName: selectedTranslation?.levelName || '',
       whatToLearn: selectedTranslation?.whatToLearn || '',
       name: selectedTranslation?.name || '',
@@ -564,7 +563,10 @@ export class ContentsService {
         id: content.id,
         image: content.image,
         rate: content.rate,
+        level: content.level,
         lessonsCount: content.lessonsCount ?? 0,
+        numberOfReviewers: content.numberOfReviewers ?? 0,
+        completedLessonsCount: content.completedLessonsCount ?? 0,
         levelName: selectedTranslation?.levelName || '',
         whatToLearn: selectedTranslation?.whatToLearn || '',
         name: selectedTranslation?.name || '',

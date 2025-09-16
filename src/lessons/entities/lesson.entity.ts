@@ -6,6 +6,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   OneToMany,
+  Column,
 } from 'typeorm';
 import { LessonTranslation } from './lesson-translation.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
@@ -14,6 +15,8 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 export class Lesson {
   @PrimaryGeneratedColumn()
   id: number;
+  @Column()
+  imageUrl: string;
   @CreateDateColumn()
   createdAt: Date;
   @UpdateDateColumn()
