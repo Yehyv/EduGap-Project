@@ -14,6 +14,8 @@ import { Course } from 'src/courses/entities/course.entity';
 import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { Topic } from 'src/topics/entities/topic.entity';
+import { Lesson } from 'src/lessons/entities/lesson.entity';
 
 @Injectable()
 export class ContentsService {
@@ -30,8 +32,6 @@ export class ContentsService {
     private categoryRepository: Repository<ContentCategory>,
     @InjectRepository(Educator)
     private educatorRepository: Repository<Educator>,
-    @InjectRepository(Enrollment)
-    private enrollmentRepository: Repository<Enrollment>
   ) {}
 
   async create(createContentDto: CreateContentDto, userInstituteId: number) {
@@ -397,11 +397,11 @@ export class ContentsService {
       );
     }
     await this.contentRepository.softDelete(id);
-    await this.enrollmentRepository
-      .createQueryBuilder()
-      .delete()
-      .where('contentId = :contentId', { contentId: id })
-      .execute();
+    // await this.enrollmentRepository
+    //   .createQueryBuilder()
+    //   .delete()
+    //   .where('contentId = :contentId', { contentId: id })
+    //   .execute();
     return { message: `Content with ID ${id} has been deleted` };
   }
 

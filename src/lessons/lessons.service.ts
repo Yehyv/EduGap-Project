@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { Language } from 'src/languages/entities/language.entity';
 import { LessonTranslation } from './entities/lesson-translation.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
+import { title } from 'process';
 
 @Injectable()
 export class LessonsService {
@@ -195,10 +196,47 @@ export class LessonsService {
     const skip = (page - 1) * limit;
     const query = this.lessonRepository
       .createQueryBuilder('lesson')
-      .leftJoinAndSelect('lesson.translations', 'translation')
+      .leftJoinAndSelect(
+        'lesson.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .leftJoinAndSelect('translation.language', 'language')
       .leftJoinAndSelect('lesson.topic', 'topic')
       .leftJoinAndSelect('topic.content', 'content')
+      .leftJoinAndSelect(
+        'content.translations',
+        'contentTranslation',
+        languageId ? 'contentTranslation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('content.educators', 'educator')
+      .leftJoinAndSelect('educator.user', 'user')
+      .loadRelationCountAndMap(
+        'content.lessonsCount',
+        'content.topics',
+        'topic',
+        (qb) => qb.leftJoin('topic.lessons', 'lesson'),
+      )
+      .loadRelationCountAndMap(
+        'content.completedLessonsCount',
+        'content.topics',
+        'topic',
+        (qb) => {
+          return qb
+            .leftJoin('topic.lessons', 'lesson')
+            .leftJoin(
+              'lesson.progresses',
+              'lessonProgress',
+              'lessonProgress.status = :status',
+              { status: 'completed' },
+            )
+            .leftJoin('lessonProgress.enrollment', 'enrollment')
+            .leftJoin('enrollment.user', 'progressUser')
+            .andWhere('progressUser.id = :userId', { userId });
+        },
+      )
       .leftJoinAndSelect('content.courses', 'course')
       .leftJoin('course.programs', 'program')
       .leftJoin('program.institutes', 'institute')
@@ -207,7 +245,6 @@ export class LessonsService {
       .skip(skip)
       .take(limit);
 
-    // لو المستخدم مسجل نجيب الـ in progress فقط
     if (userId) {
       query
         .andWhere('lessonProgress.status = :progressStatus', {
@@ -230,7 +267,27 @@ export class LessonsService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      lessons,
+      lessons: lessons.map((lesson) => {
+        const lessonTranslation = lesson.translations?.[0] || null;
+        return {
+          lessonId: lesson.id,
+          lessonName: lessonTranslation?.name,
+          content: {
+            id: lesson.topic.content.id,
+            lessonsCount: lesson.topic.content.lessonsCount ?? 0,
+            completedLessonsCount:
+              lesson.topic.content.completedLessonsCount ?? 0,
+            rate: lesson.topic.content.rate,
+            name: lesson.topic.content.translations?.[0]?.name || null,
+          },
+          educators: lesson.topic.content.educators.map((e) => ({
+            id: e.id,
+            title: e.title,
+            firstName: e.user.firstName,
+            lastName: e.user.lastName,
+          })),
+        };
+      }),
       pagination: {
         page,
         limit,
@@ -248,10 +305,47 @@ export class LessonsService {
   ) {
     const query = this.lessonRepository
       .createQueryBuilder('lesson')
-      .leftJoinAndSelect('lesson.translations', 'translation')
+      .leftJoinAndSelect(
+        'lesson.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .leftJoinAndSelect('translation.language', 'language')
       .leftJoinAndSelect('lesson.topic', 'topic')
       .leftJoinAndSelect('topic.content', 'content')
+      .leftJoinAndSelect(
+        'content.translations',
+        'contentTranslation',
+        languageId ? 'contentTranslation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('content.educators', 'educator')
+      .leftJoinAndSelect('educator.user', 'user')
+      .loadRelationCountAndMap(
+        'content.lessonsCount',
+        'content.topics',
+        'topic',
+        (qb) => qb.leftJoin('topic.lessons', 'lesson'),
+      )
+      .loadRelationCountAndMap(
+        'content.completedLessonsCount',
+        'content.topics',
+        'topic',
+        (qb) => {
+          return qb
+            .leftJoin('topic.lessons', 'lesson')
+            .leftJoin(
+              'lesson.progresses',
+              'lessonProgress',
+              'lessonProgress.status = :status',
+              { status: 'completed' },
+            )
+            .leftJoin('lessonProgress.enrollment', 'enrollment')
+            .leftJoin('enrollment.user', 'progressUser')
+            .andWhere('progressUser.id = :userId', { userId });
+        },
+      )
       .leftJoinAndSelect('content.courses', 'course')
       .leftJoin('course.programs', 'program')
       .leftJoin('program.institutes', 'institute')
@@ -278,6 +372,30 @@ export class LessonsService {
     }
 
     const lessons = await query.getMany();
-    return lessons;
+    return lessons.map((lesson) => {
+      const lessonTranslation = lesson.translations?.[0] || null;
+      console.log(
+        lesson.topic.content.lessonsCount,
+        lesson.topic.content.completedLessonsCount,
+      );
+      return {
+        lessonId: lesson.id,
+        lessonName: lessonTranslation.name,
+        content: {
+          id: lesson.topic.content.id,
+          lessonsCount: lesson.topic.content.lessonsCount ?? 0,
+          completedLessonsCount:
+            lesson.topic.content.completedLessonsCount ?? 0,
+          rate: lesson.topic.content.rate,
+          name: lesson.topic.content.translations?.[0].name || null,
+        },
+        educators: lesson.topic.content.educators.map((e) => ({
+          id: e.id,
+          title: e.title,
+          firstName: e.user.firstName,
+          lastName: e.user.lastName,
+        })),
+      };
+    });
   }
 }

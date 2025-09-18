@@ -10,7 +10,6 @@ import { ContentCategory } from 'src/course-categories/entities/content-category
 import { Educator } from 'src/educators/entities/educator.entity';
 import { ContentDetailsService } from './content-details.service';
 import { EnrollmentsModule } from 'src/enrollments/enrollments.module';
-import { EnrollmentsService } from 'src/enrollments/enrollments.service';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 
 @Module({
