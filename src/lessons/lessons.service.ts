@@ -380,6 +380,7 @@ export class LessonsService {
       );
       return {
         lessonId: lesson.id,
+        imageUrl: lesson.imageUrl,
         lessonName: lessonTranslation.name,
         content: {
           id: lesson.topic.content.id,
