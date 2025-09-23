@@ -1,0 +1,57 @@
+import InstructorAvatar from "@/assets/svgs/InstructorAvatar.svg";
+import type { CourseType } from "@/shared/types/sharedTypes";
+
+const ContinueWhereLeftOffCard = ({ course }: { course: CourseType }) => {
+  return (
+    <div
+      className="group relative bg-white rounded-xl shadow-custom overflow-hidden
+     w-full transition-all duration-300 ease-in-out
+     hover:-translate-y-2 my-3 p-2 px-3"
+    >
+      {/* Content Section */}
+      <div className="p-2 pt-2 flex-1">
+        <div className="flex justify-between items-start mb-2">
+          <div className="w-full">
+            <h5
+              className="font-semibold text-gray-800 line-clamp-1"
+              title={course?.content.name}
+            >
+              {course?.content.name}
+            </h5>
+            <div className="flex justify-between mt-1">
+              <div className="text-sm text-gray-400">
+                {course?.educators[0]?.title} - {course?.educators?.firstName}{" "}
+                {course?.educators?.lastName}
+              </div>
+              <div className="text-sm font-semibold text-yellow-400">
+                {course.content.rate}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Image Section */}
+      <div className="relative overflow-hidden rounded-xl">
+        <img
+          src={course.image || InstructorAvatar}
+          alt={course?.name}
+          className="w-full h-[180px] object-contain rounded-3xl"
+          onError={(e) => {
+            e.currentTarget.src = InstructorAvatar;
+          }}
+        />
+      </div>
+
+      <div className="flex justify-between text-sm text-secondary my-2">
+        <div className="line-clamp-1">{course?.lessonName}</div>
+        <div className="line-clamp-1">
+          {course?.content?.completedLessonsCount || 0}/
+          {course?.content?.lessonsCount || 0}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ContinueWhereLeftOffCard;
