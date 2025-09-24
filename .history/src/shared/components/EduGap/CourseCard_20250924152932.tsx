@@ -98,9 +98,9 @@ const CourseCard = ({ course }: { course: CourseType }) => {
             onClick={() => {
               let path = "";
               if (token) {
-                path = `/user-course-details/${course.id}`;
+                path = "/user-course-details/1";
               } else {
-                path = `/guest-course-details/${course.id}`;
+                path = "/guest-course-details/1";
               }
               navigate(path);
             }}

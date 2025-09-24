@@ -1,18 +1,16 @@
 import CourseDetails from "@/features/CourseDetails/components/CourseDetails";
-import { getContentDetailsForEnrolledUsers } from "@/features/CourseDetails/services/contentDetails";
+import { getContentDetailsForEnrolledUsers } from "@/features/CourseDetails/services/ContentDetails";
 import { Loader } from "@/shared/components";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import type { ContentDetailsType } from "@/shared/types/sharedTypes";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
 
 const CourseDetailsPageForUser = () => {
-  const { courseId } = useParams();
   const { t } = useLanguage();
   const { data, isLoading, error } = useQuery<ContentDetailsType>({
     queryKey: ["getContentDetailsForEnrolledUsers"],
-    queryFn: () => getContentDetailsForEnrolledUsers(courseId ?? ""),
+    queryFn: getContentDetailsForEnrolledUsers,
   });
 
   if (isLoading) return <Loader />;

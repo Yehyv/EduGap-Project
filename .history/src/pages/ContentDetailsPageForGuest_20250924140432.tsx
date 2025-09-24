@@ -5,25 +5,24 @@ import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import type { ContentDetailsType } from "@/shared/types/sharedTypes";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
 
 const CourseDetailsPageForGuest = () => {
-  const { courseId } = useParams();
   const { t } = useLanguage();
   const { data, isLoading, error } = useQuery<ContentDetailsType>({
     queryKey: ["getContentDetailsForGuest"],
-    queryFn: () => getContentDetails(courseId ?? ""),
+    queryFn: getContentDetails,
   });
 
   if (isLoading) return <Loader />;
-  if (error)
-    return (
-      <ErrorMessage message={error?.message ?? "Error in content details"} />
-    );
+  // if (error)
+  //   return (
+  //     <ErrorMessage message={error?.message ?? "Error in content details"} />
+  //   );
   return (
-    data && (
-      <CourseDetails buttonLink="/" buttonText={t("subscribe")} data={data} />
-    )
+    // data && (
+    //   <CourseDetails buttonLink="/" buttonText={t("subscribe")} data={data} />
+    // )
+    <div></div>
   );
 };
 export default CourseDetailsPageForGuest;

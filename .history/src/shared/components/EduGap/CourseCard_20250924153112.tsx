@@ -96,13 +96,15 @@ const CourseCard = ({ course }: { course: CourseType }) => {
           <DefaultButton
             text={t("start_learning")}
             onClick={() => {
-              let path = "";
-              if (token) {
-                path = `/user-course-details/${course.id}`;
-              } else {
-                path = `/guest-course-details/${course.id}`;
-              }
-              navigate(path);
+              console.log(course);
+
+              // let path = "";
+              // if (token) {
+              //   path = "/user-course-details/1";
+              // } else {
+              //   path = "/guest-course-details/1";
+              // }
+              // navigate(path);
             }}
             type="button"
             moreStyle="min-w-[150px] rounded-3xl !py-1"

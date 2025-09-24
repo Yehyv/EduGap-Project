@@ -29,16 +29,13 @@ const useLogin = () => {
     setIsLoading(true);
     loginUser(values)
       .then((response) => {
-        const { accessToken, refreshToken } = response.data.data;
-
-        login(accessToken);
-        saveRefreshToken(refreshToken);
-
+        login(response.data.data.accessToken);
+        saveRefreshToken(response.data.data.refreshToken);
         navigate("/userHome");
       })
       .catch((error) => {
-        console.log(error.response?.data?.message || error.message);
-        ShowMessagesAlert(error.response?.data?.message || error.message);
+        console.log(error.response.data.message || error.message);
+        ShowMessagesAlert(error.response.data.message || error.message);
       })
       .finally(() => {
         setIsLoading(false);

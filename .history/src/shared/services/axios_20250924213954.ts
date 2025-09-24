@@ -24,8 +24,8 @@ const refreshAccessToken = async () => {
     );
     console.log(response);
 
-    const newAccessToken = response.data?.data?.accessToken;
-    const newRefreshToken = response.data?.data?.refreshToken;
+    const newAccessToken = response.data?.accessToken;
+    const newRefreshToken = response.data?.refreshToken;
 
     if (newAccessToken) {
       localStorage.setItem("token", newAccessToken);
@@ -39,7 +39,6 @@ const refreshAccessToken = async () => {
     localStorage.removeItem("token");
     localStorage.removeItem("refresh-token");
     localStorage.removeItem("user");
-    processQueue(err, null);
     window.location.href = "/login";
     throw err;
   }

@@ -7,85 +7,46 @@ import LastUpdateIcon from "@/assets/svgs/LastUpdateIcon.svg?react";
 import CertificateIcon from "@/assets/svgs/CertificateIcon.svg?react";
 import SaveIcon from "@/assets/svgs/SaveIcon.svg?react";
 import ShareIcon from "@/assets/svgs/ShareIcon.svg?react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { enrollContent } from "../services/contentDetails";
 import Swal from "sweetalert2";
-import ButtonLoader from "@/shared/components/ButtonLoader";
-import { AxiosError } from "axios";
-
-type StickyCourseSummaryCardProps = {
-  buttonText: string;
-  buttonLink: string;
-  durationTime: string;
-  levelName: string;
-};
-
-type ApiError = {
-  message?: string[] | string;
-};
 
 const StickyCourseSummaryCard = ({
   buttonText,
   buttonLink,
   durationTime,
   levelName,
-}: StickyCourseSummaryCardProps) => {
-  const { courseId } = useParams<{ courseId: string }>();
+}: {
+  buttonText: string;
+  buttonLink: string;
+  durationTime: string;
+  levelName: string;
+}) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-
   const mutation = useMutation({
-    mutationFn: () => enrollContent(courseId ?? ""),
-    onSuccess: () => {
+    mutationFn: enrollContent,
+    onSuccess: (data) => {
       Swal.fire({
         title: "Done!",
         text: "Your course was enrolled successfully.",
         icon: "success",
         confirmButtonText: "OK",
-      }).then(() => {
-        navigate(buttonLink);
       });
     },
-    onError: (error: AxiosError<ApiError>) => {
-      const errorMessage =
-        error.response?.data?.message &&
-        (Array.isArray(error.response.data.message)
-          ? error.response.data.message[0]
-          : error.response.data.message);
-
-      Swal.fire({
-        title: "Oops!",
-        text: errorMessage || "Failed to enroll in the course",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
+    onError: (error) => {
+      console.error("❌ Failed to create course:", error);
     },
   });
 
   const infoItems = [
-    {
-      icon: TimeIcon,
-      label: `${t("content_duration")} : ${durationTime ?? 0}`,
-    },
-    { icon: SignalIcon, label: `${t("level")}: ${levelName ?? ""}` },
-    { icon: InternetIcon, label: `${t("lang")}: العربية` },
-    { icon: LastUpdateIcon, label: `${t("last_update")} : 31/8/2025` },
-    { icon: CertificateIcon, label: t("certificate") },
+    { icon: TimeIcon, label: `مدة الدورة: ${durationTime ?? 0}` },
+    { icon: SignalIcon, label: `المستوى: ${levelName ?? ""}` },
+    { icon: InternetIcon, label: "اللغة: العربية" },
+    { icon: LastUpdateIcon, label: "آخر تحديث: 31/8/2025" },
+    { icon: CertificateIcon, label: "شهادة إتمام الدورة" },
   ];
-
-  const handleSubmit = () => {
-    if (!courseId) {
-      Swal.fire({
-        title: "Error",
-        text: "Course ID is missing",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
-    mutation.mutate();
-  };
 
   return (
     <div className="w-full xl:sticky top-16 lg:w-[30%] bg-neutral-100 rounded-xl px-6 py-5 min-h-[300px] min-lg:h-[400px]">
@@ -98,11 +59,11 @@ const StickyCourseSummaryCard = ({
           </li>
         ))}
       </ul>
-
       <DefaultButton
-        disabled={mutation.isPending}
-        text={mutation.isPending ? <ButtonLoader /> : buttonText}
-        onClick={handleSubmit}
+        text={buttonText}
+        onClick={() => {
+          navigate(buttonLink);
+        }}
         type="button"
         moreStyle="px-10 mx-auto w-full !rounded-3xl"
       />
@@ -120,5 +81,4 @@ const StickyCourseSummaryCard = ({
     </div>
   );
 };
-
 export default StickyCourseSummaryCard;

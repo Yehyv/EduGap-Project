@@ -71,7 +71,7 @@ const StickyCourseSummaryCard = ({
     { icon: SignalIcon, label: `${t("level")}: ${levelName ?? ""}` },
     { icon: InternetIcon, label: `${t("lang")}: العربية` },
     { icon: LastUpdateIcon, label: `${t("last_update")} : 31/8/2025` },
-    { icon: CertificateIcon, label: t("certificate") },
+    { icon: CertificateIcon, label: "شهادة إتمام الدورة" },
   ];
 
   const handleSubmit = () => {

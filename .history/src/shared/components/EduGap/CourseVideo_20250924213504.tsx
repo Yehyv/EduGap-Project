@@ -1,5 +1,5 @@
 import StatusMessage from "@/shared/utils/StatusMessage";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const CourseVideo = ({
   videoUrl,
@@ -9,10 +9,6 @@ const CourseVideo = ({
   isOnline: boolean;
 }) => {
   const [videoError, setVideoError] = useState(false);
-
-  useEffect(() => {
-    setVideoError(false);
-  }, [videoUrl]);
 
   return (
     <div className="h-[300px] md:h-[400px]">

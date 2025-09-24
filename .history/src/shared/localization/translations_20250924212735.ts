@@ -64,8 +64,6 @@ const translations = {
     lang: "Language",
     last_update: "Last Update",
     content_duration: "Course Duration",
-    level: "Level",
-    certificate: "Course Certificate",
   },
   ar: {
     hero_title:
@@ -135,8 +133,6 @@ const translations = {
     lang: "اللغة",
     last_update: "أخر تحديث",
     content_duration: "مدة الدورة",
-    level: "المستوي",
-    certificate: "شهادة إتمام الدورة",
   },
 } as const;
 

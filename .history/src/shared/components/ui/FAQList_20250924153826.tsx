@@ -1,9 +1,7 @@
 import type { TopicsType } from "@/shared/types/sharedTypes";
 import FAQItem from "./FAQItem";
-import { useLanguage } from "@/shared/localization/useLanguage";
 
 const FAQList = ({ topics }: { topics: TopicsType[] }) => {
-  const { t } = useLanguage();
   return (
     <div className="w-full mx-auto">
       <div>
@@ -17,7 +15,7 @@ const FAQList = ({ topics }: { topics: TopicsType[] }) => {
             />
           ))
         ) : (
-          <p>{t("no_data_available")}</p>
+          <p>no data available</p>
         )}
       </div>
     </div>

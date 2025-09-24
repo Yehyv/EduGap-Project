@@ -15,17 +15,16 @@ const refreshAccessToken = async () => {
 
     const response = await axios.post(
       `${import.meta.env.VITE_BASE_URL}/auth/refresh`,
-      {},
+      {}, // body (empty if not required)
       {
         headers: {
-          Authorization: `Bearer ${refreshToken}`,
+          Authorization: `Bearer ${refreshToken}`, // send refresh token in header
         },
       }
     );
-    console.log(response);
 
-    const newAccessToken = response.data?.data?.accessToken;
-    const newRefreshToken = response.data?.data?.refreshToken;
+    const newAccessToken = response.data?.accessToken;
+    const newRefreshToken = response.data?.refreshToken;
 
     if (newAccessToken) {
       localStorage.setItem("token", newAccessToken);
@@ -39,7 +38,6 @@ const refreshAccessToken = async () => {
     localStorage.removeItem("token");
     localStorage.removeItem("refresh-token");
     localStorage.removeItem("user");
-    processQueue(err, null);
     window.location.href = "/login";
     throw err;
   }

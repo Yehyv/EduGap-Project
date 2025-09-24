@@ -1,18 +1,16 @@
 import CourseDetails from "@/features/CourseDetails/components/CourseDetails";
-import { getContentDetailsForEnrolledUsers } from "@/features/CourseDetails/services/contentDetails";
+import { getContentDetails } from "@/features/CourseDetails/services/contentDetails";
 import { Loader } from "@/shared/components";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import type { ContentDetailsType } from "@/shared/types/sharedTypes";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
 
-const CourseDetailsPageForUser = () => {
-  const { courseId } = useParams();
+const CourseDetailsPageForGuest = () => {
   const { t } = useLanguage();
   const { data, isLoading, error } = useQuery<ContentDetailsType>({
-    queryKey: ["getContentDetailsForEnrolledUsers"],
-    queryFn: () => getContentDetailsForEnrolledUsers(courseId ?? ""),
+    queryKey: ["getContentDetailsForGuest"],
+    queryFn: getContentDetails,
   });
 
   if (isLoading) return <Loader />;
@@ -23,13 +21,8 @@ const CourseDetailsPageForUser = () => {
 
   return (
     data && (
-      <CourseDetails
-        data={data}
-        buttonLink="/course-lesson/1/1"
-        buttonText={t("start_learn")}
-      />
+      <CourseDetails buttonLink="/" buttonText={t("subscribe")} data={data} />
     )
   );
 };
-
-export default CourseDetailsPageForUser;
+export default CourseDetailsPageForGuest;

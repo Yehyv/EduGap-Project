@@ -21,6 +21,7 @@ const CourseDetails = ({
 }) => {
   const { t } = useLanguage();
   const [isOnline, setIsOnline] = useState(true);
+  const videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4";
   const { firstName, lastName, title } = data.educators[0];
   const fullName = `${firstName} ${lastName}`;
   const { durationTime, levelName } = data;

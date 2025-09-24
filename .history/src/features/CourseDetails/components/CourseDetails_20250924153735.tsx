@@ -21,6 +21,7 @@ const CourseDetails = ({
 }) => {
   const { t } = useLanguage();
   const [isOnline, setIsOnline] = useState(true);
+  const videoUrl = "https://www.w3schools.com/html/mov_bbb.mp4";
   const { firstName, lastName, title } = data.educators[0];
   const fullName = `${firstName} ${lastName}`;
   const { durationTime, levelName } = data;
@@ -44,7 +45,7 @@ const CourseDetails = ({
       <ScrollToTop />
       {/* Main content */}
       <div className="w-full lg:w-[80%]">
-        <CourseVideo videoUrl={data?.adVideo} isOnline={isOnline} />
+        <CourseVideo videoUrl={videoUrl} isOnline={isOnline} />
 
         {/* Instructor Info */}
         <section className="my-5">
@@ -83,6 +84,7 @@ const CourseDetails = ({
         {/* Course content (FAQ) */}
         <section className="py-5 my-6">
           <SectionTitle textTitle={t("course_content")} />
+
           <FAQList topics={data?.topic} />
         </section>
       </div>
