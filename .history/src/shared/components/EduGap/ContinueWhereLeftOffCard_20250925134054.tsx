@@ -1,4 +1,4 @@
-import InstructorImage from "@/assets/imgs/ForDev/InstructorImage.png";
+import InstructorImage from "@/assets/svgs/InstructorImage.svg";
 import type { ContinueCourseType } from "@/shared/types/sharedTypes";
 import { Link } from "react-router-dom";
 
@@ -44,11 +44,11 @@ const ContinueWhereLeftOffCard: React.FC<ContinueWhereLeftOffCardProps> = ({
       </div>
 
       {/* Image Section */}
-      <div className="relative overflow-hidden rounded-xl mb-3 px-4">
+      <div className="relative overflow-hidden rounded-xl mb-3">
         <img
           src={course?.imageUrl || InstructorImage}
           alt={lessonName}
-          className="w-full h-[180px] object-cover rounded-3xl"
+          className="w-full h-[180px] object-contain rounded-3xl"
           onError={(e) => {
             e.currentTarget.src = InstructorImage;
           }}

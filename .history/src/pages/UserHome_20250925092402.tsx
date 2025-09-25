@@ -1,5 +1,5 @@
 import PopularCoursesSlider from "@/shared/components/EduGap/PopularCoursesSlider";
-import ProgramsSection from "@/shared/components/EduGap/ProgramsSection";
+import CoursesSection from "@/shared/components/EduGap/ProgramsSection";
 import Experts from "@/shared/components/EduGap/Experts";
 import Testimonials from "@/shared/components/EduGap/Testimonials";
 import RecommendedCourse from "@/features/UserHome/components/RecommendedCourse";
@@ -28,7 +28,7 @@ const Home = () => {
       <ContinueWhereLeftOff />
       <PopularCoursesSlider />
       <InstituteCoursesSection />
-      <ProgramsSection />
+      <CoursesSection />
       <Testimonials />
       <Experts />
     </>

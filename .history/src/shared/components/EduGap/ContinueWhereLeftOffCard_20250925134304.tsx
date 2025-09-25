@@ -44,7 +44,7 @@ const ContinueWhereLeftOffCard: React.FC<ContinueWhereLeftOffCardProps> = ({
       </div>
 
       {/* Image Section */}
-      <div className="relative overflow-hidden rounded-xl mb-3 px-4">
+      <div className="relative overflow-hidden rounded-xl mb-3">
         <img
           src={course?.imageUrl || InstructorImage}
           alt={lessonName}

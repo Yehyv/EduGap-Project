@@ -1,20 +1,20 @@
 import SectionTitle from "@/shared/components/SectionTitle";
 import Slider from "react-slick";
-import type { ContinueCourseType } from "@/shared/types/sharedTypes";
+import type { CourseType } from "@/shared/types/sharedTypes";
 import ArrowButton from "@/shared/components/ui/ArrowButton";
+import GhostButton from "@/shared/components/ui/GhostButton";
 import { useQuery } from "@tanstack/react-query";
 import CardSkeleton from "@/shared/components/ui/CardSkeleton";
 import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
-import ContinueWhereLeftOffCard from "./ContinueWhereLeftOffCard";
-import { getResumeWhereLeftForSlider } from "@/features/UserHome/services/userHomeApis";
-
-const ContinueWhereLeftOff = () => {
+import InstituteCourseCard from "./InstituteCourseCard";
+import { getInstituteCoursesForSlider } from "../services/userHomeApis";
+const InstituteCoursesSection = () => {
   const { t } = useLanguage();
-  const { data, isLoading, error } = useQuery<ContinueCourseType[]>({
-    queryKey: ["getResumeWhereLeftForSlider"],
-    queryFn: getResumeWhereLeftForSlider,
+  const { data, isLoading, error } = useQuery<CourseType[]>({
+    queryKey: ["InstituteCoursesSection"],
+    queryFn: getInstituteCoursesForSlider,
   });
 
   const { slidesToShow, windowWidth } = useResponsiveSlides(
@@ -25,6 +25,8 @@ const ContinueWhereLeftOff = () => {
     ],
     3 // default
   );
+
+  console.log(data);
 
   const settings = {
     dots: true,
@@ -38,11 +40,16 @@ const ContinueWhereLeftOff = () => {
   };
 
   if (error)
-    return <SliderErrorFallback componentTitle={t("continue_title")} />;
+    return (
+      <SliderErrorFallback componentTitle={t("institute_courses_title")} />
+    );
 
   return (
     <div className="mb-5 container">
-      <SectionTitle textTitle={t("continue_title")} />
+      <div className="flex justify-between items-start">
+        <SectionTitle textTitle={t("institute_courses_title")} />
+        <GhostButton buttonText={t("more")} to="/popular-courses-list" />
+      </div>
 
       {isLoading ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 mb-8">
@@ -54,8 +61,8 @@ const ContinueWhereLeftOff = () => {
         <div className="w-full py-5">
           <Slider {...settings}>
             {data?.map((courseData, idx) => (
-              <div key={idx} className="px-2">
-                <ContinueWhereLeftOffCard key={idx} course={courseData} />
+              <div key={idx} className="px-1">
+                <InstituteCourseCard key={idx} course={courseData} />
               </div>
             ))}
           </Slider>
@@ -65,4 +72,4 @@ const ContinueWhereLeftOff = () => {
   );
 };
 
-export default ContinueWhereLeftOff;
+export default InstituteCoursesSection;
