@@ -1,5 +1,6 @@
 import SectionTitle from "@/shared/components/SectionTitle";
 import Slider from "react-slick";
+import type { CourseType } from "@/shared/types/sharedTypes";
 import ArrowButton from "@/shared/components/ui/ArrowButton";
 import GhostButton from "@/shared/components/ui/GhostButton";
 import { useQuery } from "@tanstack/react-query";
@@ -11,9 +12,9 @@ import InstituteCourseCard from "./InstituteCourseCard";
 import { getInstituteCoursesForSlider } from "../services/userHomeApis";
 const InstituteCoursesSection = () => {
   const { t } = useLanguage();
-  const { data, isLoading, error } = useQuery<any[]>({
+  const { data, isLoading, error } = useQuery<CourseType[]>({
     queryKey: ["InstituteCoursesSection"],
-    queryFn: getInstituteCoursesForSlider as any,
+    queryFn: getInstituteCoursesForSlider,
   });
 
   const { slidesToShow, windowWidth } = useResponsiveSlides(
