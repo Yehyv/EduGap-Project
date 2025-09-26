@@ -28,7 +28,7 @@ const LanguageDropdown = ({ currentLang, onChange }: LanguageDropdownProps) => {
       >
         {languages.find((l) => l.code === currentLang)?.label ?? "Select"}
         <span
-          className={`ms-2 text-sm inline-block transform transition-transform duration-200 ${
+          className={`ms-2 inline-block transform transition-transform duration-200 ${
             open ? "rotate-180" : ""
           }`}
         >

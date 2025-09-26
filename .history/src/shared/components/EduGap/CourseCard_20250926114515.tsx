@@ -15,6 +15,8 @@ const CourseCard = ({ course }: { course: CourseType }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
+  console.log(course.name);
+
   return (
     <div
       className="group relative bg-white rounded-xl shadow-custom overflow-hidden

@@ -1,19 +1,21 @@
 import SectionTitle from "@/shared/components/SectionTitle";
 import Slider from "react-slick";
+import CourseCard from "@/shared/components/EduGap/CourseCard";
+import type { CourseType } from "@/shared/types/sharedTypes";
 import ArrowButton from "@/shared/components/ui/ArrowButton";
 import GhostButton from "@/shared/components/ui/GhostButton";
 import { useQuery } from "@tanstack/react-query";
+import { getSavedCoursesForSlider } from "@/features/GuestHome/services/GuestHomeApi";
 import CardSkeleton from "@/shared/components/ui/CardSkeleton";
 import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
-import InstituteCourseCard from "./InstituteCourseCard";
-import { getInstituteCoursesForSlider } from "../services/userHomeApis";
-const InstituteCoursesSection = () => {
+
+const SavedContentsSlider = () => {
   const { t } = useLanguage();
-  const { data, isLoading, error } = useQuery<any[]>({
-    queryKey: ["InstituteCoursesSection"],
-    queryFn: getInstituteCoursesForSlider as any,
+  const { data, isLoading, error } = useQuery<CourseType[]>({
+    queryKey: ["savedContentsForSlider"],
+    queryFn: getSavedCoursesForSlider,
   });
 
   const { slidesToShow, windowWidth } = useResponsiveSlides(
@@ -22,10 +24,8 @@ const InstituteCoursesSection = () => {
       { width: 1000, slides: 2 },
       { width: 1180, slides: 3 },
     ],
-    3 // default
+    4 // default
   );
-
-  console.log(data);
 
   const settings = {
     dots: true,
@@ -38,21 +38,20 @@ const InstituteCoursesSection = () => {
     prevArrow: windowWidth >= 1180 ? <ArrowButton direction="left" /> : <></>,
   };
 
-  if (error)
-    return (
-      <SliderErrorFallback componentTitle={t("institute_courses_title")} />
-    );
+  if (error) return <SliderErrorFallback componentTitle={t("courses_title")} />;
+
+  console.log(data);
 
   return (
     <div className="mb-5 container">
       <div className="flex justify-between items-start">
-        <SectionTitle textTitle={t("institute_courses_title")} />
-        <GhostButton buttonText={t("more")} to="/institute-courses" />
+        <SectionTitle textTitle={t("saved_courses_title")} />
+        <GhostButton buttonText={t("more")} to="/saved_coursest" />
       </div>
 
       {isLoading ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 mb-8">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <CardSkeleton key={i} />
           ))}
         </div>
@@ -60,9 +59,13 @@ const InstituteCoursesSection = () => {
         <div className="w-full py-5">
           <Slider {...settings}>
             {data?.map((courseData, idx) => (
-              <div key={idx} className="px-2">
-                <InstituteCourseCard key={idx} course={courseData} />
-              </div>
+              <>
+                {console.log(courseData.content)}
+                <CourseCard
+                  key={idx}
+                  course={{ name: courseData.content.translations[0].name }}
+                />
+              </>
             ))}
           </Slider>
         </div>
@@ -71,4 +74,4 @@ const InstituteCoursesSection = () => {
   );
 };
 
-export default InstituteCoursesSection;
+export default SavedContentsSlider;

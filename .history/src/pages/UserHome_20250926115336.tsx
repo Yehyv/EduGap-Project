@@ -7,7 +7,7 @@ import ContinueWhereLeftOff from "@/shared/components/EduGap/ContinueWhereLeftOf
 import { useEffect, useState } from "react";
 import { Loader } from "@/shared/components";
 import InstituteCoursesSection from "@/features/UserHome/components/InstituteCoursesSection";
-// import SavedContentsSlider from "@/shared/components/EduGap/SavedContentsSlider";
+import SavedContentsSlider from "@/shared/components/EduGap/SavedContentsSlider";
 
 const Home = () => {
   const [isLoading, setIsLoading] = useState(true);

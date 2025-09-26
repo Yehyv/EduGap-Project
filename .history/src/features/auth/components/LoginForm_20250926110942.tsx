@@ -40,12 +40,10 @@ const LoginForm = () => {
         <Link to={"/forgot-password"} className="text-[#767676] text-center">
           {t("forgot_password")}
         </Link>
-        <div className="sm:hidden">
-          <LightButton
-            text={t("continue_button")}
-            onClick={() => navigate("/")}
-          />
-        </div>
+        <LightButton
+          text={t("continue_button")}
+          onClick={() => navigate("/")}
+        />
       </Form>
     </Formik>
   );

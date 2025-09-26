@@ -18,7 +18,6 @@ import ProgramsList from "@/pages/ProgramsList";
 import ContentDetailsPageForGuest from "@/pages/ContentDetailsPageForGuest";
 import ContentDetailsPageForUser from "@/pages/ContentDetailsPageForUser";
 import LessonPlayerPage from "@/pages/LessonPlayerPage";
-import InstituteCourses from "@/pages/InstituteCourses";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -75,7 +74,7 @@ export default function AppRoutes() {
           path="/course-lesson/:courseId/:lessonId"
           element={<LessonPlayerPage />}
         />
-        <Route path="/institute-courses" element={<InstituteCourses />} />
+        <Route path="/institute-courses" element={<LessonPlayerPage />} />
       </Route>
 
       {/* Not Found */}

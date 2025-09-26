@@ -85,7 +85,7 @@ const Header = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
               <DefaultButton
                 text={t("auth_register")}
                 type="reset"
-                moreStyle="w-[150px] !py-1"
+                moreStyle=" ms-auto !py-1"
                 onClick={() => {}}
               />
             )}
