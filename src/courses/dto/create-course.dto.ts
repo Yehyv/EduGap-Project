@@ -4,9 +4,6 @@ import {
   IsOptional,
   IsArray,
   IsNumber,
-  IsEnum,
-  Max,
-  Min,
   ValidateNested,
   ArrayNotEmpty,
 } from 'class-validator';
@@ -19,6 +16,15 @@ export class CourseTranslationDto {
   @IsString()
   @IsNotEmpty()
   description: string;
+
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  whatToLearn?: string[];
+
+  @IsString()
+  @IsNotEmpty()
+  durationTime: string;
 
   @IsNumber()
   @IsNotEmpty()

@@ -7,10 +7,21 @@ import {
   Param,
   Delete,
   Query,
+  Req,
+  Headers,
 } from '@nestjs/common';
 import { EducatorsService } from './educators.service';
 import { CreateEducatorDto } from './dto/create-educator.dto';
 import { UpdateEducatorDto } from './dto/update-educator.dto';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+  };
+}
 
 @Controller('educators')
 export class EducatorsController {
@@ -34,8 +45,14 @@ export class EducatorsController {
     return this.educatorsService.findFirst8Educators();
   }
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.educatorsService.findOne(+id);
+  findOne(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const langId = languageId !== undefined ? +languageId : 0;
+    const userInstituteId = req.user ? req.user.instituteId : undefined;
+    return this.educatorsService.findOne(+id, langId, userInstituteId);
   }
 
   @Patch(':id')

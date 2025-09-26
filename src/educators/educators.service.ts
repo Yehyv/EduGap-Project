@@ -33,6 +33,7 @@ export class EducatorsService {
       title: createEducatorDto.title,
       bio: createEducatorDto.bio,
       image: createEducatorDto.image,
+      rate: createEducatorDto.rate,
       user: savedUser,
     });
     await this.educatorRepository.save(educator);
@@ -79,14 +80,73 @@ export class EducatorsService {
       take: 8,
     });
   }
-  async findOne(id: number) {
-    const educator = await this.educatorRepository.findOne({
-      where: { id },
-      relations: ['user'],
+  async findOne(id: number, languageId: number, userInstituteId?: number) {
+    // const educator = await this.educatorRepository.findOne({
+    //   where: { id },
+    //   relations: ['user'],
+    // });
+    // if (!educator)
+    //   throw new NotFoundException(`Educator with id ${id} not found`);
+    // return educator;
+    const query = this.educatorRepository
+      .createQueryBuilder('educator')
+      .leftJoinAndSelect('educator.user', 'user')
+      .leftJoinAndSelect('educator.contents', 'content')
+      .leftJoinAndSelect(
+        'content.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('translation.language', 'translationLanguage')
+      .leftJoinAndSelect('content.contentCategory', 'category')
+      .leftJoinAndSelect(
+        'category.translations',
+        'categoryTranslation',
+        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect(
+        'categoryTranslation.language',
+        'categoryTranslationlanguage',
+      )
+      .leftJoin('content.courses', 'course')
+      .leftJoin('course.programs', 'program')
+      .leftJoin('program.institutes', 'institute');
+    if (userInstituteId) {
+      query.where('institute.id = :instituteId', {
+        instuteId: userInstituteId,
+      });
+    }
+    const educators = await query.getMany();
+    const formatedEducators = educators.map((educator) => {
+      return {
+        id: educator.id,
+        image: educator.image,
+        title: educator.title,
+        bio: educator.bio,
+        rate: educator.rate,
+        firstName: educator.user.firstName,
+        lastName: educator.user.lastName,
+        content: educator.contents.map((content) => {
+          const contentTranslation = content.translations[0] || null;
+          return {
+            id: content.id,
+            rate: content.rate,
+            level: content.level,
+            image: content.image,
+            numberOfReviewers: content.numberOfReviewers ?? 0,
+            name: contentTranslation?.name || '',
+            levelName: contentTranslation?.levelName || '',
+            category: {
+              id: content.contentCategory?.id,
+              name: content.contentCategory?.translations?.[0]?.name || '',
+            },
+          };
+        }),
+      };
     });
-    if (!educator)
-      throw new NotFoundException(`Educator with id ${id} not found`);
-    return educator;
+    return { formatedEducators };
   }
 
   async update(id: number, updateEducatorDto: UpdateEducatorDto) {

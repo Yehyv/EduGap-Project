@@ -22,6 +22,8 @@ export class Educator {
   @Column()
   image: string;
   @CreateDateColumn()
+  @Column()
+  rate: number;
   createdAt: Date;
   @UpdateDateColumn()
   updatedAt: Date;

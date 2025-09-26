@@ -8,6 +8,7 @@ import { SignInDto } from './dto/signin';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from './types/tokens.interface';
 import * as bcrypt from 'bcrypt';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -52,15 +53,52 @@ export class AuthService {
 
   async refreshTokens(userId: number, rt: string): Promise<Tokens> {
     const user = await this.userService.findById(userId);
-    if (!user || !user.refreshToken)
+
+    // التحقق من وجود المستخدم والـ refresh token
+    if (!user || !user.refreshToken) {
       throw new ForbiddenException('Access Denied');
+    }
 
+    // التحقق من صحة الـ refresh token
     const isMatch = await bcrypt.compare(rt, user.refreshToken);
-    if (!isMatch) throw new ForbiddenException('Access Denied');
-
+    if (!isMatch) {
+      throw new ForbiddenException('Access Denied');
+    }
     const tokens = await this.getTokens(user.id, user.email, user.instituteId);
-    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    await this.userService.update(user.id, {
+      refreshToken: await bcrypt.hash(tokens.refreshToken, 10),
+    });
     return tokens;
+    // هنا الجزء المهم: محو الـ refresh token القديم فور التحقق منه
+    // هذا يضمن عدم إمكانية استخدامه مرة أخرى
+    // await this.userService.update(user.id, { refreshToken: null });
+    // const updatedUser = await this.userService.findById(userId);
+    // console.log('UPDATED REFRESH TOKEN', updatedUser.refreshToken);
+    // try {
+    //   // إنشاء tokens جديدة
+    //   const tokens = await this.getTokens(updatedUser.id, updatedUser.email, updatedUser.instituteId);
+
+    //   // حفظ الـ refresh token الجديد
+    //   await this.updateRefreshToken(updatedUser.id, tokens.refreshToken);
+
+    //   return tokens;
+    // } catch (error) {
+    //   // في حالة حدوث خطأ، تأكد من أن الـ refresh token محذوف
+    //   await this.userService.update(updatedUser.id, { refreshToken: null });
+
+    //   throw new ForbiddenException('Token refresh failed');
+    // }
+  }
+
+  // دالة إضافية للتحقق من صلاحية الـ refresh token دون استخدامه
+  async validateRefreshToken(userId: number, rt: string): Promise<boolean> {
+    const user = await this.userService.findById(userId);
+
+    if (!user || !user.refreshToken) {
+      return false;
+    }
+
+    return await bcrypt.compare(rt, user.refreshToken);
   }
 
   async getTokens(
@@ -84,7 +122,12 @@ export class AuthService {
   }
 
   async updateRefreshToken(userId: number, refreshToken: string) {
-    const hashedPassword = await bcrypt.hash(refreshToken, 10);
-    await this.userService.update(userId, { refreshToken: hashedPassword });
+    const hashedToken = await bcrypt.hash(refreshToken, 10);
+    await this.userService.update(userId, { refreshToken: hashedToken });
+  }
+
+  // دالة إضافية لمحو جميع refresh tokens للمستخدم (مفيدة عند تغيير كلمة المرور)
+  async revokeAllRefreshTokens(userId: number) {
+    await this.userService.update(userId, { refreshToken: null });
   }
 }

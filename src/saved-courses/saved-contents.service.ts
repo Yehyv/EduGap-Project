@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { SavedContent } from './entities/saved-content.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Content } from 'src/contents/entities/content.entity';
+import { skip } from 'rxjs';
 
 @Injectable()
 export class SavedContentsService {
@@ -69,7 +70,8 @@ export class SavedContentsService {
         user,
       });
 
-      return this.savedContentRepository.save(savedContent);
+      await this.savedContentRepository.save(savedContent);
+      return { message: 'content saved' };
     }
   }
 
@@ -93,18 +95,32 @@ export class SavedContentsService {
     userId: number,
     userInstituteId?: number,
     languageId?: number,
+    page: number = 1,
+    limit: number = 8,
   ) {
+    const skip = (page - 1) * limit;
     const query = this.savedContentRepository
       .createQueryBuilder('savedContent')
       .leftJoinAndSelect('savedContent.content', 'content')
       .leftJoinAndSelect('content.translations', 'translation')
       .leftJoinAndSelect('translation.language', 'language')
       .leftJoinAndSelect('content.courses', 'course')
+      .leftJoinAndSelect('content.contentCategory', 'category')
+      .leftJoinAndSelect(
+        'category.translations',
+        'categoryTranslation',
+        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('content.educators', 'educators')
+      .leftJoinAndSelect('educators.user', 'educatorUser')
       .leftJoinAndSelect('course.programs', 'program')
       .leftJoinAndSelect('program.institutes', 'institute')
       .innerJoin('savedContent.user', 'user')
       .where('user.id = :userId', { userId })
-      .orderBy('savedContent.savedAt', 'DESC');
+      .orderBy('savedContent.savedAt', 'DESC')
+      .skip(skip)
+      .take(limit);
 
     if (userInstituteId) {
       query.andWhere('institute.id = :instituteId', {
@@ -116,13 +132,50 @@ export class SavedContentsService {
       query.andWhere('translation.languageId = :languageId', { languageId });
     }
 
-    const savedContents = await query.getMany();
-
-    if (!savedContents.length) {
+    const [savedContent, total] = await query.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
+    if (!savedContent.length) {
       throw new NotFoundException('No saved contents found');
     }
-
-    return savedContents;
+    const formattedContents = savedContent.map((savedContent) => {
+      const selectedTranslation = savedContent.content.translations[0] || null;
+      return {
+        id: savedContent.content.id,
+        image: savedContent.content.image,
+        rate: savedContent.content.rate,
+        level: savedContent.content.level,
+        numberOfReviewers: savedContent.content.numberOfReviewers ?? 0,
+        levelName: selectedTranslation?.levelName || '',
+        whatToLearn: selectedTranslation?.whatToLearn || '',
+        name: selectedTranslation?.name || '',
+        description: selectedTranslation?.description || '',
+        durationTime: selectedTranslation?.durationTime || '',
+        educators: savedContent.content.educators.map((e) => ({
+          id: e.id,
+          title: e.title,
+          bio: e.bio,
+          image: e.image,
+          firstName: e.user.firstName,
+          lastName: e.user.lastName,
+        })),
+        category: {
+          id: savedContent.content.contentCategory?.id,
+          name:
+            savedContent.content.contentCategory?.translations?.[0]?.name || '',
+        },
+      };
+    });
+    return {
+      formattedContents,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
   async getFirstEight(
     userId: number,
@@ -135,6 +188,15 @@ export class SavedContentsService {
       .leftJoinAndSelect('content.translations', 'translation')
       .leftJoinAndSelect('translation.language', 'language')
       .leftJoinAndSelect('content.courses', 'course')
+      .leftJoinAndSelect('content.contentCategory', 'category')
+      .leftJoinAndSelect(
+        'category.translations',
+        'categoryTranslation',
+        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('content.educators', 'educators')
+      .leftJoinAndSelect('educators.user', 'educatorUser')
       .leftJoinAndSelect('course.programs', 'program')
       .leftJoinAndSelect('program.institutes', 'institute')
       .innerJoin('savedContent.user', 'user')
@@ -152,13 +214,41 @@ export class SavedContentsService {
       query.andWhere('translation.languageId = :languageId', { languageId });
     }
 
-    const savedContents = await query.getMany();
+    const savedContent = await query.getMany();
 
-    if (!savedContents.length) {
+    if (!savedContent.length) {
       throw new NotFoundException('No saved contents found');
     }
 
-    return savedContents;
+    const formattedContents = savedContent.map((savedContent) => {
+      const selectedTranslation = savedContent.content.translations[0] || null;
+      return {
+        id: savedContent.content.id,
+        image: savedContent.content.image,
+        rate: savedContent.content.rate,
+        level: savedContent.content.level,
+        numberOfReviewers: savedContent.content.numberOfReviewers ?? 0,
+        levelName: selectedTranslation?.levelName || '',
+        whatToLearn: selectedTranslation?.whatToLearn || '',
+        name: selectedTranslation?.name || '',
+        description: selectedTranslation?.description || '',
+        durationTime: selectedTranslation?.durationTime || '',
+        educators: savedContent.content.educators.map((e) => ({
+          id: e.id,
+          title: e.title,
+          bio: e.bio,
+          image: e.image,
+          firstName: e.user.firstName,
+          lastName: e.user.lastName,
+        })),
+        category: {
+          id: savedContent.content.contentCategory?.id,
+          name:
+            savedContent.content.contentCategory?.translations?.[0]?.name || '',
+        },
+      };
+    });
+    return formattedContents;
   }
 
   // دالة للتأكد إن الكورس محفوظ ولا لا

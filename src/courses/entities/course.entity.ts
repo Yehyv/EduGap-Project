@@ -19,6 +19,7 @@ export class Course {
   id: number;
   @Column()
   image: string;
+  contentCount: number;
   @CreateDateColumn()
   createdAt: Date;
   @UpdateDateColumn()

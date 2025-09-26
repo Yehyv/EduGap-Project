@@ -70,6 +70,8 @@ export class CoursesService {
         const courseTranslation = this.courseTranslationRepository.create({
           name: translation.name,
           description: translation.description,
+          whatToLearn: translation.whatToLearn,
+          durationTime: translation.durationTime,
           course: savedCourse,
           language: language,
         });
@@ -99,6 +101,7 @@ export class CoursesService {
       )
       .leftJoinAndSelect('translation.language', 'language')
       .leftJoinAndSelect('course.programs', 'programs')
+      .loadRelationCountAndMap('course.contentCount', 'course.contents')
       .where('institute.id = :instituteId', { instituteId: userInstituteId })
       .skip(skip)
       .take(limit)
@@ -116,9 +119,12 @@ export class CoursesService {
       return {
         id: course.id,
         image: course.image,
+        contentCount: course.contentCount,
         name: selectedTranslation?.name || '',
         description: selectedTranslation?.description || '',
-        programs: course.programs || [],
+        whatToLearn: selectedTranslation?.whatToLearn || '',
+        durationTime: selectedTranslation?.durationTime || '',
+        // programs: course.programs || [],
       };
     });
   }
@@ -130,6 +136,22 @@ export class CoursesService {
       .leftJoin('program.institutes', 'institute')
       .leftJoinAndSelect('course.translations', 'translations')
       .leftJoinAndSelect('translations.language', 'language')
+      .leftJoinAndSelect('course.contents', 'content')
+      .leftJoinAndSelect(
+        'content.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('content.contentCategory', 'category')
+      .leftJoinAndSelect(
+        'category.translations',
+        'categoryTranslation',
+        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('content.educators', 'educators')
+      .leftJoinAndSelect('educators.user', 'user')
       .leftJoinAndSelect('course.programs', 'programs')
       .where('course.id = :id', { id })
       .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
@@ -146,9 +168,39 @@ export class CoursesService {
     return {
       id: course.id,
       image: course.image,
-      name: selectedTranslation?.name,
-      description: selectedTranslation?.description,
-      programs: course.programs || [],
+      contentCount: course.contentCount,
+      name: selectedTranslation?.name || '',
+      description: selectedTranslation?.description || '',
+      whatToLearn: selectedTranslation?.whatToLearn || '',
+      durationTime: selectedTranslation?.durationTime || '',
+      // programs: course.programs || [],
+      contents: course.contents.map((c) => {
+        const contentTranslation = c.translations?.[0] || null;
+        return {
+          id: c.id,
+          image: c.image,
+          rate: c.rate,
+          level: c.level,
+          numberOfReviewers: c.numberOfReviewers ?? 0,
+          levelName: contentTranslation?.levelName || '',
+          whatToLearn: contentTranslation?.whatToLearn || '',
+          name: contentTranslation?.name || '',
+          description: contentTranslation?.description || '',
+          durationTime: contentTranslation?.durationTime || '',
+          educators: c.educators.map((e) => ({
+            id: e.id,
+            title: e.title,
+            bio: e.bio,
+            image: e.image,
+            firstName: e.user.firstName,
+            lastName: e.user.lastName,
+          })),
+          category: {
+            id: c.contentCategory?.id,
+            name: c.contentCategory?.translations?.[0]?.name || '',
+          },
+        };
+      }),
     };
   }
 
@@ -235,6 +287,8 @@ export class CoursesService {
           const newTranslation = this.courseTranslationRepository.create({
             name: t.name,
             description: t.description,
+            whatToLearn: t.whatToLearn,
+            durationTime: t.durationTime,
             language,
             course,
           });
@@ -356,7 +410,9 @@ export class CoursesService {
         image: course.image,
         name: selectedTranslation?.name || '',
         description: selectedTranslation?.description || '',
-        programs: course.programs || [],
+        whatToLearn: selectedTranslation?.whatToLearn || '',
+        durationTime: selectedTranslation?.durationTime || '',
+        // programs: course.programs || [],
       };
     });
   }
