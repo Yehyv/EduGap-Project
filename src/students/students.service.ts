@@ -10,7 +10,6 @@ import { Student } from './entities/student.entity';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { AuthService } from 'src/auth/auth.service';
-import { Tokens } from 'src/auth/types/tokens.interface';
 import * as bcrypt from 'bcrypt';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { Program } from 'src/programs/entities/program.entity';
@@ -28,7 +27,7 @@ export class StudentsService {
     @InjectRepository(Program)
     private readonly programRepository: Repository<Program>,
   ) {}
-  async create(createStudentDto: CreateStudentDto): Promise<Tokens> {
+  async create(createStudentDto: CreateStudentDto) {
     const { programId, ...studentData } = createStudentDto;
 
     // جلب الـ User
@@ -63,19 +62,7 @@ export class StudentsService {
       program,
     });
     await this.studentRepository.save(student);
-
-    // توليد التوكنز
-    const tokens = await this.authService.getTokens(
-      savedUser.id,
-      savedUser.email,
-      savedUser.instituteId,
-    );
-    await this.authService.updateRefreshToken(
-      savedUser.id,
-      tokens.refreshToken,
-    );
-
-    return tokens;
+    return { message: 'student created successfully' };
   }
 
   async findAll() {

@@ -6,6 +6,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Headers,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signin';
@@ -29,8 +30,9 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  signin(@Req() req: MyCustomRequest, @Body() dto: SignInDto) {
-    return this.authService.Signin(dto);
+  signin(@Body() dto: SignInDto, @Headers('languageId') languageId?: string) {
+    const langId = languageId !== undefined ? +languageId : 0;
+    return this.authService.Signin(dto, langId);
   }
 
   @UseGuards(AccessTokenGuard)

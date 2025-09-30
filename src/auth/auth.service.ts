@@ -8,15 +8,30 @@ import { SignInDto } from './dto/signin';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from './types/tokens.interface';
 import * as bcrypt from 'bcrypt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/users/entities/user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private userService: UsersService,
     private jwtService: JwtService,
   ) {}
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email },
+      relations: [
+        'institute',
+        'institute.translations',
+        'institute.translations.language',
+      ],
+    });
+  }
 
-  async Signin(dto: SignInDto): Promise<Tokens> {
+  async Signin(dto: SignInDto, languageId?: number): Promise<Tokens> {
     // Better validation
     if (
       typeof dto.email !== 'string' ||
@@ -27,7 +42,11 @@ export class AuthService {
       throw new BadRequestException('Email and password are required');
     }
 
-    const user = await this.userService.findByEmail(dto.email.trim());
+    const user = await this.findByEmail(dto.email.trim());
+    if (!user) {
+      throw new ForbiddenException('Invalid credentials');
+    }
+
     if (!user) {
       throw new ForbiddenException('Invalid credentials');
     }
@@ -41,8 +60,20 @@ export class AuthService {
     if (!passwordMatches) {
       throw new ForbiddenException('Invalid credentials');
     }
+    const instituteName =
+      user.institute.translations.find((t) => t.language.id === languageId)
+        ?.name ||
+      user.institute.translations[0]?.name ||
+      '';
 
-    const tokens = await this.getTokens(user.id, user.email, user.instituteId);
+    const tokens = await this.getTokens(
+      user.id,
+      user.email,
+      user.instituteId,
+      user.firstName,
+      user.lastName,
+      instituteName,
+    );
     await this.updateRefreshToken(user.id, tokens.refreshToken);
     return tokens;
   }
@@ -51,8 +82,15 @@ export class AuthService {
     await this.userService.update(+userId, { refreshToken: null });
   }
 
-  async refreshTokens(userId: number, rt: string): Promise<Tokens> {
-    const user = await this.userService.findById(userId);
+  async refreshTokens(
+    userId: number,
+    rt: string,
+    languageId?: number,
+  ): Promise<Tokens> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['institute', 'institute.translations'],
+    });
 
     // التحقق من وجود المستخدم والـ refresh token
     if (!user || !user.refreshToken) {
@@ -64,7 +102,21 @@ export class AuthService {
     if (!isMatch) {
       throw new ForbiddenException('Access Denied');
     }
-    const tokens = await this.getTokens(user.id, user.email, user.instituteId);
+    const instituteName =
+      user.institute.translations.find((t) => t.language.id === languageId)
+        ?.name ||
+      user.institute.translations[0]?.name ||
+      '';
+
+    const tokens = await this.getTokens(
+      user.id,
+      user.email,
+      user.instituteId,
+      user.firstName,
+      user.lastName,
+      instituteName,
+    );
+
     await this.userService.update(user.id, {
       refreshToken: await bcrypt.hash(tokens.refreshToken, 10),
     });
@@ -105,8 +157,18 @@ export class AuthService {
     userId: number,
     email: string,
     instituteId: number,
+    firstName: string,
+    lastName: string,
+    instituteName: string,
   ): Promise<Tokens> {
-    const payload = { sub: userId, email, instituteId };
+    const payload = {
+      sub: userId,
+      email,
+      instituteId,
+      firstName,
+      lastName,
+      instituteName,
+    };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

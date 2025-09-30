@@ -38,17 +38,7 @@ export class EducatorsService {
     });
     await this.educatorRepository.save(educator);
     // توليد التوكنز
-    const tokens = await this.authService.getTokens(
-      savedUser.id,
-      savedUser.email,
-      savedUser.instituteId,
-    );
-    await this.authService.updateRefreshToken(
-      savedUser.id,
-      tokens.refreshToken,
-    );
-
-    return tokens;
+    return { message: 'educator created succefuly' };
   }
 
   async findAll(page: number = 1, limit: number = 8) {
