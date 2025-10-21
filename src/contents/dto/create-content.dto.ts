@@ -8,55 +8,76 @@ import {
   Max,
   IsNotEmpty,
   IsEnum,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+/**
+ * 🟩 Translation DTO
+ * يمثل الترجمة الخاصة بالمحتوى (ContentTranslation)
+ */
 export class ContentTranslationDto {
   @IsString()
-  @IsOptional()
-  name?: string;
+  @IsNotEmpty()
+  name: string;
 
   @IsString()
-  @IsOptional()
-  description?: string;
+  @IsNotEmpty()
+  description: string;
 
+  // يطابق level_name في الجدول
   @IsString()
   @IsNotEmpty()
   levelName: string;
 
+  // يطابق what_to_learn (هتحوّله join(', ') في السيرفس)
   @IsArray()
   @IsOptional()
   @IsString({ each: true })
   whatToLearn?: string[];
 
+  // يطابق previous_background
   @IsString()
-  @IsNotEmpty()
-  durationTime: string;
-
-  @IsNumber()
   @IsOptional()
-  languageId?: number;
+  previousBackground?: string;
+
+  // يطابق language_type (اختياري لو عايز تستخدمه)
+  @IsEnum(['Arabic', 'English', 'French'])
+  @IsOptional()
+  languageType?: 'Arabic' | 'English' | 'French';
+
+  // علاقة اللغة الفعلية
+  @IsNumber()
+  @IsNotEmpty()
+  languageId: number;
 }
+
+/**
+ * 🟦 Create Content DTO
+ * لإنشاء المحتوى نفسه (Content)
+ */
 export class CreateContentDto {
   @IsString()
   @IsOptional()
   image?: string;
 
-  @IsArray()
-  @ArrayNotEmpty()
-  @Type(() => ContentTranslationDto)
-  translations: ContentTranslationDto[];
-
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
-  courseIds: number[];
-
-  @IsEnum(['Beginner', 'Intermediate', 'Advanced'], {
-    message: 'level must be Beginner, Intermediate, or Advanced',
-  })
+  @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
   @IsOptional()
-  level?: string;
+  level?: 'Beginner' | 'Intermediate' | 'Advanced';
+
+  // يطابق has_prerequiest في الـ entity
+  @IsEnum([0, 1])
+  @IsOptional()
+  hasPrerequiest?: 0 | 1;
+
+  // يطابق has_certificate في الـ entity
+  @IsEnum([0, 1])
+  @IsOptional()
+  hasCertificate?: 0 | 1;
+
+  @IsString()
+  @IsOptional()
+  adVideo?: string;
 
   @IsNumber()
   @Min(0)
@@ -64,19 +85,50 @@ export class CreateContentDto {
   @IsOptional()
   rate?: number;
 
+  // علاقة التصنيف (ContentCategory)
+  @IsNumber()
+  @IsNotEmpty()
+  categoryId: number;
+
+  // ترجمات المحتوى
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => ContentTranslationDto)
+  translations: ContentTranslationDto[];
+}
+
+/**
+ * 🟨 Update Content DTO
+ * لتحديث المحتوى أو ترجماته
+ */
+export class UpdateContentDto {
+  @IsString()
+  @IsOptional()
+  image?: string;
+
   @IsNumber()
   @Min(0)
+  @Max(5)
+  @IsOptional()
+  rate?: number;
+
+  @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
+  @IsOptional()
+  level?: string;
+
+  @IsNumber()
   @IsOptional()
   numberOfReviewers?: number;
 
-  @IsString()
-  adVideo: string;
-
-  @IsNumber()
-  categoryId: number;
+  @IsArray()
+  @IsOptional()
+  @IsNumber({}, { each: true })
+  courseIds?: number[];
 
   @IsArray()
-  @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
-  educatorIds: number[];
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ContentTranslationDto)
+  translations?: ContentTranslationDto[];
 }

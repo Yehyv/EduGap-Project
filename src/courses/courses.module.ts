@@ -7,8 +7,10 @@ import { CourseTranslation } from './entities/course-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { Content } from 'src/contents/entities/content.entity';
-import { Student } from 'src/students/entities/student.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
+import { ProgramCourse } from 'src/programs/entities/program-course.entity';
+import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
 
 @Module({
   imports: [
@@ -18,8 +20,10 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
       Language,
       Program,
       Content,
-      Student,
       Enrollment,
+      InstituteProgramCourse,
+      ProgramCourse,
+      InstitutePrograms,
     ]),
   ],
   controllers: [CoursesController],

@@ -2,69 +2,77 @@ import {
   Controller,
   Get,
   Post,
-  Body,
   Patch,
-  Param,
   Delete,
+  Param,
+  Body,
   Query,
-  Req,
-  Headers,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { EducatorsService } from './educators.service';
 import { CreateEducatorDto } from './dto/create-educator.dto';
 import { UpdateEducatorDto } from './dto/update-educator.dto';
 
-interface AuthenticatedRequest extends Request {
-  user: {
-    sub: number;
-    email: string;
-    instituteId: number;
-    refreshToken?: string;
-  };
-}
-
 @Controller('educators')
 export class EducatorsController {
   constructor(private readonly educatorsService: EducatorsService) {}
 
+  /** POST /educators — إنشاء محاضر */
   @Post()
-  create(@Body() createEducatorDto: CreateEducatorDto) {
-    return this.educatorsService.create(createEducatorDto);
+  create(@Body() dto: CreateEducatorDto) {
+    return this.educatorsService.create(dto);
   }
 
+  /**
+   * GET /educators — قائمة بالمحاضرين مع بحث وباجينيشن
+   * Query:
+   *  - search?: string
+   *  - page?: number (default 1)
+   *  - limit?: number (default 20)
+   *  - onlyActive?: number (0/1)
+   */
   @Get()
-  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    const pageNumber = page ? parseInt(page, 10) : 1;
-    const limitNumber = limit ? parseInt(limit, 10) : 8;
-
-    return this.educatorsService.findAll(pageNumber, limitNumber);
-  }
-
-  @Get('first-8')
-  findFirst8Educators() {
-    return this.educatorsService.findFirst8Educators();
-  }
-  @Get(':id')
-  findOne(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
-    @Headers('languageId') languageId?: string,
+  findAll(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('onlyActive') onlyActive?: string,
   ) {
-    const langId = languageId !== undefined ? +languageId : 0;
-    const userInstituteId = req.user ? req.user.instituteId : undefined;
-    return this.educatorsService.findOne(+id, langId, userInstituteId);
+    const p = page ? Number(page) : 1;
+    const l = limit ? Number(limit) : 20;
+    const oa = onlyActive !== undefined ? Number(onlyActive) : undefined;
+    return this.educatorsService.findAll(search, p, l, oa);
   }
 
+  /**
+   * GET /educators/first-8 — أول 8 (افتراضيًا active فقط)
+   * Query:
+   *  - onlyActive?: number (0/1) — default 1
+   */
+  @Get('first-8')
+  firstEight(@Query('onlyActive') onlyActive?: string) {
+    const oa = onlyActive !== undefined ? Number(onlyActive) : 1;
+    return this.educatorsService.findFirstEight(oa);
+  }
+
+  /** GET /educators/:id — محاضر واحد */
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.educatorsService.findOne(id);
+  }
+
+  /** PATCH /educators/:id — تحديث محاضر */
   @Patch(':id')
   update(
-    @Param('id') id: string,
-    @Body() updateEducatorDto: UpdateEducatorDto,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateEducatorDto,
   ) {
-    return this.educatorsService.update(+id, updateEducatorDto);
+    return this.educatorsService.update(id, dto);
   }
 
+  /** DELETE /educators/:id — حذف (Soft delete) */
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.educatorsService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.educatorsService.remove(id);
   }
 }

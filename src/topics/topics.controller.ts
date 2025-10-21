@@ -7,72 +7,74 @@ import {
   Param,
   Delete,
   Headers,
+  Query,
   ParseIntPipe,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { TopicsService } from './topics.service';
 import { CreateTopicDto } from './dto/create-topic.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
-interface AuthenticatedRequest extends Request {
-  user: {
-    sub: number;
-    email: string;
-    instituteId: number;
-    refreshToken?: string;
-  };
-}
-
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard) // dashboard-only; لو عايزها عامة، اشيل الجارد
 @Controller('topics')
 export class TopicsController {
   constructor(private readonly topicsService: TopicsService) {}
 
+  /**
+   * POST /topics
+   * إنشاء Topic داخل Content محدد
+   */
   @Post()
-  create(
-    @Req() req: AuthenticatedRequest,
-    @Body() createTopicDto: CreateTopicDto,
-  ) {
-    return this.topicsService.create(createTopicDto, req.user.instituteId);
+  create(@Body() createTopicDto: CreateTopicDto) {
+    return this.topicsService.create(createTopicDto);
   }
 
+  /**
+   * GET /topics?languageId=&contentId=
+   * جلب التوبيكس - يدعم فلترة باللغة وبالكونتنت
+   */
   @Get()
   findAll(
-    @Req() req: AuthenticatedRequest,
-    @Headers('languageId') languageId?: string,
+    @Query('languageId') languageId?: string,
+    @Query('contentId') contentId?: string,
   ) {
-    const langId = languageId !== undefined ? +languageId : 0;
-    if (langId) {
-      return this.topicsService.findAll(req.user.instituteId, langId);
-    }
-    return this.topicsService.findAll(req.user.instituteId);
+    const langId = languageId ? Number(languageId) : undefined;
+    const cId = contentId ? Number(contentId) : undefined;
+    return this.topicsService.findAll(langId, cId);
   }
 
+  /**
+   * GET /topics/:id
+   * جلب توبيك واحد (يدعم languageId كـ هيدر اختياري)
+   */
   @Get(':id')
   findOne(
-    @Req() req: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
+    @Headers('languageId') languageId?: string,
   ) {
-    return this.topicsService.findOne(id, req.user.instituteId);
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.topicsService.findOne(id, langId);
   }
 
+  /**
+   * PATCH /topics/:id
+   * تحديث التوبيك (content/order/isActive + replace translations لو مبعوتة)
+   */
   @Patch(':id')
   update(
-    @Req() req: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTopicDto: UpdateTopicDto,
   ) {
-    return this.topicsService.update(id, updateTopicDto, req.user.instituteId);
+    return this.topicsService.update(id, updateTopicDto);
   }
 
+  /**
+   * DELETE /topics/:id
+   * حذف (Soft delete)
+   */
   @Delete(':id')
-  remove(
-    @Req() req: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
-    console.log('inst id :', req.user.instituteId);
-    return this.topicsService.remove(id, req.user.instituteId);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.topicsService.remove(id);
   }
 }

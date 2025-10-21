@@ -6,36 +6,38 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
-  ManyToMany,
-  JoinTable,
 } from 'typeorm';
 import { ProgramTranslation } from './program-translation.entity';
-import { Course } from 'src/courses/entities/course.entity';
-import { Institute } from 'src/institutes/entities/institute.entity';
+import { ProgramCourse } from './program-course.entity';
+import { User } from 'src/users/entities/user.entity';
 @Entity()
 export class Program {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
+
+  @Column({ type: 'varchar', length: 255 })
   logo: string;
-  @CreateDateColumn()
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
-  @UpdateDateColumn()
+
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-  @DeleteDateColumn()
+
+  @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
-  coursesCount?: number;
+
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
+  isActive: number;
+
   @OneToMany(() => ProgramTranslation, (translation) => translation.program, {
     cascade: true,
   })
   translations: ProgramTranslation[];
-  @ManyToMany(() => Course, (course) => course.programs, {
-    cascade: ['insert', 'update'], // هنا اللي إحنا اخترناه
-  })
-  @JoinTable({
-    name: 'program_courses',
-  })
-  courses: Course[];
-  @ManyToMany(() => Institute, (institute) => institute.programs)
-  institutes: Institute[];
+
+  @OneToMany(() => ProgramCourse, (programCourse) => programCourse.program)
+  programCourses: ProgramCourse[];
+
+  @OneToMany(() => User, (user) => user.program)
+  users: User[];
 }

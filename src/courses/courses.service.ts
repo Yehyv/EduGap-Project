@@ -2,535 +2,633 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { Course } from './entities/course.entity';
+import { CourseTranslation } from './entities/course-translation.entity';
+import { Language } from 'src/languages/entities/language.entity';
+import { Program } from 'src/programs/entities/program.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Course } from './entities/course.entity';
-import { Repository } from 'typeorm';
-import { Language } from 'src/languages/entities/language.entity';
-import { CourseTranslation } from './entities/course-translation.entity';
-import { Program } from 'src/programs/entities/program.entity';
-import { Student } from 'src/students/entities/student.entity';
+import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
+import { ProgramCourse } from 'src/programs/entities/program-course.entity';
+import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
 
 @Injectable()
 export class CoursesService {
   constructor(
     @InjectRepository(Course)
-    private courseRepository: Repository<Course>,
+    private readonly courseRepository: Repository<Course>,
+
     @InjectRepository(Language)
-    private languageRepository: Repository<Language>,
+    private readonly languageRepository: Repository<Language>,
+
     @InjectRepository(CourseTranslation)
-    private courseTranslationRepository: Repository<CourseTranslation>,
+    private readonly courseTranslationRepository: Repository<CourseTranslation>,
+
     @InjectRepository(Program)
-    private programRepository: Repository<Program>,
-    @InjectRepository(Student)
-    private studentRepository: Repository<Student>,
+    private readonly programRepository: Repository<Program>,
+
+    @InjectRepository(ProgramCourse)
+    private readonly programCourseRepository: Repository<ProgramCourse>,
+
+    @InjectRepository(InstitutePrograms)
+    private readonly ipRepository: Repository<InstitutePrograms>,
+
+    @InjectRepository(InstituteProgramCourse)
+    private readonly ipcRepository: Repository<InstituteProgramCourse>,
   ) {}
 
-  async create(createCourseDto: CreateCourseDto, userInstituteId: number) {
-    let programs: Program[] = [];
-    if (createCourseDto.programIds.length > 0) {
-      // تأكد إن البرامج تنتمي لمعهد الـ user
-      programs = await this.programRepository
-        .createQueryBuilder('program')
-        .leftJoin('program.institutes', 'institute')
-        .where('program.id IN (:...programIds)', {
-          programIds: createCourseDto.programIds,
-        })
-        .andWhere('institute.id = :instituteId', {
-          instituteId: userInstituteId,
-        })
-        .getMany();
-
-      if (programs.length !== createCourseDto.programIds.length) {
-        throw new NotFoundException(
-          'One or more programs not found or not accessible',
-        );
-      }
-    }
-
+  /** 1) إنشاء كورس عام بدون أي ربط */
+  async create(dto: CreateCourseDto) {
     const course = this.courseRepository.create({
-      image: createCourseDto.image,
-      programs,
+      image: dto.image,
+      notes: dto.notes,
+      isActive: 1,
     });
-
     const savedCourse = await this.courseRepository.save(course);
 
     const translations = await Promise.all(
-      createCourseDto.translations.map(async (translation) => {
-        const language = await this.languageRepository.findOne({
-          where: { id: translation.languageId },
+      dto.translations.map(async (t) => {
+        const lang = await this.languageRepository.findOne({
+          where: { id: t.languageId },
         });
-        if (!language) {
-          throw new Error(
-            `Language with ID ${translation.languageId} not found`,
-          );
-        }
-        const courseTranslation = this.courseTranslationRepository.create({
-          name: translation.name,
-          description: translation.description,
-          whatToLearn: translation.whatToLearn,
-          durationTime: translation.durationTime,
+        if (!lang)
+          throw new NotFoundException(`Language ${t.languageId} not found`);
+        const tr = this.courseTranslationRepository.create({
+          name: t.name,
+          description: t.description,
+          whatToLearn: t.whatToLearn,
           course: savedCourse,
-          language: language,
+          language: lang,
         });
-        return this.courseTranslationRepository.save(courseTranslation);
+        return this.courseTranslationRepository.save(tr);
       }),
     );
-    return { savedCourse, translations };
+
+    return { ...savedCourse, translations };
   }
 
-  async findAll(
-    userInstituteId: number,
-    languageId?: number,
-    page: number = 1,
-    limit = 8,
-  ) {
-    const skip = (page - 1) * limit;
+  /** 2) ربط كورس ببرنامج عام (ProgramCourse = كتالوج البرنامج) */
+  async assignCourseToProgram(programId: number, courseId: number) {
+    const [program, course] = await Promise.all([
+      this.programRepository.findOne({ where: { id: programId } }),
+      this.courseRepository.findOne({ where: { id: courseId } }),
+    ]);
+    if (!program) throw new NotFoundException(`Program ${programId} not found`);
+    if (!course) throw new NotFoundException(`Course ${courseId} not found`);
 
-    const courses = await this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect(
-        'course.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('translation.language', 'language')
-      .leftJoinAndSelect('course.programs', 'programs')
-      .loadRelationCountAndMap('course.contentCount', 'course.contents')
-      .where('institute.id = :instituteId', { instituteId: userInstituteId })
-      .skip(skip)
-      .take(limit)
-      .getMany();
-
-    return courses.map((course) => {
-      let selectedTranslation: CourseTranslation;
-
-      if (languageId) {
-        selectedTranslation = course.translations[0] || null;
-      } else {
-        selectedTranslation = course.translations[0] || null;
-      }
-
-      return {
-        id: course.id,
-        image: course.image,
-        contentCount: course.contentCount,
-        name: selectedTranslation?.name || '',
-        description: selectedTranslation?.description || '',
-        whatToLearn: selectedTranslation?.whatToLearn || '',
-        durationTime: selectedTranslation?.durationTime || '',
-        // programs: course.programs || [],
-      };
+    const exist = await this.programCourseRepository.findOne({
+      where: { program: { id: programId }, course: { id: courseId } },
+      withDeleted: true,
     });
+
+    if (exist && (exist as any).deleted_at) {
+      // لو كان متشال soft قبل كده رجّعه
+      await this.programCourseRepository.recover(exist as any);
+      exist.is_active = 1;
+      await this.programCourseRepository.save(exist);
+    } else if (!exist) {
+      await this.programCourseRepository.save(
+        this.programCourseRepository.create({
+          program: { id: programId },
+          course: { id: courseId },
+          is_active: 1,
+        }),
+      );
+    } // لو موجود ومفعل خلاص
+
+    return { message: `Course ${courseId} assigned to Program ${programId}.` };
   }
+  // فك ربط كورس من برنامج عام (PC) - Soft Delete
+  async removeCourseFromProgram(programId: number, courseId: number) {
+    const link = await this.programCourseRepository.findOne({
+      where: { program: { id: programId }, course: { id: courseId } },
+      withDeleted: true,
+    });
 
-  async findOne(id: number, userInstituteId: number, languageId?: number) {
-    const course = await this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('course.translations', 'translations')
-      .leftJoinAndSelect('translations.language', 'language')
-      .leftJoinAndSelect('course.contents', 'content')
-      .leftJoinAndSelect(
-        'content.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('content.contentCategory', 'category')
-      .leftJoinAndSelect(
-        'category.translations',
-        'categoryTranslation',
-        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('content.educators', 'educators')
-      .leftJoinAndSelect('educators.user', 'user')
-      .leftJoinAndSelect('course.programs', 'programs')
-      .where('course.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!course) {
-      throw new NotFoundException(`Course ${id} not found or not accessible`);
+    if (!link) {
+      throw new NotFoundException(
+        `No ProgramCourse link found for program ${programId} with course ${courseId}`,
+      );
     }
 
-    const selectedTranslation =
-      course.translations.find((t) => t.language.id === languageId) ||
-      course.translations[0];
+    if ((link as any).deleted_at) {
+      return { message: 'Already unassigned (soft-deleted before).' };
+    }
 
+    await this.programCourseRepository.softDelete(link.id);
     return {
-      id: course.id,
-      image: course.image,
-      contentCount: course.contentCount,
-      name: selectedTranslation?.name || '',
-      description: selectedTranslation?.description || '',
-      whatToLearn: selectedTranslation?.whatToLearn || '',
-      durationTime: selectedTranslation?.durationTime || '',
-      // programs: course.programs || [],
-      contents: course.contents.map((c) => {
-        const contentTranslation = c.translations?.[0] || null;
-        return {
-          id: c.id,
-          image: c.image,
-          rate: c.rate,
-          level: c.level,
-          numberOfReviewers: c.numberOfReviewers ?? 0,
-          levelName: contentTranslation?.levelName || '',
-          whatToLearn: contentTranslation?.whatToLearn || '',
-          name: contentTranslation?.name || '',
-          description: contentTranslation?.description || '',
-          durationTime: contentTranslation?.durationTime || '',
-          educators: c.educators.map((e) => ({
-            id: e.id,
-            title: e.title,
-            bio: e.bio,
-            image: e.image,
-            firstName: e.user.firstName,
-            lastName: e.user.lastName,
-          })),
-          category: {
-            id: c.contentCategory?.id,
-            name: c.contentCategory?.translations?.[0]?.name || '',
-          },
-        };
-      }),
+      message: `Course ${courseId} soft-unassigned from program ${programId}.`,
     };
   }
 
-  async update(
-    id: number,
-    updateCourseDto: UpdateCourseDto,
-    userInstituteId: number,
+  // فك ربط كورس من برنامج تابع لمعهد (IPC) - Soft Delete
+  async removeCourseFromInstituteProgram(
+    instituteId: number,
+    programId: number,
+    courseId: number,
   ) {
-    // تأكد إن الكورس ينتمي لمعهد الـ user
-    const course = await this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('course.translations', 'translations')
-      .leftJoinAndSelect('translations.language', 'language')
-      .leftJoinAndSelect('course.programs', 'programs')
-      .where('course.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
+    const link = await this.ipcRepository.findOne({
+      where: {
+        institute: { id: instituteId },
+        program: { id: programId },
+        course: { id: courseId },
+      },
+      withDeleted: true,
+    });
 
-    if (!course) {
-      throw new NotFoundException(`Course ${id} not found or not accessible`);
+    if (!link) {
+      throw new NotFoundException(
+        `No InstituteProgramCourse link for institute ${instituteId}, program ${programId}, course ${courseId}`,
+      );
     }
 
-    // Update image if provided
-    if (updateCourseDto.image) {
-      course.image = updateCourseDto.image;
+    if ((link as any).deleted_at) {
+      return { message: 'Already unassigned (soft-deleted before).' };
     }
 
-    // Update program assignments (تأكد إن البرامج تنتمي لنفس المعهد)
-    if (updateCourseDto.programIds !== undefined) {
-      if (updateCourseDto.programIds.length > 0) {
-        const programs = await this.programRepository
-          .createQueryBuilder('program')
-          .leftJoin('program.institutes', 'institute')
-          .where('program.id IN (:...programIds)', {
-            programIds: updateCourseDto.programIds,
-          })
-          .andWhere('institute.id = :instituteId', {
-            instituteId: userInstituteId,
-          })
-          .getMany();
+    await this.ipcRepository.softDelete(link.id);
+    return {
+      message: `Course ${courseId} soft-unassigned from program ${programId} at institute ${instituteId}.`,
+    };
+  }
 
-        if (programs.length !== updateCourseDto.programIds.length) {
-          throw new NotFoundException(
-            'One or more programs not found or not accessible',
-          );
-        }
+  /** helper: جلب الكورسات من كتالوج البرنامج (ProgramCourse) */
+  async findByProgram(programId: number, languageId?: number) {
+    const program = await this.programRepository.findOne({
+      where: { id: programId },
+      relations: [
+        'programCourses',
+        'programCourses.course',
+        'programCourses.course.translations',
+        'programCourses.course.translations.language',
+      ],
+    });
+    if (!program) throw new NotFoundException(`Program ${programId} not found`);
 
-        course.programs = programs;
-      } else {
-        course.programs = [];
-      }
+    return (program.programCourses || [])
+      .filter((pc) => (pc as any).is_active !== 0)
+      .map((pc) => {
+        const c = pc.course;
+        const tr =
+          c.translations.find((t) => t.language.id === languageId) ||
+          c.translations[0];
+        return {
+          id: c.id,
+          image: c.image,
+          name: tr?.name ?? '',
+          description: tr?.description ?? '',
+        };
+      });
+  }
+
+  /** 3) ربط كورس ببرنامج مربوط بمعهد (InstituteProgramCourse) */
+  async assignCourseToInstituteProgram(
+    instituteId: number,
+    programId: number,
+    courseId: number,
+  ) {
+    // تأكد الأول إن البرنامج مربوط بالمعهد (IP)
+    const ip = await this.ipRepository.findOne({
+      where: { institute: { id: instituteId }, program: { id: programId } },
+    });
+    if (!ip)
+      throw new ForbiddenException(
+        `Program ${programId} is not assigned to Institute ${instituteId}`,
+      );
+
+    // (اختياري لكن مُستحسن) تأكد إن الكورس موجود في كتالوج البرنامج (PC)
+    const pc = await this.programCourseRepository.findOne({
+      where: { program: { id: programId }, course: { id: courseId } },
+    });
+    if (!pc) {
+      throw new BadRequestException(
+        `Course ${courseId} is not part of Program ${programId} catalog`,
+      );
     }
 
-    // Update translations
-    if (updateCourseDto.translations) {
-      for (const t of updateCourseDto.translations) {
-        const language = await this.languageRepository.findOne({
+    // اربط/فعّل في IPC
+    const existing = await this.ipcRepository.findOne({
+      where: {
+        institute: { id: instituteId },
+        program: { id: programId },
+        course: { id: courseId },
+      },
+      withDeleted: true,
+    });
+
+    if (existing && (existing as any).deleted_at) {
+      await this.ipcRepository.recover(existing as any);
+      existing.is_active = 1;
+      await this.ipcRepository.save(existing);
+    } else if (!existing) {
+      await this.ipcRepository.save(
+        this.ipcRepository.create({
+          institute: { id: instituteId },
+          program: { id: programId },
+          course: { id: courseId },
+          is_active: 1,
+        }),
+      );
+    }
+
+    return {
+      message: `Course ${courseId} assigned to Program ${programId} for Institute ${instituteId}.`,
+    };
+  }
+
+  // courses.service.ts
+  async getCourseTreeForInstitute(
+    instituteId: number,
+    courseId: number,
+    languageId?: number,
+  ) {
+    // تأكيد الوصول: لازم يبقى في لينك IPC للكورس ده في المعهد ده
+    const link = await this.ipcRepository.findOne({
+      where: {
+        institute: { id: instituteId },
+        course: { id: courseId },
+        is_active: 1,
+      },
+      relations: [
+        'course',
+        // محتوى الكورس
+        'course.courseContents',
+        'course.courseContents.content',
+        // ترجمات المحتوى
+        'course.courseContents.content.translations',
+        'course.courseContents.content.translations.language',
+        // التوبيكس والدروس
+        'course.courseContents.content.topics',
+        'course.courseContents.content.topics.lessons',
+      ],
+    });
+
+    if (!link) {
+      throw new ForbiddenException('Course not accessible for this institute');
+    }
+
+    const c = link.course;
+
+    // نحول الشجرة ل JSON مرتب
+    const contents = (c.courseContents || []).map((cc) => {
+      const content = cc.content;
+
+      const ctr =
+        content.translations?.find((t) => t.language.id === languageId) ||
+        content.translations?.[0];
+
+      return {
+        id: content.id,
+        name: ctr?.name || '',
+        description: ctr?.description || '',
+        topic: content.topics.map((t) => {
+          const topicTranslation = t.translations?.[0] || null;
+          return {
+            id: t.id,
+            name: topicTranslation?.name || '',
+            lessons: t.lessons.map((l) => {
+              const lessonTranslation = l.translations?.[0] || null;
+              return {
+                id: l.id,
+                name: lessonTranslation?.name || '',
+              };
+            }),
+          };
+        }),
+      };
+    });
+
+    return {
+      id: c.id,
+      image: c.image,
+      notes: c.notes,
+      contents,
+    };
+  }
+
+  /** بقية الدوال القديمة (findAll / findOne / update / remove) تبقى كما هي تقريبًا */
+
+  async findAll(userInstituteId: number, languageId?: number) {
+    const links = await this.ipcRepository.find({
+      where: { institute: { id: userInstituteId }, is_active: 1 },
+      relations: [
+        'course',
+        'course.translations',
+        'course.translations.language',
+      ],
+    });
+    if (!links.length) return [];
+    return links.map((l) => {
+      const c = l.course;
+      const tr =
+        c.translations.find((t) => t.language.id === languageId) ||
+        c.translations[0];
+      return {
+        id: c.id,
+        image: c.image,
+        name: tr?.name,
+        description: tr?.description,
+        whatToLearn: tr?.whatToLearn ?? [],
+      };
+    });
+  }
+
+  async findOne(id: number, userInstituteId?: number, languageId?: number) {
+    const link = await this.ipcRepository.findOne({
+      where: { institute: { id: userInstituteId }, course: { id } },
+      relations: [
+        'course',
+        'course.translations',
+        'course.translations.language',
+        'program',
+        'program.translations',
+      ],
+    });
+    if (!link)
+      throw new ForbiddenException('Not accessible for this institute');
+
+    const c = link.course;
+    const tr =
+      c.translations.find((t) => t.language.id === languageId) ||
+      c.translations[0];
+    return {
+      id: c.id,
+      image: c.image,
+      name: tr?.name,
+      description: tr?.description,
+      program: {
+        id: link.program.id,
+        name: link.program.translations?.[0]?.name ?? '',
+      },
+    };
+  }
+
+  async update(id: number, dto: UpdateCourseDto) {
+    const course = await this.courseRepository.findOne({
+      where: { id },
+      relations: ['translations', 'translations.language'],
+    });
+    if (!course) throw new NotFoundException(`Course ${id} not found`);
+
+    if (dto.image) course.image = dto.image;
+    if (dto.notes) course.notes = dto.notes;
+
+    if (dto.translations?.length) {
+      for (const t of dto.translations) {
+        const lang = await this.languageRepository.findOne({
           where: { id: t.languageId },
         });
-        if (!language) {
+        if (!lang)
           throw new NotFoundException(`Language ${t.languageId} not found`);
-        }
 
-        const translation = await this.courseTranslationRepository.findOne({
-          where: {
-            course: { id },
-            language: { id: t.languageId },
-          },
-        });
+        const existing = course.translations.find(
+          (tr) => tr.language.id === t.languageId,
+        );
 
-        if (!t.name || !t.description) {
-          throw new BadRequestException(
-            'Name and description are required for translations',
-          );
-        }
-
-        if (translation) {
-          translation.name = t.name;
-          translation.description = t.description;
-          await this.courseTranslationRepository.save(translation);
+        if (existing) {
+          existing.name = t.name;
+          existing.description = t.description;
+          existing.whatToLearn = t.whatToLearn || [];
+          await this.courseTranslationRepository.save(existing);
         } else {
-          const newTranslation = this.courseTranslationRepository.create({
+          const newTrans = this.courseTranslationRepository.create({
             name: t.name,
             description: t.description,
             whatToLearn: t.whatToLearn,
-            durationTime: t.durationTime,
-            language,
             course,
+            language: lang,
           });
-          await this.courseTranslationRepository.save(newTranslation);
+          await this.courseTranslationRepository.save(newTrans);
         }
       }
     }
 
     await this.courseRepository.save(course);
-    return this.findOne(id, userInstituteId);
+    return this.findOne(id);
   }
 
-  async remove(id: number, userInstituteId: number) {
-    const course = await this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .where('course.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!course) {
-      throw new NotFoundException(`Course ${id} not found or not accessible`);
-    }
-
+  async remove(id: number) {
+    const course = await this.courseRepository.findOne({ where: { id } });
+    if (!course) throw new NotFoundException(`Course ${id} not found`);
     await this.courseRepository.softDelete(id);
-    return { message: `Course ${id} removed` };
+    return { message: `Course ${id} deleted successfully` };
   }
+  // داخل CoursesService
 
-  async assignToPrograms(
-    courseId: number,
-    programIds: number[],
-    userInstituteId: number,
+  /** المقررات الخاصة بمعهد + برنامج (Paginated 8) */
+  async findInstituteProgramCoursesPaginated(
+    instituteId: number,
+    programId: number,
+    languageId?: number,
+    page = 1,
+    limit = 8,
   ) {
-    const course = await this.courseRepository
+    const offset = (page - 1) * limit;
+
+    // 1) IDs للكورسات المرتبطة بالـ Institute + Program
+    const baseQb = this.ipcRepository
+      .createQueryBuilder('ipc')
+      .innerJoin('ipc.course', 'course')
+      .where('ipc.is_active != 0')
+      .andWhere('ipc.instituteId = :instituteId', { instituteId })
+      .andWhere('ipc.programId = :programId', { programId })
+      .select('course.id', 'id')
+      .groupBy('course.id');
+
+    const allRows = await baseQb.getRawMany<{ id: number }>();
+    const total = allRows.length;
+
+    const pageRows = await baseQb
+      .limit(limit)
+      .offset(offset)
+      .getRawMany<{ id: number }>();
+    if (!pageRows.length) {
+      return {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1,
+        },
+      };
+    }
+
+    const courseIds = pageRows.map((r) => Number(r.id));
+
+    // 2️⃣ حساب عدد الـ contents و مجموع الـ durations (JOIN chain)
+    const rows = await this.courseRepository
       .createQueryBuilder('course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('course.programs', 'programs')
-      .where('course.id = :courseId', { courseId })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
+      .leftJoin(
+        'course_content',
+        'cc',
+        'cc.courseId = course.id AND cc.deleted_at IS NULL',
+      )
+      .leftJoin('content', 'c', 'c.id = cc.contentId AND c.deleted_at IS NULL')
+      .leftJoin(
+        'topic',
+        't',
+        't.contentId = c.id AND t.deleted_at IS NULL AND t.is_active != 0',
+      )
+      .leftJoin(
+        'lesson',
+        'l',
+        'l.topicId = t.id AND l.deleted_at IS NULL AND l.is_active != 0',
+      )
+      .select('course.id', 'id')
+      .addSelect('COUNT(DISTINCT c.id)', 'contentsCount')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .where('course.id IN (:...courseIds)', { courseIds })
+      .groupBy('course.id')
+      .getRawMany<{
+        id: string;
+        contentsCount: string;
+        totalDuration: string;
+      }>();
 
-    if (!course) {
-      throw new NotFoundException(
-        `Course ${courseId} not found or not accessible`,
-      );
-    }
-
-    const programs = await this.programRepository
-      .createQueryBuilder('program')
-      .leftJoin('program.institutes', 'institute')
-      .where('program.id IN (:...programIds)', { programIds })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getMany();
-
-    if (programs.length !== programIds.length) {
-      throw new NotFoundException(
-        'One or more programs not found or not accessible',
-      );
-    }
-
-    course.programs = programs;
-    await this.courseRepository.save(course);
-
-    return this.findOne(courseId, userInstituteId);
-  }
-
-  async removeFromPrograms(
-    courseId: number,
-    programIds: number[],
-    userInstituteId: number,
-  ) {
-    const course = await this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('course.programs', 'programs')
-      .where('course.id = :courseId', { courseId })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!course) {
-      throw new NotFoundException(
-        `Course ${courseId} not found or not accessible`,
-      );
-    }
-
-    course.programs = course.programs.filter(
-      (program) => !programIds.includes(program.id),
+    const countMap = new Map<number, number>(
+      rows.map((r) => [Number(r.id), Number(r.contentsCount)]),
+    );
+    const durationMap = new Map<number, number>(
+      rows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
 
-    await this.courseRepository.save(course);
-    return this.findOne(courseId, userInstituteId);
-  }
+    // 3️⃣ تفاصيل الكورسات + الترجمات
+    const courses = await this.courseRepository.find({
+      where: { id: In(courseIds) },
+      relations: ['translations', 'translations.language', 'courseContents'],
+    });
 
-  async findFirstEight(userInstituteId: number, languageId?: number) {
-    const courses = await this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect(
-        'course.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('translation.language', 'language')
-      .leftJoinAndSelect('course.programs', 'programs')
-      .where('institute.id = :instituteId', { instituteId: userInstituteId })
-      .take(8)
-      .getMany();
+    const orderIndex = new Map<number, number>(
+      courseIds.map((id, i) => [id, i]),
+    );
+    courses.sort(
+      (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
+    );
 
-    return courses.map((course) => {
-      const selectedTranslation = course.translations[0] || null;
-
+    const items = courses.map((c) => {
+      const tr =
+        c.translations.find((t) => t.language?.id === languageId) ||
+        c.translations[0];
       return {
-        id: course.id,
-        image: course.image,
-        name: selectedTranslation?.name || '',
-        description: selectedTranslation?.description || '',
-        whatToLearn: selectedTranslation?.whatToLearn || '',
-        durationTime: selectedTranslation?.durationTime || '',
-        // programs: course.programs || [],
+        id: c.id,
+        image: c.image,
+        name: tr?.name ?? '',
+        description: tr?.description ?? '',
+        contentsCount: countMap.get(c.id) ?? 0,
+        totalDuration: durationMap.get(c.id) ?? 0, // ⏱️ إجمالي الثواني
       };
     });
-  }
 
-  async findByPrograms(
-    programIds: number[],
-    userInstituteId: number,
-    languageId?: number,
-  ) {
-    if (!programIds || programIds.length === 0) {
-      throw new BadRequestException('You must provide at least one programId');
-    }
-
-    const courses = await this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('course.translations', 'translation')
-      .leftJoinAndSelect('translation.language', 'language')
-      .leftJoinAndSelect('course.programs', 'programs')
-      .where('program.id IN (:...programIds)', { programIds })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getMany();
-
-    return courses.map((course) => {
-      const selectedTranslation = languageId
-        ? course.translations.find((t) => t.language.id === languageId) ||
-          course.translations[0]
-        : course.translations[0];
-
-      return {
-        id: course.id,
-        image: course.image,
-        name: selectedTranslation?.name || '',
-        description: selectedTranslation?.description || '',
-        programs: course.programs || [],
-      };
-    });
-  }
-  async getPopularCourses(limit = 10) {
-    return this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin('course.enrollments', 'enrollment')
-      .leftJoinAndSelect('course.translations', 'translations')
-      .groupBy('course.id')
-      .addGroupBy('translations.id')
-      .orderBy('COUNT(enrollment.id)', 'DESC')
-      .limit(limit)
-      .getMany();
-  }
-  async findAllForVisitors(
-    languageId?: number,
-    page: number = 1,
-    limit: number = 8,
-  ) {
-    const skip = (page - 1) * limit;
-
-    const [courses, total] = await this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoinAndSelect(
-        'course.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('translation.language', 'language')
-      .leftJoinAndSelect('course.programs', 'programs')
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
-    const totalPages = Math.ceil(total / limit);
-
-    const formattedCourses = courses.map((course) => {
-      const selectedTranslation = course.translations[0] || null;
-
-      return {
-        id: course.id,
-        image: course.image,
-        name: selectedTranslation?.name || '',
-        description: selectedTranslation?.description || '',
-        programs: course.programs || [],
-      };
-    });
     return {
-      formattedCourses,
+      items,
       pagination: {
         page,
         limit,
         total,
-        totalPages,
-        hasNext: page < totalPages,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
         hasPrev: page > 1,
       },
     };
   }
-  async findFirstEightForVisitors(languageId?: number) {
-    const courses = await this.courseRepository
+
+  /** أول 8 مقررات لمعهد + برنامج (Slider) */
+  async findInstituteProgramCoursesFirstEight(
+    instituteId: number,
+    programId: number,
+    languageId?: number,
+  ) {
+    // 1️⃣ أول 8 كورسات IDs
+    const testRows = await this.ipcRepository
+      .createQueryBuilder('ipc')
+      .select(['ipc.id', 'ipc.is_active', 'ipc.instituteId', 'ipc.programId'])
+      .getRawMany();
+
+    console.log('IPC testRows:', testRows);
+    const rows = await this.ipcRepository
+      .createQueryBuilder('ipc')
+      .innerJoin('ipc.course', 'course')
+      .where('ipc.is_active != 0')
+      .andWhere('ipc.instituteId = :instituteId', { instituteId })
+      .andWhere('ipc.programId = :programId', { programId })
+      .select('course.id', 'id')
+      .groupBy('course.id')
+      .limit(8)
+      .getRawMany<{ id: number }>();
+
+    if (!rows.length) return [];
+
+    const courseIds = rows.map((r) => Number(r.id));
+
+    // 2️⃣ احسب عدد الـ contents و مجموع الـ durations
+    const durRows = await this.courseRepository
       .createQueryBuilder('course')
-      .leftJoinAndSelect(
-        'course.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
+      .leftJoin(
+        'course_content',
+        'cc',
+        'cc.courseId = course.id AND cc.deleted_at IS NULL',
       )
-      .leftJoinAndSelect('translation.language', 'language')
-      .leftJoinAndSelect('course.programs', 'programs')
-      .take(8) // أول 8 كورسات فقط
-      .getMany();
+      .leftJoin('content', 'c', 'c.id = cc.contentId AND c.deleted_at IS NULL')
+      .leftJoin(
+        'topic',
+        't',
+        't.contentId = c.id AND t.deleted_at IS NULL AND t.is_active != 0',
+      )
+      .leftJoin(
+        'lesson',
+        'l',
+        'l.topicId = t.id AND l.deleted_at IS NULL AND l.is_active != 0',
+      )
+      .select('course.id', 'id')
+      .addSelect('COUNT(DISTINCT c.id)', 'contentsCount')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .where('course.id IN (:...courseIds)', { courseIds })
+      .groupBy('course.id')
+      .getRawMany<{
+        id: string;
+        contentsCount: string;
+        totalDuration: string;
+      }>();
 
-    return courses.map((course) => {
-      const selectedTranslation = course.translations[0] || null;
+    const countMap = new Map<number, number>(
+      durRows.map((r) => [Number(r.id), Number(r.contentsCount)]),
+    );
+    const durationMap = new Map<number, number>(
+      durRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+    );
 
+    // 3️⃣ هات الكورسات + الترجمات
+    const courses = await this.courseRepository.find({
+      where: { id: In(courseIds) },
+      relations: ['translations', 'translations.language', 'courseContents'],
+    });
+
+    // نفس ترتيب IDs
+    const orderIndex = new Map<number, number>(
+      courseIds.map((id, i) => [id, i]),
+    );
+    courses.sort(
+      (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
+    );
+
+    return courses.map((c) => {
+      const tr =
+        c.translations.find((t) => t.language?.id === languageId) ||
+        c.translations[0];
       return {
-        id: course.id,
-        image: course.image,
-        name: selectedTranslation?.name || '',
-        description: selectedTranslation?.description || '',
-        programs: course.programs || [],
+        id: c.id,
+        image: c.image,
+        name: tr?.name ?? '',
+        description: tr?.description ?? '',
+        contentsCount: countMap.get(c.id) ?? 0,
+        totalDuration: durationMap.get(c.id) ?? 0, // ⏱️ إجمالي الثواني الخام
       };
     });
   }

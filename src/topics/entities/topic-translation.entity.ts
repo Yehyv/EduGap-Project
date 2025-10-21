@@ -14,20 +14,20 @@ export class TopicTranslation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 500 })
   description: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
+  @CreateDateColumn()
+  created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
+  @UpdateDateColumn()
+  updated_at: Date;
 
-  @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+  @DeleteDateColumn()
+  deleted_at: Date;
 
   @ManyToOne(() => Topic, (topic) => topic.translations, {
     onDelete: 'CASCADE',

@@ -2,15 +2,17 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 
 export const getDatabaseConfig = (
-  configService: ConfigService,
+  config: ConfigService,
 ): TypeOrmModuleOptions => ({
   type: 'mysql',
-  host: configService.get<string>('DB_HOST'),
-  port: configService.get<number>('DB_PORT'),
-  username: configService.get<string>('DB_USERNAME'),
-  password: configService.get<string>('DB_PASSWORD'),
-  database: configService.get<string>('DB_NAME'),
+  host: config.get<string>('DB_HOST'),
+  port: parseInt(config.get<string>('DB_PORT') ?? '3306', 10),
+  username: config.get<string>('DB_USERNAME'),
+  password: config.get<string>('DB_PASSWORD'),
+  database: config.get<string>('DB_NAME'),
   autoLoadEntities: true,
   synchronize: true,
-  // dropSchema: true, // Use with caution in production
+  dropSchema: false,
+  logging: ['error'],
+  charset: 'utf8mb4_general_ci',
 });

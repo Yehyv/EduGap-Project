@@ -7,13 +7,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshStrategy } from './strategies/refresh.strategy';
 import { User } from 'src/users/entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserOtp } from 'src/users/entities/user-otp.entity';
 @Module({
   imports: [
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'defaultSecret',
       signOptions: { expiresIn: '1d' },
     }),
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, UserOtp]),
     UsersModule,
   ],
   controllers: [AuthController],

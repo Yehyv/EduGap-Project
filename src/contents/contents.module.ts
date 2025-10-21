@@ -11,6 +11,10 @@ import { Educator } from 'src/educators/entities/educator.entity';
 import { ContentDetailsService } from './content-details.service';
 import { EnrollmentsModule } from 'src/enrollments/enrollments.module';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { CourseContent } from 'src/courses/entities/course-content.entity';
+import { Package } from 'src/packages/entities/package.entity';
+import { PackageContent } from 'src/packages/entities/package-content.entity';
+import { ContentReview } from 'src/content-reviews/entities/content-review.entity';
 
 @Module({
   imports: [
@@ -22,10 +26,17 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
       ContentCategory,
       Educator,
       Enrollment,
+      CourseContent,
+      Package,
+      PackageContent,
+      Educator,
+      ContentReview,
+      Enrollment,
     ]),
     EnrollmentsModule,
   ],
   controllers: [ContentsController],
   providers: [ContentsService, ContentDetailsService],
+  exports: [ContentsService],
 })
 export class ContentsModule {}

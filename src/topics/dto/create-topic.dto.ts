@@ -6,6 +6,8 @@ import {
   IsOptional,
   IsArray,
   ArrayNotEmpty,
+  ValidateNested,
+  Min,
 } from 'class-validator';
 
 export class TopicTranslationDto {
@@ -18,15 +20,27 @@ export class TopicTranslationDto {
   description: string;
 
   @IsNumber()
-  @IsOptional()
-  languageId?: number;
+  @IsNotEmpty()
+  languageId: number;
 }
+
 export class CreateTopicDto {
   @IsNumber()
+  @IsNotEmpty()
   contentId: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  orderId?: number;
+
+  @IsNumber()
+  @IsOptional()
+  isActive?: number; // 0/1
 
   @IsArray()
   @ArrayNotEmpty()
+  @ValidateNested({ each: true })
   @Type(() => TopicTranslationDto)
   translations: TopicTranslationDto[];
 }

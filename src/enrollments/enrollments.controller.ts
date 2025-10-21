@@ -7,9 +7,11 @@ import {
   Delete,
   Req,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { EnrollmentsService } from './enrollments.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RateEnrollmentDto } from './dto/create-enrollment.dto';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -42,6 +44,15 @@ export class EnrollmentsController {
       courseId,
       req.user.sub,
     );
+  }
+  /** 🔹 تقييم المحتوى (rating 1..5) */
+  @Post(':contentId/rate')
+  async rateContent(
+    @Param('contentId', ParseIntPipe) contentId: number,
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: RateEnrollmentDto,
+  ) {
+    return this.enrollmentsService.rateContent(contentId, req.user.sub, dto);
   }
 
   @Get('my-courses')

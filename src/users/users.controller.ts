@@ -7,11 +7,23 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Headers,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+  };
+}
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -25,6 +37,15 @@ export class UsersController {
   findAll() {
     console.log('IBRAHIIIIIIIIIIIIIIM');
     return this.usersService.findAll();
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getMeMinimal(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.usersService.getMeMinimal(req.user.sub, langId);
   }
 
   @Get(':id')
@@ -49,5 +70,36 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.usersService.remove(+id);
+  }
+  @Patch(':id/assign-institute/:instituteId')
+  async assignUserToInstitute(
+    @Param('id') userId: number,
+    @Param('instituteId') instituteId: number,
+  ) {
+    return this.usersService.assignUserToInstitute(userId, instituteId);
+  }
+  @Post('change-password')
+  async changePassword(
+    @Body()
+    body: {
+      userId: number;
+      oldPassword: string;
+      newPassword: string;
+      confirmPassword: string;
+    },
+  ) {
+    return this.usersService.changePassword(
+      body.userId,
+      body.oldPassword,
+      body.newPassword,
+      body.confirmPassword,
+    );
+  }
+  @Patch(':id/assign-program/:programId')
+  assignUserToProgram(
+    @Param('id', ParseIntPipe) userId: number,
+    @Param('programId', ParseIntPipe) programId: number,
+  ) {
+    return this.usersService.assignUserToProgram(userId, programId);
   }
 }

@@ -13,16 +13,22 @@ import { Lesson } from './lesson.entity';
 export class LessonTranslation {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
+
+  @Column({ type: 'varchar', length: 255 })
   name: string;
-  @Column()
+
+  @Column({ type: 'varchar', length: 500 })
   description: string;
-  @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
-  @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
-  @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @DeleteDateColumn()
+  deleted_at: Date;
+
   @ManyToOne(() => Language, {
     onDelete: 'CASCADE',
   })

@@ -7,12 +7,16 @@ import { instituteTranslation } from './entities/institute-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { User } from 'src/users/entities/user.entity';
+import { InstitutePrograms } from './entities/institute-programs.entity';
+import { InstituteProgramCourse } from './entities/institute-program-course.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Institute,
       instituteTranslation,
+      InstitutePrograms,
+      InstituteProgramCourse,
       Language,
       Program,
       User,

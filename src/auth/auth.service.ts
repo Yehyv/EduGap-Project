@@ -11,15 +11,19 @@ import * as bcrypt from 'bcrypt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
+import { UserOtp } from 'src/users/entities/user-otp.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserOtp)
+    private readonly otpRepository: Repository<UserOtp>,
     private userService: UsersService,
     private jwtService: JwtService,
   ) {}
+
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email },
@@ -31,55 +35,95 @@ export class AuthService {
     });
   }
 
-  async Signin(dto: SignInDto, languageId?: number): Promise<Tokens> {
-    // Better validation
-    if (
-      typeof dto.email !== 'string' ||
-      dto.email.trim() === '' ||
-      typeof dto.password !== 'string' ||
-      dto.password.trim() === ''
-    ) {
-      throw new BadRequestException('Email and password are required');
-    }
+  // -------- Generate OTP ----------
+  async generateOtp(user: User): Promise<UserOtp> {
+    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
+    const otp = this.otpRepository.create({
+      code,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+      user,
+    });
+    await this.otpRepository.save(otp);
 
-    const user = await this.findByEmail(dto.email.trim());
-    if (!user) {
-      throw new ForbiddenException('Invalid credentials');
-    }
+    // هنا تبعت SMS او Email
+    console.log(`📩 OTP for user ${user.email}: ${code}`);
 
-    if (!user) {
-      throw new ForbiddenException('Invalid credentials');
-    }
-
-    // Ensure password exists and is a string
-    if (!user.password || typeof user.password !== 'string') {
-      throw new ForbiddenException('Invalid credentials');
-    }
-
-    const passwordMatches = await bcrypt.compare(dto.password, user.password);
-    if (!passwordMatches) {
-      throw new ForbiddenException('Invalid credentials');
-    }
-    const instituteName =
-      user.institute.translations.find((t) => t.language.id === languageId)
-        ?.name ||
-      user.institute.translations[0]?.name ||
-      '';
-
-    const tokens = await this.getTokens(
-      user.id,
-      user.email,
-      user.instituteId,
-      user.firstName,
-      user.lastName,
-      instituteName,
-    );
-    await this.updateRefreshToken(user.id, tokens.refreshToken);
-    return tokens;
+    return otp;
   }
 
-  async Logout(userId: number | string) {
-    await this.userService.update(+userId, { refreshToken: null });
+  // -------- Verify OTP ----------
+  async verifyOtp(userId: number, code: string) {
+    const otp = await this.otpRepository.findOne({
+      where: { user: { id: userId }, code, isUsed: false },
+      relations: ['user'],
+    });
+
+    if (!otp) throw new BadRequestException('Invalid OTP');
+
+    if (otp.expiresAt < new Date()) {
+      throw new BadRequestException('OTP expired');
+    }
+
+    otp.isUsed = true;
+    await this.otpRepository.save(otp);
+
+    // بعد ما تـ mark otp.isUsed = true ...
+    const tempPayload = {
+      sub: otp.user.id,
+      email: otp.user.email,
+      mustChangePassword: true,
+    };
+    const accessToken = await this.jwtService.signAsync(tempPayload, {
+      secret: process.env.JWT_ACCESS_TOKEN,
+      expiresIn: '10m', // مؤقت
+    });
+    return {
+      message: 'OTP verified successfully, please change your password',
+      mustChangePassword: true,
+      accessToken, // ندي للفرونت يستخدمه في /auth/change-password
+    };
+  }
+
+  // -------- Resend OTP ----------
+  async resendOtp(userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found');
+
+    // invalidate old OTPs
+    await this.otpRepository.update({ user: { id: userId } }, { isUsed: true });
+
+    return this.generateOtp(user);
+  }
+
+  // -------- Login Flow ----------
+  async signin(username: string, password: string) {
+    const user = await this.userService.findByUsername(username);
+    if (!user) throw new ForbiddenException('Invalid credentials');
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) throw new ForbiddenException('Invalid credentials');
+
+    const isFirst = await this.userService.isFirstLogin(user);
+    if (isFirst) {
+      await this.generateOtp(user);
+      return { mustVerifyOtp: true, message: 'OTP sent to your phone' };
+    }
+
+    // هنا يطلع توكن عادي لو مش first login
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      instituteId: user.institute?.id || 0,
+    };
+    const token = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_ACCESS_TOKEN,
+      expiresIn: '15m',
+    });
+    return { accessToken: token };
+  }
+
+  async Logout(userId: number) {
+    await this.userService.update(userId, { refreshToken: null });
   }
 
   async refreshTokens(
@@ -92,28 +136,23 @@ export class AuthService {
       relations: ['institute', 'institute.translations'],
     });
 
-    // التحقق من وجود المستخدم والـ refresh token
-    if (!user || !user.refreshToken) {
+    if (!user || !user.refreshToken)
       throw new ForbiddenException('Access Denied');
-    }
 
-    // التحقق من صحة الـ refresh token
     const isMatch = await bcrypt.compare(rt, user.refreshToken);
-    if (!isMatch) {
-      throw new ForbiddenException('Access Denied');
-    }
+    if (!isMatch) throw new ForbiddenException('Access Denied');
+
     const instituteName =
-      user.institute.translations.find((t) => t.language.id === languageId)
+      user.institute?.translations.find((t) => t.language.id === languageId)
         ?.name ||
-      user.institute.translations[0]?.name ||
+      user.institute?.translations[0]?.name ||
       '';
 
     const tokens = await this.getTokens(
       user.id,
       user.email,
-      user.instituteId,
-      user.firstName,
-      user.lastName,
+      user.institute?.id,
+      user.full_name,
       instituteName,
     );
 
@@ -121,62 +160,30 @@ export class AuthService {
       refreshToken: await bcrypt.hash(tokens.refreshToken, 10),
     });
     return tokens;
-    // هنا الجزء المهم: محو الـ refresh token القديم فور التحقق منه
-    // هذا يضمن عدم إمكانية استخدامه مرة أخرى
-    // await this.userService.update(user.id, { refreshToken: null });
-    // const updatedUser = await this.userService.findById(userId);
-    // console.log('UPDATED REFRESH TOKEN', updatedUser.refreshToken);
-    // try {
-    //   // إنشاء tokens جديدة
-    //   const tokens = await this.getTokens(updatedUser.id, updatedUser.email, updatedUser.instituteId);
-
-    //   // حفظ الـ refresh token الجديد
-    //   await this.updateRefreshToken(updatedUser.id, tokens.refreshToken);
-
-    //   return tokens;
-    // } catch (error) {
-    //   // في حالة حدوث خطأ، تأكد من أن الـ refresh token محذوف
-    //   await this.userService.update(updatedUser.id, { refreshToken: null });
-
-    //   throw new ForbiddenException('Token refresh failed');
-    // }
-  }
-
-  // دالة إضافية للتحقق من صلاحية الـ refresh token دون استخدامه
-  async validateRefreshToken(userId: number, rt: string): Promise<boolean> {
-    const user = await this.userService.findById(userId);
-
-    if (!user || !user.refreshToken) {
-      return false;
-    }
-
-    return await bcrypt.compare(rt, user.refreshToken);
   }
 
   async getTokens(
     userId: number,
     email: string,
     instituteId: number,
-    firstName: string,
-    lastName: string,
+    full_name: string,
     instituteName: string,
   ): Promise<Tokens> {
     const payload = {
       sub: userId,
       email,
       instituteId,
-      firstName,
-      lastName,
+      full_name,
       instituteName,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: process.env.JWT_ACCESS_TOKEN as string,
+        secret: process.env.JWT_ACCESS_TOKEN,
         expiresIn: '15m',
       }),
       this.jwtService.signAsync(payload, {
-        secret: process.env.JWT_REFRESH_SECRET as string,
+        secret: process.env.JWT_REFRESH_SECRET,
         expiresIn: '7d',
       }),
     ]);
@@ -188,8 +195,24 @@ export class AuthService {
     await this.userService.update(userId, { refreshToken: hashedToken });
   }
 
-  // دالة إضافية لمحو جميع refresh tokens للمستخدم (مفيدة عند تغيير كلمة المرور)
   async revokeAllRefreshTokens(userId: number) {
     await this.userService.update(userId, { refreshToken: null });
+  }
+
+  async forceChangePassword(
+    userId: number,
+    oldPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) {
+    const result = await this.userService.changePassword(
+      userId,
+      oldPassword,
+      newPassword,
+      confirmPassword,
+    );
+
+    await this.revokeAllRefreshTokens(userId);
+    return result;
   }
 }

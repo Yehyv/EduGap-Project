@@ -10,14 +10,22 @@ import {
 export class Language {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column({ unique: true })
+
+  @Column({ type: 'varchar', length: 100 })
   name: string;
-  @Column({ default: false })
-  isDefault: boolean;
-  @CreateDateColumn()
+
+  @Column({ type: 'enum', enum: [0, 1], default: 1 })
+  isDefault: number;
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
-  @UpdateDateColumn()
+
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-  @DeleteDateColumn({ nullable: true })
+
+  @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
+
+  @Column({ type: 'enum', enum: [0, 1], default: 1 })
+  isActive: number;
 }

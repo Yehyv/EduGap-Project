@@ -3,203 +3,583 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateContentDto } from './dto/create-content.dto';
-import { UpdateContentDto } from './dto/update-content.dto';
 import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
 import { Content } from './entities/content.entity';
-import { Repository } from 'typeorm';
 import { ContentTranslation } from './entities/content-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Course } from 'src/courses/entities/course.entity';
+import { CourseContent } from 'src/courses/entities/course-content.entity';
 import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
-import { Educator } from 'src/educators/entities/educator.entity';
-import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
-import { Topic } from 'src/topics/entities/topic.entity';
-import { Lesson } from 'src/lessons/entities/lesson.entity';
-
+import { CreateContentDto, UpdateContentDto } from './dto/create-content.dto';
+import { Package } from 'src/packages/entities/package.entity';
+import { PackageContent } from 'src/packages/entities/package-content.entity';
 @Injectable()
 export class ContentsService {
   constructor(
     @InjectRepository(Content)
-    private contentRepository: Repository<Content>,
+    private readonly contentRepo: Repository<Content>,
     @InjectRepository(ContentTranslation)
-    private contentTranslationRepository: Repository<ContentTranslation>,
+    private readonly translationRepo: Repository<ContentTranslation>,
     @InjectRepository(Language)
-    private languageRepository: Repository<Language>,
+    private readonly languageRepo: Repository<Language>,
     @InjectRepository(Course)
-    private courseRepository: Repository<Course>,
+    private readonly courseRepo: Repository<Course>,
+    @InjectRepository(CourseContent)
+    private readonly courseContentRepo: Repository<CourseContent>,
     @InjectRepository(ContentCategory)
-    private categoryRepository: Repository<ContentCategory>,
-    @InjectRepository(Educator)
-    private educatorRepository: Repository<Educator>,
+    private readonly categoryRepo: Repository<ContentCategory>,
+    @InjectRepository(Package)
+    private readonly packageRepo: Repository<Package>,
+    @InjectRepository(PackageContent)
+    private readonly packageContentRepo: Repository<PackageContent>,
   ) {}
 
-  async create(createContentDto: CreateContentDto, userInstituteId: number) {
-    let courses: Course[] = [];
-    const category = await this.categoryRepository.findOne({
-      where: { id: createContentDto.categoryId },
+  /** ----------------------------------------------------------------
+   * ✅ إنشاء محتوى جديد فقط (بدون أي ربط بالكورسات)
+   * ---------------------------------------------------------------- */
+  async create(dto: CreateContentDto) {
+    const category = await this.categoryRepo.findOne({
+      where: { id: dto.categoryId },
     });
-    const educators = await this.educatorRepository
-      .createQueryBuilder('educator')
-      .where('educator.id IN (:...educatorIds)', {
-        educatorIds: createContentDto.educatorIds,
-      })
-      .getMany();
-    if (!category) throw new NotFoundException('category not found ');
-    if (createContentDto.courseIds.length > 0) {
-      // تأكد إن الكورسات تنتمي لمعهد الـ user عبر الـ programs
-      courses = await this.courseRepository
-        .createQueryBuilder('course')
-        .leftJoin('course.programs', 'program')
-        .leftJoin('program.institutes', 'institute')
-        .where('course.id IN (:...courseIds)', {
-          courseIds: createContentDto.courseIds,
-        })
-        .andWhere('institute.id = :instituteId', {
-          instituteId: userInstituteId,
-        })
-        .getMany();
+    if (!category) throw new NotFoundException('Category not found');
 
-      if (courses.length !== createContentDto.courseIds.length) {
-        throw new NotFoundException(
-          'One or more courses not found or not accessible',
-        );
-      }
-    }
-
-    const content = this.contentRepository.create({
-      image: createContentDto.image,
-      rate: createContentDto.rate ?? 0,
-      level: createContentDto.level,
-      numberOfReviewers: createContentDto.numberOfReviewers ?? 0,
-      adVideo: createContentDto.adVideo,
-      courses: courses,
-      educators: educators,
+    const content = this.contentRepo.create({
+      image: dto.image ?? '',
+      rate: dto.rate ?? 0,
+      level: dto.level ?? 'Beginner',
+      adVideo: dto.adVideo ?? '',
       contentCategory: category,
     });
 
-    const savedContent = await this.contentRepository.save(content);
+    const savedContent = await this.contentRepo.save(content);
 
-    const translations = await Promise.all(
-      createContentDto.translations.map(async (translation) => {
-        const language = await this.languageRepository.findOne({
-          where: { id: translation.languageId },
-        });
-        if (!language) {
-          throw new Error(
-            `Language with ID ${translation.languageId} not found`,
-          );
-        }
-        const contentTranslation = this.contentTranslationRepository.create({
-          name: translation.name,
-          description: translation.description,
-          whatToLearn: translation.whatToLearn,
-          levelName: translation.levelName,
-          durationTime: translation.durationTime,
-          content: savedContent,
-          language: language,
-        });
-        return this.contentTranslationRepository.save(contentTranslation);
-      }),
-    );
-    return { savedContent, translations };
+    // 🟩 إنشاء الترجمات الخاصة بالمحتوى
+    for (const t of dto.translations) {
+      const lang = await this.languageRepo.findOne({
+        where: { id: t.languageId },
+      });
+      if (!lang)
+        throw new NotFoundException(`Language ${t.languageId} not found`);
+
+      const translation = this.translationRepo.create({
+        name: t.name,
+        description: t.description,
+        level_name: t.levelName,
+        what_to_learn: t.whatToLearn?.join(', ') || undefined,
+        previous_background: t.previousBackground ?? undefined,
+        language_type: t.languageType ?? 'Arabic',
+        language: lang,
+        content: savedContent,
+      });
+
+      await this.translationRepo.save(translation);
+    }
+
+    return this.findOne(savedContent.id);
   }
 
-  async findAll(
-    userInstituteId?: number,
-    languageId?: number,
-    userId?: number,
-    page: number = 1,
-    limit: number = 8,
-  ) {
-    const skip = (page - 1) * limit;
-    const query = this.contentRepository
-      .createQueryBuilder('content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect(
-        'content.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('translation.language', 'language')
-      .leftJoinAndSelect('content.courses', 'courses')
-      .leftJoinAndSelect('content.contentCategory', 'category')
-      .leftJoinAndSelect(
-        'category.translations',
-        'categoryTranslation',
-        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('content.educators', 'educators')
-      .leftJoinAndSelect('educators.user', 'user')
-      .loadRelationCountAndMap(
-        'content.lessonsCount',
-        'content.topics',
-        'topic',
-        (qb) => qb.leftJoin('topic.lessons', 'lesson'),
-      )
-      .loadRelationCountAndMap(
-        'content.completedLessonsCount',
-        'content.topics',
-        'topic',
-        (qb) => {
-          if (!userId) return qb; // لو guest، ما نفلترش على progress
-          return qb
-            .leftJoin('topic.lessons', 'lesson')
-            .leftJoin(
-              'lesson.progresses',
-              'lessonProgress',
-              'lessonProgress.status = :status AND lessonProgress.enrollment.user.id = :userId',
-              {
-                status: 'completed',
-                userId,
-              },
-            );
-        },
-      )
-      .skip(skip)
-      .take(limit);
-    if (userInstituteId) {
-      query.where('institute.id = :instituteId', {
-        instituteId: userInstituteId,
-      });
-    }
-    const [contents, total] = await query.getManyAndCount();
-    const totalPages = Math.ceil(total / limit);
-    const formattedContents = contents.map((content) => {
-      const selectedTranslation = content.translations[0] || null;
+  /** ----------------------------------------------------------------
+   * ✅ عرض كل المحتويات
+   * ---------------------------------------------------------------- */
+  async findAll(languageId?: number) {
+    const contents = await this.contentRepo.find({
+      relations: ['translations', 'contentCategory'],
+      order: { id: 'DESC' },
+    });
+
+    return contents.map((c) => {
+      const tr =
+        c.translations.find((t) => t.language?.id === languageId) ||
+        c.translations[0];
+
       return {
-        id: content.id,
-        image: content.image,
-        rate: content.rate,
-        level: content.level,
-        lessonsCount: content.lessonsCount ?? 0,
-        completedLessonsCount: content.completedLessonsCount ?? 0,
-        numberOfReviewers: content.numberOfReviewers ?? 0,
-        levelName: selectedTranslation?.levelName || '',
-        whatToLearn: selectedTranslation?.whatToLearn || '',
-        name: selectedTranslation?.name || '',
-        description: selectedTranslation?.description || '',
-        durationTime: selectedTranslation?.durationTime || '',
-        educators: content.educators.map((e) => ({
-          id: e.id,
-          title: e.title,
-          bio: e.bio,
-          image: e.image,
-          firstName: e.user.firstName,
-          lastName: e.user.lastName,
-        })),
+        id: c.id,
+        name: tr?.name ?? '',
+        description: tr?.description ?? '',
+        image: c.image,
+        level: c.level,
+        rate: c.rate,
+        whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: {
-          id: content.contentCategory?.id,
-          name: content.contentCategory?.translations?.[0]?.name || '',
+          id: c.contentCategory?.id ?? null,
         },
       };
     });
+  }
+
+  /** ----------------------------------------------------------------
+   * ✅ عرض محتوى واحد بالتفصيل
+   * ---------------------------------------------------------------- */
+  async findOne(id: number, languageId?: number) {
+    const content = await this.contentRepo.findOne({
+      where: { id },
+      relations: [
+        'translations',
+        'translations.language',
+        'contentCategory',
+        'courseContents.course',
+      ],
+    });
+
+    if (!content) throw new NotFoundException('Content not found');
+
+    const tr =
+      content.translations.find((t) => t.language?.id === languageId) ||
+      content.translations[0];
+
     return {
-      formattedContents,
+      id: content.id,
+      name: tr?.name ?? '',
+      description: tr?.description ?? '',
+      level: content.level,
+      rate: content.rate,
+      adVideo: content.adVideo,
+      image: content.image,
+      categoryId: content.contentCategory?.id ?? null,
+      whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+      previousBackground: tr?.previous_background ?? '',
+    };
+  }
+
+  /** ----------------------------------------------------------------
+   * ✅ تحديث المحتوى (مع الترجمات فقط)
+   * ---------------------------------------------------------------- */
+  async update(id: number, dto: UpdateContentDto) {
+    const content = await this.contentRepo.findOne({
+      where: { id },
+      relations: ['translations'],
+    });
+    if (!content) throw new NotFoundException('Content not found');
+
+    Object.assign(content, {
+      image: dto.image ?? content.image,
+      rate: dto.rate ?? content.rate,
+      level: dto.level ?? content.level,
+    });
+
+    await this.contentRepo.save(content);
+
+    // تحديث الترجمات
+    if (dto.translations?.length) {
+      for (const t of dto.translations) {
+        const lang = await this.languageRepo.findOne({
+          where: { id: t.languageId },
+        });
+        if (!lang)
+          throw new NotFoundException(`Language ${t.languageId} not found`);
+
+        const existing = await this.translationRepo.findOne({
+          where: { content: { id }, language: { id: t.languageId } },
+        });
+
+        if (existing) {
+          existing.name = t.name ?? existing.name;
+          existing.description = t.description ?? existing.description;
+          existing.level_name = t.levelName ?? existing.level_name;
+          existing.what_to_learn =
+            t.whatToLearn?.join(', ') ?? existing.what_to_learn;
+          existing.previous_background =
+            t.previousBackground ?? existing.previous_background;
+          await this.translationRepo.save(existing);
+        } else {
+          const newTr = this.translationRepo.create({
+            name: t.name,
+            description: t.description,
+            level_name: t.levelName,
+            what_to_learn: t.whatToLearn?.join(', ') || undefined,
+            previous_background: t.previousBackground ?? undefined,
+            language: lang,
+            content,
+          });
+          await this.translationRepo.save(newTr);
+        }
+      }
+    }
+
+    return this.findOne(id);
+  }
+
+  /** ----------------------------------------------------------------
+   * ✅ ربط محتوى بكورسات (assign)
+   * ---------------------------------------------------------------- */
+  async assignToCourses(contentId: number, courseIds: number[]) {
+    if (!courseIds?.length)
+      throw new BadRequestException('courseIds must be provided');
+
+    const content = await this.contentRepo.findOne({
+      where: { id: contentId },
+    });
+    if (!content) throw new NotFoundException('Content not found');
+
+    const courses = await this.courseRepo.findBy({ id: In(courseIds) });
+    if (courses.length !== courseIds.length)
+      throw new NotFoundException('Some courses not found');
+
+    const links = courses.map((course) =>
+      this.courseContentRepo.create({ course, content, is_active: 1 }),
+    );
+    await this.courseContentRepo.save(links);
+
+    return { message: 'Content assigned to courses successfully' };
+  }
+
+  /** ----------------------------------------------------------------
+   * ✅ إزالة الربط بين محتوى وكورسات (unassign)
+   * ---------------------------------------------------------------- */
+  async removeFromCourses(contentId: number, courseIds: number[]) {
+    if (!courseIds?.length)
+      throw new BadRequestException('courseIds must be provided');
+
+    const links = await this.courseContentRepo.find({
+      where: {
+        content: { id: contentId },
+        course: In(courseIds.map((id) => ({ id }))),
+      },
+    });
+
+    if (!links.length)
+      throw new NotFoundException('No related course-content found');
+
+    await this.courseContentRepo.remove(links);
+    return { message: 'Content unassigned successfully' };
+  }
+
+  /** ----------------------------------------------------------------
+   * ✅ حذف المحتوى (Soft delete)
+   * ---------------------------------------------------------------- */
+  async softDelete(id: number) {
+    const content = await this.contentRepo.findOne({ where: { id } });
+    if (!content) throw new NotFoundException('Content not found');
+    await this.contentRepo.softRemove(content);
+    return { message: 'Content deleted successfully' };
+  }
+
+  /** ----------------------------------------------------------------
+   * ✅ استرجاع محتوى محذوف
+   * ---------------------------------------------------------------- */
+  async restore(id: number) {
+    await this.contentRepo.restore(id);
+    return { message: 'Content restored successfully' };
+  }
+
+  // 🔹 تريندينج بباجينيشن (8 في الصفحة)
+  async findTrendingPaginated(
+    page = 1,
+    limit = 8,
+    languageId?: number,
+    instituteId?: number, // اختياري
+    programId?: number, // اختياري
+  ) {
+    const offset = (page - 1) * limit;
+
+    // 1) IDs مرتبة حسب عدد الـ enrollments مع فلاتر اختيارية على المعهد/البرنامج عبر IPC
+    const baseQb = this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.enrollments', 'e')
+      .leftJoin('c.courseContents', 'cc')
+      .leftJoin('cc.course', 'course')
+      .leftJoin('course.instituteProgramCourses', 'ipc') // لازم يكون عندك relation من Course -> InstituteProgramCourse باسم مناسب
+      .select('c.id', 'id')
+      .addSelect('COUNT(e.id)', 'cnt')
+      .groupBy('c.id')
+      .orderBy('cnt', 'DESC');
+
+    if (instituteId) {
+      baseQb.andWhere('ipc.instituteId = :instituteId', { instituteId });
+    }
+    if (programId) {
+      baseQb.andWhere('ipc.programId = :programId', { programId });
+    }
+
+    // إجمالي النتائج (بدون limit/offset)
+    const allRows = await baseQb.getRawMany<{ id: number; cnt: string }>();
+    const total = allRows.length;
+
+    // نفس الـ query مع limit/offset
+    const pageRows = await baseQb
+      .limit(limit)
+      .offset(offset)
+      .getRawMany<{ id: number; cnt: string }>();
+
+    if (!pageRows.length) {
+      return {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1,
+        },
+      };
+    }
+
+    const ids = pageRows.map((r) => Number(r.id));
+    const countMap = new Map<number, number>(
+      pageRows.map((r) => [Number(r.id), Number(r.cnt)]),
+    );
+    const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
+
+    // 2) رجع بيانات المحتوى كاملة (ونفس ترتيب الشعبية)
+    const contents = await this.contentRepo.find({
+      where: { id: In(ids) },
+      relations: ['translations', 'translations.language', 'contentCategory'],
+    });
+
+    contents.sort(
+      (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
+    );
+
+    const items = contents.map((c) => {
+      const tr =
+        c.translations.find((t) => t.language?.id === languageId) ||
+        c.translations[0];
+      return {
+        id: c.id,
+        name: tr?.name ?? '',
+        description: tr?.description ?? '',
+        image: c.image,
+        level: c.level,
+        rate: c.rate,
+        whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+        category: { id: c.contentCategory?.id ?? null },
+        enrollmentsCount: countMap.get(c.id) ?? 0,
+      };
+    });
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
+  // 🔹 أول 8 فقط (للسلايدر)
+  async findTrendingFirstEight(
+    languageId?: number,
+    instituteId?: number,
+    programId?: number,
+  ) {
+    // 1) IDs لأول 8
+    const qb = this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.enrollments', 'e')
+      .leftJoin('c.courseContents', 'cc')
+      .leftJoin('cc.course', 'course')
+      .leftJoin('course.instituteProgramCourses', 'ipc')
+      .select('c.id', 'id')
+      .addSelect('COUNT(e.id)', 'cnt')
+      .groupBy('c.id')
+      .orderBy('cnt', 'DESC')
+      .limit(8);
+
+    if (instituteId) {
+      qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
+    }
+    if (programId) {
+      qb.andWhere('ipc.programId = :programId', { programId });
+    }
+
+    const rows = await qb.getRawMany<{ id: number; cnt: string }>();
+    if (!rows.length) return [];
+
+    const ids = rows.map((r) => Number(r.id));
+    const countMap = new Map<number, number>(
+      rows.map((r) => [Number(r.id), Number(r.cnt)]),
+    );
+    const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
+
+    // 2) البيانات
+    const contents = await this.contentRepo.find({
+      where: { id: In(ids) },
+      relations: ['translations', 'translations.language', 'contentCategory'],
+    });
+
+    contents.sort(
+      (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
+    );
+
+    return contents.map((c) => {
+      const tr =
+        c.translations.find((t) => t.language?.id === languageId) ||
+        c.translations[0];
+      return {
+        id: c.id,
+        name: tr?.name ?? '',
+        description: tr?.description ?? '',
+        image: c.image,
+        level: c.level,
+        rate: c.rate,
+        whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+        category: { id: c.contentCategory?.id ?? null },
+        enrollmentsCount: countMap.get(c.id) ?? 0,
+      };
+    });
+  }
+
+  // داخل ContentsService
+
+  async assignContentToPackage(packageId: number, contentIds: number[]) {
+    if (!contentIds?.length) {
+      throw new BadRequestException('contentIds must be provided');
+    }
+
+    const pkg = await this.packageRepo.findOne({ where: { id: packageId } });
+    if (!pkg) throw new NotFoundException('Package not found');
+
+    // تأكد إن كل الـ contents موجودة
+    const contents = await this.contentRepo.findBy({ id: In(contentIds) });
+    if (contents.length !== contentIds.length) {
+      throw new NotFoundException('Some contents not found');
+    }
+
+    // هات الموجود (بما فيها المتشالة Soft) في Query واحدة
+    const existingLinks = await this.packageContentRepo.find({
+      where: {
+        package: { id: packageId },
+        content: In(contentIds.map((id) => ({ id }))),
+      },
+      withDeleted: true,
+    });
+
+    const existingMap = new Map<number, (typeof existingLinks)[number]>();
+    for (const link of existingLinks) {
+      // link.content.id موجود لأننا عملنا relations ضمنيًا في الشرط
+      existingMap.set((link).content?.id ?? link['contentId'], link);
+    }
+
+    const created: number[] = [];
+    const restored: number[] = [];
+    const skipped: number[] = [];
+
+    for (const cid of contentIds) {
+      const found = existingMap.get(cid);
+      if (found) {
+        // لو link موجود
+        if ((found as any).deleted_at) {
+          // كان متشال Soft → رجّعه وفعلّه
+          await this.packageContentRepo.recover(found as any);
+          found.is_active = 1;
+          await this.packageContentRepo.save(found);
+          restored.push(cid);
+        } else {
+          // موجود بالفعل وActive
+          skipped.push(cid);
+        }
+      } else {
+        // اعمل create جديد
+        const link = this.packageContentRepo.create({
+          package: { id: packageId },
+          content: { id: cid },
+          is_active: 1,
+        });
+        await this.packageContentRepo.save(link);
+        created.push(cid);
+      }
+    }
+
+    return {
+      message: 'Assign completed',
+      created,
+      restored,
+      skipped,
+    };
+  }
+
+  async unAssignContentFromPackage(packageId: number, contentIds: number[]) {
+    if (!contentIds?.length) {
+      throw new BadRequestException('contentIds must be provided');
+    }
+
+    // هات الروابط الموجودة (لو مش موجودة هنعدّيها بلطف)
+    const links = await this.packageContentRepo.find({
+      where: {
+        package: { id: packageId },
+        content: In(contentIds.map((id) => ({ id }))),
+      },
+      withDeleted: true,
+    });
+
+    if (!links.length) {
+      throw new NotFoundException('No package-content links found');
+    }
+
+    // فلتر الروابط اللي لسه مش متشالة Soft
+    const activeLinks = links.filter((l: any) => !l.deleted_at);
+    if (!activeLinks.length) {
+      return { message: 'Already unassigned for all provided contents' };
+    }
+
+    await this.packageContentRepo.softDelete(activeLinks.map((l) => l.id));
+
+    return {
+      message: 'Unassign completed',
+      softDeletedIds: activeLinks.map((l) => l.id),
+    };
+  }
+
+  // أحدث الدورات – Paginated (8/صفحة) + فلترة بالمعهد/البرنامج
+  async findLatestPaginated(
+    page = 1,
+    limit = 8,
+    languageId?: number,
+    instituteId?: number, // اختياري
+    programId?: number, // اختياري
+  ) {
+    const skip = (page - 1) * limit;
+
+    const qb = this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.courseContents', 'cc')
+      .leftJoin('cc.course', 'course')
+      .leftJoin('course.instituteProgramCourses', 'ipc')
+      .leftJoinAndSelect('c.translations', 'tr')
+      .leftJoinAndSelect('tr.language', 'lang')
+      .leftJoinAndSelect('c.contentCategory', 'cat')
+      .where('c.deleted_at IS NULL')
+      .orderBy('c.created_at', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    if (instituteId) {
+      qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
+    }
+    if (programId) {
+      qb.andWhere('ipc.programId = :programId', { programId });
+    }
+
+    const [rows, total] = await qb.getManyAndCount();
+
+    const items = rows.map((c) => {
+      const tr =
+        c.translations?.find((t) => t.language?.id === languageId) ||
+        c.translations?.[0];
+
+      return {
+        id: c.id,
+        name: tr?.name ?? '',
+        description: tr?.description ?? '',
+        image: c.image,
+        level: c.level,
+        rate: c.rate,
+        whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+        category: { id: c.contentCategory?.id ?? null },
+        created_at: c.created_at,
+      };
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items,
       pagination: {
         page,
         limit,
@@ -211,387 +591,95 @@ export class ContentsService {
     };
   }
 
-  async findOne(id: number, userInstituteId: number, languageId?: number) {
-    const content = await this.contentRepository
-      .createQueryBuilder('content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('content.translations', 'translations')
-      .leftJoinAndSelect('translations.language', 'language')
-      .leftJoinAndSelect('content.courses', 'courses')
-      .leftJoinAndSelect('content.educators', 'educators')
-      .leftJoinAndSelect('educators.user', 'user')
-      .loadRelationCountAndMap(
-        'content.lessonsCount',
-        'content.topics',
-        'topic',
-        (qb) => qb.leftJoin('topic.lessons', 'lesson'),
-      )
-      .where('content.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!content) {
-      throw new NotFoundException(
-        `Content with ID ${id} not found or not accessible`,
-      );
-    }
-
-    const selectedTranslation =
-      content.translations.find((t) => t.language.id === languageId) ||
-      content.translations[0];
-
-    return {
-      id: content.id,
-      image: content.image,
-      rate: content.rate,
-      lessonsCount: content.lessonsCount ?? 0,
-      completedLessonsCount: content.completedLessonsCount ?? 0,
-      levelName: selectedTranslation?.levelName || '',
-      whatToLearn: selectedTranslation?.whatToLearn || '',
-      name: selectedTranslation?.name || '',
-      description: selectedTranslation?.description || '',
-      durationTime: selectedTranslation.durationTime,
-      educators: content.educators.map((e) => ({
-        id: e.id,
-        title: e.title,
-        bio: e.bio,
-        image: e.image,
-        firstName: e.user.firstName,
-        lastName: e.user.lastName,
-      })),
-    };
-  }
-
-  async update(
-    id: number,
-    updateContentDto: UpdateContentDto,
-    userInstituteId: number,
+  // أحدث الدورات – أول 8 (للسلايدر)
+  // أحدث الدورات – أول 8 (سلايدر) + فلترة بالمعهد/البرنامج
+  async findLatestFirstEight(
+    languageId?: number,
+    instituteId?: number, // اختياري
+    programId?: number, // اختياري
   ) {
-    // تأكد إن المحتوى ينتمي لمعهد الـ user
-    const content = await this.contentRepository
-      .createQueryBuilder('content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('content.translations', 'translations')
-      .leftJoinAndSelect('translations.language', 'language')
-      .leftJoinAndSelect('content.courses', 'courses')
-      .where('content.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
+    const qb = this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.courseContents', 'cc')
+      .leftJoin('cc.course', 'course')
+      .leftJoin('course.instituteProgramCourses', 'ipc')
+      .leftJoinAndSelect('c.translations', 'tr')
+      .leftJoinAndSelect('tr.language', 'lang')
+      .leftJoinAndSelect('c.contentCategory', 'cat')
+      .where('c.deleted_at IS NULL')
+      .orderBy('c.created_at', 'DESC')
+      .take(8);
 
-    if (!content) {
-      throw new NotFoundException(
-        `Content with ID ${id} not found or not accessible`,
-      );
+    if (instituteId) {
+      qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
+    }
+    if (programId) {
+      qb.andWhere('ipc.programId = :programId', { programId });
     }
 
-    if (updateContentDto.image) {
-      content.image = updateContentDto.image;
-    }
+    const rows = await qb.getMany();
 
-    if (updateContentDto.rate !== undefined) {
-      content.rate = updateContentDto.rate;
-    }
+    return rows.map((c) => {
+      const tr =
+        c.translations?.find((t) => t.language?.id === languageId) ||
+        c.translations?.[0];
 
-    if (updateContentDto.level !== undefined) {
-      content.level = updateContentDto.level;
-    }
-
-    if (updateContentDto.numberOfReviewers !== undefined) {
-      content.numberOfReviewers = updateContentDto.numberOfReviewers;
-    }
-
-    if (updateContentDto.rate !== undefined) {
-      content.rate = updateContentDto.rate;
-    }
-
-    if (updateContentDto.courseIds !== undefined) {
-      if (updateContentDto.courseIds.length > 0) {
-        // تأكد إن الكورسات تنتمي لنفس المعهد
-        const courses = await this.courseRepository
-          .createQueryBuilder('course')
-          .leftJoin('course.programs', 'program')
-          .leftJoin('program.institutes', 'institute')
-          .where('course.id IN (:...courseIds)', {
-            courseIds: updateContentDto.courseIds,
-          })
-          .andWhere('institute.id = :instituteId', {
-            instituteId: userInstituteId,
-          })
-          .getMany();
-
-        if (courses.length !== updateContentDto.courseIds.length) {
-          throw new NotFoundException(
-            'One or more courses not found or not accessible',
-          );
-        }
-        content.courses = courses;
-      } else {
-        content.courses = [];
-      }
-    }
-
-    if (updateContentDto.translations) {
-      for (const t of updateContentDto.translations) {
-        const language = await this.languageRepository.findOne({
-          where: { id: t.languageId },
-        });
-        if (!language) {
-          throw new NotFoundException(
-            `Language with ID ${t.languageId} not found`,
-          );
-        }
-
-        const translation = await this.contentTranslationRepository.findOne({
-          where: {
-            content: { id },
-            language: { id: t.languageId },
-          },
-        });
-
-        if (!t.name || !t.description) {
-          throw new BadRequestException(
-            'Name and description are required for new translations',
-          );
-        }
-
-        if (translation) {
-          translation.name = t.name;
-          translation.description = t.description;
-          await this.contentTranslationRepository.save(translation);
-        } else {
-          const newTranslation = this.contentTranslationRepository.create({
-            name: t.name,
-            description: t.description,
-            levelName: t.levelName,
-            whatToLearn: t.whatToLearn,
-            durationTime: t.durationTime,
-            language,
-            content,
-          });
-          await this.contentTranslationRepository.save(newTranslation);
-        }
-      }
-    }
-
-    await this.contentRepository.save(content);
-    return this.findOne(id, userInstituteId);
+      return {
+        id: c.id,
+        name: tr?.name ?? '',
+        description: tr?.description ?? '',
+        image: c.image,
+        level: c.level,
+        rate: c.rate,
+        whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+        category: { id: c.contentCategory?.id ?? null },
+        created_at: c.created_at,
+      };
+    });
   }
 
-  async remove(id: number, userInstituteId?: number) {
-    const content = await this.contentRepository
-      .createQueryBuilder('content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .where('content.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!content) {
-      throw new NotFoundException(
-        `Content with ID ${id} not found or not accessible`,
-      );
-    }
-    await this.contentRepository.softDelete(id);
-    // await this.enrollmentRepository
-    //   .createQueryBuilder()
-    //   .delete()
-    //   .where('contentId = :contentId', { contentId: id })
-    //   .execute();
-    return { message: `Content with ID ${id} has been deleted` };
-  }
-
-  async assignToCourses(
-    contentId: number,
-    courseIds: number[],
-    userInstituteId: number,
-  ) {
-    const content = await this.contentRepository
-      .createQueryBuilder('content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('content.courses', 'courses')
-      .where('content.id = :contentId', { contentId })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!content) {
-      throw new NotFoundException(
-        `Content ${contentId} not found or not accessible`,
-      );
-    }
-
-    // تأكد إن الكورسات تنتمي لنفس المعهد
-    const courses = await this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .where('course.id IN (:...courseIds)', { courseIds })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getMany();
-
-    if (courses.length !== courseIds.length) {
-      throw new NotFoundException(
-        'One or more courses not found or not accessible',
-      );
-    }
-
-    content.courses = courses;
-    await this.contentRepository.save(content);
-
-    return this.findOne(contentId, userInstituteId);
-  }
-
-  async removeFromCourses(
-    contentId: number,
-    courseIds: number[],
-    userInstituteId: number,
-  ) {
-    const content = await this.contentRepository
-      .createQueryBuilder('content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('content.courses', 'courses')
-      .where('content.id = :contentId', { contentId })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!content) {
-      throw new NotFoundException(
-        `Content ${contentId} not found or not accessible`,
-      );
-    }
-
-    content.courses = content.courses.filter(
-      (course) => !courseIds.includes(course.id),
-    );
-
-    await this.contentRepository.save(content);
-
-    return this.findOne(contentId, userInstituteId);
-  }
-
-  // Helper method لجلب المحتوى حسب الكورسات
-  async findByCourses(
-    courseIds: number[],
-    userInstituteId: number,
+  // أحدث دورة واحدة (للمعهد/البرنامج بتوع المستخدم)
+  async findLatestOneForUser(
+    instituteId: number,
+    programId: number,
     languageId?: number,
   ) {
-    if (!courseIds || courseIds.length === 0) {
-      throw new BadRequestException('You must provide at least one courseId');
+    const qb = this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.courseContents', 'cc')
+      .leftJoin('cc.course', 'course')
+      .leftJoin('course.instituteProgramCourses', 'ipc')
+      .leftJoinAndSelect('c.translations', 'tr')
+      .leftJoinAndSelect('tr.language', 'lang')
+      .leftJoinAndSelect('c.contentCategory', 'cat')
+      .where('c.deleted_at IS NULL')
+      .andWhere('ipc.instituteId = :instituteId', { instituteId })
+      .andWhere('ipc.programId = :programId', { programId })
+      .orderBy('c.created_at', 'DESC')
+      .limit(1);
+
+    const row = await qb.getOne();
+    if (!row) {
+      throw new NotFoundException(
+        'No latest content found for this institute/program',
+      );
     }
 
-    const contents = await this.contentRepository
-      .createQueryBuilder('content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('content.translations', 'translation')
-      .leftJoinAndSelect('translation.language', 'language')
-      .leftJoinAndSelect('content.courses', 'courses')
-      .where('course.id IN (:...courseIds)', { courseIds })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getMany();
+    const tr =
+      row.translations?.find((t) => t.language?.id === languageId) ||
+      row.translations?.[0];
 
-    return contents.map((content) => {
-      const selectedTranslation = languageId
-        ? content.translations.find((t) => t.language.id === languageId) ||
-          content.translations[0]
-        : content.translations[0];
-
-      return {
-        id: content.id,
-        image: content.image,
-        rate: content.rate,
-        levelName: selectedTranslation?.levelName || '',
-        whatToLearn: selectedTranslation?.whatToLearn || '',
-        name: selectedTranslation?.name || '',
-        description: selectedTranslation?.description || '',
-        durationTime: selectedTranslation?.durationTime || '',
-        courses: content.courses || [],
-      };
-    });
-  }
-  async findFirstEight(languageId?: number, userInstituteId?: number) {
-    const query = this.contentRepository
-      .createQueryBuilder('content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect(
-        'content.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('translation.language', 'language')
-      .leftJoinAndSelect('content.contentCategory', 'category')
-      .leftJoinAndSelect(
-        'category.translations',
-        'categoryTranslations',
-        languageId
-          ? 'categoryTranslations.languageId = :languageId'
-          : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('content.courses', 'courses')
-      .leftJoinAndSelect('content.educators', 'educators')
-      .leftJoinAndSelect('educators.user', 'user')
-      .loadRelationCountAndMap(
-        'content.lessonsCount',
-        'content.topics',
-        'topic',
-        (qb) => qb.leftJoin('topic.lessons', 'lesson'),
-      )
-      .orderBy('content.id', 'ASC')
-      .take(8);
-    if (userInstituteId) {
-      query.where('institute.id = :instituteId', {
-        instituteId: userInstituteId,
-      });
-    }
-    const contents = await query.getMany();
-    return contents.map((content) => {
-      let selectedTranslation: ContentTranslation;
-
-      if (languageId) {
-        selectedTranslation = content.translations[0] || null;
-      } else {
-        selectedTranslation = content.translations[0] || null;
-      }
-
-      return {
-        id: content.id,
-        image: content.image,
-        rate: content.rate,
-        level: content.level,
-        lessonsCount: content.lessonsCount ?? 0,
-        numberOfReviewers: content.numberOfReviewers ?? 0,
-        completedLessonsCount: content.completedLessonsCount ?? 0,
-        levelName: selectedTranslation?.levelName || '',
-        whatToLearn: selectedTranslation?.whatToLearn || '',
-        name: selectedTranslation?.name || '',
-        description: selectedTranslation?.description || '',
-        durationTime: selectedTranslation.durationTime || '',
-        educators: content.educators.map((e) => ({
-          id: e.id,
-          title: e.title,
-          bio: e.bio,
-          image: e.image,
-          firstName: e.user.firstName,
-          lastName: e.user.lastName,
-        })),
-        category: {
-          id: content.contentCategory.id,
-          name: content.contentCategory?.translations?.[0]?.name || '',
-        },
-      };
-    });
+    return {
+      id: row.id,
+      ad_video: row.adVideo,
+      name: tr?.name ?? '',
+      description: tr?.description ?? '',
+      image: row.image,
+      level: row.level,
+      rate: row.rate,
+      whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+      category: { id: row.contentCategory?.id ?? null },
+      created_at: row.created_at,
+    };
   }
 }

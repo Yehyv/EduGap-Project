@@ -6,6 +6,8 @@ import {
   ManyToOne,
   CreateDateColumn,
   Unique,
+  UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -13,6 +15,15 @@ import {
 export class SavedContent {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date;
 
   @ManyToOne(() => User, (user) => user.savedContents, {
     onDelete: 'CASCADE',
@@ -23,7 +34,4 @@ export class SavedContent {
     onDelete: 'CASCADE',
   })
   content: Content;
-
-  @CreateDateColumn()
-  savedAt: Date;
 }

@@ -2,35 +2,68 @@ import {
   IsEmail,
   IsString,
   IsNotEmpty,
-  MinLength,
   IsOptional,
   IsEnum,
   IsNumber,
+  Length,
+  MinLength,
 } from 'class-validator';
-enum userRole {
-  ADMIN = 'admin',
-  STUDENT = 'student',
-  EDUCATOR = 'educator',
-}
-export class CreateUserDto {
-  @IsNotEmpty()
-  firstName: string;
 
+export class CreateUserDto {
+  @IsString()
   @IsNotEmpty()
-  lastName: string;
+  full_name: string;
 
   @IsEmail()
   email: string;
 
   @IsString()
-  @MinLength(5)
-  password: string;
+  @Length(14, 14, { message: 'National ID must be 14 digits' })
+  national_id: string;
+
+  @IsString()
+  @Length(1, 3)
+  phone_key: string;
+
+  @IsString()
+  @Length(6, 20)
+  phone: string;
 
   @IsOptional()
-  @IsEnum(userRole)
-  role?: userRole;
+  @IsString()
+  user_image?: string;
 
-  @IsNotEmpty()
+  // 👇 بقوا اختياريين عشان الـ service بيولّدهم
+  @IsOptional()
+  @IsString()
+  username?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
+
+  @IsOptional()
+  @IsEnum([0, 1])
+  is_verified?: number;
+
+  @IsOptional()
+  @IsString()
+  refreshToken?: string | null;
+
+  @IsOptional()
+  @IsEnum([0, 1])
+  verified_method?: number;
+
+  @IsOptional()
+  @IsEnum([0, 1])
+  is_active?: number;
+
+  @IsOptional()
   @IsNumber()
-  instituteId: number;
+  instituteId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  programId?: number;
 }

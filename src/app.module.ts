@@ -6,7 +6,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { getDatabaseConfig } from './config/database.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { StudentsModule } from './students/students.module';
 import { AuthModule } from './auth/auth.module';
 import { LanguagesModule } from './languages/languages.module';
 import { CoursesModule } from './courses/courses.module';
@@ -20,6 +19,17 @@ import { ProgressModule } from './progress/progress.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ContentCategoriesModule } from './course-categories/content-categories.module';
 import { SavedContentsModule } from './saved-courses/saved-contents.module';
+import { SystemUsersModule } from './system-users/system-users.module';
+import { LocationsModule } from './locations/locations.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { SavedLessonModule } from './saved-lesson/saved-lesson.module';
+import { LessonMaterialsModule } from './lesson-materials/lesson-materials.module';
+import { LessonNotesModule } from './lesson-notes/lesson-notes.module';
+import { LessonReactionsModule } from './lesson-reactions/lesson-reactions.module';
+import { LessonCommentsModule } from './lesson-comments/lesson-comments.module';
+import { ContentReviewsModule } from './content-reviews/content-reviews.module';
+import { SpecializationsModule } from './specializations/specializations.module';
+import { PackagesModule } from './packages/packages.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -30,7 +40,6 @@ import { SavedContentsModule } from './saved-courses/saved-contents.module';
     }),
     DatabaseModule,
     UsersModule,
-    StudentsModule,
     AuthModule,
     LanguagesModule,
     CoursesModule,
@@ -44,6 +53,17 @@ import { SavedContentsModule } from './saved-courses/saved-contents.module';
     EnrollmentsModule,
     SavedContentsModule,
     ContentCategoriesModule,
+    SystemUsersModule,
+    LocationsModule,
+    TransactionsModule,
+    SavedLessonModule,
+    LessonMaterialsModule,
+    LessonNotesModule,
+    LessonReactionsModule,
+    LessonCommentsModule,
+    ContentReviewsModule,
+    SpecializationsModule,
+    PackagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

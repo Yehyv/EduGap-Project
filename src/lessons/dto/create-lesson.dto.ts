@@ -1,3 +1,4 @@
+// src/lessons/dto/create-lesson.dto.ts
 import { Type } from 'class-transformer';
 import {
   IsString,
@@ -6,8 +7,11 @@ import {
   IsOptional,
   IsArray,
   ArrayNotEmpty,
+  ValidateNested,
+  Min,
+  Max,
+  IsIn,
 } from 'class-validator';
-import { TopicTranslationDto } from 'src/topics/dto/create-topic.dto';
 
 export class LessonTranslationDto {
   @IsString()
@@ -19,18 +23,48 @@ export class LessonTranslationDto {
   description: string;
 
   @IsNumber()
-  @IsOptional()
-  languageId?: number;
+  @IsNotEmpty()
+  languageId: number; // إلزامي
 }
+
 export class CreateLessonDto {
   @IsNumber()
-  topicId: number;
+  @IsNotEmpty()
+  topicId: number; // لازم نحدّد التوبيك
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  duration?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  orderId?: number; // يروح لـ order_id (لو مش مبعوت بيتحسب تلقائي)
 
   @IsString()
-  imageUrl: string;
+  @IsOptional()
+  videoLink?: string; // يروح لـ video_link
+
+  @IsNumber()
+  @IsOptional()
+  @IsIn([0, 1])
+  lessonType?: number; // 0=lesson, 1=questions
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Max(100)
+  questionsPercentageScore?: number; // ex: 70
+
+  @IsNumber()
+  @IsOptional()
+  @IsIn([0, 1])
+  isActive?: number; // 0/1
 
   @IsArray()
   @ArrayNotEmpty()
+  @ValidateNested({ each: true })
   @Type(() => LessonTranslationDto)
-  translations: TopicTranslationDto[];
+  translations: LessonTranslationDto[];
 }

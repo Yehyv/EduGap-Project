@@ -17,28 +17,47 @@ import { ContentCategory } from 'src/course-categories/entities/content-category
 import { Educator } from 'src/educators/entities/educator.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { SavedContent } from 'src/saved-courses/entities/saved-content.entity';
+import { CourseContent } from 'src/courses/entities/course-content.entity';
+import { ContentReview } from 'src/content-reviews/entities/content-review.entity';
+import { SavedLesson } from 'src/saved-lesson/entities/saved-lesson.entity';
+import { LessonMaterial } from 'src/lesson-materials/entities/lesson-material.entity';
+import { LessonNote } from 'src/lesson-notes/entities/lesson-note.entity';
 @Entity()
 export class Content {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
+
+  @Column({ type: 'varchar', length: 255 })
   image: string;
+
   @Column({
     type: 'enum',
-    enum: ['Beginner', 'Intermediate', 'advanced'],
-    default: ['Beginner'],
+    enum: ['Beginner', 'Intermediate', 'Advanced'],
+    default: 'Beginner',
   })
   level: string;
-  @Column({ default: 0 })
-  numberOfReviewers: number;
-  @Column()
-  adVideo: string;
+
+  @Column({ type: 'enum', enum: [0, 1], default: 0 })
+  has_prerequiest: number;
+
+  @Column({ type: 'enum', enum: [0, 1], default: 0 })
+  has_certificate: number;
+
   @CreateDateColumn()
-  createdAt: Date;
-  @UpdateDateColumn()
-  updatedAt: Date;
+  created_at: Date;
+
   @DeleteDateColumn()
-  deletedAt: Date;
+  deleted_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @Column({ name: 'is_active', type: 'enum', enum: [0, 1], default: 1 })
+  is_active: number;
+
+  @Column({ name: 'adVideo', type: 'text', nullable: true })
+  adVideo: string;
+
   @Column({ type: 'float', default: 0 })
   rate: number;
   @OneToMany(() => ContentTranslation, (translation) => translation.content, {
@@ -51,21 +70,37 @@ export class Content {
   topics: Topic[];
   lessonsCount?: number;
   completedLessonsCount?: number;
-  @ManyToMany(() => Course, (course) => course.contents)
-  courses: Course[];
   @ManyToOne(() => ContentCategory, (category) => category.contents, {
     onDelete: 'CASCADE',
   })
   contentCategory: ContentCategory;
-  @ManyToMany(() => Educator, (educators) => educators.contents)
-  @JoinTable({
-    name: 'content_educators',
-  })
-  educators: Educator[];
   @OneToMany(() => Enrollment, (enrollments) => enrollments.content, {
     cascade: true,
   })
   enrollments: Enrollment[];
   @OneToMany(() => SavedContent, (savedContent) => savedContent.content)
   savedByUsers: SavedContent[];
+
+  @OneToMany(() => CourseContent, (cc) => cc.content, {
+    cascade: true,
+  })
+  courseContents: CourseContent[];
+
+  @OneToMany(() => ContentReview, (review) => review.content, { cascade: true })
+  reviews: ContentReview[];
+
+  @OneToMany(() => SavedLesson, (savedLesson) => savedLesson.content)
+  savedLessons: SavedLesson[];
+
+  @OneToMany(() => LessonMaterial, (material) => material.content)
+  lessonMaterials: LessonMaterial[];
+
+  @OneToMany(() => LessonNote, (note) => note.content)
+  lessonNotes: LessonNote[];
+
+  @ManyToOne(() => Educator, (educator) => educator.contents, {
+    onDelete: 'SET NULL', // أو 'CASCADE' حسب احتياجك
+    nullable: true,
+  })
+  educator: Educator;
 }

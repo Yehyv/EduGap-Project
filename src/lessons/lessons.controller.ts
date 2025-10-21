@@ -6,117 +6,74 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
-  Headers,
   ParseIntPipe,
-  UseGuards,
+  Query,
+  Headers,
 } from '@nestjs/common';
 import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
-interface AuthenticatedRequest extends Request {
-  user: {
-    sub: number;
-    email: string;
-    instituteId: number;
-    refreshToken?: string;
-  };
-}
-@UseGuards(JwtAuthGuard)
 @Controller('lessons')
 export class LessonsController {
   constructor(private readonly lessonsService: LessonsService) {}
 
+  /**
+   * POST /lessons
+   * إنشاء Lesson داخل Topic محدد
+   */
   @Post()
-  create(
-    @Req() req: AuthenticatedRequest,
-    @Body() createLessonDto: CreateLessonDto,
-  ) {
-    return this.lessonsService.create(createLessonDto, req.user.instituteId);
+  create(@Body() createLessonDto: CreateLessonDto) {
+    return this.lessonsService.create(createLessonDto);
   }
 
+  /**
+   * GET /lessons?languageId=&topicId=
+   * جلب كل الدروس مع فلاتر اختيارية:
+   *  - languageId: لتصفية الترجمة
+   *  - topicId: لتصفية الدروس الخاصة بتوبيك معين
+   */
   @Get()
   findAll(
-    @Req() req: AuthenticatedRequest,
-    @Headers('languageId') languageId?: string,
+    @Query('languageId') languageId?: string,
+    @Query('topicId') topicId?: string,
   ) {
-    const langId = languageId !== undefined ? +languageId : 0;
-    if (langId) {
-      return this.lessonsService.findAll(langId, req.user.instituteId);
-    }
-    return this.lessonsService.findAll(req.user.instituteId);
+    const langId = languageId ? Number(languageId) : undefined;
+    const tId = topicId ? Number(topicId) : undefined;
+    return this.lessonsService.findAll(langId, tId);
   }
-  @Get('in-progress')
-  getLessonsInProgress(
-    @Req() req: AuthenticatedRequest,
-    @Headers('languageId') languageId?: string,
-  ) {
-    const langId = languageId !== undefined ? +languageId : 0; // غير undefined لـ 0
 
-    if (langId) {
-      return this.lessonsService.findAllInProgress(
-        req.user.sub,
-        req.user.instituteId,
-        langId,
-      );
-    } else {
-      return this.lessonsService.findAllInProgress(
-        req.user.sub,
-        req.user.instituteId,
-      );
-    }
-  }
-  @Get('first-8')
-  getFirstEight(
-    @Req() req: AuthenticatedRequest,
-    @Headers('languageId') languageId?: string,
-  ) {
-    const langId = languageId !== undefined ? +languageId : 0; // غير undefined لـ 0
-
-    if (langId) {
-      return this.lessonsService.findFirstEight(
-        req.user.sub,
-        req.user.instituteId,
-        langId,
-      );
-    } else {
-      return this.lessonsService.findFirstEight(
-        req.user.sub,
-        req.user.instituteId,
-      );
-    }
-  }
+  /**
+   * GET /lessons/:id
+   * جلب درس واحد (يدعم languageId كهيدر اختياري)
+   */
   @Get(':id')
   findOne(
-    @Req() req: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
     @Headers('languageId') languageId?: string,
   ) {
-    const langId = languageId !== undefined ? +languageId : 0;
-    if (langId) {
-      return this.lessonsService.findOne(id, langId, req.user.instituteId);
-    } else {
-      return this.lessonsService.findOne(id, req.user.instituteId);
-    }
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.lessonsService.findOne(id, langId);
   }
 
+  /**
+   * PATCH /lessons/:id
+   * تحديث الدرس (topic/order/isActive/... + replace translations لو مبعوتة)
+   */
   @Patch(':id')
   update(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateLessonDto: UpdateLessonDto,
   ) {
-    return this.lessonsService.update(
-      id,
-      updateLessonDto,
-      req.user.instituteId,
-    );
+    return this.lessonsService.update(id, updateLessonDto);
   }
 
+  /**
+   * DELETE /lessons/:id
+   * حذف (Soft delete)
+   */
   @Delete(':id')
-  remove(@Req() req: AuthenticatedRequest, @Param('id') id: number) {
-    return this.lessonsService.remove(id, req.user.instituteId);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.lessonsService.remove(id);
   }
 }

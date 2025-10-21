@@ -12,29 +12,46 @@ import {
 import { CourseTranslation } from './course-translation.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { Content } from 'src/contents/entities/content.entity';
+import { ProgramCourse } from 'src/programs/entities/program-course.entity';
+import { CourseContent } from './course-content.entity';
+import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 
 @Entity()
 export class Course {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
+
+  @Column({ type: 'varchar', length: 255 })
   image: string;
-  contentCount: number;
-  @CreateDateColumn()
+
+  @Column({ type: 'text', nullable: true })
+  notes: string;
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
-  @UpdateDateColumn()
+
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-  @DeleteDateColumn()
+
+  @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
+
+  @Column({ type: 'enum', enum: [0, 1], default: 1 })
+  isActive: number;
+
   @OneToMany(() => CourseTranslation, (translation) => translation.course, {
     cascade: true,
   })
   translations: CourseTranslation[];
-  @ManyToMany(() => Program, (program) => program.courses)
-  programs: Program[];
-  @ManyToMany(() => Content, (content) => content.courses)
-  @JoinTable({
-    name: 'course_contents',
+
+  @OneToMany(() => ProgramCourse, (programCourse) => programCourse.course)
+  programCourses: ProgramCourse[];
+
+  @OneToMany(() => CourseContent, (cc) => cc.course, {
+    cascade: true,
   })
-  contents: Content[];
+  courseContents: CourseContent[];
+
+  @OneToMany(() => InstituteProgramCourse, (ipc) => ipc.course)
+  instituteProgramCourses: InstituteProgramCourse[];
 }

@@ -10,30 +10,41 @@ import {
   OneToOne,
   JoinColumn,
   ManyToMany,
+  OneToMany,
 } from 'typeorm';
 @Entity()
 export class Educator {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
+
+  @Column({ type: 'varchar', length: 100 })
   title: string;
-  @Column()
+
+  @Column({ type: 'varchar', length: 500 })
   bio: string;
-  @Column()
+
+  @Column({ type: 'varchar', length: 255 })
   image: string;
+
+  @Column({ name: 'video_intro', type: 'text', nullable: true })
+  video_intro: string;
+
   @CreateDateColumn()
-  @Column()
-  rate: number;
-  createdAt: Date;
+  created_at: Date;
+
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
+
   @DeleteDateColumn()
-  deletedAt: Date;
-  @OneToOne(() => User, (user) => user.educator, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn()
+  deleted_at: Date;
+
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
+  is_active: number;
+
+  @OneToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' }) // ده اللي بيضيف عمود user_id في جدول educators
   user: User;
-  @ManyToMany(() => Content, (contents) => contents.educators)
+
+  @OneToMany(() => Content, (content) => content.educator)
   contents: Content[];
 }

@@ -13,22 +13,38 @@ import { Language } from 'src/languages/entities/language.entity';
 export class ContentTranslation {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
+
+  @Column({ type: 'varchar', length: 255 })
   name: string;
-  @Column()
+
+  @Column({ type: 'varchar', length: 500 })
   description: string;
-  @Column()
-  levelName: string;
-  @Column()
-  durationTime: string;
-  @Column('simple-json', { nullable: true })
-  whatToLearn: string[];
-  @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
-  @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
-  @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+
+  @Column({ name: 'level_name', type: 'varchar', length: 100 })
+  level_name: string;
+
+  @Column({ name: 'what_to_learn', type: 'text', nullable: true })
+  what_to_learn: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['Arabic', 'English', 'French'],
+    default: 'Arabic',
+  })
+  language_type: string;
+
+  @Column({ name: 'previous_background', type: 'text', nullable: true })
+  previous_background: string;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @DeleteDateColumn()
+  deleted_at: Date;
+
   @ManyToOne(() => Content, (content) => content.translations, {
     onDelete: 'CASCADE',
   })

@@ -7,6 +7,9 @@ import { Course } from 'src/courses/entities/course.entity';
 import { ProgramTranslation } from './entities/program-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
+import { ProgramCourse } from './entities/program-course.entity';
+import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
+import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
 
 @Module({
   imports: [
@@ -16,6 +19,9 @@ import { Institute } from 'src/institutes/entities/institute.entity';
       Language,
       Course,
       Institute,
+      ProgramCourse,
+      InstituteProgramCourse,
+      InstitutePrograms,
     ]),
   ],
   controllers: [ProgramsController],

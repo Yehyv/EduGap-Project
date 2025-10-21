@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsArray,
   ValidateNested,
+  IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 export class ProgramTranslationDto {
@@ -30,6 +31,7 @@ export class CreateProgramDto {
   @Type(() => ProgramTranslationDto)
   translations: ProgramTranslationDto[];
 
+  @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
   instituteIds: number[];

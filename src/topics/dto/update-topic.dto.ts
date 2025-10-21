@@ -1,5 +1,16 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateTopicDto } from './create-topic.dto';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
+import { IsArray, IsOptional, ValidateNested } from 'class-validator';
+import { CreateTopicDto, TopicTranslationDto } from './create-topic.dto';
 
-export class UpdateTopicDto extends PartialType(CreateTopicDto) {}
-export class TopicTranslation extends PartialType(CreateTopicDto) {}
+class UpdateTopicBase extends PartialType(
+  OmitType(CreateTopicDto, ['translations'] as const),
+) {}
+
+export class UpdateTopicDto extends UpdateTopicBase {
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => TopicTranslationDto)
+  translations?: TopicTranslationDto[];
+}

@@ -1,183 +1,164 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateTopicDto } from './dto/create-topic.dto';
-import { UpdateTopicDto } from './dto/update-topic.dto';
+/* eslint-disable prettier/prettier */
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Topic } from './entities/topic.entity';
 import { Repository } from 'typeorm';
+
+import { Topic } from './entities/topic.entity';
 import { TopicTranslation } from './entities/topic-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Content } from 'src/contents/entities/content.entity';
+
+import { CreateTopicDto, TopicTranslationDto } from './dto/create-topic.dto';
+import { UpdateTopicDto } from './dto/update-topic.dto';
 
 @Injectable()
 export class TopicsService {
   constructor(
     @InjectRepository(Topic)
-    private topicRepository: Repository<Topic>,
+    private readonly topicRepo: Repository<Topic>,
     @InjectRepository(TopicTranslation)
-    private topicTranslationRepository: Repository<TopicTranslation>,
+    private readonly topicTrRepo: Repository<TopicTranslation>,
     @InjectRepository(Language)
-    private languageRepository: Repository<Language>,
+    private readonly langRepo: Repository<Language>,
     @InjectRepository(Content)
-    private contentRepository: Repository<Content>,
+    private readonly contentRepo: Repository<Content>,
   ) {}
-  async create(createTopicDto: CreateTopicDto, userInstituteId: number) {
-    const content = await this.contentRepository
-      .createQueryBuilder('content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .where('content.id = :contentId', { contentId: createTopicDto.contentId })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
 
-    if (!content) {
-      throw new Error(`Content not found for this institute`);
-    }
-
-    const topic = this.topicRepository.create({ content });
-    const savedTopic = await this.topicRepository.save(topic);
-
-    const translations = await Promise.all(
-      createTopicDto.translations.map(async (translation) => {
-        const language = await this.languageRepository.findOne({
-          where: { id: translation.languageId },
-        });
-        if (!language) {
-          throw new Error(
-            `Language with ID ${translation.languageId} not found`,
-          );
-        }
-        const topicTranslation = this.topicTranslationRepository.create({
-          name: translation.name,
-          description: translation.description,
-          topic: savedTopic,
-          language,
-        });
-        return this.topicTranslationRepository.save(topicTranslation);
-      }),
-    );
-
-    return { ...savedTopic, translations };
+  /** Helper: يحسب order_id التالي داخل نفس الـ content */
+  private async getNextOrderForContent(contentId: number): Promise<number> {
+    const last = await this.topicRepo
+      .createQueryBuilder('t')
+      .select('MAX(t.order_id)', 'max')
+      .where('t.contentId = :cid', { cid: contentId })
+      .getRawOne<{ max: number | null }>();
+    return (last?.max ?? -1) + 1;
   }
 
-  async findAll(languageId?: number, userInstituteId?: number) {
-    const query = this.topicRepository
+  /** إنشاء Topic داخل Content محدد (Content مستقل تمامًا) */
+  async create(dto: CreateTopicDto) {
+    const content = await this.contentRepo.findOne({
+      where: { id: dto.contentId },
+    });
+    if (!content) throw new NotFoundException('Content not found');
+
+    const order =
+      dto.orderId ?? (await this.getNextOrderForContent(dto.contentId));
+
+    const topic = this.topicRepo.create({
+      content,
+      order_id: order,
+      is_active: dto.isActive ?? 1,
+    });
+    const saved = await this.topicRepo.save(topic);
+
+    await this.createOrReplaceTranslations(saved, dto.translations);
+
+    // رجّع الموضوع مع ترجماته
+    return this.findOne(saved.id);
+  }
+
+  /** عرض كل التوبيكس (اختياري: فلترة باللغة وبالكونتنت) */
+  async findAll(languageId?: number, contentId?: number) {
+    const qb = this.topicRepo
       .createQueryBuilder('topic')
-      .leftJoinAndSelect('topic.content', 'content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('topic.translations', 'translation')
-      .where('institute.id = :instituteId', { instituteId: userInstituteId });
+      .leftJoinAndSelect('topic.translations', 'translation');
+
+    if (contentId) {
+      qb.where('topic.contentId = :contentId', { contentId });
+    }
 
     if (languageId) {
-      query.andWhere('translation.languageId = :languageId', { languageId });
+      qb.andWhere('translation.language_id = :languageId', { languageId });
     }
 
-    return query.getMany();
+    qb.orderBy('topic.contentId', 'ASC')
+      .addOrderBy('topic.order_id', 'ASC')
+      .addOrderBy('topic.id', 'ASC');
+
+    return qb.getMany();
   }
 
-  async findOne(id: number, userInstituteId: number, languageId?: number) {
-    const query = this.topicRepository
+  /** عرض توبيك واحد */
+  async findOne(id: number, languageId?: number) {
+    const qb = this.topicRepo
       .createQueryBuilder('topic')
-      .leftJoinAndSelect('topic.content', 'content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
       .leftJoinAndSelect('topic.translations', 'translation')
-      .where('topic.id = :id', { id })
-      .andWhere('institute.id = :instituteId', {
-        instituteId: userInstituteId,
+      .where('topic.id = :id', { id });
+
+    if (languageId) {
+      qb.andWhere('translation.language_id = :languageId', { languageId });
+    }
+
+    const topic = await qb.getOne();
+    if (!topic) throw new NotFoundException('Topic not found');
+
+    return topic;
+  }
+
+  /** تحديث توبيك: تغيير content/order/is_active + replace translations (اختياري) */
+  async update(id: number, dto: UpdateTopicDto) {
+    const existing = await this.topicRepo.findOne({
+      where: { id },
+      relations: ['content', 'translations'],
+    });
+    if (!existing) throw new NotFoundException('Topic not found');
+
+    // تغيير الكونتنت لو اتبعت
+    if (dto.contentId && dto.contentId !== existing.content?.id) {
+      const newContent = await this.contentRepo.findOne({
+        where: { id: dto.contentId },
       });
+      if (!newContent) throw new NotFoundException('Content not found');
+      existing.content = newContent;
 
-    if (languageId) {
-      query.andWhere('translation.languageId = :languageId', { languageId });
+      // لو مفيش orderId مبعوت، نحافظ على الترتيب النسبي — أو نحسب ترتيب جديد
+      if (dto.orderId === undefined) {
+        existing.order_id = await this.getNextOrderForContent(newContent.id);
+      }
     }
 
-    return query.getOne();
+    if (dto.orderId !== undefined) existing.order_id = dto.orderId;
+    if (dto.isActive !== undefined) existing.is_active = dto.isActive;
+
+    // replace translations لو مبعوتة
+    if (dto.translations) {
+      await this.topicTrRepo.delete({ topic: { id } });
+      await this.createOrReplaceTranslations(existing, dto.translations);
+    }
+
+    await this.topicRepo.save(existing);
+    return this.findOne(id);
   }
 
-  async update(
-    id: number,
-    updateTopicDto: UpdateTopicDto,
-    userInstituteId: number,
-  ): Promise<Topic> {
-    const topic = await this.topicRepository
-      .createQueryBuilder('topic')
-      .leftJoinAndSelect('topic.content', 'content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .leftJoinAndSelect('topic.translations', 'translations')
-      .leftJoinAndSelect('translations.language', 'language')
-      .where('topic.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!topic)
-      throw new NotFoundException('Topic not found for this institute');
-
-    if (updateTopicDto.contentId) {
-      const content = await this.contentRepository
-        .createQueryBuilder('content')
-        .leftJoin('content.courses', 'course')
-        .leftJoin('course.programs', 'program')
-        .leftJoin('program.institutes', 'institute')
-        .where('content.id = :contentId', {
-          contentId: updateTopicDto.contentId,
-        })
-        .andWhere('institute.id = :instituteId', {
-          instituteId: userInstituteId,
-        })
-        .getOne();
-
-      if (!content)
-        throw new NotFoundException('Content not found for this institute');
-      topic.content = content;
-    }
-
-    if (updateTopicDto.translations) {
-      await this.topicTranslationRepository.delete({ topic: { id } });
-
-      const translations = await Promise.all(
-        updateTopicDto.translations.map(async (translation) => {
-          const language = await this.languageRepository.findOne({
-            where: { id: translation.languageId },
-          });
-          if (!language)
-            throw new NotFoundException(
-              `Language with ID ${translation.languageId} not found`,
-            );
-
-          const topicTranslation = this.topicTranslationRepository.create({
-            name: translation.name,
-            description: translation.description,
-            topic,
-            language,
-          });
-          return this.topicTranslationRepository.save(topicTranslation);
-        }),
-      );
-      topic.translations = translations;
-    }
-
-    return this.topicRepository.save(topic);
+  /** حذف (Soft) */
+  async remove(id: number): Promise<void> {
+    const found = await this.topicRepo.findOne({ where: { id } });
+    if (!found) throw new NotFoundException('Topic not found');
+    await this.topicRepo.softDelete(id);
   }
 
-  async remove(id: number, userInstituteId: number): Promise<void> {
-    const topic = await this.topicRepository
-      .createQueryBuilder('topic')
-      .leftJoin('topic.content', 'content')
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute')
-      .where('topic.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!topic)
-      throw new NotFoundException('Topic not found for this institute');
-
-    await this.topicRepository.softDelete(id);
+  /** helper لإنشاء/استبدال الترجمات */
+  private async createOrReplaceTranslations(
+    topic: Topic,
+    translations: TopicTranslationDto[],
+  ) {
+    for (const t of translations) {
+      const lang = await this.langRepo.findOne({ where: { id: t.languageId } });
+      if (!lang) {
+        throw new NotFoundException(
+          `Language with ID ${t.languageId} not found`,
+        );
+      }
+      const tr = this.topicTrRepo.create({
+        name: t.name,
+        description: t.description,
+        topic,
+        language: lang,
+      });
+      await this.topicTrRepo.save(tr);
+    }
   }
 }

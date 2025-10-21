@@ -1,28 +1,28 @@
+// src/educators/dto/create-educator.dto.ts
+import { IsString, IsNotEmpty, IsOptional, IsIn, IsInt } from 'class-validator';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import {
-  IsString,
-  IsNotEmpty,
-  IsNumber,
-  Min,
-  Max,
-  IsOptional,
-} from 'class-validator';
-export class CreateEducatorDto extends CreateUserDto {
-  @IsNotEmpty()
+
+export class CreateEducatorDto {
   @IsString()
+  @IsNotEmpty()
   title: string;
 
-  @IsNotEmpty()
   @IsString()
+  @IsNotEmpty()
   bio: string;
 
-  @IsNotEmpty()
   @IsString()
+  @IsNotEmpty()
   image: string;
 
-  @IsNumber()
-  @Min(0)
-  @Max(5)
+  @IsString()
   @IsOptional()
-  rate?: number;
+  video_intro?: string;
+
+  @IsOptional()
+  @IsIn([0, 1])
+  is_active?: number; // default 1
+
+  @IsInt()
+  userId: number; // ربط باليوزر
 }

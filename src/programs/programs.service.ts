@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,191 +12,174 @@ import { Program } from './entities/program.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { ProgramTranslation } from './entities/program-translation.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
-
+import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
 @Injectable()
 export class ProgramsService {
   constructor(
     @InjectRepository(Program)
-    private programRepository: Repository<Program>,
+    private readonly programRepository: Repository<Program>,
+
     @InjectRepository(Language)
-    private languageRepository: Repository<Language>,
+    private readonly languageRepository: Repository<Language>,
+
     @InjectRepository(ProgramTranslation)
-    private programTranslationRepository: Repository<ProgramTranslation>,
+    private readonly programTranslationRepository: Repository<ProgramTranslation>,
+
     @InjectRepository(Institute)
-    private instituteRepository: Repository<Institute>,
+    private readonly instituteRepository: Repository<Institute>,
+
+    @InjectRepository(InstitutePrograms)
+    private readonly ipRepository: Repository<InstitutePrograms>,
   ) {}
+
+  // ✅ إنشاء برنامج بدون معهد (العزل لاحق بالـ assign)
   async create(createProgramDto: CreateProgramDto) {
-    let institute: Institute[] = [];
-    if (createProgramDto.instituteIds.length > 0) {
-      institute = await this.instituteRepository.findByIds(
-        createProgramDto.instituteIds,
-      );
-      if (institute.length !== createProgramDto.instituteIds.length) {
-        throw new NotFoundException('One or more institutes not found');
-      }
-    }
     const program = this.programRepository.create({
       logo: createProgramDto.logo,
-      institutes: institute,
+      isActive: 1,
     });
+
     const savedProgram = await this.programRepository.save(program);
+
+    // حفظ الترجمات
     const translations = await Promise.all(
-      createProgramDto.translations.map(async (translation) => {
-        const Language = await this.languageRepository.findOne({
-          where: { id: translation.languageId },
+      createProgramDto.translations.map(async (t) => {
+        const language = await this.languageRepository.findOne({
+          where: { id: t.languageId },
         });
-        if (!Language) {
-          throw new Error(
-            `Language with ID ${translation.languageId} not found`,
+        if (!language) {
+          throw new NotFoundException(
+            `Language with ID ${t.languageId} not found`,
           );
         }
-        const programTranslation = this.programTranslationRepository.create({
-          name: translation.name,
-          description: translation.description,
-          program: { id: savedProgram.id },
-          language: { id: Language.id },
+
+        const translation = this.programTranslationRepository.create({
+          name: t.name,
+          description: t.description,
+          program: savedProgram,
+          language,
         });
-        return this.programTranslationRepository.save(programTranslation);
+        return this.programTranslationRepository.save(translation);
       }),
     );
+
     return { ...savedProgram, translations };
   }
-  async findAll(
-    userInstituteId?: number,
-    languageId?: number,
-    page: number = 1,
-    limit: number = 8,
-  ) {
-    const skip = (page - 1) * limit;
-    const query = this.programRepository
-      .createQueryBuilder('program')
-      .leftJoinAndSelect('program.institutes', 'institute')
-      .leftJoinAndSelect(
-        'program.translations',
-        'translation',
-        languageId ? 'translation.language.id = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('translation.language', 'language')
-      .loadRelationCountAndMap('program.coursesCount', 'program.courses')
-      .skip(skip)
-      .take(limit);
-    if (userInstituteId) {
-      query.where('institute.id = :instituteId', {
-        instituteId: userInstituteId,
-      });
-    }
-    const [programs, total] = await query.getManyAndCount();
-    const totalPages = Math.ceil(total / limit);
-    const formattedPrograms = programs.map((program) => {
-      let selectedTranslation: ProgramTranslation;
-      if (languageId) {
-        selectedTranslation = program.translations[0] || null;
-      } else {
-        selectedTranslation = program.translations[0] || null;
-      }
+  // ✅ برامج عامة متاحة لكل المعاهد للاختيار منها
+  async findAllForSelection(languageId?: number) {
+    const programs = await this.programRepository.find({
+      relations: ['translations', 'translations.language'],
+      where: { isActive: 1 },
+    });
+
+    return programs.map((program) => {
+      const selectedTranslation =
+        program.translations.find((t) => t.language.id === languageId) ||
+        program.translations[0];
       return {
         id: program.id,
         logo: program.logo,
-        name: selectedTranslation ? selectedTranslation.name : null,
-        description: selectedTranslation
-          ? selectedTranslation.description
-          : null,
-        institutes: program.institutes || [],
-        coursesCount: program.coursesCount ?? 0,
+        name: selectedTranslation?.name ?? null,
+        description: selectedTranslation?.description ?? null,
       };
     });
-    return {
-      formattedPrograms,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
-    };
   }
 
-  async findOne(id: number, userInstituteId: number, languageId?: number) {
-    const program = await this.programRepository
-      .createQueryBuilder('program')
-      .leftJoinAndSelect('program.institutes', 'institute')
-      .leftJoinAndSelect('program.translations', 'translations')
-      .leftJoinAndSelect('translations.language', 'language')
-      .loadRelationCountAndMap('program.coursesCount', 'program.courses')
-      .where('program.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
+  // ✅ عرض برامج معهد محدد فقط (بعزل كامل)
+  async findAll(languageId?: number, userInstituteId?: number) {
+    if (!userInstituteId)
+      throw new BadRequestException('Institute ID is required.');
 
-    if (!program) {
-      throw new NotFoundException(
-        `Program with ID ${id} not found or not accessible`,
-      );
-    }
+    const programIds = await this.ipRepository
+      .createQueryBuilder('ip')
+      .select('DISTINCT ip.program', 'programId')
+      .where('ip.institute = :iid', { iid: userInstituteId })
+      .getRawMany<{ programId: number }>();
 
-    const selectedTranslation =
-      program.translations.find(
-        (translation) => translation.language.id === languageId,
-      ) || program.translations[0];
+    if (!programIds.length) return [];
+
+    const ids = programIds.map((p) => p.programId);
+
+    const programs = await this.programRepository.find({
+      where: { id: In(ids) },
+      relations: ['translations', 'translations.language'],
+    });
+
+    return programs.map((program) => {
+      const tr =
+        program.translations.find((t) => t.language.id === languageId) ||
+        program.translations[0];
+      return {
+        id: program.id,
+        logo: program.logo,
+        name: tr?.name,
+        description: tr?.description,
+      };
+    });
+  }
+
+  // // ✅ جلب برنامج واحد خاص بالمعهد الحالي فقط (Isolation)
+  async findOne(id: number, userInstituteId?: number, languageId?: number) {
+    const link = await this.ipRepository.findOne({
+      where: {
+        institute: { id: userInstituteId },
+        program: { id },
+      },
+      relations: [
+        'program',
+        'program.translations',
+        'program.translations.language',
+      ],
+    });
+
+    if (!link) throw new ForbiddenException(`Program ${id} not accessible.`);
+
+    const program = link.program;
+    const tr =
+      program.translations.find((t) => t.language.id === languageId) ||
+      program.translations[0];
 
     return {
       id: program.id,
       logo: program.logo,
-      coursesCount: program.coursesCount,
-      name: selectedTranslation ? selectedTranslation.name : null,
-      description: selectedTranslation ? selectedTranslation.description : null,
-      institutes: program.institutes || [],
+      name: tr?.name,
+      description: tr?.description,
     };
   }
 
-  async update(
-    id: number,
-    updateProgramDto: UpdateProgramDto,
-    userInstituteId: number,
-  ) {
-    // تأكد إن البرنامج ينتمي لمعهد الـ user
-    const program = await this.programRepository
-      .createQueryBuilder('program')
-      .leftJoinAndSelect('program.institutes', 'institute')
-      .leftJoinAndSelect('program.translations', 'translations')
-      .leftJoinAndSelect('translations.language', 'language')
-      .where('program.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
+  // ✅ تحديث البرنامج (logo + translations)
+  async update(id: number, dto: UpdateProgramDto) {
+    const program = await this.programRepository.findOne({
+      where: { id },
+      relations: ['translations', 'translations.language'],
+    });
 
-    if (!program) {
-      throw new NotFoundException(`Program ${id} not found or not accessible`);
-    }
+    if (!program) throw new NotFoundException(`Program ${id} not found`);
 
-    if (updateProgramDto.logo) {
-      program.logo = updateProgramDto.logo;
-    }
+    if (dto.logo) program.logo = dto.logo;
 
-    // تحديث الترجمات
-    if (updateProgramDto.translations) {
-      for (const t of updateProgramDto.translations) {
-        const language = await this.languageRepository.findOne({
+    if (dto.translations?.length) {
+      for (const t of dto.translations) {
+        const lang = await this.languageRepository.findOne({
           where: { id: t.languageId },
         });
-        if (!language)
+        if (!lang)
           throw new NotFoundException(`Language ${t.languageId} not found`);
 
-        const translation = await this.programTranslationRepository.findOne({
-          where: { program: { id }, language: { id: t.languageId } },
-        });
+        const existing = program.translations.find(
+          (tr) => tr.language.id === t.languageId,
+        );
 
-        if (translation) {
-          translation.name = t.name;
-          translation.description = t.description;
-          await this.programTranslationRepository.save(translation);
+        if (existing) {
+          existing.name = t.name;
+          existing.description = t.description;
+          await this.programTranslationRepository.save(existing);
         } else {
           const newTranslation = this.programTranslationRepository.create({
             name: t.name,
             description: t.description,
-            language,
             program,
+            language: lang,
           });
           await this.programTranslationRepository.save(newTranslation);
         }
@@ -199,101 +187,88 @@ export class ProgramsService {
     }
 
     await this.programRepository.save(program);
-    return this.findOne(id, userInstituteId);
+    return this.findOne(id);
   }
 
-  async remove(id: number, userInstituteId: number) {
-    // تأكد إن البرنامج ينتمي لمعهد الـ user
-    const program = await this.programRepository
-      .createQueryBuilder('program')
-      .leftJoinAndSelect('program.institutes', 'institute')
-      .where('program.id = :id', { id })
-      .andWhere('institute.id = :instituteId', { instituteId: userInstituteId })
-      .getOne();
-
-    if (!program) {
-      throw new NotFoundException(`Program ${id} not found or not accessible`);
-    }
+  // ✅ حذف البرنامج (soft delete)
+  async remove(id: number) {
+    const program = await this.programRepository.findOne({ where: { id } });
+    if (!program) throw new NotFoundException(`Program ${id} not found`);
 
     await this.programRepository.softDelete(id);
     return { message: `Program ${id} deleted successfully` };
   }
 
-  // هذول للـ admin - مش محتاجين تعديل كبير
-  async assignToInstitutes(programId: number, instituteIds: number[]) {
-    const program = await this.programRepository.findOne({
-      where: { id: programId },
-      relations: ['institutes'],
+  // ✅ Assign Program to Institutes
+  async assignProgramToInstitute(instituteId: number, programId: number) {
+    const exist = await this.ipRepository.findOne({
+      where: { institute: { id: instituteId }, program: { id: programId } },
     });
-    if (!program) {
-      throw new NotFoundException(`Program ${programId} not found`);
+    if (!exist) {
+      await this.ipRepository.save(
+        this.ipRepository.create({
+          institute: { id: instituteId },
+          program: { id: programId },
+          is_active: 1,
+        }),
+      );
     }
-    const institutes = await this.instituteRepository.findBy({
-      id: In(instituteIds),
-    });
-    if (institutes.length !== instituteIds.length) {
-      throw new NotFoundException('One or more institutes not found');
-    }
-    program.institutes = institutes;
-    await this.programRepository.save(program);
-    return this.findOne(programId, instituteIds[0]); // استخدم أول معهد للعرض
+    return { message: 'Program assigned to institute successfully.' };
   }
 
-  async removeFromInstitutes(programId: number, instituteIds: number[]) {
-    const program = await this.programRepository.findOne({
-      where: { id: programId },
-      relations: ['institutes'],
+  // ✅ Unassign program from specific institutes
+  // async removeFromInstitutes(programId: number, instituteIds: number[]) {
+  //   await this.ipRepository
+  //     .createQueryBuilder()
+  //     .delete()
+  //     .where('program_id = :pid', { pid: programId })
+  //     .andWhere('institute_id IN (:...iids)', { iids: instituteIds })
+  //     .execute();
+
+  //   return { message: `Program ${programId} unassigned successfully.` };
+  // }
+  async removeFromInstitute(programId: number, instituteId: number) {
+    const link = await this.ipRepository.findOne({
+      where: { program: { id: programId }, institute: { id: instituteId } },
+      withDeleted: true,
     });
-    if (!program) {
-      throw new NotFoundException(`Program ${programId} not found`);
+
+    if (!link) {
+      throw new NotFoundException(
+        `No link found for program ${programId} with institute ${instituteId}`,
+      );
     }
-    program.institutes = program.institutes.filter(
-      (institute) => !instituteIds.includes(institute.id),
-    );
-    await this.programRepository.save(program);
-    // استخدم أول معهد متبقي للعرض
-    const remainingInstitute = program.institutes[0];
-    return this.findOne(
-      programId,
-      remainingInstitute ? remainingInstitute.id : 1,
-    );
+
+    if (link.deleted_at) {
+      return { message: 'Already unassigned (soft-deleted before).' };
+    }
+
+    // soft delete by id
+    await this.ipRepository.softDelete(link.id);
+
+    return {
+      message: `Program ${programId} soft-unassigned from institute ${instituteId}.`,
+    };
   }
-  async findFirstEigh(languageId?: number, userInstituteId?: number) {
-    const query = this.programRepository
-      .createQueryBuilder('program')
-      .leftJoinAndSelect('program.institutes', 'institute')
-      .leftJoinAndSelect(
-        'program.translations',
-        'translation',
-        languageId ? 'translation.language.id = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('translation.language', 'language')
-      .loadRelationCountAndMap('program.coursesCount', 'program.courses')
-      .take(8);
-    if (userInstituteId) {
-      query.where('institute.id = :instituteId', {
-        instituteId: userInstituteId,
-      });
-    }
-    const programs = await query.getMany();
-    return programs.map((program) => {
-      let selectedTranslation: ProgramTranslation;
-      if (languageId) {
-        selectedTranslation = program.translations[0] || null;
-      } else {
-        selectedTranslation = program.translations[0] || null;
-      }
-      return {
-        id: program.id,
-        logo: program.logo,
-        name: selectedTranslation ? selectedTranslation.name : null,
-        description: selectedTranslation
-          ? selectedTranslation.description
-          : null,
-        coursesCount: program.coursesCount,
-        institutes: program.institutes || [],
-      };
+  async restoreProgramForInstitute(programId: number, instituteId: number) {
+    const link = await this.ipRepository.findOne({
+      where: { program: { id: programId }, institute: { id: instituteId } },
+      withDeleted: true,
     });
+
+    if (!link) {
+      throw new NotFoundException(
+        `No link found for program ${programId} with institute ${instituteId}`,
+      );
+    }
+
+    if (!link.deleted_at) {
+      return { message: 'Link is already active.' };
+    }
+
+    await this.ipRepository.restore(link.id);
+    return {
+      message: `Program ${programId} restored for institute ${instituteId}.`,
+    };
   }
 }

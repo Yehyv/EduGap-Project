@@ -1,13 +1,16 @@
+// src/course-categories/dto/create-content-category.dto.ts
 import {
   IsArray,
+  IsIn,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreateContentCategoryTranslationDto {
+export class ContentCategoryTranslationDto {
   @IsNotEmpty()
   @IsString()
   name: string;
@@ -24,6 +27,10 @@ export class CreateContentCategoryTranslationDto {
 export class CreateContentCategoryDto {
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateContentCategoryTranslationDto)
-  translations: CreateContentCategoryTranslationDto[];
+  @Type(() => ContentCategoryTranslationDto)
+  translations: ContentCategoryTranslationDto[];
+
+  @IsOptional()
+  @IsIn([0, 1])
+  is_active?: number; // default 1
 }

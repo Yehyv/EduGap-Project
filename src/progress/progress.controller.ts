@@ -13,20 +13,20 @@ interface AuthenticatedRequest extends Request {
 @Controller('progress')
 export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
-  @Post('lesson/:id/start')
-  startLesson(@Req() req: AuthenticatedRequest, @Param('id') id: number) {
-    return this.progressService.startLesson(
-      id,
-      req.user.sub,
-      req.user.instituteId,
-    );
-  }
-  @Post('lesson/:id/complete')
-  completeLesson(@Req() req: AuthenticatedRequest, @Param('id') id: number) {
-    return this.progressService.completeLesson(
-      id,
-      req.user.sub,
-      req.user.instituteId,
-    );
-  }
+  // @Post('lesson/:id/start')
+  // startLesson(@Req() req: AuthenticatedRequest, @Param('id') id: number) {
+  //   return this.progressService.startLesson(
+  //     id,
+  //     req.user.sub,
+  //     req.user.instituteId,
+  //   );
+  // }
+  // @Post('lesson/:id/complete')
+  // completeLesson(@Req() req: AuthenticatedRequest, @Param('id') id: number) {
+  //   return this.progressService.completeLesson(
+  //     id,
+  //     req.user.sub,
+  //     req.user.instituteId,
+  //   );
+  // }
 }

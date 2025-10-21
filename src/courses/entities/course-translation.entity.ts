@@ -14,24 +14,24 @@ export class CourseTranslation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 500 })
   description: string;
 
-  @Column('simple-json', { nullable: true })
+  @Column({ name: 'what_to_learn', type: 'simple-array', nullable: true })
   whatToLearn: string[];
 
-  @Column()
-  durationTime: string;
-
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
-  @UpdateDateColumn({ type: 'timestamp' })
+
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-  @DeleteDateColumn({ type: 'timestamp' })
+
+  @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
+
   @ManyToOne(() => Course, (course) => course.translations, {
     onDelete: 'CASCADE',
   })

@@ -1,175 +1,230 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, ILike, FindOptionsWhere, In } from 'typeorm';
+import { Educator } from './entities/educator.entity';
 import { CreateEducatorDto } from './dto/create-educator.dto';
 import { UpdateEducatorDto } from './dto/update-educator.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Educator } from './entities/educator.entity';
-import { Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
-import { AuthService } from 'src/auth/auth.service';
-import * as bcrypt from 'bcrypt';
-import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class EducatorsService {
   constructor(
     @InjectRepository(Educator)
-    private readonly educatorRepository: Repository<Educator>,
+    private readonly educatorRepo: Repository<Educator>,
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly authService: AuthService,
-    private userService: UsersService,
+    private readonly userRepo: Repository<User>,
   ) {}
-  async create(createEducatorDto: CreateEducatorDto) {
-    const user = this.userRepository.create({
-      firstName: createEducatorDto.firstName,
-      lastName: createEducatorDto.lastName,
-      email: createEducatorDto.email,
-      password: await bcrypt.hash(createEducatorDto.password, 10),
-      role: 'educator',
-      instituteId: createEducatorDto.instituteId,
+
+  /** Create */
+  async create(dto: CreateEducatorDto) {
+    // 1) هات اليوزر
+    const user = await this.userRepo.findOne({ where: { id: dto.userId } });
+    if (!user) throw new NotFoundException(`User ${dto.userId} not found`);
+
+    // 2) تأكد ماعندوش educator قبل كده
+    const existing = await this.educatorRepo.findOne({
+      where: { user: { id: dto.userId } },
+      relations: ['user'],
     });
-    const savedUser = await this.userRepository.save(user);
-    const educator = this.educatorRepository.create({
-      title: createEducatorDto.title,
-      bio: createEducatorDto.bio,
-      image: createEducatorDto.image,
-      rate: createEducatorDto.rate,
-      user: savedUser,
+    if (existing)
+      throw new ConflictException('This user already has an educator profile');
+
+    // 3) أنشئ ال educator واربطه باليوزر
+    const educator = this.educatorRepo.create({
+      title: dto.title,
+      bio: dto.bio,
+      image: dto.image,
+      video_intro: dto.video_intro ?? undefined,
+      is_active: dto.is_active ?? 1,
+      user, // الربط هنا
     });
-    await this.educatorRepository.save(educator);
-    // توليد التوكنز
-    return { message: 'educator created succefuly' };
+
+    const saved = await this.educatorRepo.save(educator);
+
+    // 4) رجّع مع full_name
+    return this.findOne(saved.id);
   }
 
-  async findAll(page: number = 1, limit: number = 8) {
-    const skip = (page - 1) * limit;
+  /**
+   * Find all (search + pagination + include user full_name)
+   */
+  async findAll(
+    search?: string,
+    page: number = 1,
+    limit: number = 20,
+    onlyActive?: number,
+  ) {
+    const base: FindOptionsWhere<Educator> = {};
+    if (onlyActive === 1) base.is_active = 1;
 
-    const [educators, total] = await this.educatorRepository.findAndCount({
-      relations: ['user'],
-      skip,
+    const where: FindOptionsWhere<Educator>[] =
+      search && search.trim()
+        ? [
+            { ...base, title: ILike(`%${search}%`) },
+            { ...base, bio: ILike(`%${search}%`) },
+          ]
+        : [base];
+
+    const [items, total] = await this.educatorRepo.findAndCount({
+      where,
+      relations: ['user'], // 👈 مهم: عشان نطلع full_name
+      order: { id: 'DESC' },
+      skip: (page - 1) * limit,
       take: limit,
     });
 
-    const totalPages = Math.ceil(total / limit);
+    // ماب للـ DTO الناتج
+    const mapped = items.map((e) => ({
+      id: e.id,
+      title: e.title,
+      bio: e.bio,
+      image: e.image,
+      video_intro: e.video_intro,
+      is_active: e.is_active,
+      created_at: e.created_at,
+      updated_at: e.updated_at,
+      deleted_at: e.deleted_at,
+      user: {
+        id: e.user?.id ?? null,
+        full_name: e.user?.full_name ?? '', // 👈 الاسم
+        email: e.user?.email ?? '',
+      },
+    }));
 
     return {
-      data: educators,
+      items: mapped,
       pagination: {
         page,
         limit,
         total,
-        totalPages,
-        hasNext: page < totalPages,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
         hasPrev: page > 1,
       },
     };
   }
-  async findFirst8Educators() {
-    return this.educatorRepository.find({
-      relations: ['user'],
-      take: 8,
-    });
-  }
-  async findOne(id: number, languageId: number, userInstituteId?: number) {
-    // const educator = await this.educatorRepository.findOne({
-    //   where: { id },
-    //   relations: ['user'],
-    // });
-    // if (!educator)
-    //   throw new NotFoundException(`Educator with id ${id} not found`);
-    // return educator;
-    const query = this.educatorRepository
-      .createQueryBuilder('educator')
-      .leftJoinAndSelect('educator.user', 'user')
-      .leftJoinAndSelect('educator.contents', 'content')
-      .leftJoinAndSelect(
-        'content.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('translation.language', 'translationLanguage')
-      .leftJoinAndSelect('content.contentCategory', 'category')
-      .leftJoinAndSelect(
-        'category.translations',
-        'categoryTranslation',
-        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect(
-        'categoryTranslation.language',
-        'categoryTranslationlanguage',
-      )
-      .leftJoin('content.courses', 'course')
-      .leftJoin('course.programs', 'program')
-      .leftJoin('program.institutes', 'institute');
-    if (userInstituteId) {
-      query.where('institute.id = :instituteId', {
-        instuteId: userInstituteId,
-      });
-    }
-    const educators = await query.getMany();
-    const formatedEducators = educators.map((educator) => {
-      return {
-        id: educator.id,
-        image: educator.image,
-        title: educator.title,
-        bio: educator.bio,
-        rate: educator.rate,
-        firstName: educator.user.firstName,
-        lastName: educator.user.lastName,
-        content: educator.contents.map((content) => {
-          const contentTranslation = content.translations[0] || null;
-          return {
-            id: content.id,
-            rate: content.rate,
-            level: content.level,
-            image: content.image,
-            numberOfReviewers: content.numberOfReviewers ?? 0,
-            name: contentTranslation?.name || '',
-            levelName: contentTranslation?.levelName || '',
-            category: {
-              id: content.contentCategory?.id,
-              name: content.contentCategory?.translations?.[0]?.name || '',
-            },
-          };
-        }),
-      };
-    });
-    return { formatedEducators };
-  }
 
-  async update(id: number, updateEducatorDto: UpdateEducatorDto) {
-    const educator = await this.educatorRepository.findOne({
+  /** Find one (with user full_name) */
+  async findOne(id: number) {
+    const educator = await this.educatorRepo.findOne({
       where: { id },
       relations: ['user'],
     });
+    if (!educator) throw new NotFoundException(`Educator ${id} not found`);
 
-    if (!educator) {
-      throw new NotFoundException(`Educator with ID ${id} not found`);
-    }
-
-    // وزّع الـ dto على الاتنين
-    const { firstName, lastName, email, password, ...educatorData } =
-      updateEducatorDto;
-
-    // Update educator props
-    Object.assign(educator, educatorData);
-
-    // Update user props
-    if (educator.user) {
-      Object.assign(educator.user, { firstName, lastName, email });
-
-      if (password) {
-        educator.user.password = await this.userService.hashPassword(password);
-      }
-    }
-
-    return this.educatorRepository.save(educator);
+    return {
+      id: educator.id,
+      title: educator.title,
+      bio: educator.bio,
+      image: educator.image,
+      video_intro: educator.video_intro,
+      is_active: educator.is_active,
+      created_at: educator.created_at,
+      updated_at: educator.updated_at,
+      deleted_at: educator.deleted_at,
+      user: {
+        id: educator.user?.id ?? null,
+        full_name: educator.user?.full_name ?? '',
+        email: educator.user?.email ?? '',
+      },
+    };
   }
 
+  /** Update (يدعم تبديل اليوزر مع ضمان 1:1) */
+  async update(id: number, dto: UpdateEducatorDto) {
+    const educator = await this.educatorRepo.findOne({
+      where: { id },
+      relations: ['user'],
+    });
+    if (!educator) throw new NotFoundException(`Educator ${id} not found`);
+
+    // لو فيه userId جديد
+    if (dto.userId !== undefined && dto.userId !== educator.user?.id) {
+      const newUser = await this.userRepo.findOne({
+        where: { id: dto.userId },
+      });
+      if (!newUser) throw new NotFoundException(`User ${dto.userId} not found`);
+
+      // تأكد إن مفيش Educator تاني ماسك نفس اليوزر
+      const exists = await this.educatorRepo.findOne({
+        where: { user: { id: dto.userId } },
+      });
+      if (exists)
+        throw new ConflictException(
+          'Target user already has an educator profile',
+        );
+
+      educator.user = newUser;
+    }
+
+    if (dto.is_active !== undefined && ![0, 1].includes(dto.is_active)) {
+      throw new BadRequestException('is_active must be 0 or 1');
+    }
+
+    Object.assign(educator, {
+      title: dto.title ?? educator.title,
+      bio: dto.bio ?? educator.bio,
+      image: dto.image ?? educator.image,
+      video_intro: dto.video_intro ?? educator.video_intro,
+      is_active: dto.is_active ?? educator.is_active,
+    });
+
+    await this.educatorRepo.save(educator);
+    return this.findOne(id);
+  }
+
+  /** Soft delete */
   async remove(id: number) {
-    await this.educatorRepository.softDelete(id);
-    return { message: 'Educator deleted successfully' };
+    const educator = await this.educatorRepo.findOne({ where: { id } });
+    if (!educator) throw new NotFoundException(`Educator ${id} not found`);
+    await this.educatorRepo.softDelete(id);
+    return { message: `Educator ${id} deleted successfully` };
+  }
+
+  /** Restore (اختياري) */
+  async restore(id: number) {
+    await this.educatorRepo.restore(id);
+    return { message: `Educator ${id} restored successfully` };
+  }
+
+  /** Toggle Active (اختياري) */
+  async toggleActive(id: number) {
+    const educator = await this.educatorRepo.findOne({ where: { id } });
+    if (!educator) throw new NotFoundException(`Educator ${id} not found`);
+    educator.is_active = educator.is_active === 1 ? 0 : 1;
+    await this.educatorRepo.save(educator);
+    return { id, is_active: educator.is_active };
+  }
+
+  async findFirstEight(onlyActive: number = 1) {
+    const where: FindOptionsWhere<Educator> = {};
+    if (onlyActive === 1) where.is_active = 1;
+
+    const list = await this.educatorRepo.find({
+      where,
+      relations: ['user'], // 👈 رجّع اليوزر
+      order: { id: 'DESC' },
+      take: 8,
+    });
+
+    // ماب علشان نضيف full_name
+    return list.map((e) => ({
+      id: e.id,
+      title: e.title,
+      bio: e.bio,
+      image: e.image,
+      video_intro: e.video_intro,
+      is_active: e.is_active,
+      user: {
+        id: e.user?.id ?? null,
+        full_name: e.user?.full_name ?? '',
+        email: e.user?.email ?? '',
+      },
+    }));
   }
 }

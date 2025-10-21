@@ -23,8 +23,8 @@ export class CourseTranslationDto {
   whatToLearn?: string[];
 
   @IsString()
-  @IsNotEmpty()
-  durationTime: string;
+  @IsOptional()
+  durationTime?: string;
 
   @IsNumber()
   @IsNotEmpty()
@@ -36,11 +36,16 @@ export class CreateCourseDto {
   @IsNotEmpty()
   image: string;
 
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CourseTranslationDto)
   translations: CourseTranslationDto[];
 
+  @IsOptional()
   @IsArray()
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })

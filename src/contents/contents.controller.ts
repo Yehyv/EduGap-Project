@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -7,21 +8,13 @@ import {
   Param,
   Delete,
   Headers,
-  UseGuards,
   ParseIntPipe,
   Query,
   Req,
-  BadRequestException,
 } from '@nestjs/common';
 import { ContentsService } from './contents.service';
-import { CreateContentDto } from './dto/create-content.dto';
-import { UpdateContentDto } from './dto/update-content.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { Request } from 'express';
+import { CreateContentDto, UpdateContentDto } from './dto/create-content.dto';
 import { ContentDetailsService } from './content-details.service';
-import { EnrollmentsService } from 'src/enrollments/enrollments.service';
-
-// اضافة الـ interface للـ Request
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -30,146 +23,160 @@ interface AuthenticatedRequest extends Request {
     refreshToken?: string;
   };
 }
-
 @Controller('contents')
 export class ContentsController {
-  constructor(
-    private readonly contentsService: ContentsService,
-    private readonly conentDetailsService: ContentDetailsService,
-    private readonly enrollmentService: EnrollmentsService,
+  constructor(private readonly contentsService: ContentsService, 
+    private readonly contentDetailsService: ContentDetailsService
   ) {}
 
+  /** إنشاء محتوى (بدون أي عزل) */
   @Post()
-  @UseGuards(JwtAuthGuard) // فعّل الـ Guard
-  create(
-    @Body() createContentDto: CreateContentDto,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.contentsService.create(createContentDto, req.user.instituteId);
+  create(@Body() dto: CreateContentDto) {
+    return this.contentsService.create(dto);
   }
 
+  /** كل المحتويات (فلترة اختيارية باللغة عبر الهيدر languageId) */
   @Get()
-  findAll(
-    @Req() req: AuthenticatedRequest,
-    @Headers('languageId') languageId?: string,
-  ) {
-    const langId = languageId !== undefined ? +languageId : 0;
-    const userInstituteId = req.user ? req.user.instituteId : undefined;
+  findAll(@Headers('languageId') languageId?: string) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.contentsService.findAll(langId);
+  }
+  @Get(':id/details')
+getContentDetails(
+  @Param('id', ParseIntPipe) id: number,
+  @Req() req: AuthenticatedRequest,
+  @Query('programId') programId?: string,
+  @Query('reviewPage') reviewPage?: string,
+  @Query('reviewLimit') reviewLimit?: string,
+  @Headers('languageId') languageId?: string,
+) {
+  const instituteId = req.user?.instituteId;
+  const userId = req.user?.sub;
+  const pid = programId?.trim() ? Number(programId) : undefined;
+  const langId = languageId?.trim() ? Number(languageId) : undefined;
 
-    return this.contentsService.findAll(userInstituteId, langId);
-  }
-  @Get('first-8')
-  findFirestEight(
+  return this.contentDetailsService.getDetailsForUser(id, {
+    userId,
+    instituteId,
+    programId: pid,
+    languageId: langId,
+    reviewPage: reviewPage ? Number(reviewPage) : 1,
+    reviewLimit: reviewLimit ? Number(reviewLimit) : 2,
+  });
+}
+
+
+  @Get('trending')
+  async getTrendingPaginated(
     @Req() req: AuthenticatedRequest,
     @Headers('languageId') languageId?: string,
+    @Query('programId') programId?: string,
+    @Query('page') page?: string,
   ) {
-    const langId = languageId !== undefined ? +languageId : 0;
-    const userInstituteId = req.user ? req.user.instituteId : undefined;
-    return this.contentsService.findFirstEight(langId, userInstituteId);
-  }
-  @Get(':contentId/content-details/unenrolled')
-  contentDetailsBeforeEnroll(
-    @Param('contentId') contentId: number,
-    @Headers('languageId') languageId?: string,
-  ) {
-    const langId = languageId !== undefined ? +languageId : 0;
-    return this.conentDetailsService.contentDetailsBeforeEnroll(
-      contentId,
+    const langId = languageId ? Number(languageId) : undefined;
+    const pid = programId ? Number(programId) : undefined;
+    const pg = page ? Math.max(1, Number(page)) : 1;
+    const instituteId = req.user?.instituteId; // موجودة لو Logged-in
+
+    return this.contentsService.findTrendingPaginated(
+      pg,
+      8,
       langId,
-    );
-  }
-  @Get(':contentId/content-details/enrolled')
-  @UseGuards(JwtAuthGuard)
-  async contentDetailsAfterEnroll(
-    @Req() req: AuthenticatedRequest,
-    @Param('contentId') contentId: number,
-    @Headers('languageId') languageId?: string,
-  ) {
-    const langId = languageId !== undefined ? +languageId : 0;
-    const userId = req.user?.sub;
-    const isEnrolled = await this.enrollmentService.isUserEnrolled(
-      contentId,
-      userId,
-    );
-    if (isEnrolled) {
-      return this.conentDetailsService.contentDetailsAfterEnroll(
-        contentId,
-        userId,
-        langId,
-      );
-    } else {
-      throw new BadRequestException('you not enrolled this content');
-    }
-  }
-  @Get('filter') // هذا لازم يجي قبل :id
-  findByCourses(
-    @Req() req: AuthenticatedRequest,
-    @Query('courseIds') courseIds: string, // courseIds=1,2,3
-    @Query('languageId') languageId?: number,
-  ) {
-    const ids = courseIds.split(',').map((id) => parseInt(id, 10));
-    return this.contentsService.findByCourses(
-      ids,
-      req.user.instituteId,
-      languageId,
+      instituteId,
+      pid,
     );
   }
 
+  /** 🔹 تريندينج — أول 8 فقط (سلايدر) */
+  @Get('trending/first-8')
+  async getTrendingFirstEight(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+    @Query('programId') programId?: string,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    const pid = programId ? Number(programId) : undefined;
+    const instituteId = req.user?.instituteId;
+
+    return this.contentsService.findTrendingFirstEight(
+      langId,
+      instituteId,
+      pid,
+    );
+  }
+  @Get('latest/first-8')
+findLatestFirstEight(@Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+    @Query('programId') programId?: string,) {
+  const langId = languageId ? Number(languageId) : undefined;
+  const pid = programId ? Number(programId) : undefined;
+    const instituteId = req.user?.instituteId;
+  return this.contentsService.findLatestFirstEight(langId, instituteId, pid);
+}
+
+// أحدث الدورات - Paginated
+@Get('latest')
+findLatestPaginated(
+  @Req() req: AuthenticatedRequest,
+  @Query('programId') programId?: string,
+  @Headers('languageId') languageId?: string,
+  @Query('page') page?: string,
+  @Query('limit') limit?: string,
+) {
+  const langId = languageId ? Number(languageId) : undefined;
+  const p = page ? Number(page) : 1;
+  const l = limit ? Number(limit) : 8;
+  const pid = programId ? Number(programId) : undefined;
+  const instituteId = req.user?.instituteId;
+  return this.contentsService.findLatestPaginated(p, l, langId, instituteId, pid);
+}
+  /** محتوى واحد بالتفصيل */
   @Get(':id')
   findOne(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
     @Headers('languageId') languageId?: string,
   ) {
-    const langId = languageId !== undefined ? +languageId : 0;
-    if (langId) {
-      return this.contentsService.findOne(+id, req.user.instituteId, langId);
-    }
-    return this.contentsService.findOne(+id, req.user.instituteId);
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.contentsService.findOne(id, langId);
   }
 
+  /** تحديث المحتوى/الترجمات */
   @Patch(':id')
   update(
-    @Param('id') id: string,
-    @Body() updateContentDto: UpdateContentDto,
-    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateContentDto,
   ) {
-    return this.contentsService.update(
-      +id,
-      updateContentDto,
-      req.user.instituteId,
-    );
+    return this.contentsService.update(id, dto);
   }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    return this.contentsService.remove(+id, req.user.instituteId);
-  }
-
-  @Patch(':id/courses')
+  /** ربط المحتوى بكورسات */
+  @Patch(':id/course/:courseIds/assign')
   assignToCourses(
     @Param('id', ParseIntPipe) contentId: number,
-    @Body('courseIds') courseIds: number[],
-    @Req() req: AuthenticatedRequest,
+    @Param('courseIds') courseIds: number[],
   ) {
-    return this.contentsService.assignToCourses(
-      contentId,
-      courseIds,
-      req.user.instituteId,
-    );
+    return this.contentsService.assignToCourses(contentId, courseIds);
   }
 
-  @Delete(':id/courses')
+  /** فك الربط بين المحتوى وكورسات */
+  @Delete(':id/course/:courseIds/unassign')
   removeFromCourses(
     @Param('id', ParseIntPipe) contentId: number,
-    @Body('courseIds') courseIds: number[],
-    @Req() req: AuthenticatedRequest,
+    @Param('courseIds') courseIds: number[],
   ) {
-    return this.contentsService.removeFromCourses(
-      contentId,
-      courseIds,
-      req.user.instituteId,
-    );
+    return this.contentsService.removeFromCourses(contentId, courseIds);
   }
+
+  /** حذف (Soft delete) */
+  @Delete(':id')
+  softDelete(@Param('id', ParseIntPipe) id: number) {
+    return this.contentsService.softDelete(id);
+  }
+
+  /** استرجاع محتوى محذوف */
+  @Patch(':id/restore')
+  restore(@Param('id', ParseIntPipe) id: number) {
+    return this.contentsService.restore(id);
+  }
+
 }

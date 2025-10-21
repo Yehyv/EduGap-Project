@@ -6,8 +6,11 @@ import { Lesson } from './entities/lesson.entity';
 import { LessonTranslation } from './entities/lesson-translation.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
 import { Language } from 'src/languages/entities/language.entity';
-import { Student } from 'src/students/entities/student.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { LessonComment } from 'src/lesson-comments/entities/lesson-comment.entity';
+import { LessonMaterial } from 'src/lesson-materials/entities/lesson-material.entity';
+import { LessonNote } from 'src/lesson-notes/entities/lesson-note.entity';
+import { LessonReaction } from 'src/lesson-reactions/entities/lesson-reaction.entity';
 
 @Module({
   imports: [
@@ -16,8 +19,11 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
       Language,
       LessonTranslation,
       Topic,
-      Student,
       LessonProgress,
+      LessonComment,
+      LessonMaterial,
+      LessonNote,
+      LessonReaction,
     ]),
   ],
   controllers: [LessonsController],

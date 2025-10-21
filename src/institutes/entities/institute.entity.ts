@@ -9,21 +9,35 @@ import {
   ManyToMany,
   JoinTable,
   OneToMany,
+  ManyToOne,
 } from 'typeorm';
 import { instituteTranslation } from './institute-translation.entity';
 import { User } from 'src/users/entities/user.entity';
+import { Region } from 'src/locations/entities/region.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Entity()
 export class Institute {
   @PrimaryGeneratedColumn()
   id: number;
-  @Column()
+
+  @Column({ type: 'varchar', length: 100 })
   logo: string;
-  @Column()
-  profileImage: string;
-  @Column()
+
+  @Column({ type: 'text' })
+  image_profile: string;
+
+  @Column({ type: 'varchar', length: 100 })
   email: string;
-  @Column()
+
+  @Column({ type: 'varchar', length: 3 })
+  phone_key: string;
+
+  @Column({ type: 'varchar', length: 20 })
   phone: string;
+
+  @Column({ type: 'text' })
+  location: string;
+
   @CreateDateColumn()
   createdAt: Date;
   @UpdateDateColumn()
@@ -38,12 +52,12 @@ export class Institute {
     },
   )
   translations: instituteTranslation[];
-  @ManyToMany(() => Program, (program) => program.institutes)
-  @JoinTable({
-    name: 'institute_programs',
-  })
-  programs: Program[];
-
-  @OneToMany(() => User, (user) => user.institute)
+  @OneToMany(() => User, (user) => user.institute, { cascade: true })
   users: User[];
+
+  @ManyToOne(() => Region, (region) => region.institute)
+  region: Region;
+
+  @OneToMany(() => SystemUser, (sysUser) => sysUser.institute)
+  systemUsers: SystemUser[];
 }

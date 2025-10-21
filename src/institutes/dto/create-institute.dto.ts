@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsArray,
   ValidateNested,
+  IsEmail,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 export class InstituteTranslationDto {
@@ -14,10 +15,6 @@ export class InstituteTranslationDto {
   @IsString()
   @IsNotEmpty()
   address: string;
-
-  @IsString()
-  @IsNotEmpty()
-  description: string;
 
   @IsNumber()
   @IsNotEmpty()
@@ -30,15 +27,23 @@ export class CreateInstituteDto {
 
   @IsString()
   @IsNotEmpty()
-  profileImage: string;
+  image_profile: string;
 
-  @IsString()
+  @IsEmail()
   @IsNotEmpty()
   email: string;
 
   @IsString()
   @IsNotEmpty()
+  phone_key: string;
+
+  @IsString()
+  @IsNotEmpty()
   phone: string;
+
+  @IsString()
+  @IsNotEmpty()
+  location: string;
 
   @IsArray()
   @ValidateNested({ each: true })

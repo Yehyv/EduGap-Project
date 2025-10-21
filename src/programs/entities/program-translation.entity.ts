@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+} from 'typeorm';
 import { Program } from './program.entity';
 import { Language } from 'src/languages/entities/language.entity';
 @Entity()
@@ -6,17 +14,20 @@ export class ProgramTranslation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 500 })
   description: string;
 
-  @Column()
-  languageId: number;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
-  @Column()
-  programId: number;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date;
 
   @ManyToOne(() => Program, (program) => program.translations, {
     onDelete: 'CASCADE',
