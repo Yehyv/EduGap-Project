@@ -105,32 +105,29 @@ export class AuthService {
 
     const isFirst = await this.userService.isFirstLogin(user);
     if (isFirst) {
-      await this.generateOtp(user);
-      return { mustVerifyOtp: true, message: 'OTP sent to your phone' };
+      const otp = await this.generateOtp(user);
+      return {
+        mustVerifyOtp: true,
+        message: 'OTP sent to your phone',
+        otp: otp.code,
+      };
     }
 
     // هنا يطلع توكن عادي لو مش first login
     const payload = {
       sub: user.id,
-      email: user.email,
       instituteId: user.institute?.id || 0,
     };
-    const token = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_ACCESS_TOKEN,
-      expiresIn: '15m',
-    });
-    return { accessToken: token };
+    const tokens = await this.getTokens(payload.sub, payload.instituteId);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
   }
 
   async Logout(userId: number) {
     await this.userService.update(userId, { refreshToken: null });
   }
 
-  async refreshTokens(
-    userId: number,
-    rt: string,
-    languageId?: number,
-  ): Promise<Tokens> {
+  async refreshTokens(userId: number, rt: string): Promise<Tokens> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['institute', 'institute.translations'],
@@ -142,19 +139,7 @@ export class AuthService {
     const isMatch = await bcrypt.compare(rt, user.refreshToken);
     if (!isMatch) throw new ForbiddenException('Access Denied');
 
-    const instituteName =
-      user.institute?.translations.find((t) => t.language.id === languageId)
-        ?.name ||
-      user.institute?.translations[0]?.name ||
-      '';
-
-    const tokens = await this.getTokens(
-      user.id,
-      user.email,
-      user.institute?.id,
-      user.full_name,
-      instituteName,
-    );
+    const tokens = await this.getTokens(user.id, user.institute?.id);
 
     await this.userService.update(user.id, {
       refreshToken: await bcrypt.hash(tokens.refreshToken, 10),
@@ -162,19 +147,10 @@ export class AuthService {
     return tokens;
   }
 
-  async getTokens(
-    userId: number,
-    email: string,
-    instituteId: number,
-    full_name: string,
-    instituteName: string,
-  ): Promise<Tokens> {
+  async getTokens(userId: number, instituteId: number): Promise<Tokens> {
     const payload = {
       sub: userId,
-      email,
       instituteId,
-      full_name,
-      instituteName,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
