@@ -12,7 +12,7 @@ export const getDatabaseConfig = (
   database: config.get<string>('DB_NAME'),
   autoLoadEntities: true,
   synchronize: true,
-  dropSchema: true,
+  dropSchema: false,
   logging: ['error'],
   charset: 'utf8mb4_general_ci',
 });

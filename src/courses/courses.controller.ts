@@ -29,7 +29,7 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller('courses')
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
