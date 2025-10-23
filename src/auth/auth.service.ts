@@ -4,7 +4,6 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
-import { SignInDto } from './dto/signin';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from './types/tokens.interface';
 import * as bcrypt from 'bcrypt';
@@ -12,7 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { UserOtp } from 'src/users/entities/user-otp.entity';
-
+import { randomUUID } from 'crypto';
 @Injectable()
 export class AuthService {
   constructor(
@@ -39,8 +38,9 @@ export class AuthService {
   async generateOtp(user: User): Promise<UserOtp> {
     const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
     const otp = this.otpRepository.create({
+      challengeId: randomUUID(),
       code,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       user,
     });
     await this.otpRepository.save(otp);
@@ -52,9 +52,9 @@ export class AuthService {
   }
 
   // -------- Verify OTP ----------
-  async verifyOtp(userId: number, code: string) {
+  async verifyOtp(challengeId: string, code: string) {
     const otp = await this.otpRepository.findOne({
-      where: { user: { id: userId }, code, isUsed: false },
+      where: { challengeId, isUsed: false },
       relations: ['user'],
     });
 
@@ -63,6 +63,7 @@ export class AuthService {
     if (otp.expiresAt < new Date()) {
       throw new BadRequestException('OTP expired');
     }
+    if (otp.code !== code) throw new BadRequestException('Invalid OTP');
 
     otp.isUsed = true;
     await this.otpRepository.save(otp);
@@ -70,7 +71,7 @@ export class AuthService {
     // بعد ما تـ mark otp.isUsed = true ...
     const tempPayload = {
       sub: otp.user.id,
-      email: otp.user.email,
+      username: otp.user.username,
       mustChangePassword: true,
     };
     const accessToken = await this.jwtService.signAsync(tempPayload, {
@@ -85,14 +86,27 @@ export class AuthService {
   }
 
   // -------- Resend OTP ----------
-  async resendOtp(userId: number) {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User not found');
+  async resendOtp(challengeId: string) {
+    const prev = await this.otpRepository.findOne({
+      where: { challengeId, isUsed: false },
+      relations: ['user'],
+    });
+    if (!prev) throw new BadRequestException('Invalid challenge');
 
-    // invalidate old OTPs
-    await this.otpRepository.update({ user: { id: userId } }, { isUsed: true });
+    // إبطال القديم
+    await this.otpRepository.update({ id: prev.id }, { isUsed: true });
 
-    return this.generateOtp(user);
+    // توليد جديد لنفس المستخدم
+    const next = await this.generateOtp(prev.user);
+
+    return {
+      message: 'OTP re-sent',
+      data: {
+        challengeId: next.challengeId,
+        ...(process.env.OTP_STATS === 'true' ? { otp: next.code } : {}),
+        // code: next.code,
+      },
+    };
   }
 
   // -------- Login Flow ----------
@@ -109,7 +123,8 @@ export class AuthService {
       return {
         mustVerifyOtp: true,
         message: 'OTP sent to your phone',
-        otp: otp.code,
+        challengeId: otp.challengeId,
+        ...(process.env.OTP_STATS === 'true' ? { code: otp.code } : {}),
       };
     }
 

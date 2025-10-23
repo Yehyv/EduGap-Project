@@ -7,11 +7,13 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  Unique,
 } from 'typeorm';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { User } from 'src/users/entities/user.entity';
 
 @Entity('lesson_reactions')
+@Unique('UQ_lesson_reaction_user_lesson', ['lesson', 'user']) // 👈 يمنع تكرار الريأكشن لنفس اليوزر على نفس الدرس
 export class LessonReaction {
   @PrimaryGeneratedColumn()
   id: number;

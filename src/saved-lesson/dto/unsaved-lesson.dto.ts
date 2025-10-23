@@ -1,10 +1,9 @@
 import { IsInt, IsOptional } from 'class-validator';
 
-export class CreateSavedLessonDto {
+export class UnsaveLessonDto {
   @IsInt()
   lessonId: number;
 
-  // اختياري: لو ما تبعتهوش هنستنتجه من lesson -> topic -> content
   @IsOptional()
   @IsInt()
   contentId?: number;

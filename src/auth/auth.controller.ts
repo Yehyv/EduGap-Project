@@ -60,12 +60,12 @@ export class AuthController {
     );
   }
   @Post('verify-otp')
-  async verifyOtp(@Body() body: { userId: number; code: string }) {
-    return this.authService.verifyOtp(body.userId, body.code);
+  async verifyOtp(@Body() body: { challengeId: string; code: string }) {
+    return this.authService.verifyOtp(body.challengeId, body.code);
   }
 
   @Post('resend-otp')
-  async resendOtp(@Body() body: { userId: number }) {
-    return this.authService.resendOtp(body.userId);
+  async resendOtp(@Body() body: { challengeId: string }) {
+    return this.authService.resendOtp(body.challengeId);
   }
 }
