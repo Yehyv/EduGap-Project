@@ -1,6 +1,15 @@
 export type LoginFormValues = {
-  email: string;
+  username: string;
   password: string;
+};
+export type VerifyOtpValues = {
+  challengeId?: string | null;
+  code: string;
+};
+export type ChangePasswordValues = {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 };
 
 export type AuthContextType = {
@@ -14,11 +23,6 @@ export type ForgotPasswordFormValues = {
   number: string;
 };
 
-export type VerifyOtpFormValues = {
-  otp: string;
-};
-
-export type ResetPasswordFormValues = {
-  password: string;
-  confirmPassword: string;
+export type ApiErrorResponse = {
+  message: string[] | string;
 };

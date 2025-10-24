@@ -6,19 +6,21 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import { toast } from "react-toastify";
+
 const useLogin = () => {
   const { t } = useLanguage();
   const { login, saveRefreshToken } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const initialValues: LoginFormValues = {
-    email: "",
+    username: "",
     password: "",
   };
 
   const validationSchema = Yup.object({
-    email: Yup.string()
-      .email(t("email_validation_message"))
+    username: Yup.string()
+      .matches(/^[2-3]\d{13}$/, t("national_id_validation_message"))
       .required(t("required_message")),
     password: Yup.string()
       .min(5, t("password_min_length"))
@@ -29,16 +31,27 @@ const useLogin = () => {
     setIsLoading(true);
     loginUser(values)
       .then((response) => {
-        const { accessToken, refreshToken } = response.data.data;
-
-        login(accessToken);
-        saveRefreshToken(refreshToken);
-
-        navigate("/userHome");
+        if (response?.data?.data?.mustVerifyOtp) {
+          sessionStorage.setItem(
+            "challengeId",
+            response?.data?.data?.challengeId
+          );
+          navigate("/verify-otp");
+          toast.success(t("otp_sent_successfully"));
+        } else {
+          const { accessToken, refreshToken } = response.data.data;
+          login(accessToken);
+          saveRefreshToken(refreshToken);
+          navigate("/userHome");
+        }
       })
       .catch((error) => {
-        console.log(error.response?.data?.message || error.message);
-        ShowMessagesAlert(error.response?.data?.message || error.message);
+        ShowMessagesAlert(
+          error.response?.data?.message || error.message,
+          "error",
+          t("wrong"),
+          t("okay")
+        );
       })
       .finally(() => {
         setIsLoading(false);

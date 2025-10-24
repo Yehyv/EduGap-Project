@@ -38,6 +38,7 @@ const refreshAccessToken = async () => {
     localStorage.removeItem("token");
     localStorage.removeItem("refresh-token");
     localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
     processQueue(err, null);
     window.location.href = "/login";
     throw err;

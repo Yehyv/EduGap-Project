@@ -1,12 +1,14 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 import LoginBanner from "@/assets/svgs/loginBanner.svg?react";
+import AuthBanner from "@/assets/svgs/AuthBanner.svg?react";
 import LightButton from "@/shared/components/ui/LightButton";
 import MainLogo from "@/assets/svgs/MainLogo";
 import withLoader from "@/shared/hooks/withLoader";
 import { useLanguage } from "@/shared/localization/useLanguage";
 
 const AuthLayout = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -19,7 +21,11 @@ const AuthLayout = () => {
         </div>
 
         <div className="flex-1 flex items-center justify-center overflow-hidden">
-          <LoginBanner className="w-full h-full object-contain" />
+          {location.pathname === "/login" ? (
+            <LoginBanner className="w-full h-full object-contain" />
+          ) : (
+            <AuthBanner className="w-full h-full object-contain" />
+          )}
         </div>
 
         <LightButton

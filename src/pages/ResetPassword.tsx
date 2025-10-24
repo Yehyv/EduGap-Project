@@ -1,10 +1,12 @@
 import AuthHeader from "@/features/auth/components/AuthHeader";
 import ResetPasswordForm from "@/features/auth/components/ResetPasswordForm";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const ResetPassword = () => {
+  const { t } = useLanguage();
   return (
     <>
-      <AuthHeader headerTitle="إعادة تعيين كلمة المرور" />
+      <AuthHeader headerTitle={t("reset_password")} />
       <ResetPasswordForm />
     </>
   );

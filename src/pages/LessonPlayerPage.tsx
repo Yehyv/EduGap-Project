@@ -23,7 +23,6 @@ const LessonPlayerPage = () => {
   const { lang } = useLanguage();
   const [isOnline, setIsOnline] = useState(true);
 
-  // ✅ State for tabs
   const [activeTab, setActiveTab] = useState<
     "comments" | "attachments" | "notes" | "questions"
   >("comments");

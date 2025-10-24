@@ -1,5 +1,5 @@
 import { Formik, Form, ErrorMessage } from "formik";
-import type { VerifyOtpFormValues } from "../auth.types";
+import type { VerifyOtpValues } from "../auth.types";
 import { GradientButton } from "@/shared/components";
 import useVerifyOtp from "../hooks/useVerifyOtp";
 import OtpInput from "react-otp-input";
@@ -7,10 +7,18 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 
 const VerifyOtpForm = () => {
   const { t } = useLanguage();
-  const { handleSubmit, initialValues, validationSchema } = useVerifyOtp();
+  const {
+    handleSubmit,
+    initialValues,
+    validationSchema,
+    handleResend,
+    timeLeft,
+
+    formatTime,
+  } = useVerifyOtp();
 
   return (
-    <Formik<VerifyOtpFormValues>
+    <Formik<VerifyOtpValues>
       initialValues={initialValues}
       validationSchema={validationSchema}
       onSubmit={handleSubmit}
@@ -18,10 +26,10 @@ const VerifyOtpForm = () => {
       {({ values, setFieldValue }) => (
         <Form className="flex flex-col gap-4 max-w-sm mx-auto w-full" dir="ltr">
           <OtpInput
-            value={values.otp}
+            value={values.code}
             onChange={(val) => {
               const onlyNums = val.replace(/\D/g, "");
-              setFieldValue("otp", onlyNums);
+              setFieldValue("code", onlyNums);
             }}
             numInputs={6}
             shouldAutoFocus
@@ -39,19 +47,28 @@ const VerifyOtpForm = () => {
             )}
             containerStyle="flex justify-center gap-4 mt-4"
           />
+
           <ErrorMessage
-            name="otp"
+            name="code"
             component="div"
             className="text-red-500 text-sm text-center"
           />
 
           <GradientButton text={t("confirm")} type="submit" moreStyle="mt-10" />
-          <button
-            type="button"
-            className="text-[#767676] text-center cursor-pointer"
-          >
-            {t("resend")}
-          </button>
+
+          {timeLeft > 0 ? (
+            <div className="text-[#767676] text-center">
+              {t("resend_in")} {formatTime(timeLeft)}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleResend(values)}
+              className="text-[#767676] text-center cursor-pointer"
+            >
+              {t("resend")}
+            </button>
+          )}
         </Form>
       )}
     </Formik>

@@ -19,10 +19,10 @@ const LoginForm = () => {
     >
       <Form className="flex flex-col gap-4 max-w-sm mx-auto w-full">
         <TextField
-          label={t("email")}
-          name="email"
-          type="email"
-          placeholder={t("email")}
+          label={t("national_id")}
+          name="username"
+          type="username"
+          placeholder={t("national_id")}
         />
         <TextField
           label={t("passowrd")}

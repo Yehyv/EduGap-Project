@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { LanguageProvider } from "./shared/localization/LanguageProvider.tsx";
 import HtmlDirection from "./shared/utils/HtmlDirections.tsx";
+import { ToastContainer } from "react-toastify";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ createRoot(document.getElementById("root")!).render(
             {import.meta.env.DEV && (
               <ReactQueryDevtools initialIsOpen={false} />
             )}
+            <ToastContainer />
           </AuthProvider>
         </HtmlDirection>
       </LanguageProvider>

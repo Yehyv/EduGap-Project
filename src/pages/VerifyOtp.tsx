@@ -5,7 +5,7 @@ const Login = () => {
   const { t } = useLanguage();
   return (
     <>
-      <AuthHeader headerTitle={t("change_password")} />
+      <AuthHeader headerTitle={t("verify_otp")} />
       <h4>{t("otp_title")}</h4>
       <VerifyOtpForm />
     </>

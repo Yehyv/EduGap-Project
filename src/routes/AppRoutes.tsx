@@ -23,6 +23,8 @@ import SavedContentsList from "@/pages/SavedContentsList";
 import ExpertProfile from "@/pages/ExpertProfile";
 import ProgramDetails from "@/pages/ProgramDetails";
 import InstituteCourseDetails from "@/pages/InstituteCourseDetails";
+import ProtectVerifyOtp from "./ProtectVerifyOtp";
+import ProtectResetPassword from "./ProtectResetPassword";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -52,8 +54,22 @@ export default function AppRoutes() {
       >
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-otp" element={<VerifyOtp />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route
+          path="/verify-otp"
+          element={
+            <ProtectVerifyOtp>
+              <VerifyOtp />
+            </ProtectVerifyOtp>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <ProtectResetPassword>
+              <ResetPassword />
+            </ProtectResetPassword>
+          }
+        />
       </Route>
 
       {/* Public Routes with MainLayout */}

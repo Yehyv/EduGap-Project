@@ -1,28 +1,64 @@
 import * as Yup from "yup";
-import type { ResetPasswordFormValues } from "../auth.types";
+import type { ChangePasswordValues } from "../auth.types";
+import { useLanguage } from "@/shared/localization/useLanguage";
+import { changePassword } from "../services/authApi";
+import Swal from "sweetalert2";
+import type { AxiosError } from "axios";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const useResetPassword = () => {
-  const initialValues: ResetPasswordFormValues = {
-    password: "",
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const resetPasswordToken = sessionStorage.getItem("token");
+
+  const initialValues: ChangePasswordValues = {
+    oldPassword: "",
+    newPassword: "",
     confirmPassword: "",
   };
 
   const validationSchema = Yup.object({
-    password: Yup.string()
-      .required("كلمة المرور مطلوبة")
-      .min(6, "يجب أن تكون كلمة المرور 6 أحرف على الأقل")
+    oldPassword: Yup.string().required(t("required")),
+    newPassword: Yup.string()
+      .required(t("password_required"))
+      .min(6, t("password_min_length"))
       .matches(
         /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,}$/,
-        "كلمة المرور يجب أن تحتوي على أحرف وأرقام على الأقل"
+        t("password_must_contain_letters_numbers")
       ),
 
     confirmPassword: Yup.string()
-      .oneOf([Yup.ref("password"), undefined], "كلمة المرور غير متطابقة")
-      .required("تأكيد كلمة المرور مطلوب"),
+      .oneOf([Yup.ref("newPassword"), undefined], t("passwords_do_not_match"))
+      .required(t("confirm_password_required")),
   });
 
-  const handleSubmit = (values: ResetPasswordFormValues) => {
-    console.log("Form data", values);
+  const handleSubmit = async (values: ChangePasswordValues) => {
+    try {
+      let response;
+      if (resetPasswordToken) {
+        response = await changePassword(values, resetPasswordToken);
+      }
+      toast.success(
+        response?.data.message ?? t("password_changed_successfully")
+      );
+      sessionStorage.removeItem("token");
+      navigate("/login");
+    } catch (error) {
+      console.error(error);
+
+      const err = error as AxiosError<{ message: string[] | string }>;
+      const errorMessage = Array.isArray(err.response?.data?.message)
+        ? err.response?.data?.message[0]
+        : err.response?.data?.message || t("something_went_wrong");
+
+      Swal.fire({
+        title: t("error"),
+        text: errorMessage,
+        icon: "error",
+        confirmButtonText: t("okay"),
+      });
+    }
   };
 
   return { validationSchema, handleSubmit, initialValues };
