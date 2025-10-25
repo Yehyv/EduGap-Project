@@ -154,18 +154,18 @@ async findPackagesFirst8(languageId?: number) {
     .leftJoin(
       'package_content',
       'pc',
-      'pc.package_id = p.id AND pc.deleted_at IS NULL AND pc.is_active != 0',
+      'pc.package_Id = p.id AND pc.deleted_at IS NULL AND pc.is_active != 0',
     )
-    .leftJoin('content', 'c', 'c.id = pc.content_id AND c.deleted_at IS NULL')
+    .leftJoin('content', 'c', 'c.id = pc.content_Id AND c.deleted_at IS NULL')
     .leftJoin(
       'topic',
       't',
-      't.content_id = c.id AND t.deleted_at IS NULL AND t.is_active != 0',
+      't.contentId = c.id AND t.deleted_at IS NULL AND t.is_active != 0',
     )
     .leftJoin(
       'lesson',
       'l',
-      'l.topic_id = t.id AND l.deleted_at IS NULL AND l.is_active != 0',
+      'l.topicId = t.id AND l.deleted_at IS NULL AND l.is_active != 0',
     )
     .select('p.id', 'id')
     .addSelect('COUNT(DISTINCT c.id)', 'contentsCount')
