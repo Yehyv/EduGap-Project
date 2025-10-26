@@ -11,10 +11,13 @@ import {
   ParseIntPipe,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ContentsService } from './contents.service';
 import { CreateContentDto, UpdateContentDto } from './dto/create-content.dto';
 import { ContentDetailsService } from './content-details.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -65,7 +68,7 @@ getContentDetails(
   });
 }
 
-
+  @UseGuards(OptionalJwtAuthGuard)
   @Get('trending')
   async getTrendingPaginated(
     @Req() req: AuthenticatedRequest,
@@ -77,16 +80,18 @@ getContentDetails(
     const pid = programId ? Number(programId) : undefined;
     const pg = page ? Math.max(1, Number(page)) : 1;
     const instituteId = req.user?.instituteId; // موجودة لو Logged-in
-
+    const userId = req.user?.sub;
+    console.log("USER ID",userId)
     return this.contentsService.findTrendingPaginated(
       pg,
       8,
       langId,
       instituteId,
       pid,
+      userId
     );
   }
-
+  @UseGuards(OptionalJwtAuthGuard)
   /** 🔹 تريندينج — أول 8 فقط (سلايدر) */
   @Get('trending/first-8')
   async getTrendingFirstEight(
@@ -97,11 +102,13 @@ getContentDetails(
     const langId = languageId ? Number(languageId) : undefined;
     const pid = programId ? Number(programId) : undefined;
     const instituteId = req.user?.instituteId;
+    const userId = req.user?.sub;
 
     return this.contentsService.findTrendingFirstEight(
       langId,
       instituteId,
       pid,
+      userId
     );
   }
   @Get('latest/first-8')
@@ -177,6 +184,26 @@ findLatestPaginated(
   @Patch(':id/restore')
   restore(@Param('id', ParseIntPipe) id: number) {
     return this.contentsService.restore(id);
+  }
+  @Post(':id/educator/:educatorId/assign')
+  assignEducator(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('educatorId', ParseIntPipe) educatorId: number,
+  ) {
+    return this.contentsService.assignEducator(id, educatorId);
+  }
+
+  @Delete(':id/educator')
+  unassignEducator(@Param('id', ParseIntPipe) id: number) {
+    return this.contentsService.unassignEducator(id);
+  }
+
+  @Post(':id/educator/restore')
+  restoreEducator(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('educatorId', ParseIntPipe) educatorId: number,
+  ) {
+    return this.contentsService.restoreEducator(id, educatorId);
   }
 
 }

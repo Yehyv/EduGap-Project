@@ -102,5 +102,5 @@ export class Content {
     onDelete: 'SET NULL', // أو 'CASCADE' حسب احتياجك
     nullable: true,
   })
-  educator: Educator;
+  educator: Educator | null;
 }

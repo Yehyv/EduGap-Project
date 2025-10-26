@@ -14,6 +14,8 @@ import { ContentCategory } from 'src/course-categories/entities/content-category
 import { CreateContentDto, UpdateContentDto } from './dto/create-content.dto';
 import { Package } from 'src/packages/entities/package.entity';
 import { PackageContent } from 'src/packages/entities/package-content.entity';
+import { Educator } from 'src/educators/entities/educator.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 @Injectable()
 export class ContentsService {
   constructor(
@@ -33,6 +35,10 @@ export class ContentsService {
     private readonly packageRepo: Repository<Package>,
     @InjectRepository(PackageContent)
     private readonly packageContentRepo: Repository<PackageContent>,
+    @InjectRepository(Educator)
+    private readonly educatorRepo: Repository<Educator>,
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepo: Repository<Enrollment>,
   ) {}
 
   /** ----------------------------------------------------------------
@@ -268,40 +274,34 @@ export class ContentsService {
     page = 1,
     limit = 8,
     languageId?: number,
-    instituteId?: number, // اختياري
-    programId?: number, // اختياري
+    instituteId?: number,
+    programId?: number,
+    userId?: number, // 👈 اختياري
   ) {
     const offset = (page - 1) * limit;
 
-    // 1) IDs مرتبة حسب عدد الـ enrollments مع فلاتر اختيارية على المعهد/البرنامج عبر IPC
     const baseQb = this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e')
       .leftJoin('c.courseContents', 'cc')
       .leftJoin('cc.course', 'course')
-      .leftJoin('course.instituteProgramCourses', 'ipc') // لازم يكون عندك relation من Course -> InstituteProgramCourse باسم مناسب
+      .leftJoin('course.instituteProgramCourses', 'ipc')
       .select('c.id', 'id')
       .addSelect('COUNT(e.id)', 'cnt')
       .groupBy('c.id')
       .orderBy('cnt', 'DESC');
 
-    if (instituteId) {
+    if (instituteId)
       baseQb.andWhere('ipc.instituteId = :instituteId', { instituteId });
-    }
-    if (programId) {
-      baseQb.andWhere('ipc.programId = :programId', { programId });
-    }
+    if (programId) baseQb.andWhere('ipc.programId = :programId', { programId });
 
-    // إجمالي النتائج (بدون limit/offset)
     const allRows = await baseQb.getRawMany<{ id: number; cnt: string }>();
     const total = allRows.length;
 
-    // نفس الـ query مع limit/offset
     const pageRows = await baseQb
       .limit(limit)
       .offset(offset)
       .getRawMany<{ id: number; cnt: string }>();
-
     if (!pageRows.length) {
       return {
         items: [],
@@ -317,15 +317,85 @@ export class ContentsService {
     }
 
     const ids = pageRows.map((r) => Number(r.id));
-    const countMap = new Map<number, number>(
-      pageRows.map((r) => [Number(r.id), Number(r.cnt)]),
-    );
-    const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
+    const countMap = new Map(ids.map((id, i) => [id, Number(pageRows[i].cnt)]));
+    const orderIndex = new Map(ids.map((id, i) => [id, i]));
 
-    // 2) رجع بيانات المحتوى كاملة (ونفس ترتيب الشعبية)
+    // متوسط التقييم → تخزينه في content.rate
+    const avgRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.enrollments', 'e2')
+      .select('c.id', 'id')
+      .addSelect(
+        `
+      CASE
+        WHEN SUM(CASE WHEN e2.rating > 0 THEN 1 ELSE 0 END) = 0
+        THEN 0
+        ELSE ROUND(
+          SUM(CASE WHEN e2.rating > 0 THEN e2.rating ELSE 0 END)
+          / SUM(CASE WHEN e2.rating > 0 THEN 1 ELSE 0 END), 2
+        )
+      END
+      `,
+        'avg',
+      )
+      .where('c.id IN (:...ids)', { ids })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; avg: string }>();
+
+    for (const r of avgRows) {
+      await this.contentRepo.update(
+        { id: Number(r.id) },
+        { rate: Number(r.avg) },
+      );
+    }
+
+    // إجمالي المدة + عدد المقيمين
+    const statsRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.topics', 't')
+      .leftJoin('t.lessons', 'l')
+      .leftJoin('c.enrollments', 'e3')
+      .select('c.id', 'id')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .addSelect(
+        'SUM(CASE WHEN e3.rating > 0 THEN 1 ELSE 0 END)',
+        'ratersCount',
+      )
+      .where('c.id IN (:...ids)', { ids })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+
+    const durationMap = new Map(
+      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+    );
+    const ratersMap = new Map(
+      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
+    // ✅ فلاج الالتحاق لو فيه userId
+    let enrolledMap = new Map<number, boolean>();
+    if (userId) {
+      const enrRows = await this.enrollmentRepo
+        .createQueryBuilder('en')
+        .select(['en.contentId AS cid', 'en.status AS status'])
+        .where('en.userId = :uid', { uid: userId })
+        .andWhere('en.contentId IN (:...ids)', { ids })
+        .getRawMany<{ cid: number; status: number }>();
+
+      enrolledMap = new Map(
+        enrRows.map((r) => [Number(r.cid), Number(r.status) === 0]),
+      );
+    }
+
     const contents = await this.contentRepo.find({
       where: { id: In(ids) },
-      relations: ['translations', 'translations.language', 'contentCategory'],
+      relations: [
+        'translations',
+        'translations.language',
+        'contentCategory',
+        'educator',
+        'educator.user',
+      ],
     });
 
     contents.sort(
@@ -336,13 +406,30 @@ export class ContentsService {
       const tr =
         c.translations.find((t) => t.language?.id === languageId) ||
         c.translations[0];
+
       return {
         id: c.id,
         name: tr?.name ?? '',
         description: tr?.description ?? '',
         image: c.image,
         level: c.level,
-        rate: c.rate,
+
+        rate: c.rate ?? 0,
+        ratersCount: ratersMap.get(c.id) ?? 0,
+        totalDuration: durationMap.get(c.id) ?? 0,
+
+        // 👇 الفلاج الجديد
+        isEnrolled: enrolledMap.get(c.id) ?? false,
+        isSaved: false,
+
+        educator: c.educator
+          ? {
+              id: c.educator.id,
+              title: c.educator.title,
+              name: c.educator.user?.full_name ?? '',
+            }
+          : null,
+
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: { id: c.contentCategory?.id ?? null },
         enrollmentsCount: countMap.get(c.id) ?? 0,
@@ -362,13 +449,12 @@ export class ContentsService {
     };
   }
 
-  // 🔹 أول 8 فقط (للسلايدر)
   async findTrendingFirstEight(
     languageId?: number,
     instituteId?: number,
     programId?: number,
+    userId?: number, // 👈 اختياري
   ) {
-    // 1) IDs لأول 8
     const qb = this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e')
@@ -381,26 +467,93 @@ export class ContentsService {
       .orderBy('cnt', 'DESC')
       .limit(8);
 
-    if (instituteId) {
+    if (instituteId)
       qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
-    }
-    if (programId) {
-      qb.andWhere('ipc.programId = :programId', { programId });
-    }
+    if (programId) qb.andWhere('ipc.programId = :programId', { programId });
 
     const rows = await qb.getRawMany<{ id: number; cnt: string }>();
     if (!rows.length) return [];
 
     const ids = rows.map((r) => Number(r.id));
-    const countMap = new Map<number, number>(
-      rows.map((r) => [Number(r.id), Number(r.cnt)]),
-    );
-    const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
+    const countMap = new Map(rows.map((r) => [Number(r.id), Number(r.cnt)]));
+    const orderIndex = new Map(ids.map((id, i) => [id, i]));
 
-    // 2) البيانات
+    // متوسطات → تخزين في content.rate
+    const avgRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.enrollments', 'e2')
+      .select('c.id', 'id')
+      .addSelect(
+        `
+      CASE
+        WHEN SUM(CASE WHEN e2.rating > 0 THEN 1 ELSE 0 END) = 0
+        THEN 0
+        ELSE ROUND(
+          SUM(CASE WHEN e2.rating > 0 THEN e2.rating ELSE 0 END)
+          / SUM(CASE WHEN e2.rating > 0 THEN 1 ELSE 0 END), 2
+        )
+      END
+      `,
+        'avg',
+      )
+      .where('c.id IN (:...ids)', { ids })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; avg: string }>();
+
+    for (const r of avgRows) {
+      await this.contentRepo.update(
+        { id: Number(r.id) },
+        { rate: Number(r.avg) },
+      );
+    }
+
+    // مدة + عدّاد مقيمين
+    const statsRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.topics', 't')
+      .leftJoin('t.lessons', 'l')
+      .leftJoin('c.enrollments', 'e3')
+      .select('c.id', 'id')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .addSelect(
+        'SUM(CASE WHEN e3.rating > 0 THEN 1 ELSE 0 END)',
+        'ratersCount',
+      )
+      .where('c.id IN (:...ids)', { ids })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+
+    const durationMap = new Map(
+      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+    );
+    const ratersMap = new Map(
+      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
+    // ✅ فلاج الالتحاق
+    let enrolledMap = new Map<number, boolean>();
+    if (userId) {
+      const enrRows = await this.enrollmentRepo
+        .createQueryBuilder('en')
+        .select(['en.contentId AS cid', 'en.status AS status'])
+        .where('en.userId = :uid', { uid: userId })
+        .andWhere('en.contentId IN (:...ids)', { ids })
+        .getRawMany<{ cid: number; status: number }>();
+
+      enrolledMap = new Map(
+        enrRows.map((r) => [Number(r.cid), Number(r.status) === 0]),
+      );
+    }
+
     const contents = await this.contentRepo.find({
       where: { id: In(ids) },
-      relations: ['translations', 'translations.language', 'contentCategory'],
+      relations: [
+        'translations',
+        'translations.language',
+        'contentCategory',
+        'educator',
+        'educator.user',
+      ],
     });
 
     contents.sort(
@@ -411,13 +564,30 @@ export class ContentsService {
       const tr =
         c.translations.find((t) => t.language?.id === languageId) ||
         c.translations[0];
+
       return {
         id: c.id,
         name: tr?.name ?? '',
         description: tr?.description ?? '',
         image: c.image,
         level: c.level,
-        rate: c.rate,
+
+        rate: c.rate ?? 0,
+        ratersCount: ratersMap.get(c.id) ?? 0,
+        totalDuration: durationMap.get(c.id) ?? 0,
+
+        // 👇 الفلاج
+        isEnrolled: enrolledMap.get(c.id) ?? false,
+        isSaved: false,
+
+        educator: c.educator
+          ? {
+              id: c.educator.id,
+              title: c.educator.title,
+              name: c.educator.user?.full_name ?? '',
+            }
+          : null,
+
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: { id: c.contentCategory?.id ?? null },
         enrollmentsCount: countMap.get(c.id) ?? 0,
@@ -453,7 +623,7 @@ export class ContentsService {
     const existingMap = new Map<number, (typeof existingLinks)[number]>();
     for (const link of existingLinks) {
       // link.content.id موجود لأننا عملنا relations ضمنيًا في الشرط
-      existingMap.set((link).content?.id ?? link['contentId'], link);
+      existingMap.set(link.content?.id ?? link['contentId'], link);
     }
 
     const created: number[] = [];
@@ -681,5 +851,53 @@ export class ContentsService {
       category: { id: row.contentCategory?.id ?? null },
       created_at: row.created_at,
     };
+  }
+  async assignEducator(contentId: number, educatorId: number) {
+    const content = await this.contentRepo.findOne({
+      where: { id: contentId },
+      relations: ['educator'],
+    });
+    if (!content) throw new NotFoundException(`Content ${contentId} not found`);
+
+    const educator = await this.educatorRepo.findOne({
+      where: { id: educatorId },
+      relations: ['user'],
+    });
+    if (!educator)
+      throw new NotFoundException(`Educator ${educatorId} not found`);
+
+    content.educator = educator;
+    await this.contentRepo.save(content);
+
+    return {
+      message: 'Educator assigned to content',
+      contentId: content.id,
+      educator: {
+        id: educator.id,
+        title: educator.title,
+        name: educator.user?.full_name ?? '',
+      },
+    };
+  }
+
+  /** Unassign educator from content (set null) */
+  async unassignEducator(contentId: number) {
+    const content = await this.contentRepo.findOne({
+      where: { id: contentId },
+      relations: ['educator'],
+    });
+    if (!content) throw new NotFoundException(`Content ${contentId} not found`);
+    if (!content.educator) return { message: 'Already unassigned', contentId };
+
+    content.educator = null;
+    await this.contentRepo.save(content);
+
+    return { message: 'Educator unassigned from content', contentId };
+  }
+
+  /** “Restore” = re-assign to a given educator (alias of assign) */
+  async restoreEducator(contentId: number, educatorId: number) {
+    // لو عايز ترجع “آخر واحد” لازم تحتفظ بتاريخ — لكن هنا هنرجّع للي تبعثه
+    return this.assignEducator(contentId, educatorId);
   }
 }

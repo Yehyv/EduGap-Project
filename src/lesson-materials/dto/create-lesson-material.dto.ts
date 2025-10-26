@@ -1,6 +1,14 @@
 // src/lesson-materials/dto/lesson-material-translation.dto.ts
 import { Type } from 'class-transformer';
-import { IsArray, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
 export class LessonMaterialTranslationDto {
   @IsInt()
