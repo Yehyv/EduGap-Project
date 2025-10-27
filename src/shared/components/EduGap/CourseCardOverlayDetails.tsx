@@ -1,4 +1,3 @@
-import VolumeIcon from "@/assets/svgs/VolumeIcon.svg?react";
 import TitileLine from "@/assets/svgs/TitileLine.svg?react";
 import CheckIcon from "@/assets/svgs/CheckIcon.svg?react";
 import TimeLeftIcon from "@/assets/svgs/TimeLeftIcon.svg?react";
@@ -27,16 +26,14 @@ const CourseCardOverlayDetails = ({ course }: { course: CourseType }) => {
         </h3>
 
         <p className="text-sm font-semibold text-gray-400">
-          {course.educators?.[0]?.title} / {course.educators?.[0]?.firstName}{" "}
-          {course.educators?.[0]?.lastName}
+          {course.educator?.title} / {course.educator?.name}{" "}
         </p>
       </div>
 
       {/* Info Row */}
       <div className="flex items-center gap-2 text-sm text-gray-600">
         <TimeLeftIcon className="inline-block me-1" />
-        <span>{course?.durationTime}</span>
-        <VolumeIcon className="!text-black inline-block me-2" />
+        <span>{course?.totalDuration}</span>
       </div>
 
       {/* Divider */}

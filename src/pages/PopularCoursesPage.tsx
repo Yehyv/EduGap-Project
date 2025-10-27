@@ -39,14 +39,14 @@ const PopularCoursesList = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {data?.formattedContents?.map((courseData, idx) => (
+            {data?.items?.map((courseData, idx) => (
               <CourseCard key={idx} course={courseData} />
             ))}
           </div>
           <CustomPagination
-            currentPage={data?.pagination.page ?? 1}
+            currentPage={data?.pagination?.page ?? 1}
             onPageChange={handlePageChange}
-            totalPages={data?.pagination.totalPages ?? 1}
+            totalPages={data?.pagination?.totalPages ?? 1}
           />
         </>
       )}

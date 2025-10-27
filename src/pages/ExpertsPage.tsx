@@ -36,7 +36,7 @@ const ExpertsPage = () => {
         </div>
       ) : (
         <>
-          {data?.data?.map((expertData, index) => (
+          {data?.items?.map((expertData, index) => (
             <ExpertsCard key={index} expertData={expertData} />
           ))}
           <CustomPagination

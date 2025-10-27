@@ -1,6 +1,6 @@
 const ProgramsSectionCardSkeleton = () => {
   return (
-    <div className="bg-white flex rounded-2xl shadow-custom overflow-hidden my-5 mx-1 animate-pulse">
+    <div className="bg-white flex rounded-2xl shadow-custom overflow-hidden my-5 mx-1 animate-pulse min-h-[220px]">
       {/* Left image skeleton */}
       <div className="w-1/2 relative bg-gray-200">
         <div className="w-full h-40 bg-gray-200"></div>

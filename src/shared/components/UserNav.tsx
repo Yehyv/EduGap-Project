@@ -3,8 +3,7 @@ import { logoutUser } from "@/features/auth";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLanguage } from "../localization/useLanguage";
 import { useClickOutside } from "../hooks/useClickOutside";
-import { jwtDecode } from "jwt-decode";
-import type { TokenPayload } from "../types/sharedTypes";
+import { useUser } from "@/features/auth/context/UserContext";
 
 // Lazy load components & icons
 const UserIcon = lazy(() => import("@/assets/svgs/UserIcon.svg?react"));
@@ -30,22 +29,9 @@ const UserNav = () => {
   const { logout } = useAuth();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const { user } = useUser();
 
   useClickOutside(menuRef, () => setOpen(false));
-
-  // Decode JWT if exists
-  const token = localStorage.getItem("token");
-  if (token) {
-    try {
-      const decoded = jwtDecode<TokenPayload>(token);
-      console.log("Decoded payload:", decoded);
-    } catch (e) {
-      console.error("Invalid token:", e);
-    }
-  }
-
-  const fullName = "محمد عبدالسلام محمد";
-  const [firstName, middleName] = fullName.split(" ");
 
   const handleLogOut = () => {
     logoutUser().then(logout).catch(console.error);
@@ -55,9 +41,8 @@ const UserNav = () => {
     <div className="flex items-center gap-4 relative" ref={menuRef}>
       {/* Greeting */}
       <div className="text-gray-700 max-xl:hidden">
-        <div className="ms-1 block">
-          اهلا بك {firstName} {middleName}
-        </div>
+        <span className="me-2">{t("welcome_for_user")}</span>
+        <span>{user?.userName}</span>
       </div>
 
       {/* User dropdown */}
@@ -76,18 +61,19 @@ const UserNav = () => {
         {open && (
           <div className="absolute end-0 mt-2 w-70 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
             <div className="w-10 h-10 bg-primary rounded-full mx-auto text-secondary font-bold center mt-4">
-              {firstName[0]} {middleName?.[0]}
+              {user?.userName?.[0]}
             </div>
             <div className="text-center mx-4 border-[#DBDBDB]">
-              <div className="font-semibold mt-2">{fullName}</div>
+              <div className="font-semibold mt-2">{user?.userName}</div>
               <div className="text-sm text-[#797979]">
-                معهد التكنولوجيا - برنامج التسويق
+                {user?.instituteName}
               </div>
-              <div className="text-sm text-[#797979]">
+              {/* <div className="text-sm text-[#797979]">
                 mohamedabdelsalam21@gmail.com
-              </div>
+              </div> */}
               <div className="text-sm text-secondary center gap-2 mt-2">
-                <span>عدد النقاط : 652</span>
+                <span>{t("total_points")}</span>
+                <span>400</span>
                 <Suspense fallback={null}>
                   <WalletIcon />
                 </Suspense>
@@ -97,9 +83,9 @@ const UserNav = () => {
             {/* Menu items */}
             <div className="text-sm mt-2 flex flex-col gap-2 border-b border-t mx-4 border-[#DBDBDB] py-4">
               {[
-                { icon: <CoursesIcon />, label: "دوراتي" },
-                { icon: <CertificateIcon />, label: "شهاداتي" },
-                { icon: <EditIcon />, label: "تعديل البيانات" },
+                { icon: <CoursesIcon />, label: t("my_courses") },
+                { icon: <CertificateIcon />, label: t("my_certificates") },
+                { icon: <EditIcon />, label: t("edit_profile") },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <Suspense fallback={null}>{item.icon}</Suspense>
@@ -112,7 +98,7 @@ const UserNav = () => {
                   <Suspense fallback={null}>
                     <LanguageIcon />
                   </Suspense>
-                  <div>اللغة</div>
+                  <div>{t("language")}</div>
                 </div>
                 <Suspense fallback={null}>
                   <LanguageDropdown currentLang={lang} onChange={setLang} />
@@ -123,14 +109,14 @@ const UserNav = () => {
                 <Suspense fallback={null}>
                   <MoonIcon />
                 </Suspense>
-                <div>السمة</div>
+                <div>{t("theme")}</div>
               </div>
 
               <div className="flex items-center gap-2">
                 <Suspense fallback={null}>
                   <QuestionIcon />
                 </Suspense>
-                <div>مركز المساعدة</div>
+                <div>{t("help_center")}</div>
               </div>
             </div>
 

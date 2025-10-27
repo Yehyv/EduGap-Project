@@ -39,13 +39,8 @@ const GuestPopularCoursesPage = () => {
         <IconsGroup className="absolute start-0 end-0 top-0 bottom-0 w-full h-full" />
         <div className="container">
           <h5 className="font-bold mt-2">{t("programs_title")}</h5>
-          <h4 className="text-2xl mt-2">
-            اكتشف برامج التعلم المصممة لتطوير مهاراتك المهنية
-          </h4>
-          <p className="text-lg mt-4">
-            رحلتك نحو التميز تبدأ من هنا! استكشف برامج التعلم المصممة خصيصًا لك،
-            واختر التخصص اللي يناسب طموحك، وتعلم على طريقتك.
-          </p>
+          <h4 className="text-2xl mt-2">{t("programs_heading")}</h4>
+          <p className="text-lg mt-4">{t("programs_description")}</p>
         </div>
       </div>
 
@@ -66,7 +61,7 @@ const GuestPopularCoursesPage = () => {
                 <ProgramsSectionCardSkeleton key={idx} />
               ))}
             </div>
-          ) : data?.formattedPrograms?.length === 0 ? (
+          ) : data?.items?.length === 0 ? (
             <div className="flex justify-center items-center py-10">
               <p className="text-gray-500 text-lg font-medium">
                 {t("no_data_available")}
@@ -75,7 +70,7 @@ const GuestPopularCoursesPage = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {data?.formattedPrograms?.map((d, index) => (
+                {data?.items?.map((d, index) => (
                   <ProgramsSectionCard key={index} data={d} />
                 ))}
               </div>

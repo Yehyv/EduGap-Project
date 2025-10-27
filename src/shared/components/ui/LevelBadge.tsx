@@ -1,7 +1,6 @@
 import VolumeIcon from "@/assets/svgs/VolumeIcon.svg?react";
 import type { LevelName } from "@/shared/types/sharedTypes";
 
-// هنا نعمل mapping للـ API values سواء انجليزي أو عربي
 const levelMap: Record<string, LevelName> = {
   Beginner: "Beginner",
   Mid: "Mid",

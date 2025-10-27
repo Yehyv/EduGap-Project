@@ -1,8 +1,8 @@
 import PopularCoursesSlider from "@/shared/components/EduGap/PopularCoursesSlider";
 import HeroSection from "@/features/GuestHome/components/HeroSection";
-import CoursesSection from "@/shared/components/EduGap/ProgramsSection";
+import ProgramsSection from "@/shared/components/EduGap/ProgramsSection";
 import Experts from "@/shared/components/EduGap/Experts";
-import Testimonials from "@/shared/components/EduGap/Testimonials";
+// import Testimonials from "@/shared/components/EduGap/Testimonials";
 import withLoader from "@/shared/hooks/withLoader";
 
 const GuestHome = () => {
@@ -10,8 +10,8 @@ const GuestHome = () => {
     <>
       <HeroSection />
       <PopularCoursesSlider />
-      <CoursesSection />
-      <Testimonials />
+      <ProgramsSection />
+      {/* <Testimonials /> */}
       <Experts />
     </>
   );

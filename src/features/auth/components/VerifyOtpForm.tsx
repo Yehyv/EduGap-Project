@@ -63,7 +63,7 @@ const VerifyOtpForm = () => {
           ) : (
             <button
               type="button"
-              onClick={() => handleResend(values)}
+              onClick={() => handleResend()}
               className="text-[#767676] text-center cursor-pointer"
             >
               {t("resend")}

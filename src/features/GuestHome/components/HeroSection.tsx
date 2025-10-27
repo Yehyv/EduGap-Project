@@ -1,9 +1,11 @@
 import DefaultButton from "@/shared/components/ui/DefaultButton";
 import HeroSectionImage from "@/assets/imgs/HeroSectionImage.png";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   return (
     <div className="bg-primary">
@@ -18,7 +20,9 @@ const HeroSection = () => {
           </p>
           <div className="center text-center md:text-start">
             <DefaultButton
-              onClick={() => {}}
+              onClick={() => {
+                navigate("/login");
+              }}
               text={t("subscribe")}
               type="button"
               moreStyle="px-12 md:px-16 text-lg md:text-xl mt-10 md:mt-16 !shadow-[0_4px_4px_0_rgba(0,0,0,0.25)]"

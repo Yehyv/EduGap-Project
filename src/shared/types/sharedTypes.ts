@@ -25,11 +25,15 @@ export type CourseType = {
   name: string;
   rate?: number;
   reviews?: number;
-  levelName?: LevelName;
+  level?: LevelName;
   image?: string;
-  educators: Educator[];
-  durationTime: string;
+  educator: Educator;
+  totalDuration: string;
   whatToLearn: [];
+  enrollmentsCount: number;
+  ratersCount: number;
+  isSaved: boolean;
+  isEnrolled: boolean;
 };
 
 export type CourseContent = {
@@ -77,25 +81,29 @@ export type Educator = {
   image: string;
   firstName: string;
   lastName: string;
+  name: string;
 };
 
 export type ProgramsType = {
   id: number;
   description: string;
-  name: string;
+  title: string;
+  contentsCount: number;
+  totalDuration: number;
+  image: string;
 };
 
 export type ProgramsResponse = {
-  formattedPrograms: ProgramsType[];
+  items: ProgramsType[];
   pagination: PaginationType;
 };
 
 export type CoursesResponse = {
-  formattedContents: CourseType[];
+  items: CourseType[];
   pagination: PaginationType;
 };
 export type ExpertsResponse = {
-  data: ExpertsData[];
+  items: ExpertsData[];
   pagination: PaginationType;
 };
 

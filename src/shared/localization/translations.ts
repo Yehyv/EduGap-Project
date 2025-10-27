@@ -104,6 +104,22 @@ const translations = {
     resend_failed_title: "Failed to resend OTP",
     resend_failed_message:
       "Something went wrong while resending the OTP. Please try again.",
+    course_details: "Course Details",
+    Continue_Learning: "Continue Learning",
+    courses: "Courses",
+    programs_heading:
+      "Discover learning programs designed to develop your professional skills",
+    welcome_for_user: "Welcome",
+
+    programs_description:
+      "Your journey toward excellence starts here! Explore learning programs specially designed for you, choose the specialization that matches your ambitions, and learn your own way.",
+    my_courses: "My Courses",
+    my_certificates: "My Certificates",
+    edit_profile: "Edit Profile",
+    language: "Language",
+    theme: "Theme",
+    help_center: "Help Center",
+    total_points: "Total Points",
   },
 
   ar: {
@@ -211,8 +227,22 @@ const translations = {
     resend_in: "إعادة الإرسال خلال",
     otp_resent_successfully: "تم إرسال رمز التحقق مرة أخرى بنجاح",
     resend_failed_title: "فشل في إعادة إرسال الرمز",
+    course_details: "تفاصيل الدورة",
     resend_failed_message:
       "حدث خطأ أثناء إعادة إرسال رمز التحقق. يرجى المحاولة مرة أخرى.",
+    Continue_Learning: "استكمل التعلم",
+    courses: "الكورسات",
+    programs_heading: "اكتشف برامج التعلم المصممة لتطوير مهاراتك المهنية",
+    welcome_for_user: "اهلا بك",
+    programs_description:
+      "رحلتك نحو التميز تبدأ من هنا! استكشف برامج التعلم المصممة خصيصًا لك، واختر التخصص اللي يناسب طموحك، وتعلم على طريقتك.",
+    my_courses: "دوراتي",
+    my_certificates: "شهاداتي",
+    edit_profile: "تعديل البيانات",
+    language: "اللغة",
+    theme: "السمة",
+    help_center: "مركز المساعدة",
+    total_points: "عدد النقاط",
   },
 } as const;
 

@@ -32,8 +32,8 @@ const CourseCard = ({ course }: { course: CourseType }) => {
           }}
         />
 
-        <MedalIcon className="absolute top-2 end-2" />
-        <LevelBadge level={course?.levelName ?? "Mid"} />
+        {course?.isSaved && <MedalIcon className="absolute top-2 end-2" />}
+        <LevelBadge level={course?.level ?? "Beginner"} />
       </div>
 
       {/* Content Section */}
@@ -42,48 +42,61 @@ const CourseCard = ({ course }: { course: CourseType }) => {
           <div className="w-full">
             <p className="text-sm font-semibold text-gray-400">
               {/* Category */}
-              {course?.category?.name}
+              {course?.name}
             </p>
             <div className="flex justify-between items-center">
               <h5
                 className="font-semibold text-gray-800 line-clamp-1"
-                title={course?.name}
+                title={course?.description}
               >
-                {course?.name}
+                {course?.description}
               </h5>
             </div>
           </div>
         </div>
 
         <p className="text-sm font-semibold text-gray-400">
-          {course.educators?.[0]?.title} / {course.educators?.[0]?.firstName}{" "}
-          {course.educators?.[0]?.lastName}
+          {course?.educator?.title} / {course?.educator?.name}
         </p>
 
         {/* Rating */}
         <div className="flex items-center mb-3">
           <div className="flex items-center gap-1 text-yellow-400">
             <span className="me-1">{course?.rate?.toFixed(1)}</span>
-            {[...Array(course.rate)].map((_, i) => (
-              <StarIcon key={i} />
-            ))}
+
+            {(() => {
+              const rate = course?.rate ?? 0;
+              const fullStars = Math.floor(rate);
+
+              return (
+                <>
+                  {[...Array(fullStars)].map((_, i) => (
+                    <StarIcon key={i} className="w-5 h-5" />
+                  ))}
+                </>
+              );
+            })()}
           </div>
+
           <span className="text-gray-400 text-sm ms-2">
-            {/* ({course?.reviews?.toLocaleString()}) */}
-            (0)
+            ({course?.ratersCount ?? 0})
           </span>
         </div>
 
         <div className="flex mt-auto max-sm:gap-4 justify-center relative z-20">
-          <button
-            type="button"
-            className="absolute max-sm:static end-0 cursor-pointer"
-            onClick={() => {}}
-          >
-            <SaveIcon />
-          </button>
+          {!course?.isSaved && (
+            <button
+              type="button"
+              className="absolute max-sm:static end-0 cursor-pointer"
+              onClick={() => {}}
+            >
+              <SaveIcon />
+            </button>
+          )}
           <DefaultButton
-            text={t("start_learning")}
+            text={
+              course?.isEnrolled ? t("Continue_Learning") : t("course_details")
+            }
             onClick={() => {
               let path = "";
               if (token) {

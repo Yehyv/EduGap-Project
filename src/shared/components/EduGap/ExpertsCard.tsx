@@ -4,7 +4,10 @@ import { Link } from "react-router-dom";
 
 const ExpertsCard = ({ expertData }: { expertData: ExpertsData }) => {
   return (
-    <div className="mx-10 my-5" dir="auto">
+    <div
+      className="mx-10 my-5 transition-transform duration-500 ease-out hover:-translate-y-1"
+      dir="auto"
+    >
       <Link
         to={"/expert-profile"}
         className="flex flex-col items-center gap-2 text-center"
@@ -14,7 +17,7 @@ const ExpertsCard = ({ expertData }: { expertData: ExpertsData }) => {
         </div>
         <div>
           <h4 className="mb-2">{expertData.title}</h4>
-          <span className="line-clamp-3" title={expertData.bio}>
+          <span className="line-clamp-3 text-[#575757]" title={expertData.bio}>
             {expertData.bio}
           </span>
         </div>

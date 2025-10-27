@@ -10,6 +10,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { LanguageProvider } from "./shared/localization/LanguageProvider.tsx";
 import HtmlDirection from "./shared/utils/HtmlDirections.tsx";
 import { ToastContainer } from "react-toastify";
+import { UserProvider } from "./features/auth/context/UserContext.tsx";
 
 const queryClient = new QueryClient();
 
@@ -19,11 +20,13 @@ createRoot(document.getElementById("root")!).render(
       <LanguageProvider>
         <HtmlDirection>
           <AuthProvider>
-            <AppRoutes />
-            {import.meta.env.DEV && (
-              <ReactQueryDevtools initialIsOpen={false} />
-            )}
-            <ToastContainer />
+            <UserProvider>
+              <AppRoutes />
+              {import.meta.env.DEV && (
+                <ReactQueryDevtools initialIsOpen={false} />
+              )}
+              <ToastContainer />
+            </UserProvider>
           </AuthProvider>
         </HtmlDirection>
       </LanguageProvider>

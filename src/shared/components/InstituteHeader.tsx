@@ -1,7 +1,7 @@
 import HIMSLogo from "@/assets/imgs/ForDev/HIMSLogo.png";
-import { useLanguage } from "../localization/useLanguage";
+import { useUser } from "@/features/auth/context/UserContext";
 const InstituteHeader = () => {
-  const { t } = useLanguage();
+  const { user } = useUser();
   return (
     <div className="p-4 bg-gradient-to-r from-header-gradient-start to-header-gradient-end">
       <div className="relative container">
@@ -10,7 +10,7 @@ const InstituteHeader = () => {
           className="w-16 absolute left-4 top-1/2 -translate-y-1/2 max-sm:w-10"
         ></img>
         <h4 className="text-center text-[18px] max-md:text-sm max-w-2/3 mx-auto">
-          {t("institute_title")}
+          {user?.instituteName}
         </h4>
       </div>
     </div>

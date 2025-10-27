@@ -55,7 +55,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     if (lang) {
-      config.headers["languageId"] = lang === "en" ? "1" : "2";
+      config.headers["languageId"] = lang === "ar" ? "1" : "2";
     }
     return config;
   },
