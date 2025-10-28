@@ -154,43 +154,67 @@ export class ContentsController {
     );
   }
   @UseGuards(JwtAuthGuard)
-  @Get('latest/first-8')
-findLatestFirstEight(@Req() req: AuthenticatedRequest,
-    @Headers('languageId') languageId?: string,
-    @Query('programId') programId?: string,) {
-  const langId = languageId ? Number(languageId) : undefined;
-  const pid = programId ? Number(programId) : undefined;
-    const instituteId = req.user?.instituteId;
-  return this.contentsService.findLatestFirstEight(langId, instituteId, pid);
-}
-
-@UseGuards(JwtAuthGuard)
-// أحدث الدورات - Paginated
-@Get('latest/paginated')
-findLatestPaginated(
+  @Get('latest/paginated')
+async getLatestPaginated(
   @Req() req: AuthenticatedRequest,
-  @Query('programId') programId?: string,
   @Headers('languageId') languageId?: string,
+  @Query('programId') programId?: string,
   @Query('page') page?: string,
-  @Query('limit') limit?: string,
 ) {
   const langId = languageId ? Number(languageId) : undefined;
-  const p = page ? Number(page) : 1;
-  const l = limit ? Number(limit) : 8;
+  const pid = programId ? Number(programId) : undefined;
+  const pg = page ? Math.max(1, Number(page)) : 1;
+  const instituteId = req.user?.instituteId;
+  const userId = req.user?.sub;
+
+  return this.contentsService.findLatestPaginated(
+    pg,
+    8,
+    langId,
+    instituteId,
+    pid,
+    userId, // 👈
+  );
+}
+@UseGuards(JwtAuthGuard)
+@Get('latest/first-8')
+async getLatestFirstEight(
+  @Req() req: AuthenticatedRequest,
+  @Headers('languageId') languageId?: string,
+  @Query('programId') programId?: string,
+) {
+  const langId = languageId ? Number(languageId) : undefined;
   const pid = programId ? Number(programId) : undefined;
   const instituteId = req.user?.instituteId;
-  return this.contentsService.findLatestPaginated(p, l, langId, instituteId, pid);
+  const userId = req.user?.sub;
+
+  return this.contentsService.findLatestFirstEight(
+    langId,
+    instituteId,
+    pid,
+    userId, // 👈
+  );
 }
 @UseGuards(JwtAuthGuard)
 @Get('latest/one')
-findLatestOne(@Req() req: AuthenticatedRequest,
-    @Headers('languageId') languageId?: string,
-    @Query('programId') programId?: string,) {
+findLatestOne(
+  @Req() req: AuthenticatedRequest,
+  @Headers('languageId') languageId?: string,
+  @Query('programId') programId?: string,
+) {
   const langId = languageId ? Number(languageId) : undefined;
   const pid = programId ? Number(programId) : undefined;
   const instituteId = req.user?.instituteId;
-  return this.contentsService.findLatestOneForUser(instituteId, pid, langId);
+  const userId = req.user?.sub; // ✅ خده من التوكين
+
+  return this.contentsService.findLatestOneForUser(
+    instituteId,
+    pid,
+    langId,
+    userId,
+  );
 }
+
   /** محتوى واحد بالتفصيل */
   @Get(':id')
   findOne(

@@ -701,8 +701,9 @@ export class ContentsService {
     page = 1,
     limit = 8,
     languageId?: number,
-    instituteId?: number, // اختياري
-    programId?: number, // اختياري
+    instituteId?: number,
+    programId?: number,
+    userId?: number, // 👈 جديد لاستخراج isEnrolled
   ) {
     const skip = (page - 1) * limit;
 
@@ -728,6 +729,57 @@ export class ContentsService {
 
     const [rows, total] = await qb.getManyAndCount();
 
+    if (!rows.length) {
+      const totalPages = Math.ceil(total / limit);
+      return {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      };
+    }
+
+    // ids للباكتش-حسابات
+    const ids = rows.map((c) => c.id);
+
+    // 1) المدة الكلية + عدّاد المقيمين (rating>0)
+    const statsRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.topics', 't')
+      .leftJoin('t.lessons', 'l')
+      .leftJoin('c.enrollments', 'e')
+      .select('c.id', 'id')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .addSelect('SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END)', 'ratersCount')
+      .where('c.id IN (:...ids)', { ids })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+
+    const durationMap = new Map<number, number>(
+      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+    );
+    const ratersMap = new Map<number, number>(
+      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
+    // 2) فلاج التحاق المستخدم (لو متاح userId)
+    let enrolledMap = new Map<number, boolean>();
+    if (userId) {
+      const enrRows = await this.enrollmentRepo
+        .createQueryBuilder('en')
+        .select(['en.contentId AS cid'])
+        .where('en.userId = :uid', { uid: userId })
+        .andWhere('en.contentId IN (:...ids)', { ids })
+        .getRawMany<{ cid: number }>();
+
+      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
+    }
+
     const items = rows.map((c) => {
       const tr =
         c.translations?.find((t) => t.language?.id === languageId) ||
@@ -739,7 +791,14 @@ export class ContentsService {
         description: tr?.description ?? '',
         image: c.image,
         level: c.level,
-        rate: c.rate,
+
+        // 👇 الحقول المضافة
+        rate: c.rate ?? 0,
+        ratersCount: ratersMap.get(c.id) ?? 0,
+        totalDuration: durationMap.get(c.id) ?? 0,
+        isEnrolled: enrolledMap.get(c.id) ?? false,
+        isSaved: false,
+
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: { id: c.contentCategory?.id ?? null },
         created_at: c.created_at,
@@ -765,8 +824,9 @@ export class ContentsService {
   // أحدث الدورات – أول 8 (سلايدر) + فلترة بالمعهد/البرنامج
   async findLatestFirstEight(
     languageId?: number,
-    instituteId?: number, // اختياري
-    programId?: number, // اختياري
+    instituteId?: number,
+    programId?: number,
+    userId?: number, // 👈 جديد
   ) {
     const qb = this.contentRepo
       .createQueryBuilder('c')
@@ -788,6 +848,42 @@ export class ContentsService {
     }
 
     const rows = await qb.getMany();
+    if (!rows.length) return [];
+
+    const ids = rows.map((c) => c.id);
+
+    // مدة + عدّاد المقيمين
+    const statsRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.topics', 't')
+      .leftJoin('t.lessons', 'l')
+      .leftJoin('c.enrollments', 'e')
+      .select('c.id', 'id')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .addSelect('SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END)', 'ratersCount')
+      .where('c.id IN (:...ids)', { ids })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+
+    const durationMap = new Map<number, number>(
+      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+    );
+    const ratersMap = new Map<number, number>(
+      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
+    // فلاج التحاق
+    let enrolledMap = new Map<number, boolean>();
+    if (userId) {
+      const enrRows = await this.enrollmentRepo
+        .createQueryBuilder('en')
+        .select(['en.contentId AS cid'])
+        .where('en.userId = :uid', { uid: userId })
+        .andWhere('en.contentId IN (:...ids)', { ids })
+        .getRawMany<{ cid: number }>();
+
+      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
+    }
 
     return rows.map((c) => {
       const tr =
@@ -800,7 +896,14 @@ export class ContentsService {
         description: tr?.description ?? '',
         image: c.image,
         level: c.level,
-        rate: c.rate,
+
+        // 👇 الحقول المضافة
+        rate: c.rate ?? 0,
+        ratersCount: ratersMap.get(c.id) ?? 0,
+        totalDuration: durationMap.get(c.id) ?? 0,
+        isEnrolled: enrolledMap.get(c.id) ?? false,
+        isSaved: false,
+
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: { id: c.contentCategory?.id ?? null },
         created_at: c.created_at,
@@ -813,6 +916,7 @@ export class ContentsService {
     instituteId: number,
     programId?: number,
     languageId?: number,
+    userId?: number, // 👈 أضفنا userId
   ) {
     const qb = this.contentRepo
       .createQueryBuilder('c')
@@ -841,8 +945,17 @@ export class ContentsService {
         'No latest content found for this institute/program',
       );
     }
-    const e = row.educator;
 
+    // ✅ فلاج isEnrolled
+    let isEnrolled = false;
+    if (userId) {
+      const enr = await this.enrollmentRepo.findOne({
+        where: { user: { id: userId }, content: { id: row.id } },
+      });
+      if (enr) isEnrolled = true;
+    }
+
+    const e = row.educator;
     const tr =
       row.translations?.find((t) => t.language?.id === languageId) ||
       row.translations?.[0];
@@ -858,6 +971,9 @@ export class ContentsService {
       whatToLearn: tr?.what_to_learn?.split(',') ?? [],
       category: { id: row.contentCategory?.id ?? null },
       created_at: row.created_at,
+      isEnrolled, // 👈 الفلاج الجديد
+      isSaved: false,
+
       educator: e
         ? {
             id: e.id,
@@ -871,6 +987,7 @@ export class ContentsService {
         : null,
     };
   }
+
   async assignEducator(contentId: number, educatorId: number) {
     const content = await this.contentRepo.findOne({
       where: { id: contentId },
