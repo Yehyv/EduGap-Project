@@ -12,6 +12,7 @@ type UserContextType = {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   fetchUser: () => Promise<void>;
+  logout: () => void;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -32,12 +33,20 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
   };
 
+  const logout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+  };
+
   useEffect(() => {
-    fetchUser();
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchUser();
+    }
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser, fetchUser }}>
+    <UserContext.Provider value={{ user, setUser, fetchUser, logout }}>
       {children}
     </UserContext.Provider>
   );

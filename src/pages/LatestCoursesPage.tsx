@@ -2,7 +2,7 @@ import SectionTitle from "@/shared/components/SectionTitle";
 import CourseCard from "@/shared/components/EduGap/CourseCard";
 import type { CoursesResponse } from "@/shared/types/sharedTypes";
 import { useQuery } from "@tanstack/react-query";
-import { getAllPopularCourses } from "@/features/GuestHome/services/GuestHomeApi";
+import { getLatestCoursesList } from "@/features/GuestHome/services/GuestHomeApi";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
 import CardSkeleton from "@/shared/components/ui/CardSkeleton";
@@ -12,15 +12,15 @@ import { useSearchParams } from "react-router-dom";
 import { RESULTS_PER_PAGE } from "@/shared/utils/globals";
 import { useUser } from "@/features/auth/context/UserContext";
 
-const PopularCoursesList = () => {
+const LatestCoursesPage = () => {
   const { t } = useLanguage();
   const { user } = useUser();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
   const { data, isLoading, error } = useQuery<CoursesResponse>({
-    queryKey: ["getPopularCoursesList", page, user?.programId],
+    queryKey: ["getLatestCoursesList", page, user?.programId],
     queryFn: () =>
-      getAllPopularCourses(page.toString(), RESULTS_PER_PAGE, user?.programId),
+      getLatestCoursesList(page.toString(), RESULTS_PER_PAGE, user?.programId),
     enabled: !!user?.programId,
   });
   const handlePageChange = (newPage: number) => {
@@ -32,7 +32,7 @@ const PopularCoursesList = () => {
   return (
     <div className="mb-5 mt-10 container">
       <ScrollToTop />
-      <SectionTitle textTitle={t("courses_list")} />
+      <SectionTitle textTitle={t("training_courses")} />
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 my-10">
@@ -58,4 +58,4 @@ const PopularCoursesList = () => {
   );
 };
 
-export default PopularCoursesList;
+export default LatestCoursesPage;

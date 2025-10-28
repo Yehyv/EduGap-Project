@@ -25,6 +25,7 @@ import ProgramDetails from "@/pages/ProgramDetails";
 import InstituteCourseDetails from "@/pages/InstituteCourseDetails";
 import ProtectVerifyOtp from "./ProtectVerifyOtp";
 import ProtectResetPassword from "./ProtectResetPassword";
+import LatestCoursesPage from "@/pages/LatestCoursesPage";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -96,6 +97,7 @@ export default function AppRoutes() {
         }
       >
         <Route path="/userHome" element={<UserHome />} />
+        <Route path="/latest-courses" element={<LatestCoursesPage />} />
         <Route
           path="/user-course-details/:courseId"
           element={<ContentDetailsPageForUser />}

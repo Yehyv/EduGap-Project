@@ -7,9 +7,11 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { toast } from "react-toastify";
+import { useUser } from "../context/UserContext";
 
 const useLogin = () => {
   const { t } = useLanguage();
+  const { fetchUser } = useUser();
   const { login, saveRefreshToken } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +32,7 @@ const useLogin = () => {
   const handleSubmit = (values: LoginFormValues) => {
     setIsLoading(true);
     loginUser(values)
-      .then((response) => {
+      .then(async (response) => {
         if (response?.data?.data?.mustVerifyOtp) {
           sessionStorage.setItem(
             "challengeId",
@@ -42,6 +44,8 @@ const useLogin = () => {
           const { accessToken, refreshToken } = response.data.data;
           login(accessToken);
           saveRefreshToken(refreshToken);
+          await fetchUser();
+
           navigate("/userHome");
         }
       })

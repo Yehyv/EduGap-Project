@@ -5,20 +5,20 @@ import type { CourseType } from "@/shared/types/sharedTypes";
 import ArrowButton from "@/shared/components/ui/ArrowButton";
 import GhostButton from "@/shared/components/ui/GhostButton";
 import { useQuery } from "@tanstack/react-query";
-import { getPopularCoursesForSlider } from "@/features/GuestHome/services/GuestHomeApi";
+import { getLatestCoursesForSlider } from "@/features/GuestHome/services/GuestHomeApi";
 import CardSkeleton from "@/shared/components/ui/CardSkeleton";
 import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
 import { useUser } from "@/features/auth/context/UserContext";
 
-const PopularCoursesSlider = () => {
+const LatestCourses = () => {
   const { t } = useLanguage();
   const { user } = useUser();
 
   const { data, isLoading, error } = useQuery<CourseType[]>({
-    queryKey: ["coursesForSlider", user?.programId],
-    queryFn: () => getPopularCoursesForSlider(user!.programId),
+    queryKey: ["latestCoursesSlider", user?.programId],
+    queryFn: () => getLatestCoursesForSlider(user!.programId),
     enabled: !!user?.programId,
   });
 
@@ -47,8 +47,8 @@ const PopularCoursesSlider = () => {
   return (
     <div className="mb-5 container">
       <div className="flex justify-between items-start">
-        <SectionTitle textTitle={t("courses_title")} />
-        <GhostButton buttonText={t("more")} to="/popular-courses-list" />
+        <SectionTitle textTitle={t("training_courses")} />
+        <GhostButton buttonText={t("more")} to="/latest-courses" />
       </div>
 
       {isLoading ? (
@@ -72,4 +72,4 @@ const PopularCoursesSlider = () => {
   );
 };
 
-export default PopularCoursesSlider;
+export default LatestCourses;

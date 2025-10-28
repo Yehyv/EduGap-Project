@@ -27,6 +27,8 @@ const LanguageDropdown = lazy(() => import("./ui/LanguageDropdown"));
 const UserNav = () => {
   const { lang, setLang, t } = useLanguage();
   const { logout } = useAuth();
+  const { logout: clearUserData } = useUser();
+
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { user } = useUser();
@@ -35,6 +37,7 @@ const UserNav = () => {
 
   const handleLogOut = () => {
     logoutUser().then(logout).catch(console.error);
+    clearUserData();
   };
 
   return (

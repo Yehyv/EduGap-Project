@@ -34,6 +34,7 @@ export type CourseType = {
   ratersCount: number;
   isSaved: boolean;
   isEnrolled: boolean;
+  ad_video?: string;
 };
 
 export type CourseContent = {
@@ -49,10 +50,32 @@ export type ContentDetailsType = {
   durationTime: string;
   levelName: string;
   description: string;
-  educators: Educator[];
-  whatToLearn: string[];
+  educator: Educator;
+  whatToLearn: string;
   topic: TopicsType[];
   adVideo: string;
+};
+export type ContentAccessType = {
+  access: string;
+  enrollmentId: number;
+};
+export type ContentTopicsType = {
+  id: number;
+  name: string;
+  duration: number;
+  lessons: LessonType[];
+};
+export type HistogramType = {
+  1: number;
+  2: number;
+  3: number;
+  4: number;
+  5: number;
+};
+export type ContentRatingsType = {
+  histogram: HistogramType;
+  average: number;
+  totalRaters: number;
 };
 
 export type TopicsType = {
@@ -64,6 +87,7 @@ export type TopicsType = {
 export type LessonType = {
   id: number;
   name: string;
+  duration: number;
 };
 
 export type ContinueCourseType = {
@@ -72,6 +96,18 @@ export type ContinueCourseType = {
   lessonId: string | number;
   imageUrl?: string;
   lessonName?: string;
+};
+export type InstituteCoursesType = {
+  id: number;
+  image: string;
+  name: string;
+  description: string;
+  contentsCount: number;
+  totalDuration: number;
+};
+export type InstituteCoursesResponse = {
+  items: InstituteCoursesType[];
+  pagination: PaginationType;
 };
 
 export type Educator = {

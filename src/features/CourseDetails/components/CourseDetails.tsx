@@ -5,10 +5,11 @@ import UserIcon from "@/assets/svgs/UserIcon.svg";
 import SectionTitle from "@/shared/components/SectionTitle";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import CheckIcon from "@/assets/svgs/CheckIcon.svg?react";
-import FAQList from "@/shared/components/ui/FAQList";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
 import ExpandableText from "@/shared/components/ui/ExpandableText";
 import type { ContentDetailsType } from "@/shared/types/sharedTypes";
+import CourseContent from "@/features/UserHome/components/CourseContent";
+import ContentRatings from "@/features/UserHome/components/ContentRatings";
 
 const CourseDetails = ({
   buttonText,
@@ -21,7 +22,7 @@ const CourseDetails = ({
 }) => {
   const { t } = useLanguage();
   const [isOnline, setIsOnline] = useState(true);
-  const { firstName, lastName, title } = data.educators[0];
+  const { firstName, lastName, title } = data.educator;
   const fullName = `${firstName} ${lastName}`;
   const { durationTime, levelName } = data;
 
@@ -53,7 +54,7 @@ const CourseDetails = ({
           <div className="flex items-center gap-2 my-4">
             <div className="w-12 h-12 rounded-full shadow-md overflow-hidden">
               <img
-                src={UserIcon}
+                src={data?.educator.image || UserIcon}
                 alt="Instructor"
                 className="w-full h-full object-contain"
               />
@@ -71,7 +72,7 @@ const CourseDetails = ({
         <section className="py-5 border-b border-[#575757]">
           <SectionTitle textTitle={t("what_to_learn")} />
           <ul className="space-y-4 mt-4">
-            {data?.whatToLearn?.map((item, idx) => (
+            {data?.whatToLearn.split(",").map((item, idx) => (
               <li key={idx} className="flex items-center gap-2">
                 <CheckIcon className="w-6 h-6 text-green-500 flex-shrink-0" />
                 <span>{item}</span>
@@ -81,10 +82,10 @@ const CourseDetails = ({
         </section>
 
         {/* Course content (FAQ) */}
-        <section className="py-5 my-6">
-          <SectionTitle textTitle={t("course_content")} />
-          <FAQList topics={data?.topic} />
-        </section>
+        <CourseContent />
+
+        {/* Ratings */}
+        <ContentRatings />
       </div>
 
       {/* Sidebar */}

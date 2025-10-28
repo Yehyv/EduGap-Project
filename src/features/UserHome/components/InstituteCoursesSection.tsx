@@ -9,11 +9,15 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
 import InstituteCourseCard from "./InstituteCourseCard";
 import { getInstituteCoursesForSlider } from "../services/userHomeApis";
+import { useUser } from "@/features/auth/context/UserContext";
+import type { InstituteCoursesType } from "@/shared/types/sharedTypes";
 const InstituteCoursesSection = () => {
   const { t } = useLanguage();
-  const { data, isLoading, error } = useQuery<any[]>({
-    queryKey: ["InstituteCoursesSection"],
-    queryFn: getInstituteCoursesForSlider as any,
+  const { user } = useUser();
+  const { data, isLoading, error } = useQuery<InstituteCoursesType[]>({
+    queryKey: ["InstituteCoursesSection", user?.programId],
+    queryFn: () => getInstituteCoursesForSlider(user?.programId),
+    enabled: !!user?.programId,
   });
 
   const { slidesToShow, windowWidth } = useResponsiveSlides(
@@ -22,10 +26,8 @@ const InstituteCoursesSection = () => {
       { width: 1000, slides: 2 },
       { width: 1180, slides: 3 },
     ],
-    3 // default
+    3
   );
-
-  console.log(data);
 
   const settings = {
     dots: true,
@@ -46,7 +48,9 @@ const InstituteCoursesSection = () => {
   return (
     <div className="mb-5 container">
       <div className="flex justify-between items-start">
-        <SectionTitle textTitle={t("institute_courses_title")} />
+        <SectionTitle
+          textTitle={`${t("institute_courses_title")} ${user?.instituteName}`}
+        />
         <GhostButton buttonText={t("more")} to="/institute-courses" />
       </div>
 

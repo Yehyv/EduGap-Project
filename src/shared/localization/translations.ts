@@ -66,8 +66,7 @@ const translations = {
     content_duration: "Course Duration",
     level: "Level",
     certificate: "Course Certificate",
-    institute_courses_title:
-      "Higher Institute for Administrative Sciences – Katameya",
+    institute_courses_title: "Courses offered by",
     expert_course: "Training Courses",
     program_title: "Program Title",
     courses_list: "Training Courses",
@@ -120,6 +119,11 @@ const translations = {
     theme: "Theme",
     help_center: "Help Center",
     total_points: "Total Points",
+    training_courses: "Training Courses",
+    no_internet: "⚠️ No internet connection",
+    failed_to_load: "❌ Failed to load video",
+    ratings: "Ratings & Reviews",
+    rater: "Rater",
   },
 
   ar: {
@@ -192,7 +196,7 @@ const translations = {
     content_duration: "مدة الدورة",
     level: "المستوي",
     certificate: "شهادة إتمام الدورة",
-    institute_courses_title: "المقررات الدراسية الخاصة بمعهد القطامية",
+    institute_courses_title: "المقررات الدراسية الخاصة بمعهد",
     expert_course: "الدورات التدريبية",
     program_title: "برنامج التعلم",
     courses_list: "الدورات التدريبية",
@@ -243,6 +247,11 @@ const translations = {
     theme: "السمة",
     help_center: "مركز المساعدة",
     total_points: "عدد النقاط",
+    training_courses: "الدورات التدريبية",
+    no_internet: "⚠️ لا يوجد اتصال بالإنترنت",
+    failed_to_load: "❌ فشل تحميل الفيديو",
+    ratings: "التقييم والاراء",
+    rater: "مقيم",
   },
 } as const;
 

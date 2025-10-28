@@ -53,7 +53,6 @@ const CourseContentCard = () => {
         </section>
       </div>
 
-      {/* الروابط السريعة */}
       {quickLinks.map(({ icon: Icon, label }, i) => (
         <h5
           key={i}
@@ -64,7 +63,6 @@ const CourseContentCard = () => {
         </h5>
       ))}
 
-      {/* الخبير */}
       <div className="shadow-custom overflow-auto top-16 rounded-xl py-5">
         <h5 className="flex gap-2 text-lg font-semibold mb-4 border-b pb-3 border-[#D0CDCD] px-5">
           <ExpertIcon />

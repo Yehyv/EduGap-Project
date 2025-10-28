@@ -1,7 +1,6 @@
 import SectionTitle from "@/shared/components/SectionTitle";
-import type { CoursesResponse } from "@/shared/types/sharedTypes";
+import type { InstituteCoursesResponse } from "@/shared/types/sharedTypes";
 import { useQuery } from "@tanstack/react-query";
-import { getAllPopularCourses } from "@/features/GuestHome/services/GuestHomeApi";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
 import CardSkeleton from "@/shared/components/ui/CardSkeleton";
@@ -10,15 +9,22 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import { useSearchParams } from "react-router-dom";
 import { RESULTS_PER_PAGE } from "@/shared/utils/globals";
 import InstituteCourseCard from "@/features/UserHome/components/InstituteCourseCard";
+import { useUser } from "@/features/auth/context/UserContext";
+import { getInstituteCoursesForPage } from "@/features/UserHome/services/userHomeApis";
 
 const InstituteCourses = () => {
   const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useUser();
+
   const page = Number(searchParams.get("page")) || 1;
-  const { data, isLoading, error } = useQuery<CoursesResponse>({
-    queryKey: ["getCoursesList", page],
-    queryFn: () => getAllPopularCourses(page.toString(), RESULTS_PER_PAGE),
+  const { data, isLoading, error } = useQuery<InstituteCoursesResponse>({
+    queryKey: ["InstituteCoursesPage", page, user?.programId],
+    queryFn: () =>
+      getInstituteCoursesForPage(page, RESULTS_PER_PAGE, user?.programId),
+    enabled: !!user?.programId,
   });
+
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString() });
   };
@@ -39,7 +45,7 @@ const InstituteCourses = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4">
-            {data?.formattedContents?.map((courseData, idx) => (
+            {data?.items?.map((courseData, idx) => (
               <InstituteCourseCard key={idx} course={courseData} />
             ))}
           </div>

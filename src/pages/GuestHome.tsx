@@ -2,7 +2,7 @@ import PopularCoursesSlider from "@/shared/components/EduGap/PopularCoursesSlide
 import HeroSection from "@/features/GuestHome/components/HeroSection";
 import ProgramsSection from "@/shared/components/EduGap/ProgramsSection";
 import Experts from "@/shared/components/EduGap/Experts";
-// import Testimonials from "@/shared/components/EduGap/Testimonials";
+import Testimonials from "@/shared/components/EduGap/Testimonials";
 import withLoader from "@/shared/hooks/withLoader";
 
 const GuestHome = () => {
@@ -11,7 +11,7 @@ const GuestHome = () => {
       <HeroSection />
       <PopularCoursesSlider />
       <ProgramsSection />
-      {/* <Testimonials /> */}
+      <Testimonials />
       <Experts />
     </>
   );

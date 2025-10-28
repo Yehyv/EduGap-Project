@@ -8,9 +8,19 @@ import type {
   ProgramsType,
 } from "@/shared/types/sharedTypes";
 
-export async function getPopularCoursesForSlider(): Promise<CourseType[]> {
+export async function getPopularCoursesForSlider(
+  programId?: number
+): Promise<CourseType[]> {
   const res = await api.get<ApiResponse<CourseType[]>>(
-    "/contents/trending/first-8?programId=1"
+    `/contents/trending/first-8?programId=${programId}`
+  );
+  return res.data.data;
+}
+export async function getLatestCoursesForSlider(
+  programId?: number
+): Promise<CourseType[]> {
+  const res = await api.get<ApiResponse<CourseType[]>>(
+    `/contents/latest/first-8?programId=${programId}`
   );
   return res.data.data;
 }
@@ -22,13 +32,26 @@ export async function getSavedCoursesForSlider(): Promise<CourseType[]> {
 }
 export async function getAllPopularCourses(
   page: string,
-  limit: number
+  limit: number,
+  programId?: number
 ): Promise<CoursesResponse> {
-  // change program ID
   const res = await api.get<ApiResponse<CoursesResponse>>(
-    "/contents/trending",
+    `/contents/trending/paginated?programId=${programId}`,
     {
-      params: { page, limit, programId: 1 },
+      params: { page, limit },
+    }
+  );
+  return res.data.data;
+}
+export async function getLatestCoursesList(
+  page: string,
+  limit: number,
+  programId?: number
+): Promise<CoursesResponse> {
+  const res = await api.get<ApiResponse<CoursesResponse>>(
+    `/contents/latest/paginated?programId=${programId}`,
+    {
+      params: { page, limit },
     }
   );
   return res.data.data;

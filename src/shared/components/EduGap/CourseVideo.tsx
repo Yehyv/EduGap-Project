@@ -1,3 +1,4 @@
+import { useLanguage } from "@/shared/localization/useLanguage";
 import StatusMessage from "@/shared/utils/StatusMessage";
 import { useEffect, useState } from "react";
 
@@ -8,6 +9,7 @@ const CourseVideo = ({
   videoUrl: string;
   isOnline: boolean;
 }) => {
+  const { t } = useLanguage();
   const [videoError, setVideoError] = useState(false);
 
   useEffect(() => {
@@ -19,9 +21,7 @@ const CourseVideo = ({
       {!isOnline || videoError ? (
         <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-xl shadow overflow-hidden">
           <StatusMessage
-            message={
-              !isOnline ? "⚠️ لا يوجد اتصال بالإنترنت" : "❌ فشل تحميل الفيديو"
-            }
+            message={!isOnline ? t("no_internet") : t("failed_to_load")}
           />
         </div>
       ) : (
@@ -31,7 +31,7 @@ const CourseVideo = ({
           onError={() => setVideoError(true)}
         >
           <source src={videoUrl} type="video/mp4" />
-          متصفحك لا يدعم تشغيل الفيديو
+          {t("failed_to_load")}{" "}
         </video>
       )}
     </div>
