@@ -811,7 +811,7 @@ export class ContentsService {
   // أحدث دورة واحدة (للمعهد/البرنامج بتوع المستخدم)
   async findLatestOneForUser(
     instituteId: number,
-    programId: number,
+    programId?: number,
     languageId?: number,
   ) {
     const qb = this.contentRepo
@@ -822,11 +822,18 @@ export class ContentsService {
       .leftJoinAndSelect('c.translations', 'tr')
       .leftJoinAndSelect('tr.language', 'lang')
       .leftJoinAndSelect('c.contentCategory', 'cat')
+      .leftJoinAndSelect('c.educator', 'educator')
+      .leftJoinAndSelect('educator.user', 'eduUser')
       .where('c.deleted_at IS NULL')
-      .andWhere('ipc.instituteId = :instituteId', { instituteId })
-      .andWhere('ipc.programId = :programId', { programId })
       .orderBy('c.created_at', 'DESC')
       .limit(1);
+
+    if (instituteId) {
+      qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
+    }
+    if (programId) {
+      qb.andWhere('ipc.programId = :programId', { programId });
+    }
 
     const row = await qb.getOne();
     if (!row) {
@@ -834,6 +841,7 @@ export class ContentsService {
         'No latest content found for this institute/program',
       );
     }
+    const e = row.educator;
 
     const tr =
       row.translations?.find((t) => t.language?.id === languageId) ||
@@ -850,6 +858,17 @@ export class ContentsService {
       whatToLearn: tr?.what_to_learn?.split(',') ?? [],
       category: { id: row.contentCategory?.id ?? null },
       created_at: row.created_at,
+      educator: e
+        ? {
+            id: e.id,
+            title: e.title,
+            bio: e.bio,
+            image: e.image,
+            name: e.user?.full_name ?? '',
+            userId: e.user?.id ?? null,
+            rate: 5, // ثابت مؤقتًا
+          }
+        : null,
     };
   }
   async assignEducator(contentId: number, educatorId: number) {
@@ -899,5 +918,33 @@ export class ContentsService {
   async restoreEducator(contentId: number, educatorId: number) {
     // لو عايز ترجع “آخر واحد” لازم تحتفظ بتاريخ — لكن هنا هنرجّع للي تبعثه
     return this.assignEducator(contentId, educatorId);
+  }
+
+  async getContentEducator(contentId: number) {
+    const content = await this.contentRepo.findOne({
+      where: { id: contentId },
+      relations: ['educator', 'educator.user'],
+    });
+
+    if (!content) {
+      throw new NotFoundException(`Content ${contentId} not found`);
+    }
+
+    const e = content.educator;
+    return {
+      contentId: content.id,
+      educator: e
+        ? {
+            id: e.id,
+            title: e.title,
+            bio: e.bio,
+            image: e.image,
+            // اسم المدرس من جدول الـuser
+            name: e.user?.full_name ?? '',
+            userId: e.user?.id ?? null,
+            rate: 5,
+          }
+        : null, // لو لسه ما اتعيَّن مدرّس
+    };
   }
 }

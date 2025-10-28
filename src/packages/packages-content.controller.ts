@@ -9,6 +9,7 @@ import {
   UseGuards,
   Query,
   Get,
+  Headers,
 } from '@nestjs/common';
 import { ContentsService } from 'src/contents/contents.service';
 import { PackagesService } from './packages.service';
@@ -25,14 +26,14 @@ export class PackageContentsController {
    * Body: { contentIds: number[] }
    */
   @Get('first-8')
-  getFirst8(@Query('languageId') languageId?: string) {
+  getFirst8(@Headers('languageId') languageId?: string) {
     const langId = languageId ? Number(languageId) : undefined;
     return this.packagesService.findPackagesFirst8(langId);
   }
 
   @Get('paginated')
   getPaginated(
-    @Query('languageId') languageId?: string,
+    @Headers('languageId') languageId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {

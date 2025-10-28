@@ -30,6 +30,7 @@ import { LessonCommentsModule } from './lesson-comments/lesson-comments.module';
 import { ContentReviewsModule } from './content-reviews/content-reviews.module';
 import { SpecializationsModule } from './specializations/specializations.module';
 import { PackagesModule } from './packages/packages.module';
+import { EducatorReviewsModule } from './educator-reviews/educator-reviews.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -64,6 +65,7 @@ import { PackagesModule } from './packages/packages.module';
     ContentReviewsModule,
     SpecializationsModule,
     PackagesModule,
+    EducatorReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

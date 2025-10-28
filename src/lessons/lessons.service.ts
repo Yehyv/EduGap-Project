@@ -183,4 +183,37 @@ export class LessonsService {
       await this.lessonTrRepo.save(tr);
     }
   }
+
+  async getLessonContent(lessonId: number, languageId?: number) {
+  const qb = this.lessonRepo
+    .createQueryBuilder('lesson')
+    // نجيب ترجمة واحدة حسب اللغة المطلوبة (إن وجدت)
+    .leftJoinAndSelect(
+      'lesson.translations',
+      'tr',
+      languageId ? 'tr.languageId = :languageId' : undefined,
+      { languageId },
+    )
+    // نرجّع الحقول الخفيفة فقط
+    .select([
+      'lesson.id',
+      'lesson.order_id',
+      'lesson.video_link',
+      'tr.id',
+      'tr.name',
+    ])
+    .where('lesson.id = :lessonId', { lessonId });
+
+  const entity = await qb.getOne();
+  if (!entity) throw new NotFoundException('Lesson not found');
+
+  const name = entity.translations?.[0]?.name ?? '';
+
+  return {
+    id: entity.id,
+    order: entity.order_id ?? null,
+    name,
+    video: entity.video_link ?? null,
+  };
+}
 }

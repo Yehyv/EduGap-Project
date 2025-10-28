@@ -44,29 +44,71 @@ export class ContentsController {
     const langId = languageId ? Number(languageId) : undefined;
     return this.contentsService.findAll(langId);
   }
-  @Get(':id/details')
-getContentDetails(
-  @Param('id', ParseIntPipe) id: number,
-  @Req() req: AuthenticatedRequest,
-  @Query('programId') programId?: string,
-  @Query('reviewPage') reviewPage?: string,
-  @Query('reviewLimit') reviewLimit?: string,
-  @Headers('languageId') languageId?: string,
-) {
-  const instituteId = req.user?.instituteId;
-  const userId = req.user?.sub;
-  const pid = programId?.trim() ? Number(programId) : undefined;
-  const langId = languageId?.trim() ? Number(languageId) : undefined;
+  @UseGuards(OptionalJwtAuthGuard)
+   @Get(':id/base')
+  async getBase(
+    @Param('id') id: string,
+    @Param('languageId') languageId?: string,
+    @Query('instituteId') instituteId?: string,
+    @Query('programId') programId?: string,
+  ) {
+    return this.contentDetailsService.getBase(Number(id), {
+      languageId: languageId ? Number(languageId) : undefined,
+      instituteId: instituteId ? Number(instituteId) : undefined,
+      programId: programId ? Number(programId) : undefined,
+    });
+  }
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/topics')
+  async getTopics(@Param('id') id: string, @Param('languageId') languageId?: string) {
+    return this.contentDetailsService.getTopics(Number(id), { languageId: languageId ? Number(languageId) : undefined });
+  }
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/ratings')
+  async getRatings(@Param('id') id: string) {
+    return this.contentDetailsService.getRatings(Number(id));
+  }
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/reviews')
+  async getReviews(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.contentDetailsService.getReviews(Number(id), {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+  }
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/access')
+  async getAccess(@Param('id') id: string, @Req() req?: any) {
+    const userId = req?.user?.id as number | undefined;
+    return this.contentDetailsService.getAccess(Number(id), { userId });
+  }
+//   @Get(':id/details')
+// getContentDetails(
+//   @Param('id', ParseIntPipe) id: number,
+//   @Req() req: AuthenticatedRequest,
+//   @Query('programId') programId?: string,
+//   @Query('reviewPage') reviewPage?: string,
+//   @Query('reviewLimit') reviewLimit?: string,
+//   @Headers('languageId') languageId?: string,
+// ) {
+//   const instituteId = req.user?.instituteId;
+//   const userId = req.user?.sub;
+//   const pid = programId?.trim() ? Number(programId) : undefined;
+//   const langId = languageId?.trim() ? Number(languageId) : undefined;
 
-  return this.contentDetailsService.getDetailsForUser(id, {
-    userId,
-    instituteId,
-    programId: pid,
-    languageId: langId,
-    reviewPage: reviewPage ? Number(reviewPage) : 1,
-    reviewLimit: reviewLimit ? Number(reviewLimit) : 2,
-  });
-}
+//   return this.contentDetailsService.getDetailsForUser(id, {
+//     userId,
+//     instituteId,
+//     programId: pid,
+//     languageId: langId,
+//     reviewPage: reviewPage ? Number(reviewPage) : 1,
+//     reviewLimit: reviewLimit ? Number(reviewLimit) : 2,
+//   });
+// }
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get('trending')
@@ -111,6 +153,7 @@ getContentDetails(
       userId
     );
   }
+  @UseGuards(JwtAuthGuard)
   @Get('latest/first-8')
 findLatestFirstEight(@Req() req: AuthenticatedRequest,
     @Headers('languageId') languageId?: string,
@@ -121,8 +164,9 @@ findLatestFirstEight(@Req() req: AuthenticatedRequest,
   return this.contentsService.findLatestFirstEight(langId, instituteId, pid);
 }
 
+@UseGuards(JwtAuthGuard)
 // أحدث الدورات - Paginated
-@Get('latest')
+@Get('latest/paginated')
 findLatestPaginated(
   @Req() req: AuthenticatedRequest,
   @Query('programId') programId?: string,
@@ -136,6 +180,16 @@ findLatestPaginated(
   const pid = programId ? Number(programId) : undefined;
   const instituteId = req.user?.instituteId;
   return this.contentsService.findLatestPaginated(p, l, langId, instituteId, pid);
+}
+@UseGuards(JwtAuthGuard)
+@Get('latest/one')
+findLatestOne(@Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+    @Query('programId') programId?: string,) {
+  const langId = languageId ? Number(languageId) : undefined;
+  const pid = programId ? Number(programId) : undefined;
+  const instituteId = req.user?.instituteId;
+  return this.contentsService.findLatestOneForUser(instituteId, pid, langId);
 }
   /** محتوى واحد بالتفصيل */
   @Get(':id')
@@ -204,6 +258,10 @@ findLatestPaginated(
     @Body('educatorId', ParseIntPipe) educatorId: number,
   ) {
     return this.contentsService.restoreEducator(id, educatorId);
+  }
+  @Get(':id/educator')
+  async getEducator(@Param('id') id: string) {
+    return this.contentsService.getContentEducator(Number(id));
   }
 
 }

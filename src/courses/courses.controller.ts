@@ -49,7 +49,7 @@ export class CoursesController {
     const langId = languageId ? Number(languageId) : undefined;
     return this.coursesService.findAll(req.user!.instituteId, langId);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Get('first-8')
   async findInstituteProgramCoursesFirstEight(
     @Req() req: AuthenticatedRequest,
@@ -71,7 +71,7 @@ export class CoursesController {
       langId,
     );
   }
-
+  @UseGuards(JwtAuthGuard)
   /** مقررات المعهد+البرنامج (Paginated 8) */
   @Get('paginated')
   async findInstituteProgramCoursesPaginated(
