@@ -111,7 +111,7 @@ export class ContentsController {
 // }
 
   @UseGuards(OptionalJwtAuthGuard)
-  @Get('trending')
+  @Get('trending/paginated')
   async getTrendingPaginated(
     @Req() req: AuthenticatedRequest,
     @Headers('languageId') languageId?: string,
@@ -206,7 +206,7 @@ findLatestOne(
   const pid = programId ? Number(programId) : undefined;
   const instituteId = req.user?.instituteId;
   const userId = req.user?.sub; // ✅ خده من التوكين
-
+  console.log("language ID",langId)
   return this.contentsService.findLatestOneForUser(
     instituteId,
     pid,

@@ -270,16 +270,18 @@ export class ContentsService {
   }
 
   // 🔹 تريندينج بباجينيشن (8 في الصفحة)
+  // ================= Trending – Paginated =================
   async findTrendingPaginated(
     page = 1,
     limit = 8,
     languageId?: number,
     instituteId?: number,
     programId?: number,
-    userId?: number, // 👈 اختياري
+    userId?: number, // اختياري
   ) {
     const offset = (page - 1) * limit;
 
+    // 1) IDs مرتبة حسب عدد الـ enrollments
     const baseQb = this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e')
@@ -302,6 +304,7 @@ export class ContentsService {
       .limit(limit)
       .offset(offset)
       .getRawMany<{ id: number; cnt: string }>();
+
     if (!pageRows.length) {
       return {
         items: [],
@@ -317,10 +320,12 @@ export class ContentsService {
     }
 
     const ids = pageRows.map((r) => Number(r.id));
-    const countMap = new Map(ids.map((id, i) => [id, Number(pageRows[i].cnt)]));
-    const orderIndex = new Map(ids.map((id, i) => [id, i]));
+    const countMap = new Map<number, number>(
+      ids.map((id, i) => [id, Number(pageRows[i].cnt)]),
+    );
+    const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
 
-    // متوسط التقييم → تخزينه في content.rate
+    // 2) متوسط التقييم → خزّنه في content.rate
     const avgRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e2')
@@ -349,7 +354,7 @@ export class ContentsService {
       );
     }
 
-    // إجمالي المدة + عدد المقيمين
+    // 3) المدة + عدّاد المقيمين
     const statsRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.topics', 't')
@@ -365,38 +370,45 @@ export class ContentsService {
       .groupBy('c.id')
       .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
 
-    const durationMap = new Map(
+    const durationMap = new Map<number, number>(
       statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
-    const ratersMap = new Map(
+    const ratersMap = new Map<number, number>(
       statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
     );
 
-    // ✅ فلاج الالتحاق لو فيه userId
+    // 4) فلاج الالتحاق (يكفي وجود صف)
     let enrolledMap = new Map<number, boolean>();
     if (userId) {
       const enrRows = await this.enrollmentRepo
         .createQueryBuilder('en')
-        .select(['en.contentId AS cid', 'en.status AS status'])
+        .select(['en.contentId AS cid'])
         .where('en.userId = :uid', { uid: userId })
         .andWhere('en.contentId IN (:...ids)', { ids })
-        .getRawMany<{ cid: number; status: number }>();
-
-      enrolledMap = new Map(
-        enrRows.map((r) => [Number(r.cid), Number(r.status) === 0]),
-      );
+        .getRawMany<{ cid: number }>();
+      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
     }
 
-    const contents = await this.contentRepo.find({
-      where: { id: In(ids) },
-      relations: [
-        'translations',
-        'translations.language',
-        'contentCategory',
-        'educator',
-        'educator.user',
-      ],
-    });
+    // 5) حمّل تفاصيل المحتويات + ترجمات التصنيف والـ educator
+    const contents = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoinAndSelect(
+        'c.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.contentCategory', 'cat')
+      .leftJoinAndSelect(
+        'cat.translations',
+        'catTr',
+        languageId ? 'catTr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.educator', 'educator')
+      .leftJoinAndSelect('educator.user', 'eduUser')
+      .where('c.id IN (:...ids)', { ids })
+      .getMany();
 
     contents.sort(
       (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
@@ -404,8 +416,16 @@ export class ContentsService {
 
     const items = contents.map((c) => {
       const tr =
-        c.translations.find((t) => t.language?.id === languageId) ||
-        c.translations[0];
+        c.translations.find(
+          (t: any) =>
+            t?.language?.id === languageId || t?.languageId === languageId,
+        ) || c.translations[0];
+
+      const catTr =
+        c.contentCategory?.translations?.find(
+          (t: any) =>
+            t?.language?.id === languageId || t?.languageId === languageId,
+        ) || c.contentCategory?.translations?.[0];
 
       return {
         id: c.id,
@@ -418,7 +438,6 @@ export class ContentsService {
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
 
-        // 👇 الفلاج الجديد
         isEnrolled: enrolledMap.get(c.id) ?? false,
         isSaved: false,
 
@@ -431,7 +450,10 @@ export class ContentsService {
           : null,
 
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
-        category: { id: c.contentCategory?.id ?? null },
+        category: {
+          id: c.contentCategory?.id ?? null,
+          name: catTr?.name ?? '',
+        },
         enrollmentsCount: countMap.get(c.id) ?? 0,
       };
     });
@@ -453,8 +475,9 @@ export class ContentsService {
     languageId?: number,
     instituteId?: number,
     programId?: number,
-    userId?: number, // 👈 اختياري
+    userId?: number, // اختياري
   ) {
+    // 1) هات أعلى 8 محتويات حسب عدد الـ enrollments مع تطبيق فلاتر المعهد/البرنامج
     const qb = this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e')
@@ -475,10 +498,12 @@ export class ContentsService {
     if (!rows.length) return [];
 
     const ids = rows.map((r) => Number(r.id));
-    const countMap = new Map(rows.map((r) => [Number(r.id), Number(r.cnt)]));
-    const orderIndex = new Map(ids.map((id, i) => [id, i]));
+    const countMap = new Map<number, number>(
+      rows.map((r) => [Number(r.id), Number(r.cnt)]),
+    );
+    const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
 
-    // متوسطات → تخزين في content.rate
+    // 2) احسب المتوسطات وحدّث content.rate
     const avgRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e2')
@@ -507,7 +532,7 @@ export class ContentsService {
       );
     }
 
-    // مدة + عدّاد مقيمين
+    // 3) مدة المحتوى + عدد المقيمين
     const statsRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.topics', 't')
@@ -523,38 +548,45 @@ export class ContentsService {
       .groupBy('c.id')
       .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
 
-    const durationMap = new Map(
+    const durationMap = new Map<number, number>(
       statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
-    const ratersMap = new Map(
+    const ratersMap = new Map<number, number>(
       statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
     );
 
-    // ✅ فلاج الالتحاق
+    // 4) فلاج الالتحاق (يكفي وجود صف في enrollments)
     let enrolledMap = new Map<number, boolean>();
     if (userId) {
       const enrRows = await this.enrollmentRepo
         .createQueryBuilder('en')
-        .select(['en.contentId AS cid', 'en.status AS status'])
+        .select(['en.contentId AS cid'])
         .where('en.userId = :uid', { uid: userId })
         .andWhere('en.contentId IN (:...ids)', { ids })
-        .getRawMany<{ cid: number; status: number }>();
-
-      enrolledMap = new Map(
-        enrRows.map((r) => [Number(r.cid), Number(r.status) === 0]),
-      );
+        .getRawMany<{ cid: number }>();
+      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
     }
 
-    const contents = await this.contentRepo.find({
-      where: { id: In(ids) },
-      relations: [
-        'translations',
-        'translations.language',
-        'contentCategory',
-        'educator',
-        'educator.user',
-      ],
-    });
+    // 5) حمّل تفاصيل المحتويات + ترجمات التصنيف والـ educator
+    const contents = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoinAndSelect(
+        'c.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.contentCategory', 'cat')
+      .leftJoinAndSelect(
+        'cat.translations',
+        'catTr',
+        languageId ? 'catTr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.educator', 'educator')
+      .leftJoinAndSelect('educator.user', 'eduUser')
+      .where('c.id IN (:...ids)', { ids })
+      .getMany();
 
     contents.sort(
       (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
@@ -562,8 +594,16 @@ export class ContentsService {
 
     return contents.map((c) => {
       const tr =
-        c.translations.find((t) => t.language?.id === languageId) ||
-        c.translations[0];
+        c.translations.find(
+          (t: any) =>
+            t?.language?.id === languageId || t?.languageId === languageId,
+        ) || c.translations[0];
+
+      const catTr =
+        c.contentCategory?.translations?.find(
+          (t: any) =>
+            t?.language?.id === languageId || t?.languageId === languageId,
+        ) || c.contentCategory?.translations?.[0];
 
       return {
         id: c.id,
@@ -575,8 +615,6 @@ export class ContentsService {
         rate: c.rate ?? 0,
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
-
-        // 👇 الفلاج
         isEnrolled: enrolledMap.get(c.id) ?? false,
         isSaved: false,
 
@@ -589,7 +627,10 @@ export class ContentsService {
           : null,
 
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
-        category: { id: c.contentCategory?.id ?? null },
+        category: {
+          id: c.contentCategory?.id ?? null,
+          name: catTr?.name ?? '',
+        },
         enrollmentsCount: countMap.get(c.id) ?? 0,
       };
     });
@@ -712,9 +753,20 @@ export class ContentsService {
       .leftJoin('c.courseContents', 'cc')
       .leftJoin('cc.course', 'course')
       .leftJoin('course.instituteProgramCourses', 'ipc')
-      .leftJoinAndSelect('c.translations', 'tr')
-      .leftJoinAndSelect('tr.language', 'lang')
+      .leftJoinAndSelect(
+        'c.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .leftJoinAndSelect('c.contentCategory', 'cat')
+      .leftJoinAndSelect(
+        'cat.translations',
+        'catTr',
+        languageId ? 'catTr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+
       .where('c.deleted_at IS NULL')
       .orderBy('c.created_at', 'DESC')
       .skip(skip)
@@ -784,7 +836,11 @@ export class ContentsService {
       const tr =
         c.translations?.find((t) => t.language?.id === languageId) ||
         c.translations?.[0];
-
+      const catTr =
+        c.contentCategory?.translations?.find(
+          (t: any) =>
+            t?.language?.id === languageId || t?.languageId === languageId,
+        ) || c.contentCategory?.translations?.[0];
       return {
         id: c.id,
         name: tr?.name ?? '',
@@ -800,7 +856,10 @@ export class ContentsService {
         isSaved: false,
 
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
-        category: { id: c.contentCategory?.id ?? null },
+        category: {
+          id: c.contentCategory?.id ?? null,
+          name: catTr?.name ?? '',
+        },
         created_at: c.created_at,
       };
     });
@@ -833,9 +892,19 @@ export class ContentsService {
       .leftJoin('c.courseContents', 'cc')
       .leftJoin('cc.course', 'course')
       .leftJoin('course.instituteProgramCourses', 'ipc')
-      .leftJoinAndSelect('c.translations', 'tr')
-      .leftJoinAndSelect('tr.language', 'lang')
+      .leftJoinAndSelect(
+        'c.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .leftJoinAndSelect('c.contentCategory', 'cat')
+      .leftJoinAndSelect(
+        'cat.translations',
+        'catTr',
+        languageId ? 'catTr.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .where('c.deleted_at IS NULL')
       .orderBy('c.created_at', 'DESC')
       .take(8);
@@ -889,6 +958,11 @@ export class ContentsService {
       const tr =
         c.translations?.find((t) => t.language?.id === languageId) ||
         c.translations?.[0];
+      const catTr =
+        c.contentCategory?.translations?.find(
+          (t: any) =>
+            t?.language?.id === languageId || t?.languageId === languageId,
+        ) || c.contentCategory?.translations?.[0];
 
       return {
         id: c.id,
@@ -905,7 +979,10 @@ export class ContentsService {
         isSaved: false,
 
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
-        category: { id: c.contentCategory?.id ?? null },
+        category: {
+          id: c.contentCategory?.id ?? null,
+          name: catTr?.name ?? '',
+        },
         created_at: c.created_at,
       };
     });
@@ -923,9 +1000,19 @@ export class ContentsService {
       .leftJoin('c.courseContents', 'cc')
       .leftJoin('cc.course', 'course')
       .leftJoin('course.instituteProgramCourses', 'ipc')
-      .leftJoinAndSelect('c.translations', 'tr')
-      .leftJoinAndSelect('tr.language', 'lang')
+      .leftJoinAndSelect(
+        'c.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .leftJoinAndSelect('c.contentCategory', 'cat')
+      .leftJoinAndSelect(
+        'cat.translations',
+        'catTr',
+        languageId ? 'catTr.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .leftJoinAndSelect('c.educator', 'educator')
       .leftJoinAndSelect('educator.user', 'eduUser')
       .where('c.deleted_at IS NULL')
@@ -960,6 +1047,12 @@ export class ContentsService {
       row.translations?.find((t) => t.language?.id === languageId) ||
       row.translations?.[0];
 
+    const catTr =
+      row.contentCategory?.translations?.find(
+        (t: any) =>
+          t?.language?.id === languageId || t?.languageId === languageId,
+      ) || row.contentCategory?.translations?.[0];
+
     return {
       id: row.id,
       ad_video: row.adVideo,
@@ -969,7 +1062,10 @@ export class ContentsService {
       level: row.level,
       rate: row.rate,
       whatToLearn: tr?.what_to_learn?.split(',') ?? [],
-      category: { id: row.contentCategory?.id ?? null },
+      category: {
+        id: row.contentCategory?.id ?? null,
+        name: catTr?.name ?? '',
+      },
       created_at: row.created_at,
       isEnrolled, // 👈 الفلاج الجديد
       isSaved: false,
