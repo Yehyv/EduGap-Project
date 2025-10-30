@@ -13,7 +13,7 @@ export class Enrollment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'enum', enum: [0, 1], default: 0 })
+  @Column({ type: 'tinyint', width: 1, default: 0 })
   status: number;
 
   // enrollment.entity.ts

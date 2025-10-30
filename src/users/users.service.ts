@@ -193,6 +193,7 @@ export class UsersService {
     return {
       userName: user.full_name ?? user.username ?? '',
       instituteName,
+      logo: user.institute?.logo ?? '',
       programId: user.program?.id ?? null,
     };
   }

@@ -1,4 +1,5 @@
 import { Content } from 'src/contents/entities/content.entity';
+import { Course } from 'src/courses/entities/course.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Entity,
@@ -11,8 +12,8 @@ import {
 } from 'typeorm';
 
 @Entity()
-@Unique(['user', 'content']) // منع التكرار
-export class SavedContent {
+@Unique(['user', 'course']) // منع التكرار
+export class SavedCourse {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -23,15 +24,15 @@ export class SavedContent {
   updatedAt: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date;
+  deletedAt: Date | null;
 
-  @ManyToOne(() => User, (user) => user.savedContents, {
+  @ManyToOne(() => User, (user) => user.savedCourses, {
     onDelete: 'CASCADE',
   })
   user: User;
 
-  @ManyToOne(() => Content, (content) => content.savedByUsers, {
+  @ManyToOne(() => Course, (course) => course.savedCourseByUser, {
     onDelete: 'CASCADE',
   })
-  content: Content;
+  course: Course;
 }

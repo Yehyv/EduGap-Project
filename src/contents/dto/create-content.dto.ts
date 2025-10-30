@@ -9,6 +9,7 @@ import {
   IsNotEmpty,
   IsEnum,
   ValidateNested,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -66,7 +67,7 @@ export class CreateContentDto {
   level?: 'Beginner' | 'Intermediate' | 'Advanced';
 
   // يطابق has_prerequiest في الـ entity
-  @IsEnum([0, 1])
+  @IsIn([0, 1])
   @IsOptional()
   hasPrerequiest?: 0 | 1;
 

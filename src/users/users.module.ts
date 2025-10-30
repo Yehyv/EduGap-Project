@@ -6,7 +6,7 @@ import { User } from './entities/user.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
-import { SavedContent } from 'src/saved-courses/entities/saved-content.entity';
+import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 import { UserOtp } from './entities/user-otp.entity';
 import { Program } from 'src/programs/entities/program.entity';
 
@@ -17,7 +17,7 @@ import { Program } from 'src/programs/entities/program.entity';
       Institute,
       Educator,
       Enrollment,
-      SavedContent,
+      SavedCourse,
       UserOtp,
       Program,
     ]),

@@ -9,6 +9,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { PackageTranslation } from './package-translation.entity';
+import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
 @Entity('packages')
 export class Package {
   @PrimaryGeneratedColumn()
@@ -24,7 +25,7 @@ export class Package {
   updated_at: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })
-  deleted_at: Date;
+  deleted_at: Date | null;
 
   @Column({ type: 'enum', enum: [0, 1], default: 1 })
   is_active: number;
@@ -37,4 +38,7 @@ export class Package {
     cascade: true,
   })
   translations: PackageTranslation[];
+
+  @OneToMany(() => SavedPackage, (saved) => saved.package)
+  savedByUsers: SavedPackage[];
 }

@@ -1,12 +1,10 @@
 // src/enrollments/dto/create-enrollment.dto.ts
-import { IsOptional, IsEnum, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsInt, Min, Max, IsIn } from 'class-validator';
 
 export class CreateEnrollmentDto {
+  @IsIn([0, 1])
   @IsOptional()
-  @IsEnum([0, 1], {
-    message: 'status must be 0 or 1 (0=in progress, 1=completed)',
-  })
-  status?: number;
+  status?: 0 | 1;
 }
 export class RateEnrollmentDto {
   @IsInt()

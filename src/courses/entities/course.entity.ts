@@ -15,6 +15,7 @@ import { Content } from 'src/contents/entities/content.entity';
 import { ProgramCourse } from 'src/programs/entities/program-course.entity';
 import { CourseContent } from './course-content.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
+import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 
 @Entity()
 export class Course {
@@ -54,4 +55,8 @@ export class Course {
 
   @OneToMany(() => InstituteProgramCourse, (ipc) => ipc.course)
   instituteProgramCourses: InstituteProgramCourse[];
+  savedByUsers: any;
+
+  @OneToMany(() => SavedCourse, (savedCourse) => savedCourse.course)
+  savedCourseByUser: SavedCourse[];
 }

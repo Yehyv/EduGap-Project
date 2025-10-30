@@ -8,6 +8,7 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { Content } from 'src/contents/entities/content.entity';
 import { CourseContent } from 'src/courses/entities/course-content.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
+import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequiest-content.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { InstituteProgramCourse } from 'src/institutes/entities/institute-progra
       LessonProgress,
       CourseContent,
       InstituteProgramCourse,
+      PrerequisiteContent,
     ]),
   ],
   controllers: [EnrollmentsController],

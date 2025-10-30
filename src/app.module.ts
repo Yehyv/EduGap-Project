@@ -18,7 +18,6 @@ import { EducatorsModule } from './educators/educators.module';
 import { ProgressModule } from './progress/progress.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ContentCategoriesModule } from './course-categories/content-categories.module';
-import { SavedContentsModule } from './saved-courses/saved-contents.module';
 import { SystemUsersModule } from './system-users/system-users.module';
 import { LocationsModule } from './locations/locations.module';
 import { TransactionsModule } from './transactions/transactions.module';
@@ -31,6 +30,9 @@ import { ContentReviewsModule } from './content-reviews/content-reviews.module';
 import { SpecializationsModule } from './specializations/specializations.module';
 import { PackagesModule } from './packages/packages.module';
 import { EducatorReviewsModule } from './educator-reviews/educator-reviews.module';
+import { PrerequiestContentsModule } from './prerequiest-contents/prerequiest-contents.module';
+import { SavedContentsModule } from './saved-contents/saved-contents.module';
+import { SavedPackagesModule } from './saved-packages/saved-packages.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -66,6 +68,8 @@ import { EducatorReviewsModule } from './educator-reviews/educator-reviews.modul
     SpecializationsModule,
     PackagesModule,
     EducatorReviewsModule,
+    PrerequiestContentsModule,
+    SavedPackagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

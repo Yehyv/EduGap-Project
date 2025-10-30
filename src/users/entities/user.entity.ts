@@ -1,5 +1,5 @@
 import { Institute } from 'src/institutes/entities/institute.entity';
-import { SavedContent } from 'src/saved-courses/entities/saved-content.entity';
+import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -22,6 +22,8 @@ import { LessonNote } from 'src/lesson-notes/entities/lesson-note.entity';
 import { LessonReaction } from 'src/lesson-reactions/entities/lesson-reaction.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
+import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
+import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -79,8 +81,8 @@ export class User {
   @JoinColumn({ name: 'institute_id' })
   institute: Institute;
 
-  @OneToMany(() => SavedContent, (savedContent) => savedContent.user)
-  savedContents: SavedContent[];
+  @OneToMany(() => SavedCourse, (savedContent) => savedContent.user)
+  savedCourses: SavedCourse[];
 
   @OneToMany(() => UserOtp, (otp) => otp.user)
   otps: UserOtp[];
@@ -116,4 +118,10 @@ export class User {
 
   @OneToOne(() => Educator, (educator) => educator.user, { cascade: false })
   educator: Educator;
+
+  @OneToMany(() => SavedContent, (saved) => saved.user)
+  savedContents: SavedContent[];
+
+  @OneToMany(() => SavedPackage, (saved) => saved.user)
+  savedPackages: SavedPackage[];
 }

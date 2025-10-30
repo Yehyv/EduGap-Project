@@ -1,0 +1,74 @@
+import {
+  Controller,
+  Post,
+  Delete,
+  Get,
+  Param,
+  Query,
+  ParseIntPipe,
+  DefaultValuePipe,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { SavedContentsService } from './saved-contents.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+  };
+}
+@UseGuards(JwtAuthGuard)
+@Controller('saved-contents')
+export class SavedContentsController {
+  constructor(private readonly savedSrv: SavedContentsService) {}
+
+  @Post(':contentId/save')
+  save(
+    @Req() req: AuthenticatedRequest,
+    @Param('contentId', ParseIntPipe) contentId: number,
+  ) {
+    return this.savedSrv.save(req.user.sub, contentId);
+  }
+
+  @Delete(':contentId/unsave')
+  async unsave(
+    @Req() req: AuthenticatedRequest,
+    @Param('contentId', ParseIntPipe) contentId: number,
+  ) {
+    await this.savedSrv.unsave(req.user.sub, contentId);
+    return { success: true };
+  }
+
+  @Post(':contentId/toggle')
+  toggle(
+    @Req() req: AuthenticatedRequest,
+    @Param('contentId', ParseIntPipe) contentId: number,
+  ) {
+    return this.savedSrv.toggle(req.user.sub, contentId);
+  }
+
+  @Get('is-saved/:contentId')
+  isSaved(
+    @Req() req: AuthenticatedRequest,
+    @Param('contentId', ParseIntPipe) contentId: number,
+  ) {
+    return this.savedSrv.isSaved(req.user.sub, contentId);
+  }
+
+  @Get()
+  list(
+    @Req() req: AuthenticatedRequest,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('search') search?: string,
+  ) {
+    return this.savedSrv.listUserSavedContents(req.user.sub, {
+      page,
+      limit,
+      search,
+    });
+  }
+}

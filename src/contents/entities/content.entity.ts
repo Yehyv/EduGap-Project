@@ -16,12 +16,12 @@ import { Topic } from 'src/topics/entities/topic.entity';
 import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
-import { SavedContent } from 'src/saved-courses/entities/saved-content.entity';
 import { CourseContent } from 'src/courses/entities/course-content.entity';
 import { ContentReview } from 'src/content-reviews/entities/content-review.entity';
 import { SavedLesson } from 'src/saved-lesson/entities/saved-lesson.entity';
 import { LessonMaterial } from 'src/lesson-materials/entities/lesson-material.entity';
 import { LessonNote } from 'src/lesson-notes/entities/lesson-note.entity';
+import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
 @Entity()
 export class Content {
   @PrimaryGeneratedColumn()
@@ -37,8 +37,8 @@ export class Content {
   })
   level: string;
 
-  @Column({ type: 'enum', enum: [0, 1], default: 0 })
-  has_prerequiest: number;
+  @Column({ type: 'tinyint', width: 1, default: 0, name: 'has_prerequiest' })
+  hasPrerequiest: number;
 
   @Column({ type: 'enum', enum: [0, 1], default: 0 })
   has_certificate: number;
@@ -78,8 +78,8 @@ export class Content {
     cascade: true,
   })
   enrollments: Enrollment[];
-  @OneToMany(() => SavedContent, (savedContent) => savedContent.content)
-  savedByUsers: SavedContent[];
+  // @OneToMany(() => SavedContent, (savedContent) => savedContent.content)
+  // savedByUsers: SavedContent[];
 
   @OneToMany(() => CourseContent, (cc) => cc.content, {
     cascade: true,
@@ -103,4 +103,6 @@ export class Content {
     nullable: true,
   })
   educator: Educator | null;
+  @OneToMany(() => SavedContent, (saved) => saved.content)
+  savedByUsers: SavedContent[];
 }

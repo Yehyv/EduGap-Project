@@ -12,6 +12,10 @@ import { Content } from 'src/contents/entities/content.entity';
 import { CourseContent } from 'src/courses/entities/course-content.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 import { RateEnrollmentDto } from './dto/create-enrollment.dto';
+import {
+  PrerequisiteContent,
+  PrerequisiteType,
+} from 'src/prerequiest-contents/entities/prerequiest-content.entity';
 
 @Injectable()
 export class EnrollmentsService {
@@ -26,6 +30,8 @@ export class EnrollmentsService {
     private readonly ipcRepo: Repository<InstituteProgramCourse>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(PrerequisiteContent)
+    private readonly prereqRepo: Repository<PrerequisiteContent>,
   ) {}
 
   /**
@@ -37,18 +43,20 @@ export class EnrollmentsService {
     userId: number,
     userInstituteId: number,
   ) {
+    // ✅ التحقق من المستخدم
     const user = await this.userRepo.findOne({
       where: { id: userId },
       relations: ['institute'],
     });
     if (!user) throw new NotFoundException('User not found');
 
+    // ✅ التحقق من المحتوى
     const content = await this.contentRepo.findOne({
       where: { id: contentId },
     });
     if (!content) throw new NotFoundException(`Content ${contentId} not found`);
 
-    // الكورسات المرتبطة بالمحتوى
+    // ✅ تأكيد الربط بالكورسات
     const courseLinks = await this.courseContentRepo.find({
       where: { content: { id: contentId } },
       relations: ['course'],
@@ -56,11 +64,11 @@ export class EnrollmentsService {
     if (!courseLinks.length) {
       throw new ForbiddenException('This content is not linked to any course');
     }
-    // ✅ تحقق صريح: هل المحتوى ده مربوط بأي كورس مربوط بمعهدي؟
+
+    // ✅ تحقق صريح من انتماء المحتوى لمعهد الطالب
     const allowedCount = await this.ipcRepo
       .createQueryBuilder('ipc')
       .innerJoin('ipc.course', 'course')
-      // نربط بـ course_content بحيث يكون نفس الكورس مربوط بالمحتوى
       .innerJoin(
         CourseContent,
         'cc',
@@ -69,7 +77,7 @@ export class EnrollmentsService {
       )
       .where('ipc.instituteId = :iid', { iid: userInstituteId })
       .andWhere('ipc.is_active != 0')
-      .andWhere('ipc.deleted_at IS NULL') // لو عندك Soft Delete
+      .andWhere('ipc.deleted_at IS NULL')
       .getCount();
 
     if (allowedCount === 0) {
@@ -78,7 +86,7 @@ export class EnrollmentsService {
       );
     }
 
-    // منع التسجيل المكرر
+    // ❌ منع التسجيل المكرر
     const existing = await this.enrollmentRepo.findOne({
       where: { user: { id: userId }, content: { id: contentId } },
     });
@@ -86,11 +94,77 @@ export class EnrollmentsService {
       throw new BadRequestException('You are already enrolled in this content');
     }
 
-    // تسجيل جديد: status=0, rating=0
+    // 🔎 فحص الـ prerequisites لو مطلوبة
+    const hasPrereq =
+      Number(content.hasPrerequiest ?? content['has_prerequiest']) === 1;
+    if (hasPrereq) {
+      const mandatory = await this.prereqRepo.find({
+        where: { content: { id: contentId }, type: PrerequisiteType.MANDATORY },
+        relations: ['prerequisiteContent', 'prerequisiteContent.translations'],
+        order: { id: 'ASC' },
+      });
+      console.log('Mandatory prerequisites:', mandatory);
+
+      if (mandatory.length) {
+        // دعم أسماء الأعمدة المختلفة preId / prerequisiteContentId / العلاقة
+        const prereqIds = mandatory
+          .map(
+            (m) =>
+              m?.prerequisiteContent?.id ??
+              m?.prerequisiteContentId ??
+              m?.prerequisiteContentId,
+          )
+          .filter((x) => x != null);
+
+        if (prereqIds.length > 0) {
+          const completedCount = await this.enrollmentRepo
+            .createQueryBuilder('en')
+            .where('en.userId = :uid', { uid: userId })
+            .andWhere('en.status = 1') // completed
+            .andWhere('en.contentId IN (:...ids)', { ids: prereqIds })
+            .getCount();
+
+          if (completedCount !== prereqIds.length) {
+            // رجّع تفاصيل المحتويات المطلوبة
+            const doneRows = await this.enrollmentRepo
+              .createQueryBuilder('en')
+              .select('en.contentId', 'cid')
+              .where('en.userId = :uid', { uid: userId })
+              .andWhere('en.status = 1')
+              .andWhere('en.contentId IN (:...ids)', { ids: prereqIds })
+              .getRawMany<{ cid: number }>();
+
+            const doneSet = new Set(doneRows.map((r) => Number(r.cid)));
+
+            const missing = mandatory.filter((m) => {
+              const id =
+                m?.prerequisiteContent?.id ??
+                m?.prerequisiteContentId ??
+                m?.prerequisiteContentId;
+              return !doneSet.has(Number(id));
+            });
+
+            throw new ForbiddenException({
+              message: 'PrerequisitesRequired',
+              required: missing.map((m) => ({
+                id:
+                  m?.prerequisiteContent?.id ??
+                  m?.prerequisiteContentId ??
+                  m?.prerequisiteContentId,
+                type: m.type,
+                name: m?.prerequisiteContent?.translations?.[0]?.name ?? null,
+              })),
+            });
+          }
+        }
+      }
+    }
+
+    // ✅ إنشاء التسجيل
     const enrollment = this.enrollmentRepo.create({
       user,
       content,
-      status: 0,
+      status: 0, // in progress
       rating: 0,
     });
 

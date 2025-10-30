@@ -44,23 +44,40 @@ export class ContentsController {
     const langId = languageId ? Number(languageId) : undefined;
     return this.contentsService.findAll(langId);
   }
+  @Get(':id/prerequisites')
+  async getPrerequisites(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Headers('languageId') languageId?: number,
+    @Query('programId') programId?: number,
+  ) {
+    const instituteId = req.user?.instituteId; // موجودة لو Logged-in
+    const userId = req.user?.sub;
+    return this.contentDetailsService.getContentPrerequisites(Number(id), {
+      languageId: languageId ? Number(languageId) : undefined,
+      instituteId,
+      programId: programId ? Number(programId) : undefined,
+      userId
+    });
+  }
   @UseGuards(OptionalJwtAuthGuard)
    @Get(':id/base')
   async getBase(
+    @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
-    @Param('languageId') languageId?: string,
-    @Query('instituteId') instituteId?: string,
+    @Headers('languageId') languageId?: string,
     @Query('programId') programId?: string,
   ) {
+    const instituteId = req.user?.instituteId;
     return this.contentDetailsService.getBase(Number(id), {
       languageId: languageId ? Number(languageId) : undefined,
-      instituteId: instituteId ? Number(instituteId) : undefined,
+      instituteId,
       programId: programId ? Number(programId) : undefined,
     });
   }
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/topics')
-  async getTopics(@Param('id') id: string, @Param('languageId') languageId?: string) {
+  async getTopics(@Param('id') id: string, @Headers('languageId') languageId?: string) {
     return this.contentDetailsService.getTopics(Number(id), { languageId: languageId ? Number(languageId) : undefined });
   }
   @UseGuards(OptionalJwtAuthGuard)
@@ -82,8 +99,12 @@ export class ContentsController {
   }
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/access')
-  async getAccess(@Param('id') id: string, @Req() req?: any) {
-    const userId = req?.user?.id as number | undefined;
+  async getAccess(@Param('id') id: string, @Req() req?: AuthenticatedRequest) {
+    const userId = req?.user.sub;
+    console.log("USER ID IN ACCESS",userId)
+    console.log("CONTENT ID IN ACCESS",id)
+    console.log("TYPE OF USER ID",typeof userId)
+    console.log("TYPE OF CONTENT ID",typeof id)
     return this.contentDetailsService.getAccess(Number(id), { userId });
   }
 //   @Get(':id/details')
