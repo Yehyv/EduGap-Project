@@ -2,15 +2,15 @@ type defaultButtonPropsTypes = {
   text: string | React.ReactNode;
   type: "submit" | "reset" | "button" | undefined;
   moreStyle?: string;
-  onClick: () => void;
+  onClick?: () => void;
   disabled?: boolean;
 };
 const DefaultButton = ({
   text,
   type,
   moreStyle,
-  onClick,
   disabled,
+  onClick,
 }: defaultButtonPropsTypes) => {
   return (
     <button

@@ -47,23 +47,46 @@ export type CourseContent = {
 
 export type ContentDetailsType = {
   name: string;
-  durationTime: string;
+  totalDuration: string;
+  previousBackground: string;
   levelName: string;
   description: string;
   educator: Educator;
   whatToLearn: string;
   topic: TopicsType[];
   adVideo: string;
+  languageType: string;
+  lastUpdate: string;
 };
 export type ContentAccessType = {
   access: string;
   enrollmentId: number;
+};
+export type ContentLessonType = {
+  id: number;
+  name: string;
+  video: string;
 };
 export type ContentTopicsType = {
   id: number;
   name: string;
   duration: number;
   lessons: LessonType[];
+};
+export type ContentEducatorType = {
+  educator: Educator;
+};
+export type MyNotesInLessonType = {
+  id: number;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  lessonId: number;
+  contentId: number;
+};
+export type MyNotesInLessonTypeResponse = {
+  items: MyNotesInLessonType[];
+  pagination: PaginationType;
 };
 export type HistogramType = {
   1: number;
@@ -118,6 +141,7 @@ export type Educator = {
   firstName: string;
   lastName: string;
   name: string;
+  rate?: number;
 };
 
 export type ProgramsType = {

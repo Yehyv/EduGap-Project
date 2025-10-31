@@ -3,24 +3,22 @@ import type {
   ApiResponse,
   ContentAccessType,
   ContentDetailsType,
+  ContentLessonType,
   ContentRatingsType,
   ContentTopicsType,
 } from "@/shared/types/sharedTypes";
 
-export async function getContentDetails(
-  contentId: string
-): Promise<ContentDetailsType> {
-  const res = await api.get<ApiResponse<ContentDetailsType>>(
-    `/contents/${contentId}/content-details/unenrolled`
-  );
-  return res.data.data;
-}
-export async function getContentDetailsForEnrolledUsers(
+export async function getBaseContentDetails(
   courseId: string,
-  programId: number
+  programId?: number
 ): Promise<ContentDetailsType> {
   const res = await api.get<ApiResponse<ContentDetailsType>>(
-    `/contents/${courseId}/base?programId=${programId}`
+    `/contents/${courseId}/base`,
+    {
+      params: {
+        programId,
+      },
+    }
   );
   return res.data.data;
 }
@@ -29,6 +27,14 @@ export async function getContentAccessStatusForUser(
 ): Promise<ContentAccessType> {
   const res = await api.get<ApiResponse<ContentAccessType>>(
     `/contents/${courseId}/access`
+  );
+  return res.data.data;
+}
+export async function getContentLesson(
+  lessonId: string
+): Promise<ContentLessonType> {
+  const res = await api.get<ApiResponse<ContentLessonType>>(
+    `/lessons/${lessonId}/content`
   );
   return res.data.data;
 }

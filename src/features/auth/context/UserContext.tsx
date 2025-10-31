@@ -6,6 +6,7 @@ type User = {
   programId: number;
   userName: string;
   instituteName: string;
+  logo: string;
 };
 
 type UserContextType = {

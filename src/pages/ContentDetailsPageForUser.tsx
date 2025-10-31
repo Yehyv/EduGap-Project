@@ -1,8 +1,8 @@
 import { useUser } from "@/features/auth/context/UserContext";
 import CourseDetails from "@/features/CourseDetails/components/CourseDetails";
 import {
+  getBaseContentDetails,
   getContentAccessStatusForUser,
-  getContentDetailsForEnrolledUsers,
 } from "@/features/CourseDetails/services/contentDetails";
 import { Loader } from "@/shared/components";
 import ErrorMessage from "@/shared/components/ErrorMessage";
@@ -20,8 +20,7 @@ const CourseDetailsPageForUser = () => {
   const { user } = useUser();
   const { data, isLoading, error } = useQuery<ContentDetailsType>({
     queryKey: ["getContentDetailsForEnrolledUsers", courseId, user?.programId],
-    queryFn: () =>
-      getContentDetailsForEnrolledUsers(courseId!, user!.programId!),
+    queryFn: () => getBaseContentDetails(courseId!, user!.programId!),
     enabled: !!user?.programId && !!courseId,
   });
   const { data: contentAccessStatus } = useQuery<ContentAccessType>({
@@ -29,7 +28,7 @@ const CourseDetailsPageForUser = () => {
     queryFn: () => getContentAccessStatusForUser(courseId!),
     enabled: !!courseId,
   });
-  console.log(contentAccessStatus);
+  const isEnroled = contentAccessStatus?.access === "enrolled";
 
   if (isLoading) return <Loader />;
   if (error)
@@ -40,9 +39,11 @@ const CourseDetailsPageForUser = () => {
   return (
     data && (
       <CourseDetails
+        isLoggedIn={true}
+        isEnrolled={isEnroled}
         data={data}
-        buttonLink="/course-lesson/1/1"
-        buttonText={t("start_learn")}
+        buttonLink={`/course-lesson/${courseId}/1`}
+        buttonText={isEnroled ? t("Continue_Learning") : t("start_learn")}
       />
     )
   );

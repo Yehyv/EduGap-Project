@@ -15,11 +15,11 @@ import { useUser } from "@/features/auth/context/UserContext";
 const PopularCoursesSlider = () => {
   const { t } = useLanguage();
   const { user } = useUser();
-
+  const token = localStorage.getItem("token");
   const { data, isLoading, error } = useQuery<CourseType[]>({
     queryKey: ["coursesForSlider", user?.programId],
-    queryFn: () => getPopularCoursesForSlider(user!.programId),
-    enabled: !!user?.programId,
+    queryFn: () => getPopularCoursesForSlider(user?.programId ?? 0),
+    enabled: user?.programId !== undefined || !token,
   });
 
   const { slidesToShow, windowWidth } = useResponsiveSlides(

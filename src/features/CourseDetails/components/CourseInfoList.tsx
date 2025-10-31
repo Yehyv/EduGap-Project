@@ -13,12 +13,14 @@ import { enrollContent } from "../services/contentDetails";
 import Swal from "sweetalert2";
 import ButtonLoader from "@/shared/components/ButtonLoader";
 import { AxiosError } from "axios";
+import type { ContentDetailsType } from "@/shared/types/sharedTypes";
 
 type StickyCourseSummaryCardProps = {
   buttonText: string;
   buttonLink: string;
-  durationTime: string;
-  levelName: string;
+  isEnrolled: boolean;
+  isLoggedIn: boolean;
+  contentDetailsCardData: Partial<ContentDetailsType>;
 };
 
 type ApiError = {
@@ -28,8 +30,9 @@ type ApiError = {
 const StickyCourseSummaryCard = ({
   buttonText,
   buttonLink,
-  durationTime,
-  levelName,
+  isEnrolled,
+  isLoggedIn,
+  contentDetailsCardData,
 }: StickyCourseSummaryCardProps) => {
   const { courseId } = useParams<{ courseId: string }>();
   const { t } = useLanguage();
@@ -39,10 +42,10 @@ const StickyCourseSummaryCard = ({
     mutationFn: () => enrollContent(courseId ?? ""),
     onSuccess: () => {
       Swal.fire({
-        title: "Done!",
-        text: "Your course was enrolled successfully.",
+        title: t("done"),
+        text: t("course_enrolled_success"),
         icon: "success",
-        confirmButtonText: "OK",
+        confirmButtonText: t("ok"),
       }).then(() => {
         navigate(buttonLink);
       });
@@ -55,10 +58,10 @@ const StickyCourseSummaryCard = ({
           : error.response.data.message);
 
       Swal.fire({
-        title: "Oops!",
-        text: errorMessage || "Failed to enroll in the course",
+        title: t("error"),
+        text: errorMessage || t("failed_to_enroll"),
         icon: "error",
-        confirmButtonText: "OK",
+        confirmButtonText: t("ok"),
       });
     },
   });
@@ -66,30 +69,46 @@ const StickyCourseSummaryCard = ({
   const infoItems = [
     {
       icon: TimeIcon,
-      label: `${t("content_duration")} : ${durationTime ?? 0}`,
+      label: `${t("content_duration")} : ${
+        contentDetailsCardData?.totalDuration ?? 0
+      }`,
     },
-    { icon: SignalIcon, label: `${t("level")}: ${levelName ?? ""}` },
-    { icon: InternetIcon, label: `${t("lang")}: العربية` },
-    { icon: LastUpdateIcon, label: `${t("last_update")} : 31/8/2025` },
-    { icon: CertificateIcon, label: t("certificate") },
+    {
+      icon: SignalIcon,
+      label: `${t("level")} : ${contentDetailsCardData?.levelName ?? ""}`,
+    },
+    {
+      icon: InternetIcon,
+      label: `${t("lang")} : ${contentDetailsCardData?.languageType}`,
+    },
+    {
+      icon: LastUpdateIcon,
+      label: `${t("last_update")} ${contentDetailsCardData?.lastUpdate}`,
+    },
+    { icon: CertificateIcon, label: ` ${t("certificate")}` },
   ];
 
   const handleSubmit = () => {
     if (!courseId) {
       Swal.fire({
-        title: "Error",
-        text: "Course ID is missing",
+        title: t("error"),
+        text: t("course_id_missing"),
         icon: "error",
-        confirmButtonText: "OK",
+        confirmButtonText: t("ok"),
       });
       return;
     }
-    mutation.mutate();
+    if (!isEnrolled && isLoggedIn) {
+      mutation.mutate();
+    } else {
+      navigate(buttonLink);
+    }
   };
 
   return (
     <div className="w-full xl:sticky top-16 lg:w-[30%] bg-neutral-100 rounded-xl px-6 py-5 min-h-[300px] min-lg:h-[400px]">
       <h5 className="text-lg font-semibold mb-4">{t("about_course")}</h5>
+
       <ul className="space-y-3 mb-7">
         {infoItems.map(({ icon: Icon, label }, i) => (
           <li key={i} className="flex items-center gap-2">

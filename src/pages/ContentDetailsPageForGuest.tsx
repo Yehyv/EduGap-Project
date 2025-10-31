@@ -1,5 +1,5 @@
 import CourseDetails from "@/features/CourseDetails/components/CourseDetails";
-import { getContentDetails } from "@/features/CourseDetails/services/contentDetails";
+import { getBaseContentDetails } from "@/features/CourseDetails/services/contentDetails";
 import { Loader } from "@/shared/components";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
@@ -12,7 +12,7 @@ const CourseDetailsPageForGuest = () => {
   const { t } = useLanguage();
   const { data, isLoading, error } = useQuery<ContentDetailsType>({
     queryKey: ["getContentDetailsForGuest"],
-    queryFn: () => getContentDetails(courseId ?? ""),
+    queryFn: () => getBaseContentDetails(courseId ?? ""),
   });
 
   if (isLoading) return <Loader />;
@@ -22,7 +22,13 @@ const CourseDetailsPageForGuest = () => {
     );
   return (
     data && (
-      <CourseDetails buttonLink="/" buttonText={t("subscribe")} data={data} />
+      <CourseDetails
+        isLoggedIn={false}
+        isEnrolled={false}
+        buttonLink="/login"
+        buttonText={t("login")}
+        data={data}
+      />
     )
   );
 };

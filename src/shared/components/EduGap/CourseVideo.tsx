@@ -31,7 +31,7 @@ const CourseVideo = ({
           onError={() => setVideoError(true)}
         >
           <source src={videoUrl} type="video/mp4" />
-          {t("failed_to_load")}{" "}
+          {t("failed_to_load")}
         </video>
       )}
     </div>

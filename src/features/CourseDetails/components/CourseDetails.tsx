@@ -14,17 +14,27 @@ import ContentRatings from "@/features/UserHome/components/ContentRatings";
 const CourseDetails = ({
   buttonText,
   buttonLink,
+  isEnrolled,
+  isLoggedIn,
   data,
 }: {
   buttonText: string;
   buttonLink: string;
+  isEnrolled: boolean;
+  isLoggedIn: boolean;
   data: ContentDetailsType;
 }) => {
   const { t } = useLanguage();
   const [isOnline, setIsOnline] = useState(true);
   const { firstName, lastName, title } = data.educator;
   const fullName = `${firstName} ${lastName}`;
-  const { durationTime, levelName } = data;
+  const { totalDuration, levelName, languageType, lastUpdate } = data;
+  const contentDetailsCardData = {
+    totalDuration,
+    levelName,
+    languageType,
+    lastUpdate,
+  };
 
   useEffect(() => {
     const updateStatus = () => setIsOnline(navigator.onLine);
@@ -81,6 +91,14 @@ const CourseDetails = ({
           </ul>
         </section>
 
+        {/* What you should know before starting this course */}
+        <section className="py-5 border-b border-[#575757]">
+          <SectionTitle textTitle={t("what_you_should_know")} />
+          <p className="leading-relaxed text-gray-600">
+            {data?.previousBackground}
+          </p>
+        </section>
+
         {/* Course content (FAQ) */}
         <CourseContent />
 
@@ -92,8 +110,9 @@ const CourseDetails = ({
       <StickyCourseSummaryCard
         buttonText={buttonText}
         buttonLink={buttonLink}
-        durationTime={durationTime}
-        levelName={levelName}
+        isEnrolled={isEnrolled}
+        isLoggedIn={isLoggedIn}
+        contentDetailsCardData={contentDetailsCardData}
       />
     </div>
   );

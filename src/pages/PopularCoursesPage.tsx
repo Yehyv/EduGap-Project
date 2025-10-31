@@ -17,11 +17,12 @@ const PopularCoursesList = () => {
   const { user } = useUser();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
+  const token = localStorage.getItem("token");
   const { data, isLoading, error } = useQuery<CoursesResponse>({
     queryKey: ["getPopularCoursesList", page, user?.programId],
     queryFn: () =>
       getAllPopularCourses(page.toString(), RESULTS_PER_PAGE, user?.programId),
-    enabled: !!user?.programId,
+    enabled: user?.programId !== undefined || !token,
   });
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString() });
