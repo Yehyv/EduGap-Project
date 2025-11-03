@@ -1,4 +1,3 @@
-// src/saved-lesson/saved-lesson.service.ts
 import {
   BadRequestException,
   Injectable,
@@ -10,7 +9,6 @@ import { Repository, FindOptionsWhere } from 'typeorm';
 import { SavedLesson } from './entities/saved-lesson.entity';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { Content } from 'src/contents/entities/content.entity';
-import { CreateSavedLessonDto } from './dto/create-saved-lesson.dto';
 
 @Injectable()
 export class SavedLessonService {
@@ -23,31 +21,24 @@ export class SavedLessonService {
     private readonly contentRepo: Repository<Content>,
   ) {}
 
-  /** Save (idempotent + soft-restore) */
-  async saveLesson(userId: number, dto: CreateSavedLessonDto) {
-    // 1) هات الدرس + استنتج المحتوى لو مش مبعوت
+  /** TOGGLE: first press = save, second press = unsave (soft-delete) */
+  async toggleSave(userId: number, lessonId: number) {
+    // 1) Load lesson and derive content via lesson.topic.content
     const lesson = await this.lessonRepo.findOne({
-      where: { id: dto.lessonId },
+      where: { id: lessonId },
       relations: ['topic', 'topic.content'],
     });
-    if (!lesson)
-      throw new NotFoundException(`Lesson ${dto.lessonId} not found`);
+    if (!lesson) throw new NotFoundException(`Lesson ${lessonId} not found`);
 
-    const derivedContent = lesson.topic?.content;
-    const contentId = dto.contentId ?? derivedContent?.id;
-    if (!contentId) {
+    const content = lesson.topic?.content;
+    if (!content) {
       throw new NotFoundException(
-        `Content not found through lesson->topic for lesson ${dto.lessonId}`,
+        `Content not found through lesson->topic for lesson ${lessonId}`,
       );
     }
 
-    const content = dto.contentId
-      ? await this.contentRepo.findOne({ where: { id: contentId } })
-      : derivedContent;
-    if (!content) throw new NotFoundException(`Content ${contentId} not found`);
-
-    // 2) دور حتى لو متشال سوفت (withDeleted) عشان نعمل restore
-    const existing = await this.savedRepo.findOne({
+    // 2) Find existing (including soft-deleted)
+    let existing = await this.savedRepo.findOne({
       where: {
         user: { id: userId },
         lesson: { id: lesson.id },
@@ -57,38 +48,58 @@ export class SavedLessonService {
       relations: ['lesson', 'content'],
     });
 
-    if (existing) {
-      // لو متشال سوفت → ريستور
-      if (existing.deleted_at) {
-        await this.savedRepo.restore(existing.id);
-      }
-      // already active → رجّع نفس الراو
-      return this.findOne(existing.id);
+    // 3) No record → create (saved)
+    if (!existing) {
+      const row = this.savedRepo.create({
+        user: { id: userId },
+        lesson: { id: lesson.id },
+        content: { id: content.id },
+      });
+      const saved = await this.savedRepo.save(row);
+      return {
+        status: 'saved' as const,
+        id: saved.id,
+        savedAt: saved.created_at,
+        lessonId: lesson.id,
+        contentId: content.id,
+      };
     }
 
-    // 3) أنشئ Save جديد
-    const row = this.savedRepo.create({
-      user: { id: userId },
-      lesson: { id: lesson.id },
-      content: { id: content.id },
-    });
-    const saved = await this.savedRepo.save(row);
-    return this.findOne(saved.id);
+    // 4) Was soft-deleted → restore (saved)
+    if (existing.deleted_at) {
+      await this.savedRepo.restore(existing.id);
+      existing = await this.savedRepo.findOne({
+        where: { id: existing.id },
+        relations: ['lesson', 'content'],
+      });
+      return {
+        status: 'saved' as const,
+        id: existing!.id,
+        savedAt: existing!.created_at,
+        lessonId: lesson.id,
+        contentId: content.id,
+      };
+    }
+
+    // 5) Active → second press unsaves
+    await this.savedRepo.softDelete(existing.id);
+    return {
+      status: 'unsaved' as const,
+      id: existing.id,
+      lessonId: lesson.id,
+      contentId: content.id,
+    };
   }
 
-  /** Unsave (soft delete) */
-  async unsaveLesson(userId: number, lessonId: number, contentId?: number) {
-    // استنتاج contentId لو مش مبعوت
-    if (!contentId) {
-      const lesson = await this.lessonRepo.findOne({
-        where: { id: lessonId },
-        relations: ['topic', 'topic.content'],
-      });
-      if (!lesson) throw new NotFoundException(`Lesson ${lessonId} not found`);
-      contentId = lesson.topic?.content?.id;
-    }
-    if (!contentId)
-      throw new BadRequestException('contentId is required or derivable');
+  /** Explicit unsave by lessonId (idempotent) */
+  async unsaveByLesson(userId: number, lessonId: number) {
+    const lesson = await this.lessonRepo.findOne({
+      where: { id: lessonId },
+      relations: ['topic', 'topic.content'],
+    });
+    if (!lesson) throw new NotFoundException(`Lesson ${lessonId} not found`);
+    const contentId = lesson.topic?.content?.id;
+    if (!contentId) throw new BadRequestException('contentId is not derivable');
 
     const existing = await this.savedRepo.findOne({
       where: {
@@ -97,10 +108,7 @@ export class SavedLessonService {
         content: { id: contentId },
       } as FindOptionsWhere<SavedLesson>,
     });
-    if (!existing) {
-      // idempotent: لو مش موجود اعتبرها تمام
-      return { message: 'Already unsaved' };
-    }
+    if (!existing) return { message: 'Already unsaved' };
 
     await this.savedRepo.softDelete(existing.id);
     return { message: 'Unsaved successfully' };
@@ -115,7 +123,6 @@ export class SavedLessonService {
   ) {
     const skip = (page - 1) * limit;
 
-    // نجيب مع العلاقات اللازمة لعرض أسماء التراجم والصور… إلخ
     const [rows, total] = await this.savedRepo.findAndCount({
       where: { user: { id: userId } },
       relations: [
@@ -133,7 +140,6 @@ export class SavedLessonService {
     });
 
     const items = rows.map((r) => {
-      // pick translations حسب languageId أو أول ترجمة
       const lessonTr =
         (languageId
           ? r.lesson?.translations?.find((t) => t.language?.id === languageId)

@@ -11,6 +11,7 @@ import { LessonComment } from 'src/lesson-comments/entities/lesson-comment.entit
 import { LessonMaterial } from 'src/lesson-materials/entities/lesson-material.entity';
 import { LessonNote } from 'src/lesson-notes/entities/lesson-note.entity';
 import { LessonReaction } from 'src/lesson-reactions/entities/lesson-reaction.entity';
+import { SavedLesson } from 'src/saved-lesson/entities/saved-lesson.entity';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { LessonReaction } from 'src/lesson-reactions/entities/lesson-reaction.en
       LessonMaterial,
       LessonNote,
       LessonReaction,
+      SavedLesson,
     ]),
   ],
   controllers: [LessonsController],

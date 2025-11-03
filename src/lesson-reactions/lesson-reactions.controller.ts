@@ -29,25 +29,15 @@ export class LessonReactionsController {
     @Param('lessonId', ParseIntPipe) lessonId: number,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.service.like(lessonId, req.user.sub);
+    return this.service.toggleLike(lessonId, req.user.sub);
   }
 
-  /** Dislike (لو عايز تستخدمه) */
   @Post('lessons/:lessonId/dislike')
   dislike(
     @Param('lessonId', ParseIntPipe) lessonId: number,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.service.dislike(lessonId, req.user.sub);
-  }
-
-  /** Remove reaction (unlike) */
-  @Delete('lessons/:lessonId')
-  remove(
-    @Param('lessonId', ParseIntPipe) lessonId: number,
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.service.removeReaction(lessonId, req.user.sub);
+    return this.service.toggleDislike(lessonId, req.user.sub);
   }
 
   /** Likes count فقط */

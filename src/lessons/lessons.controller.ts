@@ -15,6 +15,15 @@ import {
 import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+  };
+}
 @Controller('lessons')
 export class LessonsController {
   constructor(private readonly lessonsService: LessonsService) {}
@@ -87,5 +96,13 @@ export class LessonsController {
       Number(id),
       languageId ? Number(languageId) : undefined,
     );
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get(':lessonId/actions')
+  getActionsStatus(
+    @Param('lessonId', ParseIntPipe) lessonId: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.lessonsService.getLessonActionsStatus(req.user.sub, lessonId);
   }
 }

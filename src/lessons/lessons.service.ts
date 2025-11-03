@@ -15,7 +15,10 @@ import { Topic } from 'src/topics/entities/topic.entity';
 import { CreateLessonDto, LessonTranslationDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { getVideoDuration } from './video-utils';
-
+import { LessonReaction } from 'src/lesson-reactions/entities/lesson-reaction.entity';
+import { SavedLesson } from 'src/saved-lesson/entities/saved-lesson.entity';
+type ReactionStatus = 'liked' | 'unliked';
+type SavedStatus = 'saved' | 'unsaved';
 @Injectable()
 export class LessonsService {
   constructor(
@@ -27,6 +30,10 @@ export class LessonsService {
     private readonly langRepo: Repository<Language>,
     @InjectRepository(Topic)
     private readonly topicRepo: Repository<Topic>,
+    @InjectRepository(LessonReaction)
+  private readonly reactionRepo: Repository<LessonReaction>,
+  @InjectRepository(SavedLesson)
+  private readonly savedRepo: Repository<SavedLesson>,
   ) {}
 
   /** احسب الترتيب التالي داخل نفس الـ Topic */
@@ -214,6 +221,45 @@ export class LessonsService {
     order: entity.order_id ?? null,
     name,
     video: entity.video_link ?? null,
+  };
+}
+
+async getLessonActionsStatus(userId: number, lessonId: number) {
+  // 1) هات الدرس + المحتوى المشتق (lesson.topic.content) لو موجود
+  const lesson = await this.lessonRepo.findOne({
+    where: { id: lessonId },
+    relations: ['topic', 'topic.content'],
+  });
+  if (!lesson) throw new NotFoundException('Lesson not found');
+
+  // 2) Reaction (لو فيه سجل reaction=1 يبقى liked، غير كده unliked)
+  const reactionRow = await this.reactionRepo.findOne({
+    where: { lesson: { id: lessonId }, user: { id: userId } },
+    select: ['id', 'reaction'],
+  });
+  const reactionStatus: ReactionStatus =
+    reactionRow?.reaction === 1 ? 'liked' : 'unliked';
+
+  // 3) Saved (لو مفيش content مرتبط نرجّع unsaved)
+  const contentId = lesson.topic?.content?.id ?? null;
+  let savedStatus: SavedStatus = 'unsaved';
+  if (contentId) {
+    const savedRow = await this.savedRepo.findOne({
+      where: {
+        user: { id: userId },
+        lesson: { id: lessonId },
+        content: { id: contentId },
+      },
+      select: ['id'],
+    });
+    savedStatus = savedRow ? 'saved' : 'unsaved';
+  }
+
+  // 4) النتيجة
+  return {
+    lessonId,
+    reactionStatus,
+    savedStatus,
   };
 }
 }

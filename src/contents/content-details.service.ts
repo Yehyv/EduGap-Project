@@ -7,7 +7,7 @@ import { Content } from './entities/content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { ContentReview } from 'src/content-reviews/entities/content-review.entity';
 import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequiest-content.entity';
-
+import { formatHumanDate } from 'src/common/date-format';
 type AccessFlag = 'notLoggedIn' | 'notEnrolled' | 'enrolled';
 
 @Injectable()
@@ -89,6 +89,7 @@ export class ContentDetailsService {
   const totalDuration = Number(durRow?.totalDuration ?? 0);
 
   const ctr = content.translations?.[0] ?? null;
+  const lastUpdate = formatHumanDate(content.updated_at);
 
   return {
     id: content.id,
@@ -100,7 +101,7 @@ export class ContentDetailsService {
     whatToLearn: ctr?.what_to_learn || '',
     previousBackground: ctr?.previous_background || '',
     languageType: ctr?.language_type || '',
-    lastUpdate: content.updated_at,
+    lastUpdate,
     totalDuration, // ⬅️ الإضافة الجديدة
     educator: content.educator
       ? {

@@ -19,58 +19,53 @@ export class LessonReactionsService {
 
   /** upsert: set reaction (0/1) for (user, lesson) */
   // LessonReactionsService
-  async setReaction(lessonId: number, userId: number, reaction: 0 | 1) {
+  async toggleReaction(lessonId: number, userId: number, target: 0 | 1) {
     const lesson = await this.lessonRepo.findOne({ where: { id: lessonId } });
     if (!lesson) throw new NotFoundException(`Lesson ${lessonId} not found`);
 
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException(`User ${userId} not found`);
 
-    // 👇 دور على السجل حتى لو ممسوح (withDeleted: true)
     let rec = await this.reactionRepo.findOne({
       where: { lesson: { id: lessonId }, user: { id: userId } },
       withDeleted: true,
       relations: ['lesson', 'user'],
     });
 
-    if (rec) {
-      // لو كان Soft-deleted رجّعه
-      if (rec.deleted_at) {
-        await this.reactionRepo.recover(rec); // sets deleted_at = NULL
-      }
-      rec.reaction = reaction;
+    // مفيش سجل → أنشئ الهدف (Like أو Dislike)
+    if (!rec) {
+      rec = this.reactionRepo.create({ lesson, user, reaction: target });
       await this.reactionRepo.save(rec);
-    } else {
-      rec = this.reactionRepo.create({ lesson, user, reaction });
-      await this.reactionRepo.save(rec);
+      return { status: target === 1 ? 'liked' : 'disliked', reaction: target };
     }
 
-    return {
-      id: rec.id,
-      lessonId,
-      userId,
-      reaction: rec.reaction,
-    };
+    // لو كان متشال (soft-deleted) → رجّعه على الهدف
+    if (rec.deleted_at) {
+      await this.reactionRepo.recover(rec);
+      rec.reaction = target;
+      await this.reactionRepo.save(rec);
+      return { status: target === 1 ? 'liked' : 'disliked', reaction: target };
+    }
+
+    // موجود فعّال
+    if (rec.reaction === target) {
+      // ضغط تاني على نفس الزر → شيل الريأكشن
+      await this.reactionRepo.softDelete(rec.id);
+      return { status: 'cleared', reaction: null };
+    }
+
+    // كان الهدف المعاكس (Like↔Dislike) → بدّل القيمة (ويفضل تسيبه Active)
+    rec.reaction = target;
+    await this.reactionRepo.save(rec);
+    return { status: target === 1 ? 'liked' : 'disliked', reaction: target };
   }
 
-  async removeReaction(lessonId: number, userId: number) {
-    const rec = await this.reactionRepo.findOne({
-      where: { lesson: { id: lessonId }, user: { id: userId } },
-    });
-    if (!rec) return { message: 'No reaction to remove' };
-
-    await this.reactionRepo.softDelete(rec.id);
-    return { message: 'Reaction removed successfully' };
+  // واجهات مريحة:
+  async toggleLike(lessonId: number, userId: number) {
+    return this.toggleReaction(lessonId, userId, 1);
   }
-
-  /** Like */
-  async like(lessonId: number, userId: number) {
-    return this.setReaction(lessonId, userId, 1);
-  }
-
-  /** Dislike */
-  async dislike(lessonId: number, userId: number) {
-    return this.setReaction(lessonId, userId, 0);
+  async toggleDislike(lessonId: number, userId: number) {
+    return this.toggleReaction(lessonId, userId, 0);
   }
 
   /** Count likes (reaction=1) for one lesson */

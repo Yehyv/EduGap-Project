@@ -1,10 +1,9 @@
-// src/saved-lesson/saved-lesson.controller.ts
 import {
-  Body,
   Controller,
   Delete,
   Get,
   Headers,
+  Param,
   ParseIntPipe,
   Post,
   Query,
@@ -12,9 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { SavedLessonService } from './saved-lesson.service';
-import { CreateSavedLessonDto } from './dto/create-saved-lesson.dto';
-import { UnsaveLessonDto } from './dto/unsaved-lesson.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -23,23 +21,28 @@ interface AuthenticatedRequest extends Request {
     refreshToken?: string;
   };
 }
+
 @UseGuards(JwtAuthGuard)
 @Controller('saved-lessons')
 export class SavedLessonController {
   constructor(private readonly service: SavedLessonService) {}
 
-  /** POST /saved-lessons — Save (idempotent) */
-  @Post()
-  save(@Req() req: AuthenticatedRequest, @Body() dto: CreateSavedLessonDto) {
-    const userId = req.user.sub;
-    return this.service.saveLesson(userId, dto);
+  /** TOGGLE — POST /saved-lessons/lessons/:lessonId/toggle */
+  @Post('lessons/:lessonId/toggle')
+  toggle(
+    @Param('lessonId', ParseIntPipe) lessonId: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.toggleSave(req.user.sub, lessonId);
   }
 
-  /** DELETE /saved-lessons — Unsave (idempotent) */
-  @Delete()
-  unsave(@Req() req: AuthenticatedRequest, @Body() dto: UnsaveLessonDto) {
-    const userId = req.user.sub;
-    return this.service.unsaveLesson(userId, dto.lessonId, dto.contentId);
+  /** Explicit UNSAVE — DELETE /saved-lessons/lessons/:lessonId */
+  @Delete('lessons/:lessonId')
+  unsave(
+    @Param('lessonId', ParseIntPipe) lessonId: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.unsaveByLesson(req.user.sub, lessonId);
   }
 
   /** GET /saved-lessons?languageId=&page=&limit= */

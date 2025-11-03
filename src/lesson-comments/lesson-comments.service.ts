@@ -12,7 +12,7 @@ import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { User } from 'src/users/entities/user.entity';
 import { CreateLessonCommentDto } from './dto/create-lesson-comment.dto';
 import { UpdateLessonCommentDto } from './dto/update-lesson-comment.dto';
-
+import { formatRelativeDate } from 'src/common/date-format';
 @Injectable()
 export class LessonCommentsService {
   constructor(
@@ -60,7 +60,7 @@ export class LessonCommentsService {
     const items = rows.map((c) => ({
       id: c.id,
       comment: c.comment,
-      createdAt: c.createdAt,
+      createdAt: formatRelativeDate(c.createdAt),
       updatedAt: c.updatedAt,
       user: {
         id: c.user?.id ?? null,
