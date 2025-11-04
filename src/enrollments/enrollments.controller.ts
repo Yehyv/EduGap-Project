@@ -65,4 +65,13 @@ export class EnrollmentsController {
   getContentEnrollments(@Param('contentId') contentId: number) {
     return this.enrollmentsService.getContentEnrollments(contentId);
   }
+
+  @Get('contents/:contentId/my-rating')
+  @UseGuards(JwtAuthGuard)
+  getMyRating(
+    @Param('contentId', ParseIntPipe) contentId: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.enrollmentsService.getUserRate(contentId, req.user.sub);
+  }
 }

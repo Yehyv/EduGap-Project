@@ -201,6 +201,22 @@ export class EnrollmentsService {
     return this.enrollmentRepo.save(enrollment);
   }
 
+  async getUserRate(contentId: number, userId: number) {
+    const enrollment = await this.enrollmentRepo.findOne({
+      where: { user: { id: userId }, content: { id: contentId } },
+      select: ['id', 'rating', 'status'],
+    });
+
+    if (!enrollment) {
+      // مش متسجّل
+      return { rating: 0, enrolled: false, status: null as number | null };
+    }
+
+    return {
+      rating: enrollment.rating ?? 0,
+    };
+  }
+
   /**
    * هل المستخدم مسجل؟
    */
