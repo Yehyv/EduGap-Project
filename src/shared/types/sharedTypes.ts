@@ -46,7 +46,9 @@ export type CourseContent = {
 };
 
 export type ContentDetailsType = {
+  id: number;
   name: string;
+  isSaved: boolean;
   totalDuration: string;
   previousBackground: string;
   levelName: string;
@@ -99,6 +101,21 @@ export type ContentRatingsType = {
   histogram: HistogramType;
   average: number;
   totalRaters: number;
+};
+export type ContentReviews = {
+  id: number;
+  review: string;
+  createdAt: string;
+  user: {
+    id: number;
+    full_name: string;
+    image: string;
+  };
+  rating: number;
+};
+export type ContentReviewsResponse = {
+  reviews: ContentReviews[];
+  pagination: PaginationType;
 };
 
 export type TopicsType = {
@@ -161,6 +178,11 @@ export type ProgramsResponse = {
 export type CoursesResponse = {
   items: CourseType[];
   pagination: PaginationType;
+};
+export type lessonActionsHistory = {
+  lessonId: number;
+  reactionStatus: string;
+  savedStatus: string;
 };
 export type ExpertsResponse = {
   items: ExpertsData[];

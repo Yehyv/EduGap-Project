@@ -9,11 +9,30 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import LevelBadge from "../ui/LevelBadge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-toastify";
+import { saveContent } from "@/features/CourseDetails/services/contentDetails";
+import { useUser } from "@/features/auth/context/UserContext";
 
 const CourseCard = ({ course }: { course: CourseType }) => {
   const { token } = useAuth();
   const { t } = useLanguage();
+  const { user } = useUser();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { mutateAsync, isPending } = useMutation<void, Error, number>({
+    mutationFn: (contentId: number) => saveContent(contentId),
+    onSuccess: () => {
+      toast.success(t("content_saved_successfully"));
+      queryClient.invalidateQueries({
+        queryKey: ["coursesForSlider", user?.programId],
+      });
+    },
+    onError: () => {
+      toast.error(t("save_failed"));
+    },
+  });
 
   return (
     <div
@@ -87,12 +106,22 @@ const CourseCard = ({ course }: { course: CourseType }) => {
           {!course?.isSaved && (
             <button
               type="button"
-              className="absolute max-sm:static end-0 cursor-pointer"
-              onClick={() => {}}
+              disabled={isPending}
+              className="absolute max-sm:static end-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+                if (localStorage.getItem("token")) {
+                  console.log("saved");
+                  mutateAsync(course.id);
+                } else {
+                  console.log("not saved");
+                  toast.warning(t("must_be_logged_in"));
+                }
+              }}
             >
               <SaveIcon />
             </button>
           )}
+
           <DefaultButton
             text={
               course?.isEnrolled ? t("Continue_Learning") : t("course_details")

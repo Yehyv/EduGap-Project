@@ -37,7 +37,6 @@ const AddNotesInLesson = () => {
       }))
     ) || [];
 
-  // Mutation with proper typing
   const { mutateAsync, isPending } = useMutation<
     void,
     Error,

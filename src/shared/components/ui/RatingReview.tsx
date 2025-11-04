@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { rateContent } from "@/features/ContentLesson/services/lessonsApis";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import DefaultButton from "./DefaultButton";
 
 interface RatingReviewProps {
   totalStars?: number;
@@ -49,18 +50,9 @@ const RatingReview: React.FC<RatingReviewProps> = ({
     },
   });
 
-  const calculateRating = (
-    index: number,
-    e: React.MouseEvent<HTMLSpanElement, MouseEvent>
-  ) => {
-    const { width, left } = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - left;
-    return x < width / 2 ? index + 0.5 : index + 1;
-  };
-
-  const handleClick = (index: number, e: React.MouseEvent<HTMLSpanElement>) => {
+  const handleClick = (index: number) => {
     if (!editable || mutation.isPending) return;
-    const newRating = calculateRating(index, e);
+    const newRating = index + 1; // ✅ Full star only
     setCurrentRating(newRating);
     mutation.mutate(newRating);
   };
@@ -68,42 +60,38 @@ const RatingReview: React.FC<RatingReviewProps> = ({
   const displayedRating = hoverRating ?? currentRating;
 
   return (
-    <div
-      className={`flex gap-1 items-center justify-center ${
-        mutation.isPending ? "pointer-events-none opacity-50" : ""
-      }`}
-    >
-      {[...Array(totalStars)].map((_, index) => (
-        <span
-          key={index}
-          onMouseMove={(e) =>
-            editable &&
-            !mutation.isPending &&
-            setHoverRating(calculateRating(index, e))
-          }
-          onMouseLeave={() =>
-            editable && !mutation.isPending && setHoverRating(null)
-          }
-          onClick={(e) => handleClick(index, e)}
-          className="cursor-pointer"
-        >
-          {displayedRating >= index + 1 ? (
-            <span className="text-yellow-400 text-3xl">★</span>
-          ) : displayedRating >= index + 0.5 ? (
-            <span className="relative text-3xl w-[28px] inline-block">
-              <span
-                className="absolute top-0 left-0.5 text-yellow-400 overflow-hidden"
-                style={{ clipPath: "inset(0 50% 0 0)" }}
-              >
-                ★
-              </span>
-              <span className="text-gray-300">★</span>
-            </span>
-          ) : (
-            <span className="text-gray-300 text-3xl">★</span>
-          )}
-        </span>
-      ))}
+    <div>
+      <div
+        className={`flex gap-1 items-center justify-center mb-2 ${
+          mutation.isPending ? "pointer-events-none opacity-50" : ""
+        }`}
+      >
+        {[...Array(totalStars)].map((_, index) => (
+          <span
+            key={index}
+            onMouseEnter={() =>
+              editable && !mutation.isPending && setHoverRating(index + 1)
+            }
+            onMouseLeave={() =>
+              editable && !mutation.isPending && setHoverRating(null)
+            }
+            onClick={() => handleClick(index)}
+            className="cursor-pointer"
+          >
+            {displayedRating >= index + 1 ? (
+              <span className="text-yellow-400 text-3xl">★</span>
+            ) : (
+              <span className="text-gray-300 text-3xl">★</span>
+            )}
+          </span>
+        ))}
+      </div>
+      <DefaultButton
+        onClick={() => {}}
+        type="button"
+        moreStyle="!py-1 text-sm"
+        text="leave a review"
+      />
     </div>
   );
 };

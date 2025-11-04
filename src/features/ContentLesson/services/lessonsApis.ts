@@ -2,6 +2,7 @@ import api from "@/shared/services/axios";
 import type {
   ApiResponse,
   ContentEducatorType,
+  lessonActionsHistory,
   MyNotesInLessonTypeResponse,
 } from "@/shared/types/sharedTypes";
 
@@ -54,6 +55,13 @@ export async function dislikeLesson(lessonId: string): Promise<void> {
 
   return res.data.data;
 }
+export async function saveLesson(lessonId: string): Promise<void> {
+  const res = await api.post<ApiResponse<void>>(`/saved-lessons`, {
+    lessonId,
+  });
+
+  return res.data.data;
+}
 export async function addLessonNote(
   lessonId: string,
   data: { noteName: string; notes: string }
@@ -66,5 +74,14 @@ export async function addLessonNote(
     }
   );
 
+  return res.data.data;
+}
+
+export async function getLessonActionsHistory(
+  lessonId: string
+): Promise<lessonActionsHistory> {
+  const res = await api.get<ApiResponse<lessonActionsHistory>>(
+    `/lessons/${lessonId}/actions`
+  );
   return res.data.data;
 }

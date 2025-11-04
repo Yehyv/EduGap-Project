@@ -49,7 +49,7 @@ const LessonPlayerPage = () => {
       <ScrollToTop />
 
       <LessonHeader
-        name={data?.name ?? ""}
+        name={"Back to course details"}
         duration="8 ساعة 50 دقيقة"
         lang={lang}
       />

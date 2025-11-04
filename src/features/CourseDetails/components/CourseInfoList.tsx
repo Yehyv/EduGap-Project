@@ -8,12 +8,14 @@ import CertificateIcon from "@/assets/svgs/CertificateIcon.svg?react";
 import SaveIcon from "@/assets/svgs/SaveIcon.svg?react";
 import ShareIcon from "@/assets/svgs/ShareIcon.svg?react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
-import { enrollContent } from "../services/contentDetails";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { enrollContent, saveContent } from "../services/contentDetails";
 import Swal from "sweetalert2";
 import ButtonLoader from "@/shared/components/ButtonLoader";
 import { AxiosError } from "axios";
 import type { ContentDetailsType } from "@/shared/types/sharedTypes";
+import { toast } from "react-toastify";
+import { useUser } from "@/features/auth/context/UserContext";
 
 type StickyCourseSummaryCardProps = {
   buttonText: string;
@@ -37,6 +39,7 @@ const StickyCourseSummaryCard = ({
   const { courseId } = useParams<{ courseId: string }>();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useUser();
 
   const mutation = useMutation({
     mutationFn: () => enrollContent(courseId ?? ""),
@@ -63,6 +66,23 @@ const StickyCourseSummaryCard = ({
         icon: "error",
         confirmButtonText: t("ok"),
       });
+    },
+  });
+  const queryClient = useQueryClient();
+  const { mutateAsync, isPending } = useMutation<void, Error, number>({
+    mutationFn: (contentId: number) => saveContent(contentId),
+    onSuccess: () => {
+      toast.success(t("content_saved_successfully"));
+      queryClient.invalidateQueries({
+        queryKey: [
+          "getContentDetailsForEnrolledUsers",
+          courseId,
+          user?.programId,
+        ],
+      });
+    },
+    onError: () => {
+      toast.error(t("save_failed"));
     },
   });
 
@@ -117,24 +137,39 @@ const StickyCourseSummaryCard = ({
           </li>
         ))}
       </ul>
-
-      <DefaultButton
-        disabled={mutation.isPending}
-        text={mutation.isPending ? <ButtonLoader /> : buttonText}
-        onClick={handleSubmit}
-        type="button"
-        moreStyle="px-10 mx-auto w-full !rounded-3xl"
-      />
+      <div className="text-center">
+        <DefaultButton
+          disabled={mutation.isPending}
+          text={mutation.isPending ? <ButtonLoader /> : buttonText}
+          onClick={handleSubmit}
+          type="button"
+          moreStyle="px-10 mx-auto w-full !rounded-3xl max-w-[300px]"
+        />
+      </div>
 
       <div className="flex justify-center mt-6 xl:gap-4">
         <div className="flex items-center gap-2 cursor-pointer">
           <ShareIcon />
           <div className="text-nowrap">{t("share_course")}</div>
         </div>
-        <div className="flex items-center gap-2 cursor-pointer">
-          <SaveIcon />
-          <div className="text-nowrap">{t("save_course")}</div>
-        </div>
+        {!contentDetailsCardData?.isSaved && (
+          <button
+            type="button"
+            disabled={isPending}
+            className="flex items-center gap-2 relative cursor-pointer transition-all duration-300 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => {
+              if (localStorage.getItem("token")) {
+                mutateAsync(contentDetailsCardData?.id ?? 0);
+              } else {
+                console.log("not saved");
+                toast.warning(t("must_be_logged_in"));
+              }
+            }}
+          >
+            <SaveIcon />
+            <div className="text-nowrap">{t("save_course")}</div>
+          </button>
+        )}
       </div>
     </div>
   );

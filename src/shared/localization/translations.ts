@@ -175,6 +175,19 @@ const translations = {
     like_failed: "Like failed",
     dislike_failed: "Dislike failed",
     like_submitted_successfully: "Like submitted successfully",
+    content_saved_successfully: "Content saved successfully",
+    save_failed: "Saving failed",
+    dislike_submitted_successfully: "Dislike submitted successfully",
+    saved: "Saved",
+    save: "Save",
+    must_be_logged_in: "You must be logged in",
+    like_removed_successfully: "like removed successfully",
+    save_lesson: "Saved lesson successfully",
+    pre_req_title:
+      "Previous courses recommended to be completed before starting this course",
+    loading_reviews: "Loading reviews...",
+    error_loading_reviews: "An error occurred while loading reviews.",
+    no_reviews_yet: "No reviews yet",
   },
 
   ar: {
@@ -353,6 +366,18 @@ const translations = {
     like_failed: "حدث خطأ",
     dislike_failed: "حدث خطأ",
     like_submitted_successfully: "تم الإعجاب بنجاح",
+    content_saved_successfully: "تم حفظ المحتوى بنجاح",
+    save_failed: "فشل في الحفظ",
+    dislike_submitted_successfully: "تم تسجيل عدم الإعجاب بنجاح",
+    saved: "تم الحفظ",
+    save: "حفظ",
+    must_be_logged_in: "من فضلك سجِّل الدخول للمتابعة",
+    like_removed_successfully: "تم حذف الاعجاب بنجاح",
+    save_lesson: "تم حفظ الدرس بنجاح",
+    pre_req_title: "الدورات السابقة التي يوصي بإتمامها قبل بدء هذه الدورة",
+    loading_reviews: "جاري التحميل...",
+    error_loading_reviews: "حدث خطأ أثناء تحميل المراجعات",
+    no_reviews_yet: "لا يوجد تقييمات بعد",
   },
 } as const;
 

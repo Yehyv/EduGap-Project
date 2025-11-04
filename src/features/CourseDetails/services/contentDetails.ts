@@ -5,6 +5,7 @@ import type {
   ContentDetailsType,
   ContentLessonType,
   ContentRatingsType,
+  ContentReviewsResponse,
   ContentTopicsType,
 } from "@/shared/types/sharedTypes";
 
@@ -56,5 +57,17 @@ export async function getContentRatings(
 }
 export async function enrollContent(contentId: string) {
   const res = await api.post(`/enrollments/${contentId}/enroll`);
+  return res.data.data;
+}
+export async function saveContent(contentId: number) {
+  const res = await api.post(`/saved-contents/${contentId}/save`);
+  return res.data.data;
+}
+export async function getContentReviews(
+  courseID: string
+): Promise<ContentReviewsResponse> {
+  const res = await api.get<ApiResponse<ContentReviewsResponse>>(
+    `/contents/${courseID}/reviews`
+  );
   return res.data.data;
 }

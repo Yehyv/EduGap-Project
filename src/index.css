@@ -199,3 +199,12 @@
   color: #fff !important;
   border-radius: 8px !important;
 }
+
+.custom-text-gradient {
+  background: radial-gradient(
+    57.59% 47.59% at 52.41% 50%,
+    #ffffff 0%,
+    #fbfcff 73.47%,
+    #f2f5ff 100%
+  );
+}

@@ -1,4 +1,5 @@
 import { Suspense, lazy } from "react";
+import { Link, useParams } from "react-router-dom";
 const RightArrow = lazy(() => import("@/assets/svgs/RightArrow.svg?react"));
 const TimeIcon = lazy(() => import("@/assets/svgs/TimeIcon.svg?react"));
 
@@ -9,6 +10,7 @@ type Props = {
 };
 
 const LessonHeader = ({ name, duration = "—", lang }: Props) => {
+  const { courseId } = useParams();
   return (
     <div className="flex max-md:flex-col max-md:gap-4 justify-between items-start pt-2 m-6 lg:mx-14">
       <div className="flex items-center gap-2">
@@ -22,12 +24,15 @@ const LessonHeader = ({ name, duration = "—", lang }: Props) => {
       </div>
 
       <div>
-        <div className="flex items-center gap-2">
+        <Link
+          to={`/user-course-details/${courseId}`}
+          className="flex items-center gap-2"
+        >
           <h4 className="m-0">{name}</h4>
           <Suspense fallback={null}>
             <RightArrow className={lang === "ar" ? "rotate-180" : ""} />
           </Suspense>
-        </div>
+        </Link>
 
         <div className="flex gap-2 mt-2 text-sm">
           <Suspense fallback={null}>

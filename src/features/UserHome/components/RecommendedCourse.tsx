@@ -108,8 +108,8 @@ const RecommendedCourse = () => {
           <div className="flex gap-4 items-center my-5">
             <img src={userIcon} className="w-10 h-10 rounded-full" />
             <div>
-              <h5 className="font-semibold">{data?.educator.name}</h5>
-              <h6 className="text-[#575757]">{data?.educator.title}</h6>
+              <h5 className="font-semibold">{data?.educator?.name ?? ""}</h5>
+              <h6 className="text-[#575757]">{data?.educator?.title}</h6>
             </div>
           </div>
 

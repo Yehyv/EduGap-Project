@@ -10,6 +10,8 @@ import ExpandableText from "@/shared/components/ui/ExpandableText";
 import type { ContentDetailsType } from "@/shared/types/sharedTypes";
 import CourseContent from "@/features/UserHome/components/CourseContent";
 import ContentRatings from "@/features/UserHome/components/ContentRatings";
+import ContentPrerequisites from "./ContentPrerequisites";
+import ContentTestimonials from "./ContentTestimonials";
 
 const CourseDetails = ({
   buttonText,
@@ -26,14 +28,15 @@ const CourseDetails = ({
 }) => {
   const { t } = useLanguage();
   const [isOnline, setIsOnline] = useState(true);
-  const { firstName, lastName, title } = data.educator;
-  const fullName = `${firstName} ${lastName}`;
-  const { totalDuration, levelName, languageType, lastUpdate } = data;
+  const { firstName, lastName, title } = data.educator ?? {};
+  const fullName = firstName && `${firstName ?? ""} ${lastName ?? ""}`;
+  const { totalDuration, levelName, languageType, lastUpdate, id } = data;
   const contentDetailsCardData = {
     totalDuration,
     levelName,
     languageType,
     lastUpdate,
+    id,
   };
 
   useEffect(() => {
@@ -51,27 +54,29 @@ const CourseDetails = ({
   }, []);
 
   return (
-    <div className="flex flex-col-reverse gap-6 m-6 lg:m-14 lg:flex-row">
+    <div className="flex flex-col-reverse gap-6 m-6 xl:m-14 xl:flex-row">
       <ScrollToTop />
       {/* Main content */}
-      <div className="w-full lg:w-[80%]">
+      <div className="w-full xl:w-[70%]">
         <CourseVideo videoUrl={data?.adVideo} isOnline={isOnline} />
 
         {/* Instructor Info */}
         <section className="my-5">
-          <h4 className="my-5">{data?.name}</h4>
+          <h4 className="my-5">{data?.name ?? ""}</h4>
 
           <div className="flex items-center gap-2 my-4">
             <div className="w-12 h-12 rounded-full shadow-md overflow-hidden">
               <img
-                src={data?.educator.image || UserIcon}
+                src={data?.educator?.image || UserIcon}
                 alt="Instructor"
                 className="w-full h-full object-contain"
               />
             </div>
             <div>
-              <p className="font-semibold">{fullName}</p>
-              <p className="text-[#575757] font-light">{title}</p>
+              <h5 className="font-semibold">
+                {fullName || "Unknown Instructor"}
+              </h5>
+              <span className="text-[#575757] font-light">{title}</span>
             </div>
           </div>
 
@@ -104,6 +109,10 @@ const CourseDetails = ({
 
         {/* Ratings */}
         <ContentRatings />
+        <ContentTestimonials />
+
+        {/* Prerequsite content */}
+        <ContentPrerequisites />
       </div>
 
       {/* Sidebar */}

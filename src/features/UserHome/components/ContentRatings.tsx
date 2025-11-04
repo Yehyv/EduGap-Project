@@ -75,7 +75,7 @@ const ContentRatings = () => {
 
           {/* Dynamic Stars */}
           <div className="flex gap-1">
-            {Array.from({ length: 5 }).map((_, index) => (
+            {Array.from({ length: filledStars }).map((_, index) => (
               <StarIcon
                 key={index}
                 className={`h-7 w-7 ${

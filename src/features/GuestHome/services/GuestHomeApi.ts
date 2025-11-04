@@ -43,6 +43,14 @@ export async function getAllPopularCourses(
   );
   return res.data.data;
 }
+export async function getCoursePrerequisites(
+  courseId?: string
+): Promise<CoursesResponse> {
+  const res = await api.get<ApiResponse<CoursesResponse>>(
+    `/contents/${courseId}/prerequisites`
+  );
+  return res.data.data;
+}
 export async function getLatestCoursesList(
   page: string,
   limit: number,
