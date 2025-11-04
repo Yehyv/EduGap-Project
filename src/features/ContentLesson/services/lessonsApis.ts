@@ -1,6 +1,7 @@
 import api from "@/shared/services/axios";
 import type {
   ApiResponse,
+  CommentsTypeResponse,
   ContentEducatorType,
   lessonActionsHistory,
   MyNotesInLessonTypeResponse,
@@ -98,5 +99,53 @@ export async function updateNoteInLesson(
 export async function deleteNoteInLesson(lessonId: number): Promise<void> {
   const res = await api.delete<ApiResponse<void>>(`/lesson-notes/${lessonId}`);
 
+  return res.data.data;
+}
+// getComments,
+// addComment,
+// deleteComment,
+// editComment
+export async function getComments(
+  lessonId: string,
+  page: number
+): Promise<CommentsTypeResponse> {
+  const res = await api.get<ApiResponse<CommentsTypeResponse>>(
+    `/lesson-comments/lessons/${lessonId}`,
+    {
+      params: {
+        page,
+      },
+    }
+  );
+  return res.data.data;
+}
+export async function addComment(
+  lessonId: string,
+  comment: string
+): Promise<void> {
+  const res = await api.post<ApiResponse<void>>(
+    `/lesson-comments/lessons/${lessonId}`,
+    {
+      comment,
+    }
+  );
+  return res.data.data;
+}
+export async function deleteComment(lessonId: number): Promise<void> {
+  const res = await api.delete<ApiResponse<void>>(
+    `/lesson-comments/${lessonId}`
+  );
+  return res.data.data;
+}
+export async function editComment(
+  lessonId: number,
+  comment: string
+): Promise<void> {
+  const res = await api.patch<ApiResponse<void>>(
+    `/lesson-comments/${lessonId}`,
+    {
+      comment,
+    }
+  );
   return res.data.data;
 }

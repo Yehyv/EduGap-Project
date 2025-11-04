@@ -187,6 +187,21 @@ export type lessonActionsHistory = {
   reactionStatus: string;
   savedStatus: string;
 };
+export type CommentsType = {
+  id: number;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: number;
+    full_name: string;
+    image: string;
+  };
+};
+export type CommentsTypeResponse = {
+  items: CommentsType[];
+  pagination: PaginationType;
+};
 export type ExpertsResponse = {
   items: ExpertsData[];
   pagination: PaginationType;

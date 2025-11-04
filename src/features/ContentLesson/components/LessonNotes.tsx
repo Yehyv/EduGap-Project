@@ -187,7 +187,7 @@ const LessonNotes = () => {
         totalPages={data?.pagination?.totalPages ?? 1}
       />
 
-      {/* ✅ Edit Modal */}
+      {/*  Edit Modal */}
       {selectedNote && (
         <MyModal
           open={editModalOpen}
@@ -216,7 +216,7 @@ const LessonNotes = () => {
         </MyModal>
       )}
 
-      {/* ✅ Delete Modal */}
+      {/*  Delete Modal */}
       {selectedNote && (
         <MyModal
           headerTitle={t("delete_note")}
