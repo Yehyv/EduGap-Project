@@ -16,6 +16,8 @@ import { Package } from 'src/packages/entities/package.entity';
 import { PackageContent } from 'src/packages/entities/package-content.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { SavedContent } from 'src/saved-contents/entities/saved-content.entity'; // عدّل المسار حسب مشروعك
+
 @Injectable()
 export class ContentsService {
   constructor(
@@ -39,7 +41,24 @@ export class ContentsService {
     private readonly educatorRepo: Repository<Educator>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepo: Repository<Enrollment>,
+    @InjectRepository(SavedContent)
+    private readonly savedContentRepo: Repository<SavedContent>,
   ) {}
+  private async buildSavedMap(userId: number | undefined, ids: number[]) {
+    if (!userId || ids.length === 0) return new Map<number, boolean>();
+
+    const rows = await this.savedContentRepo
+      .createQueryBuilder('s')
+      .leftJoin('s.user', 'u')
+      .leftJoin('s.content', 'c')
+      .select(['c.id AS cid'])
+      .where('u.id = :uid', { uid: userId })
+      .andWhere('c.id IN (:...ids)', { ids })
+      // بدون withDeleted => يعني بس النشطة (مش متشالة سوفت)
+      .getRawMany<{ cid: number }>();
+
+    return new Map(rows.map((r) => [Number(r.cid), true]));
+  }
 
   /** ----------------------------------------------------------------
    * ✅ إنشاء محتوى جديد فقط (بدون أي ربط بالكورسات)
@@ -388,6 +407,7 @@ export class ContentsService {
         .getRawMany<{ cid: number }>();
       enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
     }
+    const savedMap = await this.buildSavedMap(userId, ids);
 
     // 5) حمّل تفاصيل المحتويات + ترجمات التصنيف والـ educator
     const contents = await this.contentRepo
@@ -439,7 +459,7 @@ export class ContentsService {
         totalDuration: durationMap.get(c.id) ?? 0,
 
         isEnrolled: enrolledMap.get(c.id) ?? false,
-        isSaved: false,
+        isSaved: savedMap.get(c.id) ?? false,
 
         educator: c.educator
           ? {
@@ -566,6 +586,7 @@ export class ContentsService {
         .getRawMany<{ cid: number }>();
       enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
     }
+    const savedMap = await this.buildSavedMap(userId, ids);
 
     // 5) حمّل تفاصيل المحتويات + ترجمات التصنيف والـ educator
     const contents = await this.contentRepo
@@ -616,7 +637,7 @@ export class ContentsService {
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
         isEnrolled: enrolledMap.get(c.id) ?? false,
-        isSaved: false,
+        isSaved: savedMap.get(c.id) ?? false,
 
         educator: c.educator
           ? {
@@ -831,6 +852,7 @@ export class ContentsService {
 
       enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
     }
+    const savedMap = await this.buildSavedMap(userId, ids);
 
     const items = rows.map((c) => {
       const tr =
@@ -853,7 +875,7 @@ export class ContentsService {
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
         isEnrolled: enrolledMap.get(c.id) ?? false,
-        isSaved: false,
+        isSaved: savedMap.get(c.id) ?? false,
 
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: {
@@ -953,6 +975,7 @@ export class ContentsService {
 
       enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
     }
+    const savedMap = await this.buildSavedMap(userId, ids);
 
     return rows.map((c) => {
       const tr =
@@ -976,7 +999,7 @@ export class ContentsService {
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
         isEnrolled: enrolledMap.get(c.id) ?? false,
-        isSaved: false,
+        isSaved: savedMap.get(c.id) ?? false,
 
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: {
@@ -1041,6 +1064,18 @@ export class ContentsService {
       });
       if (enr) isEnrolled = true;
     }
+    let isSaved = false;
+    if (userId) {
+      // لو TypeORM >= 0.3 يدعم getExists()
+      const exists = await this.savedContentRepo
+        .createQueryBuilder('s')
+        .leftJoin('s.user', 'u')
+        .leftJoin('s.content', 'c')
+        .where('u.id = :uid', { uid: userId })
+        .andWhere('c.id = :cid', { cid: row.id })
+        .getExists(); // إن لم تتوفر، استخدم getCount()>0
+      isSaved = exists;
+    }
 
     const e = row.educator;
     const tr =
@@ -1068,7 +1103,7 @@ export class ContentsService {
       },
       created_at: row.created_at,
       isEnrolled, // 👈 الفلاج الجديد
-      isSaved: false,
+      isSaved,
 
       educator: e
         ? {

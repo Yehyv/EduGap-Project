@@ -16,6 +16,7 @@ import { Package } from 'src/packages/entities/package.entity';
 import { PackageContent } from 'src/packages/entities/package-content.entity';
 import { ContentReview } from 'src/content-reviews/entities/content-review.entity';
 import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequiest-content.entity';
+import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequie
       ContentReview,
       Enrollment,
       PrerequisiteContent,
+      SavedContent,
     ]),
     EnrollmentsModule,
   ],
