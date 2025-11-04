@@ -8,6 +8,7 @@ import AddReviewOnContent from "@/features/CourseDetails/components/AddReviewOnC
 import DefaultButton from "./DefaultButton";
 import { getMyCurrentRate } from "@/features/CourseDetails/services/contentDetails";
 import type { CurrentUserRating } from "@/shared/types/sharedTypes";
+import { motion } from "framer-motion";
 
 interface RatingReviewProps {
   totalStars?: number;
@@ -77,14 +78,14 @@ const RatingReview: React.FC<RatingReviewProps> = ({
 
   return (
     <div>
-      {/* النجوم */}
+      {/* Stars */}
       <div
         className={`flex gap-1 items-center justify-center mb-2 ${
           mutation.isPending ? "pointer-events-none opacity-50" : ""
         }`}
       >
         {[...Array(totalStars)].map((_, index) => (
-          <span
+          <motion.span
             key={index}
             onMouseEnter={() =>
               editable && !mutation.isPending && setHoverRating(index + 1)
@@ -93,14 +94,24 @@ const RatingReview: React.FC<RatingReviewProps> = ({
               editable && !mutation.isPending && setHoverRating(null)
             }
             onClick={() => handleClick(index)}
-            className="cursor-pointer"
+            className="cursor-pointer select-none"
+            initial={{ scale: 1 }}
+            whileHover={{ scale: 1.3 }}
+            whileTap={{ scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 300, damping: 12 }}
           >
             {displayedRating >= index + 1 ? (
-              <span className="text-yellow-400 text-3xl">★</span>
+              <motion.span
+                className="text-yellow-400 text-3xl"
+                animate={{ rotate: [0, -15, 15, 0] }}
+                transition={{ duration: 0.3 }}
+              >
+                ★
+              </motion.span>
             ) : (
               <span className="text-gray-300 text-3xl">★</span>
             )}
-          </span>
+          </motion.span>
         ))}
       </div>
 

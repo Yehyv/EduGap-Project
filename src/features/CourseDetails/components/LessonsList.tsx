@@ -1,6 +1,7 @@
 import type { ContentTopicsType } from "@/shared/types/sharedTypes";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 const LessonsList = ({
   indx,
@@ -14,6 +15,7 @@ const LessonsList = ({
 
   return (
     <div className="py-3">
+      {/* Header button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-full items-center justify-between focus:outline-none cursor-pointer"
@@ -27,34 +29,55 @@ const LessonsList = ({
           <span className="mx-1 inline-block text-yellow-500">{indx}.</span>
           {ContentTopics?.name}
         </h5>
-        <svg
-          className={`w-5 h-5 text-gray-500 transform transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
+
+        {/* Rotate icon smoothly */}
+        <motion.svg
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-5 h-5 text-gray-500"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
           viewBox="0 0 24 24"
         >
           <path d="M19 9l-7 7-7-7"></path>
-        </svg>
+        </motion.svg>
       </button>
-      {isOpen && (
-        <div className="mt-3 text-gray-600">
-          <ul className="list-decimal ms-6 space-y-2">
-            {ContentTopics?.lessons?.map((ans, i) => (
-              <li key={i} className="text-amber-500">
-                <Link
-                  to={`/course-lesson/${courseId}/${ans?.id}`}
-                  className={`${ans?.id == +lessonId! ? "text-secondary" : ""}`}
+
+      {/* Animated Lessons List */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="lessons-list"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <ul className="mt-3 list-decimal ms-6 space-y-2 text-gray-600">
+              {ContentTopics?.lessons?.map((ans, i) => (
+                <motion.li
+                  key={i}
+                  className="text-amber-500"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
                 >
-                  {ans?.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                  <Link
+                    to={`/course-lesson/${courseId}/${ans?.id}`}
+                    className={`${
+                      ans?.id == +lessonId! ? "text-secondary font-medium" : ""
+                    }`}
+                  >
+                    {ans?.name}
+                  </Link>
+                </motion.li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

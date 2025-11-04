@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { useLanguage } from "@/shared/localization/useLanguage";
 
 type TabKey = "comments" | "attachments" | "notes";
@@ -24,17 +25,23 @@ const LessonTabs = ({ activeTab, setActiveTab }: Props) => {
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`
-              rounded-3xl py-2 text-center transition font-medium 
-              outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer
-              ${
-                isActive
-                  ? "bg-white shadow-md text-black"
-                  : "text-gray-600 hover:bg-white/70"
-              }
-            `}
+            className="relative rounded-3xl py-2 text-center font-medium cursor-pointer overflow-hidden"
           >
-            {label}
+            {isActive && (
+              <motion.div
+                layoutId="tab-bg"
+                className="absolute inset-0 bg-white shadow-md rounded-3xl"
+                transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              />
+            )}
+
+            <span
+              className={`relative z-10 ${
+                isActive ? "text-black" : "text-gray-600"
+              }`}
+            >
+              {label}
+            </span>
           </button>
         );
       })}

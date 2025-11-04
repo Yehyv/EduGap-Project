@@ -219,6 +219,7 @@ const translations = {
     delete_success: "Comment deleted",
     delete_error: "Failed to delete comment",
     user: "User",
+    share_material: "Share Material",
   },
 
   ar: {
@@ -440,6 +441,7 @@ const translations = {
     delete_success: "تم حذف التعليق",
     delete_error: "حدث خطأ أثناء الحذف",
     user: "مستخدم",
+    share_material: "مشاركة",
   },
 } as const;
 

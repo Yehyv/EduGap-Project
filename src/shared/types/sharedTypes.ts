@@ -179,6 +179,17 @@ export type CoursesResponse = {
   items: CourseType[];
   pagination: PaginationType;
 };
+export type lessonMaterialsTypes = {
+  id: number;
+  file: string;
+  materialType: {
+    id: number;
+    name: string;
+    icon: string;
+  };
+  title: string;
+  description: string;
+};
 export type CurrentUserRating = {
   rating: number;
 };

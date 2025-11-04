@@ -1,5 +1,11 @@
 import { Suspense, lazy } from "react";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import { useQuery } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
+import type { lessonMaterialsTypes } from "@/shared/types/sharedTypes";
+import { getLessonsMaterials } from "../services/lessonsApis";
+import CircleLoader from "@/shared/components/ui/CircleLoader";
+import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 
 const AttachmentIcon = lazy(
   () => import("@/assets/svgs/AttachmentIcon.svg?react")
@@ -22,6 +28,22 @@ const LessonAttachments = () => {
   const { t } = useLanguage();
 
   const hasFiles = dummyFiles.length > 0;
+  const { lessonId } = useParams();
+  const { data, isLoading, error } = useQuery<lessonMaterialsTypes[]>({
+    queryKey: ["getLessonMaterials", lessonId],
+    queryFn: () => getLessonsMaterials(lessonId ?? ""),
+  });
+
+  if (error)
+    return (
+      <SliderErrorFallback
+        componentTitle={
+          error?.message ?? "Error while fetching lesson materials"
+        }
+      />
+    );
+
+  if (isLoading) return <CircleLoader />;
 
   return (
     <div className="min-h-[300px]">
@@ -33,13 +55,15 @@ const LessonAttachments = () => {
 
       {/* If files exist */}
       {hasFiles ? (
-        dummyFiles.map(({ name, size }, i) => (
+        data?.map((file, i) => (
           <div key={i} className="mb-5">
             <div className="flex gap-4 border border-[#D6D6D6] hover:border-primary transition rounded-xl px-4 py-3 items-center">
               <AttachmentIcon className="text-primary" />
               <div className="w-full">
-                <p className="font-medium">{name}</p>
-                <p className="text-[#797979] text-sm">{size}</p>
+                <p className="font-medium">
+                  {file?.title}.{file?.materialType?.name}
+                </p>
+                <p className="text-gray-400">{file?.description}</p>
               </div>
 
               {/* download icon */}

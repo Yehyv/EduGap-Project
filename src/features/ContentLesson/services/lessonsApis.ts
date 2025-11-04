@@ -4,6 +4,7 @@ import type {
   CommentsTypeResponse,
   ContentEducatorType,
   lessonActionsHistory,
+  lessonMaterialsTypes,
   MyNotesInLessonTypeResponse,
 } from "@/shared/types/sharedTypes";
 
@@ -101,10 +102,7 @@ export async function deleteNoteInLesson(lessonId: number): Promise<void> {
 
   return res.data.data;
 }
-// getComments,
-// addComment,
-// deleteComment,
-// editComment
+
 export async function getComments(
   lessonId: string,
   page: number
@@ -116,6 +114,14 @@ export async function getComments(
         page,
       },
     }
+  );
+  return res.data.data;
+}
+export async function getLessonsMaterials(
+  lessonId: string
+): Promise<lessonMaterialsTypes[]> {
+  const res = await api.get<ApiResponse<lessonMaterialsTypes[]>>(
+    `/lesson-materials/content/${lessonId}`
   );
   return res.data.data;
 }

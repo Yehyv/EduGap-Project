@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import StarIcon from "@/assets/svgs/StarIcon.svg?react";
 import SaveIcon from "@/assets/svgs/SaveIcon.svg?react";
 import MedalIcon from "@/assets/svgs/Medalcon.svg?react";
@@ -35,10 +36,10 @@ const CourseCard = ({ course }: { course: CourseType }) => {
   });
 
   return (
-    <div
-      className="group relative bg-white rounded-xl shadow-custom overflow-hidden
-       w-full transition-all duration-300 ease-in-out
-       hover:-translate-y-2 my-3"
+    <motion.div
+      whileHover={{ scale: 1.015, y: -4 }}
+      transition={{ duration: 0.25 }}
+      className="group relative bg-white rounded-xl shadow-custom overflow-hidden w-full cursor-pointer"
     >
       {/* Image Section */}
       <div className="relative overflow-hidden rounded-xl">
@@ -60,17 +61,14 @@ const CourseCard = ({ course }: { course: CourseType }) => {
         <div className="flex justify-between items-start mb-2">
           <div className="w-full">
             <p className="text-sm font-semibold text-gray-400">
-              {/* Category */}
               {course?.name}
             </p>
-            <div className="flex justify-between items-center">
-              <h5
-                className="font-semibold text-gray-800 line-clamp-1"
-                title={course?.description}
-              >
-                {course?.description}
-              </h5>
-            </div>
+            <h5
+              className="font-semibold text-gray-800 line-clamp-1"
+              title={course?.description}
+            >
+              {course?.description}
+            </h5>
           </div>
         </div>
 
@@ -82,21 +80,10 @@ const CourseCard = ({ course }: { course: CourseType }) => {
         <div className="flex items-center mb-3">
           <div className="flex items-center gap-1 text-yellow-400">
             <span className="me-1">{course?.rate?.toFixed(1)}</span>
-
-            {(() => {
-              const rate = course?.rate ?? 0;
-              const fullStars = Math.floor(rate);
-
-              return (
-                <>
-                  {[...Array(fullStars)].map((_, i) => (
-                    <StarIcon key={i} className="w-5 h-5" />
-                  ))}
-                </>
-              );
-            })()}
+            {[...Array(Math.floor(course?.rate ?? 0))].map((_, i) => (
+              <StarIcon key={i} className="w-5 h-5" />
+            ))}
           </div>
-
           <span className="text-gray-400 text-sm ms-2">
             ({course?.ratersCount ?? 0})
           </span>
@@ -109,11 +96,9 @@ const CourseCard = ({ course }: { course: CourseType }) => {
               disabled={isPending}
               className="absolute max-sm:static end-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => {
-                if (localStorage.getItem("token")) {
-                  console.log("saved");
+                if (token) {
                   mutateAsync(course.id);
                 } else {
-                  console.log("not saved");
                   toast.warning(t("must_be_logged_in"));
                 }
               }}
@@ -127,13 +112,11 @@ const CourseCard = ({ course }: { course: CourseType }) => {
               course?.isEnrolled ? t("Continue_Learning") : t("course_details")
             }
             onClick={() => {
-              let path = "";
-              if (token) {
-                path = `/user-course-details/${course.id}`;
-              } else {
-                path = `/guest-course-details/${course.id}`;
-              }
-              navigate(path);
+              navigate(
+                token
+                  ? `/user-course-details/${course.id}`
+                  : `/guest-course-details/${course.id}`
+              );
             }}
             type="button"
             moreStyle="min-w-[150px] rounded-3xl !py-1"
@@ -141,9 +124,8 @@ const CourseCard = ({ course }: { course: CourseType }) => {
         </div>
       </div>
 
-      {/* Overlay Details */}
       <CourseCardOverlayDetails course={course} />
-    </div>
+    </motion.div>
   );
 };
 
