@@ -17,7 +17,7 @@ import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { getVideoDuration } from './video-utils';
 import { LessonReaction } from 'src/lesson-reactions/entities/lesson-reaction.entity';
 import { SavedLesson } from 'src/saved-lesson/entities/saved-lesson.entity';
-type ReactionStatus = 'liked' | 'unliked';
+type ReactionStatus = 'liked' | 'disliked' | 'none';
 type SavedStatus = 'saved' | 'unsaved';
 @Injectable()
 export class LessonsService {
@@ -237,8 +237,11 @@ async getLessonActionsStatus(userId: number, lessonId: number) {
     where: { lesson: { id: lessonId }, user: { id: userId } },
     select: ['id', 'reaction'],
   });
-  const reactionStatus: ReactionStatus =
-    reactionRow?.reaction === 1 ? 'liked' : 'unliked';
+   let reactionStatus: ReactionStatus = 'none';
+  if (reactionRow) {
+    if (reactionRow.reaction === 1) reactionStatus = 'liked';
+    else if (reactionRow.reaction === 0) reactionStatus = 'disliked';
+  }
 
   // 3) Saved (لو مفيش content مرتبط نرجّع unsaved)
   const contentId = lesson.topic?.content?.id ?? null;
