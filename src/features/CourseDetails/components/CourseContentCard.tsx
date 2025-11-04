@@ -24,7 +24,7 @@ const CourseContentCard = () => {
   });
 
   return (
-    <div className="w-full lg:w-[30%] h-full">
+    <div className="w-full lg:w-[30%] h-full mb-10">
       {/* Lessons List */}
       <div className="shadow-custom overflow-auto top-16 rounded-xl py-5 min-lg:h-[400px]">
         <h5 className="flex gap-2 text-lg font-semibold mb-4 border-b pb-3 border-[#D0CDCD] px-5">

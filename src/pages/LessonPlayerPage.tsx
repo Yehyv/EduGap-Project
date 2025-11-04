@@ -21,7 +21,7 @@ const LessonNotes = lazy(
 );
 
 const LessonPlayerPage = () => {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const { lessonId } = useParams();
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<
@@ -49,7 +49,7 @@ const LessonPlayerPage = () => {
       <ScrollToTop />
 
       <LessonHeader
-        name={"Back to course details"}
+        name={t("back_to_course_details")}
         duration="8 ساعة 50 دقيقة"
         lang={lang}
       />

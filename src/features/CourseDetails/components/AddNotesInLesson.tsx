@@ -1,6 +1,5 @@
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
-import { TextField } from "@/shared/components";
 import SelectField from "@/shared/components/forms/SelectField";
 import TextareaField from "@/shared/components/forms/TextareaField";
 import DefaultButton from "@/shared/components/ui/DefaultButton";
@@ -13,12 +12,17 @@ import type { ContentTopicsType } from "@/shared/types/sharedTypes";
 import { toast } from "react-toastify";
 import ButtonLoader from "@/shared/components/ButtonLoader";
 
-const AddNotesInLesson = () => {
+const AddNotesInLesson = ({
+  noteslessonCount = 0,
+}: {
+  noteslessonCount?: number;
+}) => {
   const { t } = useLanguage();
   const { courseId } = useParams();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
+  const nextNoteNumber = noteslessonCount + 1;
 
   // Fetch topics
   const { data } = useQuery<ContentTopicsType[]>({
@@ -40,13 +44,15 @@ const AddNotesInLesson = () => {
   const { mutateAsync, isPending } = useMutation<
     void,
     Error,
-    { noteName: string; notes: string; lessonName: string }
+    { notes: string; lessonName: string }
   >({
-    mutationFn: (noteData) => addLessonNote(noteData.lessonName, noteData),
+    mutationFn: (noteData) => addLessonNote(noteData?.lessonName, noteData),
     onSuccess: () => {
       toast.success(t("note_saved_successfully"));
       setSearchParams({ page: "1" });
-      queryClient.invalidateQueries(["getMyNotesInLesson", page, lessonName]);
+      queryClient.invalidateQueries({
+        queryKey: ["getMyNotesInLesson", page],
+      });
     },
     onError: () => {
       toast.error(t("note_save_failed"));
@@ -55,13 +61,11 @@ const AddNotesInLesson = () => {
 
   return (
     <Formik
-      initialValues={{ noteName: "", notes: "", lessonName: "" }}
+      initialValues={{ notes: "", lessonName: "" }}
       validationSchema={Yup.object({
-        noteName: Yup.string().max(20, t("note_max")).required(t("required")),
         notes: Yup.string()
           .max(200, t("note_max"))
           .required(t("note_required")),
-        lessonName: Yup.string().required(t("lesson_required")),
       })}
       onSubmit={async (values, { resetForm }) => {
         mutateAsync(values, {
@@ -72,18 +76,26 @@ const AddNotesInLesson = () => {
       {({ handleSubmit, resetForm }) => (
         <Form className="mt-4 space-y-3" onSubmit={handleSubmit}>
           <div className="flex gap-4 items-start">
-            <div className="w-1/4">
-              <Field
-                as={TextField}
-                maxLength={20}
-                name="noteName"
-                type="text"
-                placeholder={t("note_title")}
-                label=""
-              />
+            <div className="lg:w-1/4">
+              <Field name="noteName">
+                {() => (
+                  <div className="flex flex-col">
+                    <label className="mb-2 text-sm text-gray-700">
+                      {t("note_title")}
+                    </label>
+
+                    <input
+                      disabled
+                      value={`ملاحظة رقم ${nextNoteNumber}`}
+                      placeholder={t("note_title")}
+                      className="w-full border border-gray-300 bg-gray-100 text-gray-500 rounded-lg px-3 py-1.5 cursor-not-allowed"
+                    />
+                  </div>
+                )}
+              </Field>
             </div>
 
-            <div className="w-full mt-1">
+            <div className="w-full mt-7">
               <Field
                 as={SelectField}
                 name="lessonName"

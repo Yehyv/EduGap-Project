@@ -7,6 +7,7 @@ type TextFieldProps = {
   placeholder?: string;
   onlyNumbers?: boolean;
   maxLength?: number;
+  disabled?: boolean;
 };
 
 const TextField = ({
@@ -16,6 +17,7 @@ const TextField = ({
   placeholder,
   onlyNumbers = false,
   maxLength,
+  disabled = false,
 }: TextFieldProps) => {
   const [, meta] = useField(name);
 
@@ -32,6 +34,7 @@ const TextField = ({
         name={name}
         type={type}
         placeholder={placeholder}
+        disabled={disabled}
         inputMode={onlyNumbers ? "numeric" : "text"}
         className={`border rounded-lg px-2 py-1.5 border-[#9E9C9C] focus:border-tertiary outline-none ${borderColor}`}
         maxLength={maxLength}

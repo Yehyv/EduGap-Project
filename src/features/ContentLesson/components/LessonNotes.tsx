@@ -1,12 +1,22 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 import AddNotesInLesson from "@/features/CourseDetails/components/AddNotesInLesson";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { getMyNotesInLesson } from "../services/lessonsApis";
+import {
+  getMyNotesInLesson,
+  updateNoteInLesson,
+  deleteNoteInLesson,
+} from "../services/lessonsApis";
 import { useParams, useSearchParams } from "react-router-dom";
 import type { MyNotesInLessonTypeResponse } from "@/shared/types/sharedTypes";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import CustomPagination from "@/shared/utils/CustomPagination";
+import MyModal from "@/shared/components/ui/MyModal";
+import DefaultButton from "@/shared/components/ui/DefaultButton";
+import TextareaField from "@/shared/components/forms/TextareaField";
+import { Formik, Form } from "formik";
+import * as Yup from "yup";
+import { toast } from "react-toastify";
 
 const TitleLine = lazy(() => import("@/assets/svgs/TitileLine.svg?react"));
 const EditIcon = lazy(() => import("@/assets/svgs/EditTextIcon.svg?react"));
@@ -17,6 +27,15 @@ const LessonNotes = () => {
   const { lessonId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
+  const queryClient = useQueryClient();
+
+  // --- States for Modals ---
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<{
+    id: number;
+    text: string;
+  } | null>(null);
 
   const { data, isLoading, error } = useQuery<MyNotesInLessonTypeResponse>({
     queryKey: ["getMyNotesInLesson", page, lessonId],
@@ -28,10 +47,79 @@ const LessonNotes = () => {
     setSearchParams({ page: newPage.toString() });
   };
 
+  const editMutation = useMutation({
+    mutationFn: (payload: { id: number; text: string }) =>
+      updateNoteInLesson(payload.id, payload.text),
+
+    onMutate: () => {
+      toast.dismiss("editNote");
+      toast.loading(t("saving"), { toastId: "editNote" });
+    },
+
+    onSuccess: () => {
+      toast.update("editNote", {
+        render: t("note_updated"),
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["getMyNotesInLesson", page, lessonId],
+        exact: true,
+      });
+
+      setEditModalOpen(false);
+    },
+
+    onError: () => {
+      toast.update("editNote", {
+        render: t("error"),
+        type: "error",
+        isLoading: false,
+        autoClose: 2000,
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteNoteInLesson(id),
+
+    onMutate: () => {
+      toast.dismiss("deleteNote");
+      toast.loading(t("loading"), { toastId: "deleteNote" });
+    },
+
+    onSuccess: () => {
+      toast.update("deleteNote", {
+        render: t("note_deleted"),
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["getMyNotesInLesson", page, lessonId],
+        exact: true,
+      });
+      setDeleteModalOpen(false);
+    },
+
+    onError: () => {
+      toast.update("deleteNote", {
+        render: t("error"),
+        type: "error",
+        isLoading: false,
+        autoClose: 2000,
+      });
+    },
+  });
+
   if (isLoading) return <CircleLoader />;
   if (error) return <div>{t("error_fetching_notes")}</div>;
 
   const notesList = data?.items || [];
+  const notesCount = data?.pagination?.total ?? 0;
 
   return (
     <div className="min-h-[350px]">
@@ -42,7 +130,7 @@ const LessonNotes = () => {
         </Suspense>
       </div>
 
-      <AddNotesInLesson />
+      <AddNotesInLesson noteslessonCount={notesCount} />
 
       {/* Notes List */}
       <div className="grid grid-cols-2 max-md:grid-cols-1 gap-10 mt-10">
@@ -61,8 +149,27 @@ const LessonNotes = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 absolute bottom-2 end-2">
-                  <EditIcon className="cursor-pointer hover:scale-110 transition" />
-                  <TrashIcon className="cursor-pointer hover:scale-110 transition" />
+                  <EditIcon
+                    className="cursor-pointer hover:scale-110 transition"
+                    onClick={() => {
+                      setSelectedNote({
+                        id: noteItem.id,
+                        text: noteItem.notes,
+                      });
+                      setEditModalOpen(true);
+                    }}
+                  />
+
+                  <TrashIcon
+                    className="cursor-pointer hover:scale-110 transition"
+                    onClick={() => {
+                      setSelectedNote({
+                        id: noteItem.id,
+                        text: noteItem.notes,
+                      });
+                      setDeleteModalOpen(true);
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -73,11 +180,67 @@ const LessonNotes = () => {
           </div>
         )}
       </div>
+
       <CustomPagination
         currentPage={data?.pagination?.page ?? 1}
         onPageChange={handlePageChange}
         totalPages={data?.pagination?.totalPages ?? 1}
       />
+
+      {/* ✅ Edit Modal */}
+      {selectedNote && (
+        <MyModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          headerTitle={t("edit_note")}
+        >
+          <Formik
+            initialValues={{ note: selectedNote.text }}
+            validationSchema={Yup.object({
+              note: Yup.string().required(t("required")),
+            })}
+            onSubmit={(values) =>
+              editMutation.mutate({ id: selectedNote.id, text: values.note })
+            }
+          >
+            <Form className="flex flex-col gap-4">
+              <label id="note">{t("edit_note")}:</label>
+              <TextareaField
+                placeholder={t("edit_note")}
+                name="note"
+                rows={4}
+              />
+              <DefaultButton text={t("save")} type="submit" />
+            </Form>
+          </Formik>
+        </MyModal>
+      )}
+
+      {/* ✅ Delete Modal */}
+      {selectedNote && (
+        <MyModal
+          headerTitle={t("delete_note")}
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+        >
+          <p className="text-center text-xl text-gray-600">
+            {t("confirm_delete")}
+          </p>
+          <div className="flex justify-center gap-3 mt-4">
+            <DefaultButton
+              text={t("cancel")}
+              type="button"
+              moreStyle="!bg-gray-300 !text-black hover:!to-gray-400"
+              onClick={() => setDeleteModalOpen(false)}
+            />
+            <DefaultButton
+              text={t("delete")}
+              type="button"
+              onClick={() => deleteMutation.mutate(selectedNote.id)}
+            />
+          </div>
+        </MyModal>
+      )}
     </div>
   );
 };

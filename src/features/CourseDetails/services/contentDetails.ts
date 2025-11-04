@@ -7,6 +7,7 @@ import type {
   ContentRatingsType,
   ContentReviewsResponse,
   ContentTopicsType,
+  CurrentUserRating,
 } from "@/shared/types/sharedTypes";
 
 export async function getBaseContentDetails(
@@ -47,6 +48,14 @@ export async function getContentTopics(
   );
   return res.data.data;
 }
+export async function getMyCurrentRate(
+  courseId: string
+): Promise<CurrentUserRating> {
+  const res = await api.get<ApiResponse<CurrentUserRating>>(
+    `/enrollments/contents/${courseId}/my-rating`
+  );
+  return res.data.data;
+}
 export async function getContentRatings(
   courseId: string
 ): Promise<ContentRatingsType> {
@@ -69,5 +78,10 @@ export async function getContentReviews(
   const res = await api.get<ApiResponse<ContentReviewsResponse>>(
     `/contents/${courseID}/reviews`
   );
+  return res.data.data;
+}
+
+export async function addReviewOnContent(contentId: number, review: string) {
+  const res = await api.post(`/content-reviews/${contentId}`, { review });
   return res.data.data;
 }

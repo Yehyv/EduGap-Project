@@ -179,6 +179,9 @@ export type CoursesResponse = {
   items: CourseType[];
   pagination: PaginationType;
 };
+export type CurrentUserRating = {
+  rating: number;
+};
 export type lessonActionsHistory = {
   lessonId: number;
   reactionStatus: string;

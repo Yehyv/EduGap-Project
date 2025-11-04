@@ -56,20 +56,19 @@ export async function dislikeLesson(lessonId: string): Promise<void> {
   return res.data.data;
 }
 export async function saveLesson(lessonId: string): Promise<void> {
-  const res = await api.post<ApiResponse<void>>(`/saved-lessons`, {
-    lessonId,
-  });
+  const res = await api.post<ApiResponse<void>>(
+    `/saved-lessons/lessons/${lessonId}/toggle`
+  );
 
   return res.data.data;
 }
 export async function addLessonNote(
   lessonId: string,
-  data: { noteName: string; notes: string }
+  data: { notes: string }
 ): Promise<void> {
   const res = await api.post<ApiResponse<void>>(
     `/lesson-notes/lessons/${lessonId}`,
     {
-      noteName: data.noteName,
       notes: data.notes,
     }
   );
@@ -83,5 +82,21 @@ export async function getLessonActionsHistory(
   const res = await api.get<ApiResponse<lessonActionsHistory>>(
     `/lessons/${lessonId}/actions`
   );
+  return res.data.data;
+}
+
+export async function updateNoteInLesson(
+  lessonId: number,
+  notes: string
+): Promise<void> {
+  const res = await api.patch<ApiResponse<void>>(`/lesson-notes/${lessonId}`, {
+    notes,
+  });
+
+  return res.data.data;
+}
+export async function deleteNoteInLesson(lessonId: number): Promise<void> {
+  const res = await api.delete<ApiResponse<void>>(`/lesson-notes/${lessonId}`);
+
   return res.data.data;
 }

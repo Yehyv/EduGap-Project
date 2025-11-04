@@ -1,9 +1,13 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { rateContent } from "@/features/ContentLesson/services/lessonsApis";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import MyModal from "./MyModal";
+import AddReviewOnContent from "@/features/CourseDetails/components/AddReviewOnContent";
 import DefaultButton from "./DefaultButton";
+import { getMyCurrentRate } from "@/features/CourseDetails/services/contentDetails";
+import type { CurrentUserRating } from "@/shared/types/sharedTypes";
 
 interface RatingReviewProps {
   totalStars?: number;
@@ -17,32 +21,43 @@ const RatingReview: React.FC<RatingReviewProps> = ({
   courseId,
 }) => {
   const { t } = useLanguage();
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [currentRating, setCurrentRating] = useState(0);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
 
-  const texts = {
-    saving: t("saving_rating"),
-    success: t("rating_saved"),
-    error: t("error"),
-  };
+  const { data: currentUserRating } = useQuery<CurrentUserRating>({
+    queryKey: ["currentUserRating", courseId],
+    queryFn: () => getMyCurrentRate(courseId),
+  });
+
+  useEffect(() => {
+    if (currentUserRating?.rating) {
+      setCurrentRating(currentUserRating.rating);
+    }
+  }, [currentUserRating]);
+
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: (rating: number) => rateContent(courseId, rating),
     onMutate: () => {
       toast.dismiss("rate");
-      toast.loading(texts.saving, { toastId: "rate" });
+      toast.loading(t("saving_rating"), { toastId: "rate" });
     },
     onSuccess: () => {
       toast.update("rate", {
-        render: texts.success,
+        render: t("rating_saved"),
         type: "success",
         isLoading: false,
         autoClose: 2000,
       });
+      queryClient.invalidateQueries({
+        queryKey: ["currentUserRating", courseId],
+      });
     },
     onError: () => {
       toast.update("rate", {
-        render: texts.error,
+        render: t("error"),
         type: "error",
         isLoading: false,
         autoClose: 2000,
@@ -52,7 +67,8 @@ const RatingReview: React.FC<RatingReviewProps> = ({
 
   const handleClick = (index: number) => {
     if (!editable || mutation.isPending) return;
-    const newRating = index + 1; // ✅ Full star only
+    const newRating = index + 1;
+
     setCurrentRating(newRating);
     mutation.mutate(newRating);
   };
@@ -61,6 +77,7 @@ const RatingReview: React.FC<RatingReviewProps> = ({
 
   return (
     <div>
+      {/* النجوم */}
       <div
         className={`flex gap-1 items-center justify-center mb-2 ${
           mutation.isPending ? "pointer-events-none opacity-50" : ""
@@ -86,12 +103,25 @@ const RatingReview: React.FC<RatingReviewProps> = ({
           </span>
         ))}
       </div>
+
       <DefaultButton
-        onClick={() => {}}
         type="button"
-        moreStyle="!py-1 text-sm"
-        text="leave a review"
+        text={t("leave_a_comment")}
+        onClick={() => setReviewModalOpen(true)}
+        moreStyle="text-sm"
       />
+
+      <MyModal
+        headerTitle={t("review_content")}
+        open={reviewModalOpen}
+        onOpenChange={setReviewModalOpen}
+      >
+        <AddReviewOnContent
+          currentUserRate={currentUserRating?.rating}
+          courseId={+courseId}
+          onOpenChange={setReviewModalOpen}
+        />
+      </MyModal>
     </div>
   );
 };

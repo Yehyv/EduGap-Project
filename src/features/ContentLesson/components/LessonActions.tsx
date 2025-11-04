@@ -71,7 +71,11 @@ const LessonActions = ({
   const saveLessonMutation = useMutation({
     mutationFn: () => saveLesson(lessonId),
     onSuccess: () => {
-      toast.error(t("save_lesson"));
+      toast.success(
+        data?.savedStatus == "unsaved"
+          ? t("save_lesson")
+          : t("removed_from_saved_list")
+      );
       queryClient.invalidateQueries({
         queryKey: ["getLessonsActionsStatus", lessonId],
       });
@@ -81,7 +85,7 @@ const LessonActions = ({
 
   return (
     <div className="flex max-md:flex-col max-md:gap-3 justify-between py-2">
-      <div className="flex max-md:justify-center flex-wrap gap-2 text-secondary">
+      <div className="flex max-md:flex-col-reverse max-md:justify-center flex-wrap gap-2 text-secondary">
         {/* Share Button */}
         <button className="bg-[#F5F5F5] rounded-3xl text-sm px-6 py-2 center gap-2 cursor-pointer">
           <LazyIcon Icon={ShareIcon} />
@@ -102,12 +106,12 @@ const LessonActions = ({
         </button>
 
         {/* Like / Dislike */}
-        <div className="bg-[#F5F5F5] rounded-3xl flex items-center gap-3 p-2">
+        <div className="bg-[#F5F5F5] rounded-3xl flex items-center justify-center gap-3 p-2">
           <div
             className="center gap-2 border-e border-secondary px-3 cursor-pointer"
             onClick={() => dislikeMutation.mutate()}
           >
-            {data?.reactionStatus != "liked" ? (
+            {data?.reactionStatus == "disliked" ? (
               <LazyIcon
                 className="w-7 h-7 rotate-180 transform [-scale-x-100]"
                 Icon={likedIcon}
@@ -115,6 +119,7 @@ const LessonActions = ({
             ) : (
               <LazyIcon Icon={DisLikeIcon} />
             )}
+
             <span>{dislikesCount}</span>
           </div>
 
