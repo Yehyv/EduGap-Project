@@ -96,7 +96,7 @@ export class LessonMaterialsController {
     return {
       ...saved,
       fileUrl: saved.file
-        ? `${process.env.BASE_URL || 'http://localhost:3000'}/uploads/materials/${saved.file}`
+        ? `${process.env.BASE_URL || 'http://72.60.39.170:3000'}/uploads/materials/${saved.file}`
         : null,
     };
   }
