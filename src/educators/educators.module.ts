@@ -7,10 +7,11 @@ import { User } from 'src/users/entities/user.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { UsersModule } from 'src/users/users.module';
 import { Content } from 'src/contents/entities/content.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Educator, User, Content]),
+    TypeOrmModule.forFeature([Educator, User, Content, Enrollment]),
     AuthModule,
     UsersModule,
   ],

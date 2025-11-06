@@ -8,11 +8,22 @@ import {
   Body,
   Query,
   ParseIntPipe,
+  Req,
+  Headers,
+  UseGuards
 } from '@nestjs/common';
 import { EducatorsService } from './educators.service';
 import { CreateEducatorDto } from './dto/create-educator.dto';
 import { UpdateEducatorDto } from './dto/update-educator.dto';
-
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+  };
+}
 @Controller('educators')
 export class EducatorsController {
   constructor(private readonly educatorsService: EducatorsService) {}
@@ -74,5 +85,33 @@ export class EducatorsController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.educatorsService.remove(id);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/contents')
+  async findContentsByEducator(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') pageRaw?: string,
+    @Query('limit') limitRaw?: string,
+    @Headers('languageId') languageIdRaw?: string,
+    @Query('programId') programIdRaw?: string,
+    @Req() req?: AuthenticatedRequest,
+  ) {
+    const page = pageRaw ? Number(pageRaw) : 1;
+    const limit = limitRaw ? Number(limitRaw) : 8;
+    const languageId = languageIdRaw ? Number(languageIdRaw) : undefined;
+    const programId = programIdRaw ? Number(programIdRaw) : undefined;
+    const instituteId = req?.user?.instituteId
+      ? Number(req.user.instituteId)
+      : undefined;
+    const userId = req?.user?.sub ? Number(req.user.sub) : undefined;
+
+    return this.educatorsService.findContentsByEducator(id, {
+      page,
+      limit,
+      languageId,
+      instituteId,
+      programId,
+      userId,
+    });
   }
 }

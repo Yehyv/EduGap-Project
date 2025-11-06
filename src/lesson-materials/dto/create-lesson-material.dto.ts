@@ -1,4 +1,3 @@
-// src/lesson-materials/dto/lesson-material-translation.dto.ts
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
@@ -23,35 +22,7 @@ export class LessonMaterialTranslationDto {
   @IsString()
   description?: string;
 }
-const safeJson = (s: string): unknown => {
-  try {
-    return JSON.parse(s) as unknown;
-  } catch {
-    return [];
-  }
-};
 
-// helper: طبّع عنصر واحد إلى TranslationDto (مع حراسة أنواع)
-type RawTrans = {
-  languageId?: unknown;
-  title?: unknown;
-  description?: unknown;
-};
-const normalizeOne = (raw: unknown): LessonMaterialTranslationDto | null => {
-  if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as RawTrans;
-
-  const langId = Number(obj.languageId);
-  const title =
-    typeof obj.title === 'string' ? obj.title : String(obj.title ?? '');
-
-  if (!Number.isFinite(langId) || !title) return null;
-
-  const description =
-    obj.description === undefined ? undefined : String(obj.description);
-
-  return { languageId: langId, title, description };
-};
 export class CreateLessonMaterialDto {
   @IsInt()
   @Type(() => Number)
@@ -68,28 +39,37 @@ export class CreateLessonMaterialDto {
 
   @IsOptional()
   @IsString()
-  file?: string; // لو بتخزن URL/Key
+  file?: string;
 
   @IsOptional()
   @IsIn([0, 1])
   @Type(() => Number)
-  is_active?: number; // default 1
+  is_active?: number;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => LessonMaterialTranslationDto)
   @Transform(({ value }): LessonMaterialTranslationDto[] => {
-    const src: unknown =
-      typeof value === 'string' ? safeJson(value) : (value as unknown);
-
-    const arr: unknown[] = Array.isArray(src) ? src : [];
-
-    const out: LessonMaterialTranslationDto[] = [];
-    for (const item of arr) {
-      const t = normalizeOne(item);
-      if (t) out.push(t);
+    // لو جت string (من form-data)
+    if (typeof value === 'string') {
+      try {
+        const parsed: unknown = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return parsed as LessonMaterialTranslationDto[];
+        }
+        return [];
+      } catch {
+        return [];
+      }
     }
-    return out; // ✅ مش any
+
+    // لو جت array فعلاً (من JSON body)
+    if (Array.isArray(value)) {
+      return value as LessonMaterialTranslationDto[];
+    }
+
+    // أي حاجة تانية
+    return [];
   })
   translations: LessonMaterialTranslationDto[];
 }

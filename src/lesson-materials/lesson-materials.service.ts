@@ -65,22 +65,30 @@ export class LessonMaterialsService {
     material: LessonMaterial,
     translations: CreateLessonMaterialDto['translations'],
   ) {
-    // امسح القديم واعمل إدخال جديد (أبسط نمط)
     await this.trRepo.delete({ lessonMaterial: { id: material.id } });
 
-    for (const t of translations) {
-      const lang = await this.langRepo.findOne({ where: { id: t.languageId } });
-      if (!lang)
-        throw new NotFoundException(`Language ${t.languageId} not found`);
+    if (!translations?.length) return;
 
-      const row = this.trRepo.create({
+    // OPTIONAL: تحقق سريع من وجود اللغات لو حابب
+    const langIds = translations.map((t) => t.languageId);
+    const foundLangIds = new Set(
+      (await this.langRepo.findBy({ id: In(langIds) })).map((l) => l.id),
+    );
+    const missing = langIds.filter((id) => !foundLangIds.has(id));
+    if (missing.length) {
+      throw new NotFoundException(`Missing languages: ${missing.join(', ')}`);
+    }
+
+    const rows = translations.map((t) =>
+      this.trRepo.create({
         title: t.title,
         description: t.description ?? undefined,
-        language: lang,
-        lessonMaterial: material,
-      });
-      await this.trRepo.save(row);
-    }
+        language: { id: t.languageId },
+        lessonMaterial: { id: material.id },
+      }),
+    );
+
+    await this.trRepo.save(rows);
   }
 
   /** Create */
@@ -310,32 +318,85 @@ export class LessonMaterialsService {
     return { message: `Material ${id} deleted successfully` };
   }
   async findByContent(contentId: number, languageId?: number) {
-    const qb = this.matRepo
+    const rows = await this.matRepo
       .createQueryBuilder('m')
-      .leftJoin('m.content', 'mc')
-      .leftJoin('m.lesson', 'l')
-      .leftJoin('l.topic', 't')
-      .leftJoin('t.content', 'c')
+      // ✅ لازم AndSelect عشان الكائن يتعبّى
+      .leftJoinAndSelect('m.lesson', 'l')
+      .leftJoinAndSelect('l.topic', 't')
+      .leftJoinAndSelect('t.content', 'c')
+      .leftJoinAndSelect('m.content', 'mc')
+
       .leftJoinAndSelect('m.materialType', 'mt')
+
+      // ترجمة الماتيريال
       .leftJoinAndSelect(
         'm.translations',
-        'tr',
-        languageId ? 'tr.languageId = :languageId' : undefined,
+        'mtr',
+        languageId ? 'mtr.languageId = :languageId' : undefined,
         { languageId },
       )
-      .leftJoinAndSelect('tr.language', 'lang')
-      .where('m.is_active != 0')
+      .leftJoinAndSelect('mtr.language', 'mlang')
+
+      // ترجمة الدرس
+      .leftJoinAndSelect(
+        'l.translations',
+        'ltr',
+        languageId ? 'ltr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+
+      .where('m.is_active <> 0')
       .andWhere('(mc.id = :cid OR c.id = :cid)', { cid: contentId })
-      .orderBy('m.id', 'DESC');
+      .orderBy('t.id', 'ASC')
+      .addOrderBy('l.order_id', 'ASC')
+      .addOrderBy('l.id', 'ASC')
+      .addOrderBy('m.id', 'DESC')
+      .getMany();
 
-    const rows = await qb.getMany();
+    const byLesson = new Map<
+      number,
+      {
+        lesson: {
+          id: number;
+          name: string;
+          order: number;
+          topicId: number | null;
+        };
+        materials: Array<{
+          id: number;
+          file: string | null;
+          materialType: { id: number; name: string; icon: string } | null;
+          title: string;
+          description: string;
+        }>;
+      }
+    >();
 
-    return rows.map((m) => {
-      // لو استخدمت الفلترة بـ join على languageId فوق، يبقى tr هنا بالفعل مصفي
+    for (const m of rows) {
+      const lessonId = m.lesson?.id ?? 0;
+      if (!lessonId) continue; // كان سبب الفاضي
+
+      const lessonName = m.lesson?.translations?.[0]?.name ?? '';
+      const lessonOrder = m.lesson?.order_id ?? 0;
+      const topicId = m.lesson?.topic?.id ?? null;
+
+      if (!byLesson.has(lessonId)) {
+        byLesson.set(lessonId, {
+          lesson: {
+            id: lessonId,
+            name: lessonName,
+            order: lessonOrder,
+            topicId,
+          },
+          materials: [],
+        });
+      }
+
       const tr = m.translations?.[0] ?? null;
-      return {
+
+      byLesson.get(lessonId)!.materials.push({
         id: m.id,
-        file: m.file,
+        file: m.file ?? null,
         materialType: m.materialType
           ? {
               id: m.materialType.id,
@@ -345,7 +406,9 @@ export class LessonMaterialsService {
           : null,
         title: tr?.title ?? '',
         description: tr?.description ?? '',
-      };
-    });
+      });
+    }
+
+    return Array.from(byLesson.values());
   }
 }

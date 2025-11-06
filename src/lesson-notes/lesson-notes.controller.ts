@@ -12,6 +12,8 @@ import {
   Query,
   Req,
   UseGuards,
+  DefaultValuePipe,
+  Headers
 } from '@nestjs/common';
 import { LessonNotesService } from './lesson-notes.service';
 import { CreateLessonNoteDto } from './dto/create-lesson-note.dto';
@@ -73,5 +75,28 @@ export class LessonNotesController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number, @Req() req: AuthenticatedRequest) {
     return this.service.remove(id, req.user.sub);
+  }
+
+  @Get('content/:contentId/me')
+  @UseGuards(JwtAuthGuard)
+  async findForContentMe(
+    @Req() req: AuthenticatedRequest,
+    @Param('contentId', ParseIntPipe) contentId: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit?: number,
+    @Headers('languageId') languageIdRaw?: string,
+    
+  ) {
+    const userId = req.user.sub; // حسب التوكن عندك
+    const languageId =
+      languageIdRaw !== undefined ? Number(languageIdRaw) : undefined;
+
+    return this.service.findLessonsWithNotesForContentMe(
+      contentId,
+      userId,
+      page,
+      limit,
+      languageId,
+    );
   }
 }

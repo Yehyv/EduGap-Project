@@ -114,7 +114,6 @@ export class SavedLessonService {
     return { message: 'Unsaved successfully' };
   }
 
-  /** Get user's saved lessons (paginated + language aware) */
   async getUserSavedLessons(
     userId: number,
     languageId?: number,
@@ -132,54 +131,173 @@ export class SavedLessonService {
         'lesson.topic',
         'lesson.topic.translations',
         'lesson.topic.translations.language',
-        'content',
+        // 'content', // ❌ مش محتاجينها دلوقتي
       ],
       order: { created_at: 'DESC' },
       skip,
       take: limit,
     });
 
-    const items = rows.map((r) => {
-      const lessonTr =
-        (languageId
-          ? r.lesson?.translations?.find((t) => t.language?.id === languageId)
-          : null) ||
-        r.lesson?.translations?.[0] ||
-        null;
+    const pickLessonName = (r: SavedLesson) => {
+      const tr = languageId
+        ? r.lesson?.translations?.find((t) => t.language?.id === languageId)
+        : r.lesson?.translations?.[0];
+      return tr?.name ?? '';
+    };
 
-      const topicTr =
-        (languageId
-          ? r.lesson?.topic?.translations?.find(
-              (t) => t.language?.id === languageId,
-            )
-          : null) ||
-        r.lesson?.topic?.translations?.[0] ||
-        null;
+    const pickTopicName = (r: SavedLesson) => {
+      const tr = languageId
+        ? r.lesson?.topic?.translations?.find(
+            (t) => t.language?.id === languageId,
+          )
+        : r.lesson?.topic?.translations?.[0];
+      return tr?.name ?? '';
+    };
 
-      return {
-        id: r.id,
+    type Bucket = {
+      topic: { id: number | null; name: string };
+      lessons: Array<{
+        savedId: number;
+        savedAt: Date;
+        id: number | null;
+        name: string;
+        duration: number;
+      }>;
+    };
+
+    const byTopic = new Map<number, Bucket>();
+
+    for (const r of rows) {
+      const topicId = r.lesson?.topic?.id ?? -1;
+      if (topicId === -1) continue;
+
+      if (!byTopic.has(topicId)) {
+        byTopic.set(topicId, {
+          topic: { id: r.lesson?.topic?.id ?? null, name: pickTopicName(r) },
+          lessons: [],
+        });
+      }
+
+      byTopic.get(topicId)!.lessons.push({
+        savedId: r.id,
         savedAt: r.created_at,
-        lesson: {
-          id: r.lesson?.id,
-          name: lessonTr?.name ?? '',
-          duration: r.lesson?.duration ?? 0,
-          topic: {
-            id: r.lesson?.topic?.id,
-            name: topicTr?.name ?? '',
-          },
-        },
-        content: r.content
-          ? { id: r.content.id, image: r.content.image ?? null }
-          : null,
-      };
-    });
+        id: r.lesson?.id ?? null,
+        name: pickLessonName(r),
+        duration: r.lesson?.duration ?? 0,
+      });
+    }
+
+    const items = Array.from(byTopic.values());
 
     return {
-      items,
+      items, // [{ topic: {id,name}, lessons: [...] }]
       pagination: {
         page,
         limit,
         total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+      },
+    };
+  }
+  async getUserSavedLessonsForContent(
+    userId: number,
+    contentId: number,
+    languageId?: number,
+    page = 1,
+    limit = 10,
+  ) {
+    const skip = (page - 1) * limit;
+
+    // فلترة مباشرة على SavedLesson.content.id
+    const [rows, total] = await this.savedRepo.findAndCount({
+      where: {
+        user: { id: userId },
+        content: { id: contentId },
+      },
+      relations: [
+        'lesson',
+        'lesson.translations',
+        'lesson.translations.language',
+        'lesson.topic',
+        'lesson.topic.translations',
+        'lesson.topic.translations.language',
+        'lesson.topic.content', // للتيقّن/الفاليديشـن
+        'content', // عندنا أصلاً لكن مش هنرجّعه في الـ response
+      ],
+      order: { created_at: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    // ✅ في حالة قديمة مافيهاش content على السجل (لو عندك بيانات تراثية)
+    // بنفلتر احتياطيًا على level التطبيق (مش هيأثر لو كل السجلات سليمة)
+    const filtered = rows.filter(
+      (r) =>
+        r.content?.id === contentId ||
+        r.lesson?.topic?.content?.id === contentId,
+    );
+
+    const pickLessonName = (r: SavedLesson) => {
+      const tr = languageId
+        ? r.lesson?.translations?.find((t) => t.language?.id === languageId)
+        : r.lesson?.translations?.[0];
+      return tr?.name ?? '';
+    };
+
+    const pickTopicName = (r: SavedLesson) => {
+      const tr = languageId
+        ? r.lesson?.topic?.translations?.find(
+            (t) => t.language?.id === languageId,
+          )
+        : r.lesson?.topic?.translations?.[0];
+      return tr?.name ?? '';
+    };
+
+    type Bucket = {
+      topic: { id: number; name: string };
+      lessons: Array<{
+        savedId: number;
+        savedAt: Date;
+        id: number;
+        name: string;
+        duration: number;
+      }>;
+    };
+
+    const byTopic = new Map<number, Bucket>();
+
+    for (const r of filtered) {
+      const topicId = r.lesson?.topic?.id;
+      if (!topicId) continue;
+
+      if (!byTopic.has(topicId)) {
+        byTopic.set(topicId, {
+          topic: { id: topicId, name: pickTopicName(r) },
+          lessons: [],
+        });
+      }
+
+      byTopic.get(topicId)!.lessons.push({
+        savedId: r.id,
+        savedAt: r.created_at,
+        id: r.lesson.id,
+        name: pickLessonName(r),
+        duration: r.lesson?.duration ?? 0,
+      });
+    }
+
+    // رجّع توبيكات فيها دروس محفوظة فقط
+    const items = Array.from(byTopic.values());
+
+    return {
+      contentId, // للوضوح
+      items, // [{ topic:{id,name}, lessons:[...] }]
+      pagination: {
+        page,
+        limit,
+        total, // إجمالي السجلات قبل التجميع
         totalPages: Math.ceil(total / limit),
         hasNext: page * limit < total,
         hasPrev: page > 1,

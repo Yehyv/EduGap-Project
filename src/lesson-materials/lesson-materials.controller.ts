@@ -87,7 +87,9 @@ export class LessonMaterialsController {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: CreateLessonMaterialDto,
   ) {
-    // لو عايز تسمح بإنشاء بدون ملف، خليه optional:
+    console.log('DTO received:', dto);
+    console.log('Translations length:', dto?.translations?.length);
+
     const saved = await this.service.create({
       ...dto,
       file: file?.filename ?? dto.file ?? undefined,
@@ -96,7 +98,7 @@ export class LessonMaterialsController {
     return {
       ...saved,
       fileUrl: saved.file
-        ? `${process.env.BASE_URL || 'http://72.60.39.170:3000'}/uploads/materials/${saved.file}`
+        ? `${process.env.BASE_URL || 'http://localhost:3000'}/uploads/materials/${saved.file}`
         : null,
     };
   }

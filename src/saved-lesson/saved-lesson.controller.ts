@@ -59,4 +59,26 @@ export class SavedLessonController {
     const lim = limit ? Number(limit) : 10;
     return this.service.getUserSavedLessons(userId, langId, pg, lim);
   }
+  @Get('content/:contentId/me')
+  @UseGuards(JwtAuthGuard)
+  async getMySavedLessonsForContent(
+    @Req() req: AuthenticatedRequest,
+    @Param('contentId', ParseIntPipe) contentId: number,
+    @Query('page') pageRaw?: string,
+    @Query('limit') limitRaw?: string,
+    @Query('languageId') languageIdRaw?: string,
+  ) {
+    const userId = req.user.sub;
+    const page = Math.max(1, Number(pageRaw) || 1);
+    const limit = Math.max(1, Number(limitRaw) || 10);
+    const languageId = languageIdRaw ? Number(languageIdRaw) : undefined;
+
+    return this.service.getUserSavedLessonsForContent(
+      userId,
+      contentId,
+      languageId,
+      page,
+      limit,
+    );
+  }
 }

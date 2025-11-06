@@ -13,6 +13,8 @@ import { Language } from 'src/languages/entities/language.entity';
 import { Content } from 'src/contents/entities/content.entity';
 
 import { ContentsModule } from 'src/contents/contents.module'; // <-- هنا
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { ContentsModule } from 'src/contents/contents.module'; // <-- هنا
       PackageContent,
       Language,
       Content,
+      Enrollment,
+      LessonProgress,
     ]),
     ContentsModule, // <-- أهم سطر: عشان يوفر ContentsService للكنترولر
   ],

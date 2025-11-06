@@ -11,6 +11,7 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 import { ProgramCourse } from 'src/programs/entities/program-course.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
+import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { InstitutePrograms } from 'src/institutes/entities/institute-programs.en
       InstituteProgramCourse,
       ProgramCourse,
       InstitutePrograms,
+      LessonProgress,
     ]),
   ],
   controllers: [CoursesController],

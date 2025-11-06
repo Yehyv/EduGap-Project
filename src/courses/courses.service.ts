@@ -15,6 +15,33 @@ import { UpdateCourseDto } from './dto/update-course.dto';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 import { ProgramCourse } from 'src/programs/entities/program-course.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
+import { Content } from 'src/contents/entities/content.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+// type LangRef = { id: number };
+// type WithLanguage = { language?: LangRef };
+
+/** يختار ترجمة مطابقة للّغة إن وُجدت، وإلا أول ترجمة صالحة—بدون any */
+// function pickTranslation<T extends WithLanguage>(
+//   arr: unknown,
+//   languageId?: number,
+// ): T | undefined {
+//   if (!Array.isArray(arr)) return undefined;
+
+//   const isT = (x: unknown): x is T =>
+//     typeof x === 'object' &&
+//     x !== null &&
+//     (typeof (x as any).language?.id === 'number' ||
+//       (x as any).language === undefined);
+
+//   if (typeof languageId === 'number') {
+//     const byLang = arr.find(
+//       (t): t is T => isT(t) && (t as any).language?.id === languageId,
+//     );
+//     if (byLang) return byLang;
+//   }
+//   return arr.find((t): t is T => isT(t));
+// }
 
 @Injectable()
 export class CoursesService {
@@ -39,6 +66,15 @@ export class CoursesService {
 
     @InjectRepository(InstituteProgramCourse)
     private readonly ipcRepository: Repository<InstituteProgramCourse>,
+
+    @InjectRepository(Content)
+    private readonly contentRepo: Repository<Content>,
+
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepo: Repository<Enrollment>,
+
+    @InjectRepository(LessonProgress)
+    private readonly progressRepo: Repository<LessonProgress>,
   ) {}
 
   /** 1) إنشاء كورس عام بدون أي ربط */
@@ -631,5 +667,352 @@ export class CoursesService {
         totalDuration: durationMap.get(c.id) ?? 0, // ⏱️ إجمالي الثواني الخام
       };
     });
+  }
+
+  // courses.service.ts
+  async getCourseBasicById(
+    courseId: number,
+    {
+      languageId,
+      instituteId,
+      programId,
+    }: { languageId?: number; instituteId?: number; programId?: number } = {},
+  ) {
+    // الكورس + الترجمات
+    const course = await this.courseRepository.findOne({
+      where: { id: courseId },
+      relations: ['translations', 'translations.language'],
+    });
+    if (!course) throw new NotFoundException(`Course ${courseId} not found`);
+
+    const tr =
+      course.translations?.find((t) => t.language?.id === languageId) ||
+      course.translations?.[0] ||
+      null;
+
+    // IDs للمحتويات التابعة للكورس (مع/بدون فلترة IPC)
+    let contentIdRows: { id: number }[];
+    if (!instituteId && !programId) {
+      contentIdRows = await this.courseRepository
+        .createQueryBuilder('course')
+        .leftJoin(
+          'course_content',
+          'cc',
+          'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
+        )
+        .leftJoin(
+          'content',
+          'c',
+          'c.id = cc.contentId AND c.deleted_at IS NULL',
+        )
+        .where('course.id = :courseId', { courseId })
+        .select('c.id', 'id')
+        .groupBy('c.id')
+        .getRawMany();
+    } else {
+      contentIdRows = await this.ipcRepository
+        .createQueryBuilder('ipc')
+        .innerJoin('ipc.course', 'course', 'course.id = :courseId', {
+          courseId,
+        })
+        .innerJoin(
+          'course_content',
+          'cc',
+          'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
+        )
+        .innerJoin(
+          'content',
+          'c',
+          'c.id = cc.contentId AND c.deleted_at IS NULL',
+        )
+        .select('c.id', 'id')
+        .groupBy('c.id')
+        .andWhere('ipc.instituteId = :instituteId', { instituteId })
+        .andWhere('ipc.programId = :programId', { programId })
+        .getRawMany();
+    }
+
+    const contentsCount = contentIdRows.length;
+
+    // إجمالي الديوراشن عبر كل المحتويات
+    const durRow = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin(
+        'course_content',
+        'cc',
+        'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
+      )
+      .leftJoin('content', 'c', 'c.id = cc.contentId AND c.deleted_at IS NULL')
+      .leftJoin(
+        'topic',
+        't',
+        't.contentId = c.id AND t.deleted_at IS NULL AND t.is_active != 0',
+      )
+      .leftJoin(
+        'lesson',
+        'l',
+        'l.topicId = t.id AND l.deleted_at IS NULL AND l.is_active != 0',
+      )
+      .select('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .where('course.id = :courseId', { courseId })
+      .getRawOne<{ totalDuration: string }>();
+
+    return {
+      id: course.id,
+      image: course.image,
+      name: tr?.name ?? '',
+      description: tr?.description ?? '',
+      notes: course.notes,
+      contentsCount,
+      totalDuration: Number(durRow?.totalDuration ?? 0),
+    };
+  }
+  async getCourseContentsPaginated(
+    courseId: number,
+    {
+      page = 1,
+      limit = 8,
+      languageId,
+      instituteId,
+      programId,
+      userId, // اختياري لإظهار isEnrolled + completedLessons
+    }: {
+      page?: number;
+      limit?: number;
+      languageId?: number;
+      instituteId?: number;
+      programId?: number;
+      userId?: number;
+    } = {},
+  ) {
+    const skip = (page - 1) * limit;
+
+    // 1) IDs للمحتويات + إجمالي العدد (Typed)
+    let baseQb = this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin(
+        'course_content',
+        'cc',
+        'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
+      )
+      .leftJoin('content', 'c', 'c.id = cc.contentId AND c.deleted_at IS NULL')
+      .where('course.id = :courseId', { courseId })
+      .select('c.id', 'id')
+      .groupBy('c.id');
+
+    if (instituteId || programId) {
+      const qb = this.ipcRepository
+        .createQueryBuilder('ipc')
+        .innerJoin('ipc.course', 'course', 'course.id = :courseId', {
+          courseId,
+        })
+        .innerJoin(
+          'course_content',
+          'cc',
+          'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
+        )
+        .innerJoin(
+          'content',
+          'c',
+          'c.id = cc.contentId AND c.deleted_at IS NULL',
+        )
+        .select('c.id', 'id')
+        .groupBy('c.id');
+
+      if (instituteId)
+        qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
+      if (programId) qb.andWhere('ipc.programId = :programId', { programId });
+
+      // نحافظ على نفس الواجهة
+      baseQb = qb as unknown as typeof baseQb;
+    }
+
+    const allIdRows = await baseQb.getRawMany<{ id: number }>();
+    const total = allIdRows.length;
+
+    const pageIdRows = await baseQb
+      .limit(limit)
+      .offset(skip)
+      .getRawMany<{ id: number }>();
+    const contentIds = pageIdRows.map((r) => Number(r.id));
+
+    if (!contentIds.length) {
+      const totalPages = Math.ceil(total / limit);
+      return {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      };
+    }
+
+    // 2) تفاصيل المحتوى + ترجمات + كاتيجوري
+    const contents = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoinAndSelect(
+        'c.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.contentCategory', 'cat')
+      .leftJoinAndSelect(
+        'cat.translations',
+        'catTr',
+        languageId ? 'catTr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .where('c.id IN (:...ids)', { ids: contentIds })
+      .getMany();
+
+    // 3) إحصاءات: duration + ratersCount
+    const statsRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.topics', 't')
+      .leftJoin('t.lessons', 'l')
+      .leftJoin('c.enrollments', 'e')
+      .select('c.id', 'id')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .addSelect('SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END)', 'ratersCount')
+      .where('c.id IN (:...ids)', { ids: contentIds })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+
+    const durationMap = new Map<number, number>(
+      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+    );
+    const ratersMap = new Map<number, number>(
+      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
+    // 3-bis) إجمالي عدد الدروس (active) لكل محتوى
+    const lessonsCountRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.topics', 't', 't.deleted_at IS NULL AND t.is_active != 0')
+      .leftJoin('t.lessons', 'l', 'l.deleted_at IS NULL AND l.is_active != 0')
+      .select('c.id', 'id')
+      .addSelect('COUNT(DISTINCT l.id)', 'totalLessons')
+      .where('c.id IN (:...ids)', { ids: contentIds })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; totalLessons: string }>();
+
+    const totalLessonsMap = new Map<number, number>(
+      lessonsCountRows.map((r) => [Number(r.id), Number(r.totalLessons || 0)]),
+    );
+
+    // 3-ter) عدد الدروس المكتملة لكل محتوى لهذا المستخدم (لو userId موجود)
+    let completedLessonsMap = new Map<number, number>();
+    if (userId) {
+      // الطريقة المضمونة: progress -> enrollment -> content
+      const completedRows = await this.progressRepo
+        .createQueryBuilder('lp')
+        .innerJoin('lp.enrollment', 'en')
+        .innerJoin('en.content', 'c')
+        .where('lp.user_id = :uid', { uid: userId }) // اسم العمود الفعلي
+        .andWhere('lp.deleted_at IS NULL')
+        .andWhere('c.id IN (:...ids)', { ids: contentIds })
+        .select('c.id', 'id')
+        .addSelect('COUNT(DISTINCT lp.lesson_id)', 'completedLessons')
+        .groupBy('c.id')
+        .getRawMany<{ id: string; completedLessons: string }>();
+
+      completedLessonsMap = new Map<number, number>(
+        completedRows.map((r) => [
+          Number(r.id),
+          Number(r.completedLessons || 0),
+        ]),
+      );
+    }
+
+    // 4) isEnrolled (اختياري)
+    let enrolledMap = new Map<number, boolean>();
+    if (userId) {
+      const enrRows = await this.enrollmentRepo
+        .createQueryBuilder('en')
+        .select(['en.contentId AS cid'])
+        .where('en.userId = :uid', { uid: userId })
+        .andWhere('en.contentId IN (:...ids)', { ids: contentIds })
+        .getRawMany<{ cid: number }>();
+      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
+    }
+
+    // 5) حافظ على ترتيب الـ IDs
+    const orderIndex = new Map(contentIds.map((id, i) => [id, i]));
+    contents.sort(
+      (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
+    );
+
+    // 6) بناء العناصر
+    const items = contents.map((c) => {
+      const tr = this.pickTranslation<{
+        language?: { id: number };
+        name?: string;
+        description?: string;
+        what_to_learn?: string;
+      }>(c.translations, languageId);
+
+      const catTr = this.pickTranslation<{
+        language?: { id: number };
+        name?: string;
+      }>(c.contentCategory?.translations, languageId);
+
+      const totalLessons = totalLessonsMap.get(c.id) ?? 0;
+      const completedLessons = userId
+        ? (completedLessonsMap.get(c.id) ?? 0)
+        : 0;
+
+      const base = {
+        id: c.id,
+        name: tr?.name ?? '',
+        description: tr?.description ?? '',
+        image: c.image ?? null,
+        level: c.level,
+        rate: c.rate ?? 0,
+        ratersCount: ratersMap.get(c.id) ?? 0,
+        totalDuration: durationMap.get(c.id) ?? 0,
+        whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+        category: {
+          id: c.contentCategory?.id ?? null,
+          name: catTr?.name ?? '',
+        },
+        created_at: c.created_at,
+
+        // الجديد:
+        totalLessons,
+        completedLessons,
+      };
+
+      return userId
+        ? { ...base, isEnrolled: enrolledMap.get(c.id) ?? false }
+        : base;
+    });
+
+    const totalPages = Math.ceil(total / limit);
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
+  // 🧩 Helper صغير لنفس أسلوبك
+  private pickTranslation<T extends { language?: { id?: number } }>(
+    list: T[] | undefined,
+    languageId?: number,
+  ): T | undefined {
+    if (!list || !list.length) return undefined;
+    if (languageId == null) return list[0];
+    return list.find((t) => (t as any)?.language?.id === languageId) ?? list[0];
   }
 }

@@ -19,6 +19,7 @@ import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Request } from 'express';
+import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -182,4 +183,53 @@ removeCourseFromInstituteProgram(
     courseId,
   );
 }
+
+@Get(':courseId/basic')
+  async getCourseBasicById(
+    @Param('courseId', ParseIntPipe) courseId: number,
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageIdRaw?: string,
+    @Query('programId') programIdRaw?: string,
+  ) {
+    const languageId = languageIdRaw !== undefined ? Number(languageIdRaw) : undefined;
+    const instituteId = req?.user?.instituteId
+      ? Number(req.user.instituteId)
+      : undefined;
+    const programId = programIdRaw !== undefined ? Number(programIdRaw) : undefined;
+
+    return this.coursesService.getCourseBasicById(courseId, {
+      languageId,
+      instituteId,
+      programId,
+    });
+  }
+  @UseGuards(OptionalJwtAuthGuard)
+  // GET /courses/:courseId/contents?page=&limit=&languageId=&instituteId=&programId=&userId=
+  @Get(':courseId/contents')
+  async getCourseContentsPaginated(
+    @Param('courseId', ParseIntPipe) courseId: number,
+    @Req() req: AuthenticatedRequest,
+    @Query('page') pageRaw?: string,
+    @Query('limit') limitRaw?: string,
+    @Headers('languageId') languageIdRaw?: string,
+    @Query('programId') programIdRaw?: string,
+  ) {
+    const page = pageRaw ? Number(pageRaw) : undefined;         // الخدمة عندك فيها قيم افتراضية
+    const limit = limitRaw ? Number(limitRaw) : undefined;
+    const languageId = languageIdRaw !== undefined ? Number(languageIdRaw) : undefined;
+    const instituteId = req?.user?.instituteId
+      ? Number(req.user.instituteId)
+      : undefined;
+    const programId = programIdRaw !== undefined ? Number(programIdRaw) : undefined;
+    const userId = req?.user?.sub ? Number(req.user.sub) : undefined;
+
+    return this.coursesService.getCourseContentsPaginated(courseId, {
+      page,
+      limit,
+      languageId,
+      instituteId,
+      programId,
+      userId,
+    });
+  }
 }
