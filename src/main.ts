@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import * as express from 'express';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -21,7 +23,14 @@ async function bootstrap() {
       'http://localhost:5173',
     ],
   });
-
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      transformOptions: { enableImplicitConversion: true }, // "1" -> 1
+    }),
+  );
   await app.listen(process.env.PORT ?? 3000);
 }
 void bootstrap();

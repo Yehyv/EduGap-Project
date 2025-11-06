@@ -308,5 +308,32 @@ findLatestOne(
   async getEducator(@Param('id') id: string) {
     return this.contentsService.getContentEducator(Number(id));
   }
+  @Get(':id/summary')
+  async getContentSummary(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+    @Query('programId') programId?: string,
+  ) {
+    const instituteId = req.user?.instituteId;
+    return this.contentDetailsService.getContentSummary(id, {
+      languageId: languageId ? Number(languageId) : undefined,
+      instituteId,
+      programId: programId ? Number(programId) : undefined,
+    });
+  }
+  @UseGuards(JwtAuthGuard) // أو الجارديان عندك
+  @Get(':id/next-lesson-id')
+  async getNextLessonId(
+  @Param('id') id: string,
+  @Req() req: AuthenticatedRequest,
+) {
+  const userId = req.user.sub; // حسب استخراجك لليوزر
+  const res = await this.contentDetailsService.getNextOpenLessonId(
+    Number(id),
+    Number(userId),
+  );
+  return res;
+}
 
 }

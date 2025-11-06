@@ -10,12 +10,22 @@ import {
   Query,
   Headers,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  NotFoundException,
+  Res,
 } from '@nestjs/common';
 import { LessonMaterialsService } from './lesson-materials.service';
 import { CreateLessonMaterialDto } from './dto/create-lesson-material.dto';
 import { UpdateLessonMaterialDto } from './dto/update-lesson-material.dto';
 import { CreateMaterialTypeInlineDto } from './dto/create-material-type-inline.dto';
-
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as multer from 'multer';
+import * as fs from 'fs';
+import * as path from 'path';
+import type { Request as ExpressRequest } from 'express';
+import type { Response } from 'express';
 @Controller('lesson-materials')
 export class LessonMaterialsController {
   constructor(private readonly service: LessonMaterialsService) {}
@@ -25,8 +35,79 @@ export class LessonMaterialsController {
    * إنشاء مرفق جديد (بيشتق content تلقائي من lesson -> topic -> content)
    */
   @Post()
-  create(@Body() dto: CreateLessonMaterialDto) {
-    return this.service.create(dto);
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: multer.diskStorage({
+        destination(
+          _req: ExpressRequest,
+          _file: Express.Multer.File,
+          cb: (error: Error | null, destination: string) => void,
+        ): void {
+          const dest = path.join(process.cwd(), 'uploads', 'materials');
+          if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+          cb(null, dest);
+        },
+        filename(
+          _req: ExpressRequest,
+          file: Express.Multer.File,
+          cb: (error: Error | null, filename: string) => void,
+        ): void {
+          try {
+            const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+            const ext = path.extname(file.originalname);
+            cb(null, `${file.fieldname}-${unique}${ext}`);
+          } catch {
+            cb(
+              new BadRequestException(
+                'File processing error',
+              ) as unknown as Error,
+              '',
+            );
+          }
+        },
+      }),
+      fileFilter(
+        _req: ExpressRequest,
+        file: Express.Multer.File,
+        cb: multer.FileFilterCallback,
+      ): void {
+        if (!/\.(pdf|jpg|jpeg|png)$/i.test(file.originalname)) {
+          return cb(
+            new BadRequestException(
+              'Only PDF/JPG/PNG allowed',
+            ) as unknown as Error,
+          );
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 20 * 1024 * 1024 },
+    }),
+  )
+  async create(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: CreateLessonMaterialDto,
+  ) {
+    // لو عايز تسمح بإنشاء بدون ملف، خليه optional:
+    const saved = await this.service.create({
+      ...dto,
+      file: file?.filename ?? dto.file ?? undefined,
+    });
+
+    return {
+      ...saved,
+      fileUrl: saved.file
+        ? `${process.env.BASE_URL || 'http://localhost:3000'}/uploads/materials/${saved.file}`
+        : null,
+    };
+  }
+  @Get(':id/download')
+  async download(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    const m = await this.service.findOne(id); // رجّع فيه m.file
+    if (!m?.file) throw new NotFoundException('File not found');
+
+    const filePath = path.join(process.cwd(), 'uploads', 'materials', m.file);
+    if (!fs.existsSync(filePath)) throw new NotFoundException('File missing');
+    return res.download(filePath, m.file); // 👈 attachment + filename
   }
 
   /**

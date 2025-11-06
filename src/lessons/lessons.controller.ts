@@ -16,6 +16,8 @@ import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { TopicWithLessonsStatus } from './types/lesson-status.types';
+import { LessonUnlockGuard } from './lesson-unlock.guard';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -86,17 +88,6 @@ export class LessonsController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.lessonsService.remove(id);
   }
-
-  @Get(':id/content')
-  async getLessonContent(
-    @Param('id') id: string,
-    @Headers('languageId') languageId?: string,
-  ) {
-    return this.lessonsService.getLessonContent(
-      Number(id),
-      languageId ? Number(languageId) : undefined,
-    );
-  }
   @UseGuards(JwtAuthGuard)
   @Get(':lessonId/actions')
   getActionsStatus(
@@ -104,5 +95,26 @@ export class LessonsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.lessonsService.getLessonActionsStatus(req.user.sub, lessonId);
+  }
+  // قائمة التوبيكس + حالة الدروس (لازم يكون مُصادق ومُسجَّل في المحتوى)
+  @UseGuards(JwtAuthGuard)
+  @Get('content/:contentId/topics-with-status')
+  async getTopicsWithStatus(
+    @Param('contentId') contentId: string,
+    @Headers('languageId') languageId: string | undefined,
+    @Req() req: any,
+  ): Promise<TopicWithLessonsStatus[]> {
+    const userId = Number(req.user?.sub);
+    return this.lessonsService.getTopicsWithStatus(Number(contentId), userId, {
+      languageId: languageId ? Number(languageId) : undefined,
+    });
+  }
+
+  // قراءة درس (محمي بالجارد: لازم السابق مكتمل)
+  @UseGuards(JwtAuthGuard, LessonUnlockGuard)
+  @Get(':id/content')
+  async getLesson(@Param('id') id: string) {
+    // تقدر هنا ترجع getLessonContent(...) أو تفاصيل كاملة
+    return this.lessonsService.getLessonContent(Number(id));
   }
 }

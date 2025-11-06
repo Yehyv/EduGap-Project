@@ -8,6 +8,8 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { ContentReview } from 'src/content-reviews/entities/content-review.entity';
 import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequiest-content.entity';
 import { formatHumanDate } from 'src/common/date-format';
+import { Lesson } from 'src/lessons/entities/lesson.entity';
+import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 type AccessFlag = 'notLoggedIn' | 'notEnrolled' | 'enrolled';
 
 @Injectable()
@@ -17,6 +19,8 @@ export class ContentDetailsService {
     @InjectRepository(Enrollment) private readonly enrollmentRepo: Repository<Enrollment>,
     @InjectRepository(ContentReview) private readonly reviewRepo: Repository<ContentReview>,
     @InjectRepository(PrerequisiteContent) private readonly prereqRepo: Repository<PrerequisiteContent>,
+    @InjectRepository(Lesson) private readonly lessonRepo: Repository<Lesson>,                    // ⬅️ جديد
+    @InjectRepository(LessonProgress) private readonly progressRepo: Repository<LessonProgress>, // ⬅️ جديد
   ) {}
 
   /** Helper: يضمن ان الـcontent موجود ومتاح داخل معهد/برنامج (لو اتبعتوا) */
@@ -95,6 +99,7 @@ export class ContentDetailsService {
     id: content.id,
     image: content.image ?? null,
     adVideo: content.adVideo ?? null,
+    hasCertificate: content.has_certificate ?? null,
     name: ctr?.name || '',
     description: ctr?.description || '',
     levelName: ctr?.level_name || '',
@@ -463,7 +468,112 @@ export class ContentDetailsService {
     count: items.length,
   };
 }
+async getContentSummary(
+    contentId: number,
+    params: { languageId?: number; instituteId?: number; programId?: number } = {},
+  ) {
+    // 1) هات المحتوى + ترجمة واحدة حسب اللغة (خفيف)
+    const qb = this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoinAndSelect(
+        'c.translations',
+        'ctr',
+        params.languageId ? 'ctr.languageId = :languageId' : '1=1',
+        { languageId: params.languageId },
+      )
+      .where('c.id = :cid', { cid: contentId })
+      .select([
+        'c.id',
+        // نرجّع ترجمة واحدة فقط (لو في أكثر من ترجمة بدون languageId، أول عنصر هتاخده من المصفوفة)
+        'ctr.id',
+        'ctr.name',
+      ]);
 
+    const content = await qb.getOne();
+    if (!content) throw new NotFoundException('Content not found');
+
+    // 2) احسب إجمالي المدة مع فلترة المعهد/البرنامج (نفس منطقك في getBase)
+    const durRow = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.topics', 't')
+      .leftJoin('t.lessons', 'l')
+      .leftJoin('c.courseContents', 'cc')
+      .leftJoin('cc.course', 'course')
+      .leftJoin('course.instituteProgramCourses', 'ipc')
+      .select('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .where('c.id = :cid', { cid: contentId })
+      .andWhere(params.instituteId ? 'ipc.instituteId = :instituteId' : '1=1', {
+        instituteId: params.instituteId,
+      })
+      .andWhere(params.programId ? 'ipc.programId = :programId' : '1=1', {
+        programId: params.programId,
+      })
+      .getRawOne<{ totalDuration: string }>();
+
+    const totalDuration = Number(durRow?.totalDuration ?? 0);
+
+    const displayName =
+      content.translations?.[0]?.name ??
+      ''; // لو عايز fallback آخر، زوّده هنا
+
+    return {
+      id: content.id,
+      name: displayName,
+      totalDuration,
+    };
+  }
+  async getNextOpenLessonId(
+  contentId: number,
+  userId: number,
+): Promise<{ lessonId: number | null }> {
+  // 0) لازم يكون ملتحق بالمحتوى ده
+  const enrollment = await this.enrollmentRepo.findOne({
+    where: { user: { id: userId }, content: { id: contentId } },
+    select: ['id'],
+  });
+  // لو مش ملتحق، هنرجّع null بدل ما نرمى Forbidden عشان الـUI يتصرف ببساطة
+  if (!enrollment) return { lessonId: null };
+
+  // 1) هات IDs الدروس مرتبة بالترتيب الطبيعي (topic ثم order ثم id)
+  const lessonRows = await this.lessonRepo
+    .createQueryBuilder('l')
+    .leftJoin('l.topic', 't')
+    .leftJoin('t.content', 'c')
+    .where('c.id = :cid', { cid: contentId })
+    .select(['l.id AS id'])
+    .orderBy('t.id', 'ASC')
+    .addOrderBy('l.order_id', 'ASC')
+    .addOrderBy('l.id', 'ASC')
+    .getRawMany<{ id: number }>();
+
+  if (!lessonRows.length) return { lessonId: null };
+  const orderedIds = lessonRows.map(r => Number(r.id));
+
+  // 2) هات الدروس المكتملة للمستخدم داخل نفس الـenrollment
+  const completedRows = await this.progressRepo
+    .createQueryBuilder('p')
+    .select(['p.lesson_id AS lessonId'])
+    .where('p.enrollment_id = :enrollId', { enrollId: enrollment.id })
+    .andWhere('p.user_id = :userId', { userId })
+    .getRawMany<{ lessonId: number }>();
+
+  const completed = new Set(completedRows.map(r => Number(r.lessonId)));
+
+  // 3) أول درس غير مكتمل ومسموح (الأول أو يلي درسًا مكتملًا)
+  let nextId: number | null = null;
+  for (let i = 0; i < orderedIds.length; i++) {
+    const cur = orderedIds[i];
+    if (completed.has(cur)) continue;
+    const isFirst = i === 0;
+    const prevCompleted = isFirst ? true : completed.has(orderedIds[i - 1]);
+    if (isFirst || prevCompleted) {
+      nextId = cur;
+      break;
+    }
+  }
+
+  return { lessonId: nextId };
+}
 }
 
 // // src/contents/content-details.service.ts

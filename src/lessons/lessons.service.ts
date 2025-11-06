@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -17,6 +18,11 @@ import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { getVideoDuration } from './video-utils';
 import { LessonReaction } from 'src/lesson-reactions/entities/lesson-reaction.entity';
 import { SavedLesson } from 'src/saved-lesson/entities/saved-lesson.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { Content } from 'src/contents/entities/content.entity';
+import { TopicWithLessonsStatus } from './types/lesson-status.types';
+
 type ReactionStatus = 'liked' | 'disliked' | 'none';
 type SavedStatus = 'saved' | 'unsaved';
 @Injectable()
@@ -31,9 +37,12 @@ export class LessonsService {
     @InjectRepository(Topic)
     private readonly topicRepo: Repository<Topic>,
     @InjectRepository(LessonReaction)
-  private readonly reactionRepo: Repository<LessonReaction>,
-  @InjectRepository(SavedLesson)
-  private readonly savedRepo: Repository<SavedLesson>,
+    private readonly reactionRepo: Repository<LessonReaction>,
+    @InjectRepository(SavedLesson)
+    private readonly savedRepo: Repository<SavedLesson>,
+    @InjectRepository(Content) private readonly contentRepo: Repository<Content>,
+    @InjectRepository(Enrollment) private readonly enrollRepo: Repository<Enrollment>,
+    @InjectRepository(LessonProgress) private readonly progressRepo: Repository<LessonProgress>,
   ) {}
 
   /** احسب الترتيب التالي داخل نفس الـ Topic */
@@ -265,4 +274,152 @@ async getLessonActionsStatus(userId: number, lessonId: number) {
     savedStatus,
   };
 }
+async getPrevAndNextInContent(lessonId: number) {
+    const cur = await this.lessonRepo.findOne({
+      where: { id: lessonId },
+      relations: ['topic', 'topic.content'],
+      select: ['id', 'order_id'],
+    });
+    if (!cur) throw new NotFoundException('Lesson not found');
+
+    const contentId = cur.topic.content.id;
+    const curTopicId = cur.topic.id;
+    const curOrder = cur.order_id ?? 0;
+
+    const prev = await this.lessonRepo.createQueryBuilder('l')
+      .innerJoin('l.topic', 't')
+      .innerJoin('t.content', 'c')
+      .where('c.id = :cid', { cid: contentId })
+      .andWhere('(t.id < :tid OR (t.id = :tid AND l.order_id < :ord))',
+        { tid: curTopicId, ord: curOrder })
+      .orderBy('t.id', 'DESC')
+      .addOrderBy('l.order_id', 'DESC')
+      .addOrderBy('l.id', 'DESC')
+      .getOne();
+
+    const next = await this.lessonRepo.createQueryBuilder('l')
+      .innerJoin('l.topic', 't')
+      .innerJoin('t.content', 'c')
+      .where('c.id = :cid', { cid: contentId })
+      .andWhere('(t.id > :tid OR (t.id = :tid AND l.order_id > :ord))',
+        { tid: curTopicId, ord: curOrder })
+      .orderBy('t.id', 'ASC')
+      .addOrderBy('l.order_id', 'ASC')
+      .addOrderBy('l.id', 'ASC')
+      .getOne();
+
+    return { cur, prev, next, contentId };
+  }
+
+async getTopicsWithStatus(
+    contentId: number,
+    userId: number,
+    params: { languageId?: number },
+  ): Promise<TopicWithLessonsStatus[]> {
+    // content موجود؟
+    const content = await this.contentRepo.findOne({ where: { id: contentId } });
+    if (!content) throw new NotFoundException('Content not found');
+
+    // لازم Enrollment
+    const enrollment = await this.enrollRepo.findOne({
+      where: { user: { id: userId }, content: { id: contentId } },
+      select: ['id'],
+    });
+    if (!enrollment) throw new ForbiddenException('Not enrolled in this content');
+
+    // هات التوبيكس + الدروس + الترجمات
+    const qb = this.contentRepo
+      .createQueryBuilder('content')
+      .leftJoinAndSelect('content.topics', 'topic')
+      .leftJoinAndSelect(
+        'topic.translations',
+        'ttr',
+        params.languageId ? 'ttr.languageId = :languageId' : undefined,
+        { languageId: params.languageId },
+      )
+      .leftJoinAndSelect('topic.lessons', 'lesson')
+      .leftJoinAndSelect(
+        'lesson.translations',
+        'ltr',
+        params.languageId ? 'ltr.languageId = :languageId' : undefined,
+        { languageId: params.languageId },
+      )
+      .where('content.id = :id', { id: contentId });
+
+    const c = await qb.getOne();
+    if (!c) throw new NotFoundException('Content not found');
+
+    // كل الدروس المكتملة
+    const progressRows = await this.progressRepo
+      .createQueryBuilder('p')
+      .select(['p.lesson_id AS lessonId'])
+      .where('p.enrollment_id = :enrollId', { enrollId: enrollment.id })
+      .andWhere('p.user_id = :userId', { userId })
+      .getRawMany<{ lessonId: number }>();
+
+    const completedSet = new Set(progressRows.map(r => Number(r.lessonId)));
+
+    // ترتيب عام لكل دروس المحتوى (topicId ثم order_id ثم id)
+    const allLessonsOrdered = (c.topics ?? [])
+      .flatMap(t => (t.lessons ?? []).map(l => ({ t, l })))
+      .sort((a, b) => {
+        const ta = a.t.id, tb = b.t.id;
+        if (ta !== tb) return ta - tb;
+        const oa = a.l.order_id ?? 0, ob = b.l.order_id ?? 0;
+        if (oa !== ob) return oa - ob;
+        return a.l.id - b.l.id;
+      });
+
+    // ابني الاستجابة
+    const topics: TopicWithLessonsStatus[] = (c.topics ?? []).map((t) => {
+      const ttr = t.translations?.[0] ?? null;
+
+      // رتّب دروس التوبيك محليًا (احتياطي)
+      const lessonsOrdered = [...(t.lessons ?? [])].sort((a, b) => {
+        const ao = a.order_id ?? 0;
+        const bo = b.order_id ?? 0;
+        if (ao !== bo) return ao - bo;
+        return a.id - b.id;
+      });
+
+      let topicDuration = 0;
+
+      const lessons = lessonsOrdered.map((l) => {
+        const ltr = l.translations?.[0] ?? null;
+        const duration = typeof l.duration === 'number' ? l.duration : 0;
+        topicDuration += duration;
+
+        const idxGlobal = allLessonsOrdered.findIndex(x => x.l.id === l.id);
+        const prevGlobal = idxGlobal > 0 ? allLessonsOrdered[idxGlobal - 1].l : null;
+
+        const isCompleted = completedSet.has(l.id);
+        const prevCompleted = prevGlobal ? completedSet.has(prevGlobal.id) : true;
+        const isFirstInContent = idxGlobal === 0;
+
+        const isUnlocked = isFirstInContent ? true : prevCompleted;
+
+        return {
+          id: l.id,
+          name: ltr?.name || '',
+          duration,
+          order: l.order_id ?? 0,
+          isCompleted,
+          isUnlocked,
+        };
+      });
+
+      return {
+        id: t.id,
+        name: ttr?.name || '',
+        duration: topicDuration,
+        lessons,
+      };
+    });
+
+    // ترتيب التوبيكس اختياري (لو عايز تثبيت)
+    topics.sort((a, b) => a.id - b.id);
+    topics.forEach(t => t.lessons.sort((a, b) => a.order - b.order || a.id - b.id));
+
+    return topics;
+  }
 }

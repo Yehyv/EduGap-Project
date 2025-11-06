@@ -192,6 +192,7 @@ export class UsersService {
 
     return {
       userName: user.full_name ?? user.username ?? '',
+      userImage: user.user_image,
       instituteName,
       logo: user.institute?.logo ?? '',
       programId: user.program?.id ?? null,
