@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   CommentsTypeResponse,
   ContentEducatorType,
+  ContentTopicsTypeResponse,
   lessonActionsHistory,
   lessonMaterialsTypes,
   MyNotesInLessonTypeResponse,
@@ -125,6 +126,21 @@ export async function getLessonsMaterials(
   );
   return res.data.data;
 }
+export async function getSavedLessons(
+  page: string,
+  limit: string
+): Promise<ContentTopicsTypeResponse> {
+  const res = await api.get<ApiResponse<ContentTopicsTypeResponse>>(
+    `/saved-lessons`,
+    {
+      params: {
+        page,
+        limit,
+      },
+    }
+  );
+  return res.data.data;
+}
 export async function addComment(
   lessonId: string,
   comment: string
@@ -152,6 +168,13 @@ export async function editComment(
     {
       comment,
     }
+  );
+  return res.data.data;
+}
+
+export async function completeLesson(lessonId: string): Promise<void> {
+  const res = await api.post<ApiResponse<void>>(
+    `/progress/${lessonId}/complete`
   );
   return res.data.data;
 }

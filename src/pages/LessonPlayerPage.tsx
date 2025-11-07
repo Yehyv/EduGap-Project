@@ -4,12 +4,16 @@ import { useQuery } from "@tanstack/react-query";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
 import CourseVideo from "@/shared/components/EduGap/CourseVideo";
 import CourseContentCard from "@/features/CourseDetails/components/CourseContentCard";
-import { getContentLesson } from "@/features/CourseDetails/services/contentDetails";
+import {
+  getContentLesson,
+  getContentTopics,
+} from "@/features/CourseDetails/services/contentDetails";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import LessonHeader from "@/features/ContentLesson/components/LessonHeader";
 import LessonTabs from "@/features/ContentLesson/components/LessonTabs";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import LessonActions from "@/features/ContentLesson/components/LessonActions";
+import type { ContentTopicsType } from "@/shared/types/sharedTypes";
 const LessonComments = lazy(
   () => import("@/features/ContentLesson/components/LessonComments")
 );
@@ -22,16 +26,33 @@ const LessonNotes = lazy(
 
 const LessonPlayerPage = () => {
   const { lang, t } = useLanguage();
-  const { lessonId } = useParams();
+  const { lessonId, courseId } = useParams();
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "comments" | "attachments" | "notes"
   >("comments");
+  const {
+    data: getContentTopicsAndLessons,
+    isLoading,
+    error,
+  } = useQuery<ContentTopicsType[]>({
+    queryKey: ["getTopicsInContent", courseId],
+    queryFn: () => getContentTopics(courseId!),
+    enabled: !!courseId,
+    retry: 1,
+  });
+
+  const lessonIdNumber = Number(lessonId);
+
+  const isLessonAlreadyCompleted =
+    getContentTopicsAndLessons
+      ?.flatMap((topic) => topic.lessons)
+      .some((lesson) => lesson.id === lessonIdNumber && lesson.isCompleted) ??
+    false;
 
   const { data } = useQuery({
     queryKey: ["getContentLesson", lessonId],
     queryFn: () => getContentLesson(lessonId!),
-    enabled: !!lessonId,
   });
 
   useEffect(() => {
@@ -48,33 +69,43 @@ const LessonPlayerPage = () => {
     <div className="flex flex-col h-full">
       <ScrollToTop />
 
-      <LessonHeader
-        name={t("back_to_course_details")}
-        duration="8 ساعة 50 دقيقة"
-        lang={lang}
-      />
+      <div className="container">
+        <LessonHeader
+          name={t("back_to_course_details")}
+          duration="8 ساعة 50 دقيقة"
+          lang={lang}
+        />
+        <div className="flex h-full justify-start flex-col-reverse gap-6 lg:flex-row">
+          <div className="w-full lg:w-[80%]">
+            <CourseVideo
+              key={lessonId}
+              isThisLessonAlreadyCompleted={isLessonAlreadyCompleted}
+              videoUrl={data?.video ?? ""}
+              isOnline={isOnline}
+            />
 
-      <div className="flex h-full justify-start flex-col-reverse gap-6 mx-6 lg:mx-14 lg:flex-row">
-        <div className="w-full lg:w-[80%]">
-          <CourseVideo videoUrl={data?.video ?? ""} isOnline={isOnline} />
+            <LessonActions
+              lessonTitle={data?.name ?? ""}
+              lessonId={lessonId ?? ""}
+            />
 
-          <LessonActions
-            lessonTitle={data?.name ?? ""}
-            lessonId={lessonId ?? ""}
-          />
+            <LessonTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-          <LessonTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
-          <div className="my-10">
-            <Suspense fallback={<CircleLoader />}>
-              {activeTab === "comments" && <LessonComments />}
-              {activeTab === "attachments" && <LessonAttachments />}
-              {activeTab === "notes" && <LessonNotes />}
-            </Suspense>
+            <div className="my-10 mb-30">
+              <Suspense fallback={<CircleLoader />}>
+                {activeTab === "comments" && <LessonComments />}
+                {activeTab === "attachments" && <LessonAttachments />}
+                {activeTab === "notes" && <LessonNotes />}
+              </Suspense>
+            </div>
           </div>
-        </div>
 
-        <CourseContentCard />
+          <CourseContentCard
+            data={getContentTopicsAndLessons ?? []}
+            isLoading={isLoading}
+            error={error}
+          />
+        </div>
       </div>
     </div>
   );

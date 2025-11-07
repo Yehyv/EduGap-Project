@@ -2,6 +2,9 @@ import type { ContentTopicsType } from "@/shared/types/sharedTypes";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatDuration } from "@/shared/utils/globals";
+import { useLanguage } from "@/shared/localization/useLanguage";
+import { toast } from "react-toastify";
 
 const LessonsList = ({
   indx,
@@ -12,17 +15,21 @@ const LessonsList = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { courseId, lessonId } = useParams();
+  const { lang, t } = useLanguage();
+
+  const handleLockedClick = () => {
+    toast.error(t("complete_prev_lesson"));
+  };
 
   return (
     <div className="py-3">
-      {/* Header button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between focus:outline-none cursor-pointer"
+        className="flex w-full items-center justify-between cursor-pointer"
       >
         <h5
           title={ContentTopics?.name}
-          className={`${
+          className={`text-lg ${
             isOpen ? "text-secondary" : "text-gray-800"
           } line-clamp-1`}
         >
@@ -30,25 +37,20 @@ const LessonsList = ({
           {ContentTopics?.name}
         </h5>
 
-        {/* Rotate icon smoothly */}
         <motion.svg
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.3 }}
           className="w-5 h-5 text-gray-500"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
         >
           <path d="M19 9l-7 7-7-7"></path>
         </motion.svg>
       </button>
 
-      {/* Animated Lessons List */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
-            key="lessons-list"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -56,24 +58,67 @@ const LessonsList = ({
             className="overflow-hidden"
           >
             <ul className="mt-3 list-decimal ms-6 space-y-2 text-gray-600">
-              {ContentTopics?.lessons?.map((ans, i) => (
-                <motion.li
-                  key={i}
-                  className="text-amber-500"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <Link
-                    to={`/course-lesson/${courseId}/${ans?.id}`}
-                    className={`${
-                      ans?.id == +lessonId! ? "text-secondary font-medium" : ""
-                    }`}
+              {ContentTopics?.lessons?.map((ans, i) => {
+                const isActive = ans?.id == +lessonId!;
+                const durationText = formatDuration(ans?.duration, lang);
+
+                return (
+                  <motion.li
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.04 }}
                   >
-                    {ans?.name}
-                  </Link>
-                </motion.li>
-              ))}
+                    <motion.div
+                      animate={
+                        isActive
+                          ? { scale: 1.05, backgroundColor: "#EDF1FF" }
+                          : { scale: 1, backgroundColor: "transparent" }
+                      }
+                      transition={{ duration: 0.25 }}
+                      className={`rounded px-1 py-0.5 flex items-center gap-2
+                        ${
+                          !ans?.isUnlocked
+                            ? "opacity-40 cursor-not-allowed"
+                            : "cursor-pointer"
+                        }
+                      `}
+                      onClick={() => {
+                        if (!ans?.isUnlocked) return handleLockedClick();
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      {/* ✅ لو مقفول ميبقاش Link */}
+                      {!ans?.isUnlocked ? (
+                        <span className="text-gray-500">{ans?.name}</span>
+                      ) : (
+                        <Link
+                          to={`/course-lesson/${courseId}/${ans?.id}`}
+                          className={`${
+                            isActive
+                              ? "text-secondary font-semibold"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {ans?.name}
+                        </Link>
+                      )}
+
+                      {/* ✅ duration */}
+                      <span className="text-xs text-gray-400">
+                        ({durationText})
+                      </span>
+
+                      {/* ✅ Completed Icon */}
+                      {ans?.isCompleted && (
+                        <span className="text-green-500 text-sm font-bold">
+                          ✓
+                        </span>
+                      )}
+                    </motion.div>
+                  </motion.li>
+                );
+              })}
             </ul>
           </motion.div>
         )}

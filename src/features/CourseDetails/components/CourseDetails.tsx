@@ -54,11 +54,15 @@ const CourseDetails = ({
   }, []);
 
   return (
-    <div className="flex flex-col-reverse gap-6 m-6 xl:m-14 xl:flex-row">
+    <div className="container flex flex-col-reverse gap-6 my-10 xl:flex-row">
       <ScrollToTop />
       {/* Main content */}
       <div className="w-full xl:w-[70%]">
-        <CourseVideo videoUrl={data?.adVideo} isOnline={isOnline} />
+        <CourseVideo
+          isThisLessonAlreadyCompleted={true}
+          videoUrl={data?.adVideo}
+          isOnline={isOnline}
+        />
 
         {/* Instructor Info */}
         <section className="my-5">

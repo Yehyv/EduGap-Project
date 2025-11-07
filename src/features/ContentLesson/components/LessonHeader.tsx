@@ -1,24 +1,41 @@
+import {
+  getContentNameAndDuration,
+  getContentProgressData,
+} from "@/features/CourseDetails/services/contentDetails";
+import { useLanguage } from "@/shared/localization/useLanguage";
+import { formatDuration } from "@/shared/utils/globals";
+import { useQuery } from "@tanstack/react-query";
 import { Suspense, lazy } from "react";
 import { Link, useParams } from "react-router-dom";
 const RightArrow = lazy(() => import("@/assets/svgs/RightArrow.svg?react"));
 const TimeIcon = lazy(() => import("@/assets/svgs/TimeIcon.svg?react"));
 
-type Props = {
-  name: string;
-  duration?: string;
-  lang: string;
-};
-
-const LessonHeader = ({ name, duration = "—", lang }: Props) => {
+const LessonHeader = () => {
+  const { lang } = useLanguage();
   const { courseId } = useParams();
+
+  const { data } = useQuery({
+    queryKey: ["getContentNameAndDuration", courseId],
+    queryFn: () => getContentNameAndDuration(courseId!),
+  });
+  const { data: contentProgressData } = useQuery({
+    queryKey: ["getContentProgress", courseId],
+    queryFn: () => getContentProgressData(courseId!),
+  });
+  console.log(contentProgressData?.percent);
+
   return (
-    <div className="flex max-md:flex-col max-md:gap-4 justify-between items-start pt-2 m-6 lg:mx-14">
+    <div className="flex max-md:flex-col max-md:gap-4 justify-between items-start pt-2 my-1">
       <div className="flex items-center gap-2">
-        <div className="text-secondary">(104/72) 41%</div>
+        <div className="text-secondary">
+          ({contentProgressData?.totalLessons}/
+          {contentProgressData?.completedLessons}){" "}
+          {contentProgressData?.percent}%
+        </div>
         <div className="w-[250px] max-md:w-[150px] h-1 bg-gray-300 rounded">
           <div
             className="h-1 bg-secondary rounded"
-            style={{ width: "41%" }}
+            style={{ width: `${contentProgressData?.percent}%` }}
           ></div>
         </div>
       </div>
@@ -28,7 +45,7 @@ const LessonHeader = ({ name, duration = "—", lang }: Props) => {
           to={`/user-course-details/${courseId}`}
           className="flex items-center gap-2"
         >
-          <h4 className="m-0">{name}</h4>
+          <h4 className="m-0">{data?.name}</h4>
           <Suspense fallback={null}>
             <RightArrow className={lang === "ar" ? "rotate-180" : ""} />
           </Suspense>
@@ -38,7 +55,7 @@ const LessonHeader = ({ name, duration = "—", lang }: Props) => {
           <Suspense fallback={null}>
             <TimeIcon className="w-4" />
           </Suspense>
-          <div>{duration}</div>
+          <div>{formatDuration(data?.totalDuration ?? 0, lang)}</div>
         </div>
       </div>
     </div>

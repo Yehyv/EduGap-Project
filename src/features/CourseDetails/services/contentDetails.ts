@@ -4,6 +4,8 @@ import type {
   ContentAccessType,
   ContentDetailsType,
   ContentLessonType,
+  ContentNameAndDurationType,
+  ContentProgressType,
   ContentRatingsType,
   ContentReviewsResponse,
   ContentTopicsType,
@@ -40,11 +42,27 @@ export async function getContentLesson(
   );
   return res.data.data;
 }
+export async function getContentNameAndDuration(
+  lessonId: string
+): Promise<ContentNameAndDurationType> {
+  const res = await api.get<ApiResponse<ContentNameAndDurationType>>(
+    `/contents/${lessonId}/summary`
+  );
+  return res.data.data;
+}
+export async function getContentProgressData(
+  courseId: string
+): Promise<ContentProgressType> {
+  const res = await api.get<ApiResponse<ContentProgressType>>(
+    `/progress/content/${courseId}/summary`
+  );
+  return res.data.data;
+}
 export async function getContentTopics(
   courseId: string
 ): Promise<ContentTopicsType[]> {
   const res = await api.get<ApiResponse<ContentTopicsType[]>>(
-    `/contents/${courseId}/topics`
+    `/lessons/content/${courseId}/topics-with-status`
   );
   return res.data.data;
 }

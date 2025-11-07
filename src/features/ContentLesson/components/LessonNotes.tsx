@@ -175,17 +175,21 @@ const LessonNotes = () => {
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-500 bg-gray-100 p-4 rounded-lg w-full">
-            {t("no_notes_available")}
+          <div className="flex items-center justify-center col-span-2 max-md:col-span-1">
+            <div className="text-center text-gray-500 bg-gray-100 p-6 rounded-lg w-full h-[200px] flex items-center justify-center">
+              {t("no_notes_available")}
+            </div>
           </div>
         )}
       </div>
 
-      <CustomPagination
-        currentPage={data?.pagination?.page ?? 1}
-        onPageChange={handlePageChange}
-        totalPages={data?.pagination?.totalPages ?? 1}
-      />
+      {data?.pagination?.total != undefined && data?.pagination?.total > 1 && (
+        <CustomPagination
+          currentPage={data?.pagination?.page ?? 1}
+          onPageChange={handlePageChange}
+          totalPages={data?.pagination?.totalPages ?? 1}
+        />
+      )}
 
       {/*  Edit Modal */}
       {selectedNote && (

@@ -220,6 +220,9 @@ const translations = {
     delete_error: "Failed to delete comment",
     user: "User",
     share_material: "Share Material",
+    no_comments_available: "No comments available",
+    complete_prev_lesson: "You must complete the previous lesson first",
+    complete_lesson: "You have successfully completed this lesson",
   },
 
   ar: {
@@ -442,6 +445,9 @@ const translations = {
     delete_error: "حدث خطأ أثناء الحذف",
     user: "مستخدم",
     share_material: "مشاركة",
+    no_comments_available: "لا يوجد تعليقات حتي الأن",
+    complete_prev_lesson: "يجب إكمال الدرس السابق أولاً",
+    complete_lesson: "لقد أكملت هذا الدرس بنجاح.",
   },
 } as const;
 

@@ -13,26 +13,15 @@ const AttachmentIcon = lazy(
 const DownloadIcon = lazy(() => import("@/assets/svgs/DownloadIcon.svg?react"));
 const TitleLine = lazy(() => import("@/assets/svgs/TitileLine.svg?react"));
 
-type Attachment = {
-  name: string;
-  size: string;
-};
-
-const dummyFiles: Attachment[] = [
-  { name: "قالب استراتيجية التسويق بالذكاء الاصطناعي.pdf", size: "2.3 م ب" },
-  { name: "قالب استراتيجية التسويق بالذكاء الاصطناعي.pdf", size: "2.3 م ب" },
-  { name: "قالب استراتيجية التسويق بالذكاء الاصطناعي.pdf", size: "2.3 م ب" },
-];
-
 const LessonAttachments = () => {
   const { t } = useLanguage();
 
-  const hasFiles = dummyFiles.length > 0;
   const { lessonId } = useParams();
   const { data, isLoading, error } = useQuery<lessonMaterialsTypes[]>({
     queryKey: ["getLessonMaterials", lessonId],
     queryFn: () => getLessonsMaterials(lessonId ?? ""),
   });
+  const hasFiles = data != undefined && data?.length > 0;
 
   if (error)
     return (

@@ -69,12 +69,28 @@ export type ContentLessonType = {
   name: string;
   video: string;
 };
+export type ContentNameAndDurationType = {
+  id: number;
+  name: string;
+  totalDuration: number;
+};
+export type ContentProgressType = {
+  completedLessons: number;
+  contentId: number;
+  percent: number;
+  totalLessons: number;
+};
 export type ContentTopicsType = {
   id: number;
   name: string;
   duration: number;
   lessons: LessonType[];
 };
+export type ContentTopicsTypeResponse = {
+  items: ContentTopicsType[];
+  pagination: PaginationType;
+};
+
 export type ContentEducatorType = {
   educator: Educator;
 };
@@ -128,14 +144,31 @@ export type LessonType = {
   id: number;
   name: string;
   duration: number;
+  video: string;
+  isUnlocked: boolean;
+  isCompleted: boolean;
 };
 
 export type ContinueCourseType = {
-  educators: Educator[];
+  educator: Educator;
   content: CourseContent;
-  lessonId: string | number;
-  imageUrl?: string;
-  lessonName?: string;
+  lesson: LessonType;
+  rating: RatingType;
+  stats: statsType;
+};
+export type RatingType = {
+  averageRating: number;
+  ratingsCount: number;
+  userRating: number;
+};
+export type statsType = {
+  completedLessons: number;
+  percent: number;
+  totalLessons: number;
+};
+export type ContinueCourseTypeResponse = {
+  items: ContinueCourseType[];
+  pagination: PaginationType;
 };
 export type InstituteCoursesType = {
   id: number;

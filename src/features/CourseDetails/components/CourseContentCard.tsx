@@ -1,27 +1,24 @@
 import { lazy, Suspense } from "react";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ComputerIcon from "@/assets/svgs/ComputerIcon.svg?react";
-import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import type { ContentTopicsType } from "@/shared/types/sharedTypes";
-import { getContentTopics } from "../services/contentDetails";
 import LessonRate from "@/features/ContentLesson/components/LessonRate";
 import LessonExpert from "@/features/ContentLesson/components/LessonExpert";
 import LessonsQuickLinks from "@/features/ContentLesson/components/LessonsQuickLinks";
+import type { ContentTopicsType } from "@/shared/types/sharedTypes";
 
 // Lazy load
 const LessonsList = lazy(() => import("./LessonsList"));
 
-const CourseContentCard = () => {
+const CourseContentCard = ({
+  data,
+  isLoading,
+  error,
+}: {
+  data: ContentTopicsType[];
+  isLoading: boolean;
+  error: object | null;
+}) => {
   const { t } = useLanguage();
-  const { courseId } = useParams();
-
-  const { data, isLoading, error } = useQuery<ContentTopicsType[]>({
-    queryKey: ["getTopicsInContent", courseId],
-    queryFn: () => getContentTopics(courseId!),
-    enabled: !!courseId,
-    retry: 1,
-  });
 
   return (
     <div className="w-full lg:w-[30%] h-full mb-10">

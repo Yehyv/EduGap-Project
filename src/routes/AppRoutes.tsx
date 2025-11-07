@@ -26,6 +26,7 @@ import InstituteCourseDetails from "@/pages/InstituteCourseDetails";
 import ProtectVerifyOtp from "./ProtectVerifyOtp";
 import ProtectResetPassword from "./ProtectResetPassword";
 import LatestCoursesPage from "@/pages/LatestCoursesPage";
+import SavedLessons from "@/pages/SavedLessons";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -108,6 +109,7 @@ export default function AppRoutes() {
         />
         <Route path="/institute-courses" element={<InstituteCourses />} />
         <Route path="/saved-contents" element={<SavedContentsList />} />
+        <Route path="/saved-lessons" element={<SavedLessons />} />
       </Route>
 
       {/* Not Found */}

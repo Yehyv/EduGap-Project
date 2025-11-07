@@ -1,17 +1,15 @@
 import api from "@/shared/services/axios";
 import type {
   ApiResponse,
-  ContinueCourseType,
+  ContinueCourseTypeResponse,
   CourseType,
   InstituteCoursesResponse,
   InstituteCoursesType,
 } from "@/shared/types/sharedTypes";
 
-export async function getResumeWhereLeftForSlider(): Promise<
-  ContinueCourseType[]
-> {
-  const res = await api.get<ApiResponse<ContinueCourseType[]>>(
-    "/lessons/first-8"
+export async function getResumeWhereLeftForSlider(): Promise<ContinueCourseTypeResponse> {
+  const res = await api.get<ApiResponse<ContinueCourseTypeResponse>>(
+    "/progress/resume-lessons"
   );
   return res.data.data;
 }
