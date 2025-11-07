@@ -21,15 +21,17 @@ const ContinueWhereLeftOffCard = ({
 
   const videoSrc = course?.lesson?.video || "";
 
-  /**  Extract frame as poster after 1 second */
   const capturePoster = () => {
     const v = videoRef.current;
     if (!v) return;
 
+    // Fix tainted canvas issue
+    v.crossOrigin = "anonymous";
+
     try {
-      v.currentTime = 1; // jump to second 1
+      v.currentTime = 1;
     } catch {
-      // stop
+      // Do Nothing
     }
 
     const onSeeked = () => {
@@ -39,15 +41,21 @@ const ContinueWhereLeftOffCard = ({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-      setPosterFromVideo(canvas.toDataURL("image/png"));
+      try {
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        const imgUrl = canvas.toDataURL("image/png");
+        setPosterFromVideo(imgUrl);
+      } catch {
+        // If still tainted → fallback
+        setPosterFromVideo("/fallback-placeholder.jpg");
+      }
+
       v.removeEventListener("seeked", onSeeked);
     };
 
     v.addEventListener("seeked", onSeeked);
   };
 
-  /** ✅ Play on hover */
   const handleMouseEnter = () => {
     if (!videoSrc) return;
     setIsHovering(true);
@@ -65,7 +73,6 @@ const ContinueWhereLeftOffCard = ({
     }
   };
 
-  /** ✅ Stop on leave */
   const handleMouseLeave = () => {
     setIsHovering(false);
     const v = videoRef.current;
@@ -74,23 +81,19 @@ const ContinueWhereLeftOffCard = ({
     try {
       v.currentTime = 0;
     } catch {
-      // stop
+      // Do Nothing
     }
     setIsPlaying(false);
     setIsLoading(false);
   };
 
-  /** ✅ Events Listeners */
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
 
     const onCanPlay = () => {
       setIsLoading(false);
-      // ✅ ONLY generate poster once
-      if (!posterFromVideo) {
-        capturePoster();
-      }
+      if (!posterFromVideo) capturePoster();
     };
 
     const onPlaying = () => {
@@ -121,7 +124,6 @@ const ContinueWhereLeftOffCard = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Lesson Info */}
       <div className="flex-1 mb-3">
         <h5
           className="font-semibold text-gray-800 line-clamp-1"
@@ -129,7 +131,6 @@ const ContinueWhereLeftOffCard = ({
         >
           {lessonName}
         </h5>
-
         <div className="flex justify-between items-center mt-1">
           {educator && (
             <span className="text-sm text-gray-400 line-clamp-1">
@@ -137,19 +138,24 @@ const ContinueWhereLeftOffCard = ({
               {educator?.lastName ?? ""}
             </span>
           )}
-          <span className="text-sm font-semibold text-yellow-400">
-            {course?.content?.rate ?? 0}
+          <span className="center items-center gap-2 text-sm font-semibold text-yellow-400">
+            {course?.rating?.averageRating ?? 0}
+            <svg
+              viewBox="0 0 24 24"
+              className="w-4 h-4 mb-0.5 text-yellow-400"
+              fill="currentColor"
+            >
+              <path d="M12 .587l3.668 7.568L24 9.748l-6 5.848L19.335 24 12 19.897 4.665 24 6 15.596 0 9.748l8.332-1.593z" />
+            </svg>
           </span>
         </div>
       </div>
 
-      {/* Poster & Video */}
       <div className="relative rounded-xl overflow-hidden mb-3 mx-4">
         {posterFromVideo ? (
           <img
-            src={posterFromVideo || "/fallback-placeholder.jpg"}
+            src={posterFromVideo}
             alt={lessonName}
-            crossOrigin="anonymous"
             className="w-full h-[200px] object-cover"
           />
         ) : (
@@ -159,8 +165,8 @@ const ContinueWhereLeftOffCard = ({
         {videoSrc && (
           <video
             ref={videoRef}
-            muted
             crossOrigin="anonymous"
+            muted
             playsInline
             preload="metadata"
             className={`absolute inset-0 w-full h-[200px] object-cover transition-opacity duration-300 
@@ -169,13 +175,11 @@ const ContinueWhereLeftOffCard = ({
           />
         )}
 
-        {/* ✅ Loader */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
               transition={{ duration: 0.25 }}
               className="flex items-center gap-2 bg-black/40 px-3 py-2 rounded-full"
             >
@@ -190,7 +194,6 @@ const ContinueWhereLeftOffCard = ({
           </div>
         )}
 
-        {/* Play icon when hovering but not yet playing */}
         {!isPlaying && !isLoading && isHovering && videoSrc && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-12 h-12 rounded-full bg-black/40 flex items-center justify-center">

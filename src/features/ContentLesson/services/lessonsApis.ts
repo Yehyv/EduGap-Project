@@ -3,9 +3,11 @@ import type {
   ApiResponse,
   CommentsTypeResponse,
   ContentEducatorType,
+  ContentMaterialsTypeResponse,
   ContentTopicsTypeResponse,
   lessonActionsHistory,
   lessonMaterialsTypes,
+  MyNotesInContentTypeResponse,
   MyNotesInLessonTypeResponse,
 } from "@/shared/types/sharedTypes";
 
@@ -26,6 +28,22 @@ export async function getMyNotesInLesson(
     {
       params: {
         page,
+      },
+    }
+  );
+  return res.data.data;
+}
+export async function getMyNotesInContent(
+  page: number,
+  limit: number,
+  courseId: string
+): Promise<MyNotesInContentTypeResponse> {
+  const res = await api.get<ApiResponse<MyNotesInContentTypeResponse>>(
+    `/lesson-notes/content/${courseId}/me`,
+    {
+      params: {
+        page,
+        limit,
       },
     }
   );
@@ -127,8 +145,8 @@ export async function getLessonsMaterials(
   return res.data.data;
 }
 export async function getSavedLessons(
-  page: string,
-  limit: string
+  page: number,
+  limit: number
 ): Promise<ContentTopicsTypeResponse> {
   const res = await api.get<ApiResponse<ContentTopicsTypeResponse>>(
     `/saved-lessons`,
@@ -138,6 +156,14 @@ export async function getSavedLessons(
         limit,
       },
     }
+  );
+  return res.data.data;
+}
+export async function getContentMaterials(
+  courseId: string
+): Promise<ContentMaterialsTypeResponse> {
+  const res = await api.get<ApiResponse<ContentMaterialsTypeResponse>>(
+    `/lesson-materials/content/${courseId}`
   );
   return res.data.data;
 }

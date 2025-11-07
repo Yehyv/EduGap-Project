@@ -2,15 +2,28 @@ import StarIcon from "@/assets/svgs/BlackStarIcon.svg?react";
 import WriteIcon from "@/assets/svgs/WriteIcon.svg?react";
 import AttachementIcon from "@/assets/svgs/AttachmentIcon.svg?react";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const LessonsQuickLinks = () => {
   const { t } = useLanguage();
+  const { courseId } = useParams();
 
   const quickLinks = [
-    { icon: StarIcon, label: t("important_lessons"), url: "" },
-    { icon: WriteIcon, label: t("my_notes"), url: "" },
-    { icon: AttachementIcon, label: t("course_attachments"), url: "" },
+    {
+      icon: StarIcon,
+      label: t("important_lessons"),
+      url: `/saved-lessons/${courseId}`,
+    },
+    {
+      icon: WriteIcon,
+      label: t("my_notes"),
+      url: `/content-notes/${courseId}`,
+    },
+    {
+      icon: AttachementIcon,
+      label: t("course_attachments"),
+      url: `/content-materials/${courseId}`,
+    },
   ];
 
   return (

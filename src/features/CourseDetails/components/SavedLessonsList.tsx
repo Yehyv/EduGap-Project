@@ -5,15 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { formatDuration } from "@/shared/utils/globals";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { toast } from "react-toastify";
-
-const LessonsList = ({
+import StarIcon from "@/assets/svgs/FullStarIcon.svg?react";
+const SavedLessonsList = ({
   indx,
   ContentTopics,
 }: {
   indx: number;
   ContentTopics: ContentTopicsType;
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const { courseId, lessonId } = useParams();
   const { lang, t } = useLanguage();
 
@@ -22,7 +22,7 @@ const LessonsList = ({
   };
 
   return (
-    <div className="py-3">
+    <div className="py-3 bg-primary px-4 max-md:px-2 rounded-lg">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-full items-center justify-between cursor-pointer"
@@ -57,7 +57,7 @@ const LessonsList = ({
             transition={{ duration: 0.35, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <ul className="mt-3 list-decimal ms-6 space-y-2 text-gray-600">
+            <ul className="mt-3 ms-6 max-md:ms-3 space-y-2 text-gray-600">
               {ContentTopics?.lessons?.map((ans, i) => {
                 const isActive = ans?.id == +lessonId!;
                 const durationText = formatDuration(ans?.duration, lang);
@@ -88,6 +88,7 @@ const LessonsList = ({
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
                     >
+                      <StarIcon className="w-7 h-7 max-md:w-5 max-md:h-5" />
                       {!ans?.isUnlocked ? (
                         <span className="text-gray-500">{ans?.name}</span>
                       ) : (
@@ -126,4 +127,4 @@ const LessonsList = ({
   );
 };
 
-export default LessonsList;
+export default SavedLessonsList;

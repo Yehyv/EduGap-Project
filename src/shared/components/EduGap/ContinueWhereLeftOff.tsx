@@ -17,8 +17,6 @@ const ContinueWhereLeftOff = () => {
     queryFn: getResumeWhereLeftForSlider,
   });
 
-  console.log(data);
-
   const { slidesToShow, windowWidth } = useResponsiveSlides(
     [
       { width: 600, slides: 1 },

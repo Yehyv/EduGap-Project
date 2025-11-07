@@ -223,6 +223,9 @@ const translations = {
     no_comments_available: "No comments available",
     complete_prev_lesson: "You must complete the previous lesson first",
     complete_lesson: "You have successfully completed this lesson",
+    no_prerequisites_available: "No prerequisite courses recommended",
+    new: "New",
+    untitled: "untitled",
   },
 
   ar: {
@@ -448,6 +451,9 @@ const translations = {
     no_comments_available: "لا يوجد تعليقات حتي الأن",
     complete_prev_lesson: "يجب إكمال الدرس السابق أولاً",
     complete_lesson: "لقد أكملت هذا الدرس بنجاح.",
+    no_prerequisites_available: "لا توجد دورات تمهيدية مقترحة",
+    new: "جديد",
+    untitled: "untitled",
   },
 } as const;
 

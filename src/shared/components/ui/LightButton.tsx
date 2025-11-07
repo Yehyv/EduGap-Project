@@ -10,6 +10,7 @@ const LightButton = ({ text, onClick }: LightButtonProps) => {
   const { lang } = useLanguage();
   return (
     <button
+      type="button"
       onClick={onClick}
       className="group mt-4 py-1.5 px-20 rounded-lg w-fit bg-white mx-auto text-lg font-medium shadow-md hover:shadow-xl transition-shadow duration-200 flex items-center justify-center gap-2 overflow-hidden relative cursor-pointer"
     >

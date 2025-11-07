@@ -26,12 +26,14 @@ import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import CircleLoader from "./CircleLoader";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import CustomPagination from "@/shared/utils/CustomPagination";
+import { useUser } from "@/features/auth/context/UserContext";
 
 const EditIcon = lazy(() => import("@/assets/svgs/EditTextIcon.svg?react"));
 const TrashIcon = lazy(() => import("@/assets/svgs/TrashIcon.svg?react"));
 
 const CommentsSection = () => {
   const { t } = useLanguage();
+  const { user } = useUser();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("commentsPage")) || 1;
@@ -158,10 +160,10 @@ const CommentsSection = () => {
           {() => (
             <Form>
               <div className="w-full flex gap-2">
-                <div className="w-12 h-12 p-1 rounded-full bg-[#EDEDED]">
+                <div className="w-12 h-12  rounded-full overflow-hidden bg-[#EDEDED]">
                   <img
-                    src={UserImage}
-                    className="w-full object-contain"
+                    src={user?.userImage || UserImage}
+                    className="w-full h-full object-cover"
                     alt="user"
                   />
                 </div>

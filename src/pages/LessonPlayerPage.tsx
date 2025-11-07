@@ -6,9 +6,8 @@ import CourseVideo from "@/shared/components/EduGap/CourseVideo";
 import CourseContentCard from "@/features/CourseDetails/components/CourseContentCard";
 import {
   getContentLesson,
-  getContentTopics,
+  getContentTopicsForUser,
 } from "@/features/CourseDetails/services/contentDetails";
-import { useLanguage } from "@/shared/localization/useLanguage";
 import LessonHeader from "@/features/ContentLesson/components/LessonHeader";
 import LessonTabs from "@/features/ContentLesson/components/LessonTabs";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
@@ -25,21 +24,20 @@ const LessonNotes = lazy(
 );
 
 const LessonPlayerPage = () => {
-  const { lang, t } = useLanguage();
   const { lessonId, courseId } = useParams();
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "comments" | "attachments" | "notes"
   >("comments");
+
   const {
     data: getContentTopicsAndLessons,
     isLoading,
     error,
   } = useQuery<ContentTopicsType[]>({
-    queryKey: ["getTopicsInContent", courseId],
-    queryFn: () => getContentTopics(courseId!),
+    queryKey: ["getTopicsInContentForUser", courseId],
+    queryFn: () => getContentTopicsForUser(courseId!),
     enabled: !!courseId,
-    retry: 1,
   });
 
   const lessonIdNumber = Number(lessonId);
@@ -70,11 +68,7 @@ const LessonPlayerPage = () => {
       <ScrollToTop />
 
       <div className="container">
-        <LessonHeader
-          name={t("back_to_course_details")}
-          duration="8 ساعة 50 دقيقة"
-          lang={lang}
-        />
+        <LessonHeader />
         <div className="flex h-full justify-start flex-col-reverse gap-6 lg:flex-row">
           <div className="w-full lg:w-[80%]">
             <CourseVideo

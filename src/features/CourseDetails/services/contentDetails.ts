@@ -58,11 +58,19 @@ export async function getContentProgressData(
   );
   return res.data.data;
 }
-export async function getContentTopics(
+export async function getContentTopicsForUser(
   courseId: string
 ): Promise<ContentTopicsType[]> {
   const res = await api.get<ApiResponse<ContentTopicsType[]>>(
     `/lessons/content/${courseId}/topics-with-status`
+  );
+  return res.data.data;
+}
+export async function getContentTopicsForGuest(
+  courseId: string
+): Promise<ContentTopicsType[]> {
+  const res = await api.get<ApiResponse<ContentTopicsType[]>>(
+    `/contents/${courseId}/topics`
   );
   return res.data.data;
 }

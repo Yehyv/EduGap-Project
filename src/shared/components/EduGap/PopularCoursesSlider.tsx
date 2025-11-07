@@ -11,6 +11,22 @@ import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
 import { useUser } from "@/features/auth/context/UserContext";
+import { motion } from "framer-motion";
+
+const container = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15 } },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
+};
 
 const PopularCoursesSlider = () => {
   const { t } = useLanguage();
@@ -28,7 +44,7 @@ const PopularCoursesSlider = () => {
       { width: 1000, slides: 2 },
       { width: 1180, slides: 3 },
     ],
-    4 // default
+    4
   );
 
   const settings = {
@@ -58,15 +74,20 @@ const PopularCoursesSlider = () => {
           ))}
         </div>
       ) : (
-        <div className="w-full py-5">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={container}
+        >
           <Slider {...settings}>
             {data?.map((courseData, idx) => (
-              <div key={idx} className="px-2">
-                <CourseCard key={idx} course={courseData} />
-              </div>
+              <motion.div key={idx} className="px-2" variants={item}>
+                <CourseCard course={courseData} />
+              </motion.div>
             ))}
           </Slider>
-        </div>
+        </motion.div>
       )}
     </div>
   );

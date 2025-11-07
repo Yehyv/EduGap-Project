@@ -4,31 +4,81 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLanguage } from "../localization/useLanguage";
 import { useClickOutside } from "../hooks/useClickOutside";
 import { useUser } from "@/features/auth/context/UserContext";
+import { motion, AnimatePresence } from "framer-motion";
 
-// Lazy load components & icons
-const UserIcon = lazy(() => import("@/assets/svgs/UserIcon.svg?react"));
-const NotificationIcon = lazy(
-  () => import("@/assets/svgs/Notification.svg?react")
+const smoothLazy = <P extends {}>(
+  importFunc: () => Promise<{ default: React.ComponentType<P> }>,
+  className?: string
+): React.FC<P> => {
+  const Comp = lazy(importFunc);
+
+  const LazyIcon: React.FC<P> = (props) => (
+    <Suspense
+      fallback={
+        <div className={`w-5 h-5 bg-gray-300 rounded-full ${className}`} />
+      }
+    >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.15 }}
+        className={className}
+      >
+        <Comp {...props} className={className} />
+      </motion.div>
+    </Suspense>
+  );
+
+  return LazyIcon;
+};
+
+const UserIcon = smoothLazy(
+  () => import("@/assets/svgs/UserIcon.svg?react"),
+  "w-6 h-6"
 );
-const WalletIcon = lazy(() => import("@/assets/svgs/WalletIcon.svg?react"));
-const CoursesIcon = lazy(() => import("@/assets/svgs/MyCoursesIcon.svg?react"));
-const CertificateIcon = lazy(
-  () => import("@/assets/svgs/CertificateBoldIcon.svg?react")
+const NotificationIcon = smoothLazy(
+  () => import("@/assets/svgs/Notification.svg?react"),
+  "w-7 h-7"
 );
-const EditIcon = lazy(() => import("@/assets/svgs/EditIcon.svg?react"));
-const LanguageIcon = lazy(() => import("@/assets/svgs/LanguageIcon.svg?react"));
-const MoonIcon = lazy(() => import("@/assets/svgs/MoonIcon.svg?react"));
-const QuestionIcon = lazy(
-  () => import("@/assets/svgs/QuestitionIcon.svg?react")
+const WalletIcon = smoothLazy(
+  () => import("@/assets/svgs/WalletIcon.svg?react"),
+  "w-5 h-5"
 );
-const LogoutIcon = lazy(() => import("@/assets/svgs/LogoutIcon.svg?react"));
+const CoursesIcon = smoothLazy(
+  () => import("@/assets/svgs/MyCoursesIcon.svg?react"),
+  "w-5 h-5"
+);
+const CertificateIcon = smoothLazy(
+  () => import("@/assets/svgs/CertificateBoldIcon.svg?react"),
+  "w-5 h-5"
+);
+const EditIcon = smoothLazy(
+  () => import("@/assets/svgs/EditIcon.svg?react"),
+  "w-5 h-5"
+);
+const LanguageIcon = smoothLazy(
+  () => import("@/assets/svgs/LanguageIcon.svg?react"),
+  "w-5 h-5"
+);
+const MoonIcon = smoothLazy(
+  () => import("@/assets/svgs/MoonIcon.svg?react"),
+  "w-5 h-5"
+);
+const QuestionIcon = smoothLazy(
+  () => import("@/assets/svgs/QuestitionIcon.svg?react"),
+  "w-5 h-5"
+);
+const LogoutIcon = smoothLazy(
+  () => import("@/assets/svgs/LogoutIcon.svg?react"),
+  "w-5 h-5"
+);
+
 const LanguageDropdown = lazy(() => import("./ui/LanguageDropdown"));
 
 const UserNav = () => {
   const { lang, setLang, t } = useLanguage();
   const { logout } = useAuth();
   const { logout: clearUserData } = useUser();
-
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { user } = useUser();
@@ -40,6 +90,18 @@ const UserNav = () => {
     clearUserData();
   };
 
+  // Menu Animation
+  const pop = {
+    initial: { opacity: 0, scale: 0.93, y: -6 },
+    animate: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: { duration: 0.18, ease: "easeOut" },
+    },
+    exit: { opacity: 0, scale: 0.92, y: -6, transition: { duration: 0.12 } },
+  };
+
   return (
     <div className="flex items-center gap-4 relative" ref={menuRef}>
       {/* Greeting */}
@@ -48,98 +110,111 @@ const UserNav = () => {
         <span>{user?.userName}</span>
       </div>
 
-      {/* User dropdown */}
-      <div className="relative">
-        <button
-          onClick={() => setOpen((prev) => !prev)}
-          className="flex items-center cursor-pointer justify-center w-9 h-9 rounded-full bg-gray-200 hover:bg-gray-300 transition"
-        >
-          <Suspense
-            fallback={<span className="w-6 h-6 bg-gray-300 rounded-full" />}
-          >
-            <UserIcon className="w-6 h-6 text-gray-700" />
-          </Suspense>
-        </button>
+      {/* User button */}
+      <motion.button
+        onClick={() => setOpen((prev) => !prev)}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.95 }}
+        className="flex items-center cursor-pointer justify-center w-9 h-9 rounded-full bg-gray-200 hover:bg-gray-300 transition"
+      >
+        <UserIcon />
+      </motion.button>
 
+      {/* Dropdown menu */}
+      <AnimatePresence>
         {open && (
-          <div className="absolute end-0 mt-2 w-70 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-            <div className="w-10 h-10 bg-primary rounded-full mx-auto text-secondary font-bold center mt-4">
+          <motion.div
+            variants={pop}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="absolute top-10 -ms-30 w-72 bg-white rounded-lg shadow-[0_6px_20px_-2px_rgba(0,0,0,0.15)] border border-gray-200 z-50"
+          >
+            {/* Avatar */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-11 h-11 bg-primary rounded-full mx-auto text-secondary font-bold grid place-items-center mt-4"
+            >
               {user?.userName?.[0]}
-            </div>
-            <div className="text-center mx-4 border-[#DBDBDB]">
+            </motion.div>
+
+            {/* Info */}
+            <div className="text-center mx-4">
               <div className="font-semibold mt-2">{user?.userName}</div>
               <div className="text-sm text-[#797979]">
                 {user?.instituteName}
               </div>
-              {/* <div className="text-sm text-[#797979]">
-                mohamedabdelsalam21@gmail.com
-              </div> */}
-              <div className="text-sm text-secondary center gap-2 mt-2">
+
+              <div className="text-sm text-secondary flex justify-center gap-2 mt-2">
                 <span>{t("total_points")}</span>
                 <span>400</span>
-                <Suspense fallback={null}>
-                  <WalletIcon />
-                </Suspense>
+                <WalletIcon />
               </div>
             </div>
 
-            {/* Menu items */}
-            <div className="text-sm mt-2 flex flex-col gap-2 border-b border-t mx-4 border-[#DBDBDB] py-4">
+            {/* Items */}
+            <div className="text-sm mt-3 flex flex-col gap-2 border-b border-t mx-4 border-[#DBDBDB] py-4">
               {[
                 { icon: <CoursesIcon />, label: t("my_courses") },
                 { icon: <CertificateIcon />, label: t("my_certificates") },
                 { icon: <EditIcon />, label: t("edit_profile") },
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Suspense fallback={null}>{item.icon}</Suspense>
-                  <div>{item.label}</div>
-                </div>
+                <motion.div
+                  key={i}
+                  whileHover={{ x: 4, opacity: 0.9 }}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </motion.div>
               ))}
 
-              <div className="flex justify-between items-center gap-2">
+              <motion.div
+                whileHover={{ x: 4 }}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <MoonIcon />
+                <span>{t("theme")}</span>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ x: 4 }}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <QuestionIcon />
+                <span>{t("help_center")}</span>
+              </motion.div>
+
+              <motion.div className="flex justify-between items-center cursor-pointer">
                 <div className="flex items-center gap-2">
-                  <Suspense fallback={null}>
-                    <LanguageIcon />
-                  </Suspense>
-                  <div>{t("language")}</div>
+                  <LanguageIcon />
+                  <span>{t("language")}</span>
                 </div>
-                <Suspense fallback={null}>
+
+                <Suspense
+                  fallback={<div className="w-16 h-4 bg-gray-300 rounded" />}
+                >
                   <LanguageDropdown currentLang={lang} onChange={setLang} />
                 </Suspense>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Suspense fallback={null}>
-                  <MoonIcon />
-                </Suspense>
-                <div>{t("theme")}</div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Suspense fallback={null}>
-                  <QuestionIcon />
-                </Suspense>
-                <div>{t("help_center")}</div>
-              </div>
+              </motion.div>
             </div>
 
-            <button
+            {/* Logout */}
+            <motion.button
+              whileHover={{ x: 4, color: "#e11d48" }}
               onClick={handleLogOut}
-              className="w-full text-start text-sm px-4 py-2 items-center hover:text-red-500 flex gap-2 cursor-pointer"
+              className="w-full text-start text-sm px-4 py-3 flex gap-2 items-center cursor-pointer"
             >
-              <Suspense fallback={null}>
-                <LogoutIcon />
-              </Suspense>
-              <div>{t("logout")}</div>
-            </button>
-          </div>
+              <LogoutIcon />
+              <span>{t("logout")}</span>
+            </motion.button>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       {/* Notification */}
-      <Suspense fallback={<span className="w-7 h-7 bg-gray-300 rounded" />}>
-        <NotificationIcon className="w-7 h-7 cursor-pointer" />
-      </Suspense>
+      <NotificationIcon />
     </div>
   );
 };

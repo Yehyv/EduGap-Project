@@ -5,7 +5,7 @@ import TextareaField from "@/shared/components/forms/TextareaField";
 import DefaultButton from "@/shared/components/ui/DefaultButton";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getContentTopics } from "../services/contentDetails";
+import { getContentTopicsForGuest } from "../services/contentDetails";
 import { addLessonNote } from "@/features/ContentLesson/services/lessonsApis";
 import { useParams, useSearchParams } from "react-router-dom";
 import type { ContentTopicsType } from "@/shared/types/sharedTypes";
@@ -27,7 +27,7 @@ const AddNotesInLesson = ({
   // Fetch topics
   const { data } = useQuery<ContentTopicsType[]>({
     queryKey: ["getTopicsInContent", courseId],
-    queryFn: () => getContentTopics(courseId!),
+    queryFn: () => getContentTopicsForGuest(courseId!),
     enabled: !!courseId,
     retry: 1,
   });
@@ -76,7 +76,7 @@ const AddNotesInLesson = ({
       {({ handleSubmit, resetForm }) => (
         <Form className="mt-4 space-y-3" onSubmit={handleSubmit}>
           <div className="flex gap-4 items-start">
-            <div className="lg:w-1/4">
+            <div className="w-1/4">
               <Field name="noteName">
                 {() => (
                   <div className="flex flex-col">

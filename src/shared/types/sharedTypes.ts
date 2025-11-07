@@ -83,12 +83,21 @@ export type ContentProgressType = {
 export type ContentTopicsType = {
   id: number;
   name: string;
-  duration: number;
+  duration?: number;
   lessons: LessonType[];
+  topic?: {
+    name: string;
+    id: number;
+  };
 };
 export type ContentTopicsTypeResponse = {
   items: ContentTopicsType[];
   pagination: PaginationType;
+};
+
+export type ContentMaterialsTypeResponse = {
+  materials: lessonMaterialsTypes[];
+  lesson: LessonType;
 };
 
 export type ContentEducatorType = {
@@ -102,8 +111,16 @@ export type MyNotesInLessonType = {
   lessonId: number;
   contentId: number;
 };
+export type MyNotesInContentType = {
+  lesson: LessonType;
+  notes: MyNotesInLessonType[];
+};
 export type MyNotesInLessonTypeResponse = {
   items: MyNotesInLessonType[];
+  pagination: PaginationType;
+};
+export type MyNotesInContentTypeResponse = {
+  items: MyNotesInContentType[];
   pagination: PaginationType;
 };
 export type HistogramType = {

@@ -1,4 +1,4 @@
-import { getContentTopics } from "@/features/CourseDetails/services/contentDetails";
+import { getContentTopicsForGuest } from "@/features/CourseDetails/services/contentDetails";
 import SectionTitle from "@/shared/components/SectionTitle";
 import FAQList from "@/shared/components/ui/FAQList";
 import { useLanguage } from "@/shared/localization/useLanguage";
@@ -12,7 +12,7 @@ const CourseContent = () => {
   const { courseId } = useParams();
   const { data, isLoading, error } = useQuery<ContentTopicsType[]>({
     queryKey: ["getContentDetailsForEnrolledUsers", courseId],
-    queryFn: () => getContentTopics(courseId!),
+    queryFn: () => getContentTopicsForGuest(courseId!),
     enabled: !!courseId,
   });
 

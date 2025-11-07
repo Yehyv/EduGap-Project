@@ -1,6 +1,6 @@
 import type { statsType } from "@/shared/types/sharedTypes";
-import { motion, animate, useMotionValue, useTransform } from "framer-motion";
-import { useEffect } from "react";
+import { motion, animate, useMotionValue } from "framer-motion";
+import { useEffect, useState } from "react";
 
 const LessonProgress = ({
   courseName,
@@ -13,15 +13,19 @@ const LessonProgress = ({
   const total = courseStats?.totalLessons ?? 0;
   const percent = courseStats?.percent ?? 0;
 
-  // Animated number with framer motion
   const count = useMotionValue(0);
-  const animatedPercent = useTransform(count, (latest) => Math.round(latest));
+  const [displayPercent, setDisplayPercent] = useState(0);
 
   useEffect(() => {
-    animate(count, percent, {
+    const controls = animate(count, percent, {
       duration: 1,
       ease: "easeOut",
+      onUpdate: (latest) => {
+        setDisplayPercent(Math.round(latest));
+      },
     });
+
+    return () => controls.stop();
   }, [percent, count]);
 
   return (
@@ -36,11 +40,10 @@ const LessonProgress = ({
           />
         </div>
         <div className="flex justify-between items-center">
-          <motion.span className="font-semibold">
-            {animatedPercent.get()}%
-          </motion.span>
+          <span className="font-semibold">{displayPercent}%</span>
         </div>
       </div>
+
       <div className="flex text-secondary text-sm mt-2">
         <span className="line-clamp-1 flex-1 pe-3">{courseName}</span>
         <span className="whitespace-nowrap pe-3">

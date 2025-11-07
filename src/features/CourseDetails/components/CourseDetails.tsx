@@ -13,19 +13,7 @@ import ContentRatings from "@/features/UserHome/components/ContentRatings";
 import ContentPrerequisites from "./ContentPrerequisites";
 import ContentTestimonials from "./ContentTestimonials";
 
-const CourseDetails = ({
-  buttonText,
-  buttonLink,
-  isEnrolled,
-  isLoggedIn,
-  data,
-}: {
-  buttonText: string;
-  buttonLink: string;
-  isEnrolled: boolean;
-  isLoggedIn: boolean;
-  data: ContentDetailsType;
-}) => {
+const CourseDetails = ({ data }: { data: ContentDetailsType }) => {
   const { t } = useLanguage();
   const [isOnline, setIsOnline] = useState(true);
   const { firstName, lastName, title } = data.educator ?? {};
@@ -121,10 +109,6 @@ const CourseDetails = ({
 
       {/* Sidebar */}
       <StickyCourseSummaryCard
-        buttonText={buttonText}
-        buttonLink={buttonLink}
-        isEnrolled={isEnrolled}
-        isLoggedIn={isLoggedIn}
         contentDetailsCardData={contentDetailsCardData}
       />
     </div>

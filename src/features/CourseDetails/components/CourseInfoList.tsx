@@ -8,20 +8,23 @@ import CertificateIcon from "@/assets/svgs/CertificateIcon.svg?react";
 import SaveIcon from "@/assets/svgs/SaveIcon.svg?react";
 import ShareIcon from "@/assets/svgs/ShareIcon.svg?react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { enrollContent, saveContent } from "../services/contentDetails";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  enrollContent,
+  getContentAccessStatusForUser,
+  saveContent,
+} from "../services/contentDetails";
 import Swal from "sweetalert2";
 import ButtonLoader from "@/shared/components/ButtonLoader";
 import { AxiosError } from "axios";
-import type { ContentDetailsType } from "@/shared/types/sharedTypes";
+import type {
+  ContentAccessType,
+  ContentDetailsType,
+} from "@/shared/types/sharedTypes";
 import { toast } from "react-toastify";
 import { useUser } from "@/features/auth/context/UserContext";
 
 type StickyCourseSummaryCardProps = {
-  buttonText: string;
-  buttonLink: string;
-  isEnrolled: boolean;
-  isLoggedIn: boolean;
   contentDetailsCardData: Partial<ContentDetailsType>;
 };
 
@@ -30,16 +33,21 @@ type ApiError = {
 };
 
 const StickyCourseSummaryCard = ({
-  buttonText,
-  buttonLink,
-  isEnrolled,
-  isLoggedIn,
   contentDetailsCardData,
 }: StickyCourseSummaryCardProps) => {
   const { courseId } = useParams<{ courseId: string }>();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { user } = useUser();
+  const isLoggedIn = !!localStorage.getItem("token");
+
+  const { data: contentAccessStatus } = useQuery<ContentAccessType>({
+    queryKey: ["getContentAccessStatus", courseId],
+    queryFn: () => getContentAccessStatusForUser(courseId!),
+    enabled: isLoggedIn && !!courseId,
+  });
+
+  const isEnrolled = contentAccessStatus?.access === "enrolled";
 
   const mutation = useMutation({
     mutationFn: () => enrollContent(courseId ?? ""),
@@ -50,7 +58,7 @@ const StickyCourseSummaryCard = ({
         icon: "success",
         confirmButtonText: t("ok"),
       }).then(() => {
-        navigate(buttonLink);
+        navigate(`/course-lesson/${courseId}/${contentDetailsCardData?.id}`);
       });
     },
     onError: (error: AxiosError<ApiError>) => {
@@ -69,6 +77,7 @@ const StickyCourseSummaryCard = ({
     },
   });
   const queryClient = useQueryClient();
+
   const { mutateAsync, isPending } = useMutation<void, Error, number>({
     mutationFn: (contentId: number) => saveContent(contentId),
     onSuccess: () => {
@@ -121,7 +130,10 @@ const StickyCourseSummaryCard = ({
     if (!isEnrolled && isLoggedIn) {
       mutation.mutate();
     } else {
-      navigate(buttonLink);
+      navigate(`/course-lesson/${courseId}/${contentDetailsCardData?.id}`);
+    }
+    if (!isEnrolled) {
+      navigate(`/login`);
     }
   };
 
@@ -140,7 +152,15 @@ const StickyCourseSummaryCard = ({
       <div className="text-center">
         <DefaultButton
           disabled={mutation.isPending}
-          text={mutation.isPending ? <ButtonLoader /> : buttonText}
+          text={
+            mutation.isPending ? (
+              <ButtonLoader />
+            ) : isEnrolled ? (
+              t("Continue_Learning")
+            ) : (
+              t("login")
+            )
+          }
           onClick={handleSubmit}
           type="button"
           moreStyle="px-10 mx-auto w-full !rounded-3xl max-w-[300px]"

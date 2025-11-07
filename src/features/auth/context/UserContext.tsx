@@ -7,6 +7,7 @@ type User = {
   userName: string;
   instituteName: string;
   logo: string;
+  userImage: string;
 };
 
 type UserContextType = {
