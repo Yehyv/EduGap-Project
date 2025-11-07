@@ -43,6 +43,45 @@ export async function getAllPopularCourses(
   );
   return res.data.data;
 }
+export async function getAllCoursesInProgram(
+  programId: string,
+  page: number,
+  limit: number
+): Promise<CoursesResponse> {
+  const res = await api.get<ApiResponse<CoursesResponse>>(
+    `/packages/${programId}/contents`,
+    {
+      params: { page, limit },
+    }
+  );
+  return res.data.data;
+}
+export async function getAllCoursesInInstituteContent(
+  InInstituteCourseId: string,
+  page: number,
+  limit: number
+): Promise<CoursesResponse> {
+  const res = await api.get<ApiResponse<CoursesResponse>>(
+    `/courses/${InInstituteCourseId}/contents`,
+    {
+      params: { page, limit },
+    }
+  );
+  return res.data.data;
+}
+export async function getAllExpertCourses(
+  expertId: string,
+  page: number,
+  limit: number
+): Promise<CoursesResponse> {
+  const res = await api.get<ApiResponse<CoursesResponse>>(
+    `/educators/${expertId}/contents`,
+    {
+      params: { page, limit },
+    }
+  );
+  return res.data.data;
+}
 export async function getCoursePrerequisites(
   courseId?: string
 ): Promise<CoursesResponse> {

@@ -10,6 +10,9 @@ import type {
   ContentReviewsResponse,
   ContentTopicsType,
   CurrentUserRating,
+  ExpertProfileType,
+  InstituteCourseDetailsTypes,
+  PrgoramDetailsTypes,
 } from "@/shared/types/sharedTypes";
 
 export async function getBaseContentDetails(
@@ -63,6 +66,30 @@ export async function getContentTopicsForUser(
 ): Promise<ContentTopicsType[]> {
   const res = await api.get<ApiResponse<ContentTopicsType[]>>(
     `/lessons/content/${courseId}/topics-with-status`
+  );
+  return res.data.data;
+}
+export async function getExpertInfo(
+  expertId: string
+): Promise<ExpertProfileType> {
+  const res = await api.get<ApiResponse<ExpertProfileType>>(
+    `/educators/${expertId}`
+  );
+  return res.data.data;
+}
+export async function getPackageDetails(
+  programId: string
+): Promise<PrgoramDetailsTypes> {
+  const res = await api.get<ApiResponse<PrgoramDetailsTypes>>(
+    `/packages/${programId}/basic`
+  );
+  return res.data.data;
+}
+export async function getInstituteCourseDetails(
+  courseId: string
+): Promise<InstituteCourseDetailsTypes> {
+  const res = await api.get<ApiResponse<InstituteCourseDetailsTypes>>(
+    `/courses/${courseId}/basic`
   );
   return res.data.data;
 }

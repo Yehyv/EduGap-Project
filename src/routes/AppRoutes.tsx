@@ -37,7 +37,7 @@ export default function AppRoutes() {
         <Route path="/popular-courses-list" element={<PopularCoursesPage />} />
         <Route path="/programs-list" element={<ProgramsList />} />
         <Route path="/experts-list" element={<ExpertsPage />} />
-        <Route path="/expert-profile" element={<ExpertProfile />} />
+        <Route path="/expert/:expertId" element={<ExpertProfile />} />
         <Route
           path="/program-details/:programId"
           element={<ProgramDetails />}

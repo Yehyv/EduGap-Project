@@ -34,7 +34,9 @@ const InstituteCourses = () => {
   return (
     <div className="mb-5 mt-10 container">
       <ScrollToTop />
-      <SectionTitle textTitle={t("courses_title")} />
+      <SectionTitle
+        textTitle={`${t("institute_courses_title")} ${user?.instituteName}`}
+      />
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 my-5">
@@ -49,11 +51,15 @@ const InstituteCourses = () => {
               <InstituteCourseCard key={idx} course={courseData} />
             ))}
           </div>
-          <CustomPagination
-            currentPage={data?.pagination.page ?? 1}
-            onPageChange={handlePageChange}
-            totalPages={data?.pagination.totalPages ?? 1}
-          />
+
+          {data?.pagination?.total != undefined &&
+            data?.pagination?.total > 1 && (
+              <CustomPagination
+                currentPage={data?.pagination?.page ?? 1}
+                onPageChange={handlePageChange}
+                totalPages={data?.pagination?.totalPages ?? 1}
+              />
+            )}
         </>
       )}
     </div>

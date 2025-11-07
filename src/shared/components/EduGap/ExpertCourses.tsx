@@ -1,24 +1,27 @@
 import SectionTitle from "@/shared/components/SectionTitle";
 import CourseCard from "@/shared/components/EduGap/CourseCard";
-import type { CoursesResponse } from "@/shared/types/sharedTypes";
 import { useQuery } from "@tanstack/react-query";
-import { getAllPopularCourses } from "@/features/GuestHome/services/GuestHomeApi";
+import { getAllExpertCourses } from "@/features/GuestHome/services/GuestHomeApi";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
 import CardSkeleton from "@/shared/components/ui/CardSkeleton";
 import CustomPagination from "@/shared/utils/CustomPagination";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { RESULTS_PER_PAGE } from "@/shared/utils/globals";
 
 const ExpertCourses = () => {
   const { t } = useLanguage();
+  const { expertId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
-  const { data, isLoading, error } = useQuery<CoursesResponse>({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["getAllPopularCoursesForExpert", page],
-    queryFn: () => getAllPopularCourses(page.toString(), RESULTS_PER_PAGE),
+    queryFn: () => getAllExpertCourses(expertId ?? "", page, RESULTS_PER_PAGE),
   });
+
+  console.log(data);
+
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString() });
   };
@@ -39,15 +42,19 @@ const ExpertCourses = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {data?.formattedContents?.map((courseData, idx) => (
+            {data?.items?.map((courseData, idx) => (
               <CourseCard key={idx} course={courseData} />
             ))}
           </div>
-          <CustomPagination
-            currentPage={data?.pagination.page ?? 1}
-            onPageChange={handlePageChange}
-            totalPages={data?.pagination.totalPages ?? 1}
-          />
+
+          {data?.pagination?.total != undefined &&
+            data?.pagination?.total > 1 && (
+              <CustomPagination
+                currentPage={data?.pagination?.page ?? 1}
+                onPageChange={handlePageChange}
+                totalPages={data?.pagination?.totalPages ?? 1}
+              />
+            )}
         </>
       )}
     </div>

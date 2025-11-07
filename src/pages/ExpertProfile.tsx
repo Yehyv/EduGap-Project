@@ -1,21 +1,33 @@
-import profileImage from "@/assets/imgs/ForDev/Person.jpg";
 import StarIcon from "@/assets/svgs/StarIcon.svg?react";
 import EyeIcon from "@/assets/svgs/EyeIcon.svg?react";
 import PlayVideoIcon from "@/assets/svgs/PlayVideoIcon.svg?react";
 import StudentsIcon from "@/assets/svgs/StudentsIcon.svg?react";
 import { Loader } from "@/shared/components";
-import { useEffect, useState } from "react";
 import ExpandableText from "@/shared/components/ui/ExpandableText";
 import ExpertCourses from "@/shared/components/EduGap/ExpertCourses";
+import { useQuery } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
+import { getExpertInfo } from "@/features/CourseDetails/services/contentDetails";
+import ErrorMessage from "@/shared/components/ErrorMessage";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const ExpertProfile = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
+  const { expertId } = useParams();
+  const { t } = useLanguage();
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["getExpertInformation", expertId],
+    queryFn: () => getExpertInfo(expertId ?? ""),
+    enabled: !!expertId,
+  });
 
   if (isLoading) return <Loader />;
+  if (isError)
+    return (
+      <ErrorMessage
+        message={error.message ?? t("error_fetching_expert_data")}
+      />
+    );
 
   return (
     <div className="container my-10">
@@ -23,12 +35,12 @@ const ExpertProfile = () => {
         {/* Profile Image & Rating */}
         <div className="w-full md:w-[20%] flex flex-col items-center md:items-start">
           <img
-            src={profileImage}
+            src={data?.image}
             className="w-48 h-48 object-cover rounded-lg shadow-md"
-            alt="Profile"
+            alt={t("expert_profile_image")}
           />
           <div className="flex items-center gap-1 mt-4">
-            <span className="text-yellow-500">4.8</span>
+            <span className="text-yellow-500">5.0</span>
             {[...Array(5)].map((_, i) => (
               <StarIcon key={i} className="w-5 h-5 text-yellow-400" />
             ))}
@@ -40,20 +52,11 @@ const ExpertProfile = () => {
           {/* Top Info */}
           <div>
             <h4 className="w-fit border-t-2 border-[#FCB737] pt-3 text-xl font-bold">
-              محمد عبد السلام
+              {data?.user?.full_name}
             </h4>
-            <p className="text-[#575757] text-sm mb-4">
-              باحث وخبير في التسويق بإستخدام الذكاء الاصطناعي
-            </p>
+            <p className="text-[#575757] text-sm mb-4">{data?.title}</p>
             <div className="mb-4">
-              <ExpandableText
-                limit={2}
-                text=" يقوم بدور مهم في الشرق الأوسط، من خلال رصد وتحليل الاتجاهات المختلفة
-                     في مجالات الأعمال التجارية والمشروعات الناشئة والسفر والإعلام. وقد
-                     في مجالات الأعمال التجارية والمشروعات الناشئة والسفر والإعلام. وقد
-                 شارك فادي في دورات تدريبية ومؤتمرات دولية في مصر، وتونس، والمملكة
-                      العربية السعودية، والكويت، وكينيا، وإيطاليا، وغيرها من الدول ..."
-              />
+              <ExpandableText limit={2} text={data?.bio ?? ""} />
             </div>
           </div>
 
@@ -61,15 +64,15 @@ const ExpertProfile = () => {
           <div className="bg-[#F1EFEF] flex flex-col sm:flex-row justify-between text-base px-4 py-2 rounded-lg shadow-sm gap-4 mt-auto">
             <div className="flex items-center gap-2">
               <EyeIcon className="w-6 h-6" />
-              <span>المشاهدات : 1,762</span>
+              <span>{t("expert_views")}: 0</span>
             </div>
             <div className="flex items-center gap-2">
               <PlayVideoIcon className="w-6 h-6" />
-              <span>الدورات : 2</span>
+              <span>{t("expert_courses")}: 0</span>
             </div>
             <div className="flex items-center gap-2">
               <StudentsIcon className="w-6 h-6" />
-              <span>المتعلمين : 985</span>
+              <span>{t("expert_students")}: 0</span>
             </div>
           </div>
         </div>

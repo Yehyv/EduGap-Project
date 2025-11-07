@@ -90,6 +90,37 @@ export type ContentTopicsType = {
     id: number;
   };
 };
+export type ExpertProfileType = {
+  bio: string;
+  created_at: string;
+  deleted_at: null;
+  id: number;
+  image: string;
+  is_active: number;
+  title: string;
+  updated_at: string;
+  user: { id: number; full_name: string; email: string };
+  video_intro: string;
+};
+export type PrgoramDetailsTypes = {
+  id: number;
+  image: string;
+  is_active: number;
+  title: string;
+  description: string;
+  learning_outcoms: string;
+  contentsCount: number;
+  totalDuration: number;
+};
+export type InstituteCourseDetailsTypes = {
+  contentsCount: number;
+  description: string;
+  id: number;
+  image: string;
+  name: string;
+  notes: string;
+  totalDuration: number;
+};
 export type ContentTopicsTypeResponse = {
   items: ContentTopicsType[];
   pagination: PaginationType;

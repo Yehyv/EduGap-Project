@@ -1,7 +1,7 @@
 import CourseCard from "@/shared/components/EduGap/CourseCard";
 import type { CoursesResponse } from "@/shared/types/sharedTypes";
 import { useQuery } from "@tanstack/react-query";
-import { getAllCoursesInProgram } from "@/features/GuestHome/services/GuestHomeApi";
+import { getAllCoursesInInstituteContent } from "@/features/GuestHome/services/GuestHomeApi";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
 import CardSkeleton from "@/shared/components/ui/CardSkeleton";
@@ -10,16 +10,20 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { RESULTS_PER_PAGE } from "@/shared/utils/globals";
 import { useLanguage } from "@/shared/localization/useLanguage";
 
-const CoursesInProgram = () => {
+const CoursesInInstitute = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLanguage();
   const page = Number(searchParams.get("page")) || 1;
-  const { programId } = useParams();
+  const { instituteCourseId } = useParams();
 
   const { data, isLoading, error } = useQuery<CoursesResponse>({
-    queryKey: ["getAllCoursesInProgram", programId, page],
+    queryKey: ["getAllCoursesInProgram", instituteCourseId, page],
     queryFn: () =>
-      getAllCoursesInProgram(programId ?? "", page, RESULTS_PER_PAGE),
+      getAllCoursesInInstituteContent(
+        instituteCourseId ?? "",
+        page,
+        RESULTS_PER_PAGE
+      ),
   });
 
   const handlePageChange = (newPage: number) => {
@@ -68,4 +72,4 @@ const CoursesInProgram = () => {
   );
 };
 
-export default CoursesInProgram;
+export default CoursesInInstitute;

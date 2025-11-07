@@ -28,8 +28,8 @@ const ProgramsSectionCard = ({ data }: { data: ProgramsType }) => {
         </p>
         <div className="text-end">
           <Link
-            className="border rounded-xl px-4 py-1 text-secondary border-secondary transform transition-transform duration-400 hover:-translate-y-0.5 inline-block"
-            to="/program-details/1"
+            className="rounded-xl px-4 py-1 bg-[#FCB737] font-bold text-black transform transition-transform duration-300 hover:!text-black hover:-translate-y-0.5 inline-block no-underline"
+            to={`/program-details/${data?.id}`}
           >
             {t("eductaion_button")}
           </Link>
