@@ -26,7 +26,7 @@ const Header = ({
       <div className="container mx-auto flex items-center justify-between gap-4 px-4">
         {/* Logo */}
         <Link to={"/userHome"}>
-          <LogoSm className="w-24 cursor-pointer" />
+          <LogoSm className="cursor-pointer" />
         </Link>
 
         {/* Desktop Search */}
