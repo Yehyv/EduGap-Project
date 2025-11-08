@@ -128,7 +128,7 @@ const UserNav = () => {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="absolute top-10 -ms-30 w-72 bg-white rounded-lg shadow-[0_6px_20px_-2px_rgba(0,0,0,0.15)] border border-gray-200 z-50"
+            className="absolute top-12 max-sm:-ms-40 -ms-12 w-72 bg-white rounded-lg shadow-[0_6px_20px_-2px_rgba(0,0,0,0.15)] border border-gray-200 z-50"
           >
             {/* Avatar */}
             <motion.div
