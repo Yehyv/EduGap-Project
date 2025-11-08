@@ -28,7 +28,6 @@ const InstituteCoursesSection = () => {
     ],
     3
   );
-
   const settings = {
     dots: true,
     infinite: true,
@@ -36,6 +35,9 @@ const InstituteCoursesSection = () => {
     slidesToShow,
     slidesToScroll: 1,
     accessibility: true,
+    lazyLoad: "ondemand",
+    waitForAnimate: false,
+    adaptiveHeight: true,
     nextArrow: windowWidth >= 1180 ? <ArrowButton direction="right" /> : <></>,
     prevArrow: windowWidth >= 1180 ? <ArrowButton direction="left" /> : <></>,
   };
@@ -61,7 +63,7 @@ const InstituteCoursesSection = () => {
           ))}
         </div>
       ) : (
-        <div className="w-full py-5">
+        <div className="w-full py-5 min-h-[300px]">
           <Slider {...settings}>
             {data?.map((courseData, idx) => (
               <div key={idx} className="px-2">

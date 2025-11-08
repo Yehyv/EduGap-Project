@@ -1,5 +1,4 @@
 import type { ExpertsData } from "@/shared/types/sharedTypes";
-import personImage from "@/assets/imgs/ForDev/Person.jpg";
 import { Link } from "react-router-dom";
 
 const ExpertsCard = ({ expertData }: { expertData: ExpertsData }) => {
@@ -13,7 +12,10 @@ const ExpertsCard = ({ expertData }: { expertData: ExpertsData }) => {
         className="flex flex-col items-center gap-2 text-center"
       >
         <div className="w-40 h-40 rounded-full overflow-hidden">
-          <img src={personImage} className="w-full h-full object-cover"></img>
+          <img
+            src={expertData?.image}
+            className="w-full h-full object-cover"
+          ></img>
         </div>
         <div>
           <h4 className="mb-2">{expertData.title}</h4>

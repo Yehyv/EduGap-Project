@@ -45,7 +45,8 @@ const translations = {
     footer_discover_plans: "Subscription Plans",
 
     footer_business_title: "For Business",
-    footer_business_join_experts: "Join as an Expert",
+    footer_business_join_experts:
+      "Become one of the platform’s partners and enhance your students’ opportunities in the job market.",
     footer_discover_experts: "Our Experts",
     footer_by_company: "Developed by",
 
@@ -235,6 +236,15 @@ const translations = {
     expert_views: "Views",
     expert_courses: "Courses",
     expert_students: "Students",
+    join_now: "Join Now",
+    privacy_policy: "Privacy Policy",
+    terms_of_use: "Terms of Use",
+    footer_email: "edugap@",
+
+    footer_download_title: "Download App",
+    footer_google_play: "Google Play",
+    footer_app_store: "App Store",
+    footer_logo_alt: "Platform Logo",
   },
 
   ar: {
@@ -283,7 +293,8 @@ const translations = {
     footer_discover_plans: "انظمة الاشتراك",
 
     footer_business_title: "المنصة للأعمال",
-    footer_business_join_experts: "انضم لخبراء المنصة",
+    footer_business_join_experts:
+      "كن احد شركاء المنصة وعزز فرص طلابك لسوق العمل",
     footer_discover_experts: "خبراء المنصة",
     footer_by_company: "بواسطة شركة",
 
@@ -472,6 +483,14 @@ const translations = {
     expert_views: "المشاهدات",
     expert_courses: "الدورات",
     expert_students: "المتعلمين",
+    join_now: " انضم الأن",
+    privacy_policy: "سياسة الخصوصية",
+    terms_of_use: "شروط الاستخدام",
+    footer_email: "edugap@",
+    footer_download_title: "حمل التطبيق",
+    footer_google_play: "جوجل بلاي",
+    footer_app_store: "آب ستور",
+    footer_logo_alt: "شعار المنصة",
   },
 } as const;
 
