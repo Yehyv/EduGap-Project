@@ -25,7 +25,7 @@ const InstituteCourseCard = ({ course }: { course: InstituteCoursesType }) => {
           }}
         />
         <Link
-          to={"/institute-course-details/1"}
+          to={`/institute-course-details/${course.id}`}
           className="absolute -bottom-[20px] w-[90%] h-[40px] bg-[#DEF4FF] left-1/2 -translate-x-1/2 rounded-lg center text-secondary font-bold text-sm p-1 shadow-custom"
         >
           {course?.name}
@@ -47,7 +47,12 @@ const InstituteCourseCard = ({ course }: { course: InstituteCoursesType }) => {
           </div>
         </div>
         <p className="text-gray-500">{course?.description}</p>
-        <div className="text-secondary cursor-pointer">{t("more")}..</div>
+        <Link
+          to={`/institute-course-details/${course.id}`}
+          className="text-secondary cursor-pointer"
+        >
+          {t("more")}..
+        </Link>
       </div>
     </div>
   );
