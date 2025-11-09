@@ -8,7 +8,7 @@ const ExpertsCard = ({ expertData }: { expertData: ExpertsData }) => {
       dir="auto"
     >
       <Link
-        to={"/expert-profile"}
+        to={`/expert/${expertData.id}`}
         className="flex flex-col items-center gap-2 text-center"
       >
         <div className="w-40 h-40 rounded-full overflow-hidden">

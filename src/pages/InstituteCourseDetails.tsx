@@ -65,9 +65,9 @@ const InstituteCourseDetails = () => {
           </div>
         </div>
       </div>
-      <div className="container pe-30">
+      <div className="container">
         <div>
-          <SectionTitle textTitle="عن المقرر" />
+          <SectionTitle textTitle={t("about_course")} />
           <ExpandableText limit={2} text={data?.description ?? ""} />
         </div>
         <div className="mt-10">

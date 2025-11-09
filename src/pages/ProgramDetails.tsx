@@ -59,7 +59,7 @@ const ProgramDetails = () => {
 
           <div className="relative w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] me-[50px]">
             <div className="absolute w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] start-6 bg-[#FCB737] rounded-2xl -rotate-[30deg]" />
-            <div className="absolute inset-0 rounded-2xl overflow-hidden -rotate-[30deg]">
+            <div className="absolute border inset-0 rounded-2xl overflow-hidden -rotate-[30deg]">
               <img
                 src={data?.image ?? programImage}
                 alt={t("program_image_alt")}
@@ -70,14 +70,12 @@ const ProgramDetails = () => {
         </div>
       </div>
 
-      <div className="container pe-30">
-        {/* ✅ About Program */}
+      <div className="container">
         <div>
           <SectionTitle textTitle={t("about_learning_program")} />
           <ExpandableText limit={2} text={data?.description ?? ""} />
         </div>
 
-        {/* ✅ What to learn */}
         <section className="py-10">
           <SectionTitle textTitle={t("what_to_learn")} />
           <ul className="space-y-4 mt-4">

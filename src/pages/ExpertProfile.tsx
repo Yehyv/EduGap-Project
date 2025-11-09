@@ -48,7 +48,7 @@ const ExpertProfile = () => {
         </div>
 
         {/* Profile Info */}
-        <div className="flex flex-col justify-between flex-1">
+        <div className="flex w-full flex-col justify-between flex-1">
           {/* Top Info */}
           <div>
             <h4 className="w-fit border-t-2 border-[#FCB737] pt-3 text-xl font-bold">
