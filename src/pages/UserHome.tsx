@@ -3,8 +3,7 @@ import ProgramsSection from "@/shared/components/EduGap/ProgramsSection";
 import Experts from "@/shared/components/EduGap/Experts";
 import Testimonials from "@/shared/components/EduGap/Testimonials";
 import RecommendedCourse from "@/features/UserHome/components/RecommendedCourse";
-import { useEffect, useState } from "react";
-import { Loader } from "@/shared/components";
+
 import InstituteCoursesSection from "@/features/UserHome/components/InstituteCoursesSection";
 import LatestCourses from "@/features/UserHome/components/LatestCourses";
 import ContinueWhereLeftOff from "@/shared/components/EduGap/ContinueWhereLeftOff";
@@ -15,7 +14,7 @@ const fadeVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" }, // بدون تأخير متدرج
+    transition: { duration: 0.5, ease: "easeOut" },
   },
 };
 
@@ -33,14 +32,6 @@ const AnimatedSection = ({ children }: { children: React.ReactNode }) => {
 };
 
 const Home = () => {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
-
-  if (isLoading) return <Loader />;
-
   const sections = [
     <RecommendedCourse key="recommended" />,
     <ContinueWhereLeftOff key="continue" />,

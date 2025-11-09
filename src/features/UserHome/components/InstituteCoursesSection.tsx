@@ -34,10 +34,8 @@ const InstituteCoursesSection = () => {
     speed: 500,
     slidesToShow,
     slidesToScroll: 1,
-    accessibility: true,
-    lazyLoad: "ondemand",
     waitForAnimate: false,
-    adaptiveHeight: true,
+    accessibility: true,
     nextArrow: windowWidth >= 1180 ? <ArrowButton direction="right" /> : <></>,
     prevArrow: windowWidth >= 1180 ? <ArrowButton direction="left" /> : <></>,
   };
@@ -65,9 +63,9 @@ const InstituteCoursesSection = () => {
       ) : (
         <div className="w-full py-5 min-h-[300px]">
           <Slider {...settings}>
-            {data?.map((courseData, idx) => (
-              <div key={idx} className="px-2">
-                <InstituteCourseCard key={idx} course={courseData} />
+            {data?.map((course) => (
+              <div className="px-2">
+                <InstituteCourseCard course={course} />
               </div>
             ))}
           </Slider>

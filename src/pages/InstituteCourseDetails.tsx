@@ -54,7 +54,7 @@ const InstituteCourseDetails = () => {
             </div>
           </div>
           <div className="relative w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] me-[50px]">
-            <div className="absolute w-[210px] h-[210px]  max-md:w-[200px] max-md:h-[200px] start-1 bottom-0 bg-[#FCB737] rounded-full" />
+            <div className="absolute w-[210px] h-[210px]  max-md:w-[160px] max-md:h-[160px] start-1 bottom-0 bg-[#FCB737] rounded-full" />
             <div className="absolute inset-0 rounded-full overflow-hidden">
               <img
                 src={data?.image}
