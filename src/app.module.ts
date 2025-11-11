@@ -33,6 +33,7 @@ import { EducatorReviewsModule } from './educator-reviews/educator-reviews.modul
 import { PrerequiestContentsModule } from './prerequiest-contents/prerequiest-contents.module';
 import { SavedContentsModule } from './saved-contents/saved-contents.module';
 import { SavedPackagesModule } from './saved-packages/saved-packages.module';
+import { SearchModule } from './search/search.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -70,6 +71,7 @@ import { SavedPackagesModule } from './saved-packages/saved-packages.module';
     EducatorReviewsModule,
     PrerequiestContentsModule,
     SavedPackagesModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],

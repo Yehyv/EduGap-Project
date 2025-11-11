@@ -9,6 +9,7 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 import { UserOtp } from './entities/user-otp.entity';
 import { Program } from 'src/programs/entities/program.entity';
+import { PasswordAction } from './entities/password-action.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { Program } from 'src/programs/entities/program.entity';
       SavedCourse,
       UserOtp,
       Program,
+      PasswordAction,
     ]),
   ],
   controllers: [UsersController],

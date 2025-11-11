@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { Program } from 'src/programs/entities/program.entity';
+import { PasswordAction } from './entities/password-action.entity';
 
 @Injectable()
 export class UsersService {
@@ -21,7 +22,20 @@ export class UsersService {
     private readonly instituteRepositry: Repository<Institute>,
     @InjectRepository(Program)
     private readonly programRepository: Repository<Program>,
+    @InjectRepository(PasswordAction)
+    private readonly passwordActionRepo: Repository<PasswordAction>,
   ) {}
+
+  private async logPasswordAction(
+    user: User,
+    action: PasswordAction['action'],
+  ) {
+    const rec = this.passwordActionRepo.create({
+      user: { id: user.id },
+      action,
+    });
+    await this.passwordActionRepo.save(rec);
+  }
 
   // Helpers
   async hashPassword(password: string): Promise<string> {
@@ -125,7 +139,36 @@ export class UsersService {
     user.is_verified = 1; // ✅ اعتبره اتفعل
     await this.userRepositry.save(user);
 
+    await this.logPasswordAction(user, 'CHANGE_WITH_OLD');
+
     return { message: 'Password updated successfully' };
+  }
+  async resetPasswordWithOtp(
+    userId: number,
+    newPassword: string,
+    confirmPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepositry.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException(`User with id ${userId} not found`);
+
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    if (!this.validatePasswordStrength(newPassword)) {
+      throw new BadRequestException(
+        'Password must be at least 8 characters and include upper, lower, number, and special char.',
+      );
+    }
+
+    user.password = await this.hashPassword(newPassword);
+    user.is_verified = 1;
+    await this.userRepositry.save(user);
+
+    // ✅ log في الجدول
+    await this.logPasswordAction(user, 'RESET_WITH_OTP');
+
+    return { message: 'Password reset successfully' };
   }
 
   async assignUserToInstitute(

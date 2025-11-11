@@ -10,7 +10,7 @@ import {
   ParseIntPipe,
   Req,
   Headers,
-  UseGuards
+  UseGuards,
 } from '@nestjs/common';
 import { EducatorsService } from './educators.service';
 import { CreateEducatorDto } from './dto/create-educator.dto';

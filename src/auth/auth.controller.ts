@@ -68,4 +68,23 @@ export class AuthController {
   async resendOtp(@Body() body: { challengeId: string }) {
     return this.authService.resendOtp(body.challengeId);
   }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: { nationalId: string; phone: string }) {
+    return this.authService.requestPasswordReset(body.nationalId, body.phone);
+  }
+
+  @Post('reset-password')
+  @UseGuards(AccessTokenGuard) // نفس الجارد بتاعك اللي بيقرا JWT
+  async resetPassword(
+    @Req() req: MyCustomRequest,
+    @Body() body: { newPassword: string; confirmPassword: string },
+  ) {
+    const userId = req.user.sub; // جاي من الـ JWT
+    return this.authService.resetPasswordAfterOtp(
+      userId,
+      body.newPassword,
+      body.confirmPassword,
+    );
+  }
 }

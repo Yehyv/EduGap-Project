@@ -24,6 +24,7 @@ import { Program } from 'src/programs/entities/program.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
 import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
 import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
+import { PasswordAction } from './password-action.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -124,4 +125,9 @@ export class User {
 
   @OneToMany(() => SavedPackage, (saved) => saved.user)
   savedPackages: SavedPackage[];
+
+  @OneToMany(() => PasswordAction, (pa) => pa.user, {
+    cascade: true,
+  })
+  passwordActions: PasswordAction[];
 }

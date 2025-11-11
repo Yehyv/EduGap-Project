@@ -206,4 +206,42 @@ export class AuthService {
     await this.revokeAllRefreshTokens(userId);
     return result;
   }
+  async requestPasswordReset(nationalId: string, phone: string) {
+    const user = await this.userRepository.findOne({
+      where: {
+        national_id: nationalId,
+        phone,
+      },
+    });
+
+    if (!user) {
+      // تقدر تخلي الرسالة جينيريك عشان متفضحش لو اليوزر مش موجود
+      throw new BadRequestException('Invalid national id or phone');
+    }
+
+    const otp = await this.generateOtp(user);
+
+    return {
+      message: 'OTP sent to your phone',
+      challengeId: otp.challengeId,
+      ...(process.env.OTP_STATS === 'true' ? { code: otp.code } : {}),
+    };
+  }
+  async resetPasswordAfterOtp(
+    userId: number,
+    newPassword: string,
+    confirmPassword: string,
+  ) {
+    // من غير oldPassword
+    const result = await this.userService.resetPasswordWithOtp(
+      userId,
+      newPassword,
+      confirmPassword,
+    );
+
+    // نمسح كل الـ refresh tokens القديمة
+    await this.revokeAllRefreshTokens(userId);
+
+    return result; // { message: 'Password reset successfully' }
+  }
 }
