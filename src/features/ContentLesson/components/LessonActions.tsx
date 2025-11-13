@@ -104,6 +104,8 @@ const LessonActions = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
+      <h4 className="font-semibold">{lessonTitle}</h4>
+
       <div className="flex max-md:flex-col-reverse max-md:justify-center flex-wrap gap-2 text-secondary">
         {/*  Share Button Animated */}
         <motion.button
@@ -210,8 +212,6 @@ const LessonActions = ({
           </motion.div>
         </div>
       </div>
-
-      <h4 className="font-semibold">{lessonTitle}</h4>
     </motion.div>
   );
 };

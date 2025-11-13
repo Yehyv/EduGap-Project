@@ -92,33 +92,35 @@ const SearchBar = ({
 
       {/* Dropdown */}
       {showDropdown && (
-        <div className="absolute z-50 bg-white border border-gray-300 rounded-md w-full max-h-60 overflow-auto mt-1 shadow-sm">
-          {isLoading && (
-            <p className="p-2 text-sm text-gray-500">{t("search_loading")}</p>
-          )}
+        <div className="absolute z-50 bg-white border border-gray-300 rounded-md w-full shadow-sm">
+          <div className="overflow-auto max-h-60 mt-1 ">
+            {isLoading && (
+              <p className="p-2 text-sm text-gray-500">{t("search_loading")}</p>
+            )}
 
-          {!isLoading && data && data?.items?.length === 0 && (
-            <p className="p-2 text-sm text-gray-500">
-              {t("search_no_results")}
-            </p>
-          )}
+            {!isLoading && data && data?.items?.length === 0 && (
+              <p className="p-2 text-sm text-gray-500">
+                {t("search_no_results")}
+              </p>
+            )}
 
-          {!isLoading &&
-            data?.items?.map((item: CourseType) => (
-              <Link
-                to={`/user-course-details/${item?.id}`}
-                key={item.id}
-                className="block p-2 text-sm cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSelect(item)}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {!isLoading &&
+              data?.items?.map((item: CourseType) => (
+                <Link
+                  to={`/user-course-details/${item?.id}`}
+                  key={item.id}
+                  className="block p-2 text-sm cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSelect(item)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+          </div>
 
           {!isLoading && data?.items && data.items.length > 0 && (
             <Link
               to={`/search-results?query=${encodeURIComponent(query)}`}
-              className="block text-center p-2 text-sm bg-primary hover:bg-gray-200 text-secondary font-medium"
+              className="block text-center p-1.5 text-sm bg-primary hover:bg-gray-200 text-secondary font-medium"
               onClick={() => setShowDropdown(false)}
             >
               {t("search_show_all")}

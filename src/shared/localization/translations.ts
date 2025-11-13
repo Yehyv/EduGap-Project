@@ -1,7 +1,6 @@
 const translations = {
   en: {
-    hero_title:
-      "An all-inclusive platform for learning skills and specializations online anytime, anywhere with accredited courses and outstanding instructors.",
+    hero_title: "Your smart platform to develop skills and connect education with real-world careers. Learn online through interactive courses, gain hands-on experience, and get ready to stand out in the future job market.",
     hero_subtitle:
       "Level up from your phone! Sign up now and start learning what you love, anytime you want",
     nav_courses: "Courses",
@@ -33,12 +32,11 @@ const translations = {
     eductaion_button: "View Education Program",
     experts: "Experts",
     testimonials_title: "Our Customers’ Reviews",
-
     footer_about: "About Us",
     footer_news: "News",
+    our_partners_reviews: "Our Partners’ Reviews",
     footer_team: "Our Team",
     footer_contact: "Contact Us",
-
     footer_discover_title: "Discover More",
     footer_discover_courses: "Our Courses",
     footer_discover_popular: "Popular Courses",
@@ -264,7 +262,7 @@ const translations = {
 
   ar: {
     hero_title:
-      "منصتك الشاملة لتعلّم المهارات والتخصصات المختلفة أونلاين، في أي وقت ومن أي مكان، مع أفضل الكورسات المعتمدة والمدربين المتميزين.",
+      "منصتك الذكية لتطوير المهارات وربط التعليم بسوق العمل. اتعلّم أونلاين من خلال محتوى تدريبي تفاعلي مصمَّم بما يتوافق مع احتياجات سوق العمل، واكتسب الخبرة العملية اللي تجهّزك لفرص المستقبل وتخليك مميز في مجالك. ",
     hero_subtitle:
       "طوّر نفسك من موبايلك! اشترك دلوقتي وابدأ تتعلم اللي بتحبه وقت ما تحب.",
     nav_courses: "الدورات التدريبية",
@@ -296,7 +294,7 @@ const translations = {
     eductaion_button: "عرض  برنامج التعلم",
     experts: "الخبراء",
     testimonials_title: "اراء عملائنا",
-
+    our_partners_reviews: "اراء شركائنا",
     footer_about: "عن المنصة",
     footer_news: "اخبارنا",
     footer_team: "الفريق",

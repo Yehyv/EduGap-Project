@@ -18,7 +18,6 @@ const RecommendedCourse = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [isOnline, setIsOnline] = useState(true);
-  const [videoError, setVideoError] = useState(false);
   const { user } = useUser();
   const token = localStorage.getItem("token");
 

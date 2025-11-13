@@ -44,7 +44,7 @@ const ContinueWhereLeftOff = () => {
 
   return (
     <div className="mb-5 container">
-      <SectionTitle textTitle={t("continue_title")} />
+      <SectionTitle textTitle={t("continue_title")} lineWidth="w-50" />
 
       {isLoading ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 mb-8">

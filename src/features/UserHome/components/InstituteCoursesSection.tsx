@@ -49,6 +49,7 @@ const InstituteCoursesSection = () => {
     <div className="mb-5 container">
       <div className="flex justify-between items-start">
         <SectionTitle
+          lineWidth="w-60"
           textTitle={`${t("institute_courses_title")} ${
             user?.instituteName ?? ""
           }`}

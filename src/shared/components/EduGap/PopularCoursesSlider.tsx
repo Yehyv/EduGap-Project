@@ -63,7 +63,7 @@ const PopularCoursesSlider = () => {
   return (
     <div className="mb-5 container">
       <div className="flex justify-between items-start">
-        <SectionTitle textTitle={t("courses_title")} />
+        <SectionTitle textTitle={t("courses_title")} lineWidth="w-46" />
         <GhostButton buttonText={t("more")} to="/popular-courses-list" />
       </div>
 

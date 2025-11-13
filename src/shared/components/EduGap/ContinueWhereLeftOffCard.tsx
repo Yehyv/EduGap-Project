@@ -125,20 +125,14 @@ const ContinueWhereLeftOffCard = ({
       onMouseLeave={handleMouseLeave}
     >
       <div className="flex-1 mb-3">
-        <h5
-          className="font-semibold text-gray-800 line-clamp-1"
-          title={lessonName}
-        >
-          {lessonName}
-        </h5>
-        <div className="flex justify-between items-center mt-1">
-          {educator && (
-            <span className="text-sm text-gray-400 line-clamp-1">
-              {educator?.title ?? ""} / {educator?.firstName ?? ""}{" "}
-              {educator?.lastName ?? ""}
-            </span>
-          )}
-          <span className="center items-center gap-2 text-sm font-semibold text-yellow-400">
+        <div className="flex items-center justify-between">
+          <h5
+            className="font-semibold text-gray-800 line-clamp-1"
+            title={lessonName}
+          >
+            {lessonName}
+          </h5>
+          <span className="center items-center gap-1 text-sm font-semibold text-yellow-400">
             {course?.rating?.averageRating ?? 0}
             <svg
               viewBox="0 0 24 24"
@@ -149,6 +143,12 @@ const ContinueWhereLeftOffCard = ({
             </svg>
           </span>
         </div>
+        {educator && (
+          <span className="text-sm text-gray-400 line-clamp-1">
+            {educator?.title ?? ""} / {educator?.firstName ?? ""}{" "}
+            {educator?.lastName ?? ""}
+          </span>
+        )}
       </div>
 
       <div className="relative rounded-xl overflow-hidden mb-3 mx-4">

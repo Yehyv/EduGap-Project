@@ -72,7 +72,7 @@ const Testimonials = () => {
   return (
     <div className=" bg-testimonial-color py-5">
       <div className="container relative py-10">
-        <SectionTitle textTitle={t("testimonials_title")} lineWidth="w-28" />
+        <SectionTitle textTitle={t("our_partners_reviews")} lineWidth="w-28" />
         <IconsGroup className="absolute start-0 end-0 top-0 bottom-0 w-full h-full" />
         <div className="w-full px-2">
           <Slider {...settings}>
