@@ -36,8 +36,8 @@ export class PrerequisiteContent {
   @Column()
   prerequisiteContentId: number;
 
-  @Column({ type: 'enum', enum: [0, 1], default: 1 })
-  type: PrerequisiteType; // 0=optional, 1=mandatory
+  @Column({ type: 'tinyint', width: 1, default: 1 })
+  type: number;
 
   @CreateDateColumn()
   created_at: Date;

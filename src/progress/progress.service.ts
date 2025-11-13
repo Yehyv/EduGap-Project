@@ -35,13 +35,13 @@ export class ProgressService {
 
     const enrollment = await this.enrollRepo.findOne({
       where: { user: { id: userId }, content: { id: lesson.topic.content.id } },
-      select: ['id'],
+      select: ['id', 'status'], // 👈 هات الـ status كمان عشان نعدّله
     });
     if (!enrollment)
       throw new ForbiddenException('Not enrolled in this course');
 
-    // السابق/التالي على مستوى المحتوى
-    const { prev, next } =
+    // هنحتاج كمان contentId من الدالة
+    const { prev, next, contentId } =
       await this.lessonsService.getPrevAndNextInContent(lessonId);
 
     // لازم تكون مكمّل السابق لو في سابق
@@ -58,7 +58,7 @@ export class ProgressService {
       }
     }
 
-    // upsert
+    // upsert progress (هنا زي ما هو)
     try {
       const entity = this.progressRepo.create({
         lesson: { id: lesson.id },
@@ -66,9 +66,35 @@ export class ProgressService {
         user: { id: userId },
       });
       await this.progressRepo.save(entity);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_) {
       // already exists -> ignore
+    }
+
+    // 👇👇 إضافة جزء الـ "آخر درس → كمّل الـ content"
+    if (!next) {
+      // مفيش درس بعده في الـ content ده → احتمال يكون آخر واحد
+      // نتأكد بالأرقام (total vs completed)
+
+      const totalLessons = await this.lessonRepo
+        .createQueryBuilder('l')
+        .innerJoin('l.topic', 't')
+        .innerJoin('t.content', 'c')
+        .where('c.id = :cid', { cid: contentId })
+        .getCount();
+
+      const completedLessons = await this.progressRepo
+        .createQueryBuilder('p')
+        .where('p.enrollment_id = :enrollId', { enrollId: enrollment.id })
+        .andWhere('p.user_id = :userId', { userId })
+        .getCount();
+
+      if (totalLessons > 0 && completedLessons >= totalLessons) {
+        // ✅ كل الدروس في الـ content ده اتكمّلت
+        await this.enrollRepo.update(enrollment.id, { status: 1 });
+        // أو:
+        // enrollment.status = 1;
+        // await this.enrollRepo.save(enrollment);
+      }
     }
 
     return {
@@ -82,6 +108,7 @@ export class ProgressService {
         : null,
     };
   }
+
   async getContentProgress(contentId: number, userId: number) {
     // 1) تأكد إن المستخدم مُسجَّل في هذا المحتوى
     const enrollment = await this.enrollRepo.findOne({

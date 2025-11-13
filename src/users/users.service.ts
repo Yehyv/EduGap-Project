@@ -220,6 +220,8 @@ export class UsersService {
       where: { id: userId },
       relations: [
         'program',
+        'program.translations',
+        'program.translations.language',
         'institute',
         'institute.translations',
         'institute.translations.language',
@@ -232,6 +234,11 @@ export class UsersService {
         ?.name ??
       user.institute?.translations?.[0]?.name ??
       '';
+    const programName =
+      user.program?.translations?.find((t) => t.language?.id === languageId)
+        ?.name ??
+      user.program?.translations?.[0]?.name ??
+      '';
 
     return {
       userName: user.full_name ?? user.username ?? '',
@@ -239,6 +246,7 @@ export class UsersService {
       instituteName,
       logo: user.institute?.logo ?? '',
       programId: user.program?.id ?? null,
+      programName,
     };
   }
 }

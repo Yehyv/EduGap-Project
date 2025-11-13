@@ -75,6 +75,7 @@ export class ContentsService {
       level: dto.level ?? 'Beginner',
       adVideo: dto.adVideo ?? '',
       contentCategory: category,
+      hasPrerequiest: dto.hasPrerequiest ?? 0,
     });
 
     const savedContent = await this.contentRepo.save(content);
