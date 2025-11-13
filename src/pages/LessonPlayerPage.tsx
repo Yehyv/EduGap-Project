@@ -68,7 +68,7 @@ const LessonPlayerPage = () => {
       <ScrollToTop />
 
       <div className="container">
-        <LessonHeader />
+        <LessonHeader linkTo={`/user-course-details/${courseId}`} />
         <div className="flex h-full justify-start flex-col gap-6 lg:flex-row">
           <CourseContentCard
             data={getContentTopicsAndLessons ?? []}
@@ -81,6 +81,7 @@ const LessonPlayerPage = () => {
               isThisLessonAlreadyCompleted={isLessonAlreadyCompleted}
               videoUrl={data?.video ?? ""}
               isOnline={isOnline}
+              isLoading={isLoading}
             />
 
             <LessonActions

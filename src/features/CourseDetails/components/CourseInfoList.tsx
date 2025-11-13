@@ -138,11 +138,8 @@ const StickyCourseSummaryCard = ({
     if (!isEnrolled && isLoggedIn) {
       mutation.mutate();
     } else {
-      navigate(`/course-lesson/${courseId}/${contentDetailsCardData?.id}`);
+      navigate(`/course-lesson/${courseId}/${1}`);
     }
-    // if (!isEnrolled) {
-    //   navigate(`/login`);
-    // }
   };
   const handleShare = async () => {
     const url = window.location.href;

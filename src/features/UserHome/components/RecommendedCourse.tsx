@@ -13,6 +13,7 @@ import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { saveContent } from "@/features/CourseDetails/services/contentDetails";
 import { toast } from "react-toastify";
 import SavedIcon from "@/assets/svgs/SaveIcon.svg?react";
+import CourseVideo from "@/shared/components/EduGap/CourseVideo";
 const RecommendedCourse = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -187,25 +188,14 @@ const RecommendedCourse = () => {
           </motion.div>
         </motion.div>
         {/* Video Section */}
-        <div className="relative w-full min-h-[300px] md:min-h-[350px] md:col-span-3">
-          {!isOnline ? (
-            <div className="flex items-center justify-center w-full h-full bg-gray-100 text-red-500">
-              ⚠️ No internet connection
-            </div>
-          ) : videoError ? (
-            <div className="flex items-center justify-center w-full h-full bg-gray-600 text-white font-bold">
-              ❌ Video failed to load
-            </div>
-          ) : (
-            <video
-              className="w-full h-full object-cover shadow"
-              controls
-              onError={() => setVideoError(true)}
-            >
-              <source src={data?.ad_video} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          )}
+        <div className="relative w-full min-h-[300px] md:min-h-[300px] md:col-span-3">
+          <CourseVideo
+            videoHeight="350px"
+            isThisLessonAlreadyCompleted={true}
+            isOnline={isOnline}
+            videoUrl={data?.ad_video ?? ""}
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </div>

@@ -13,7 +13,13 @@ import ContentRatings from "@/features/UserHome/components/ContentRatings";
 import ContentPrerequisites from "./ContentPrerequisites";
 import ContentTestimonials from "./ContentTestimonials";
 
-const CourseDetails = ({ data }: { data: ContentDetailsType }) => {
+const CourseDetails = ({
+  data,
+  isLoading,
+}: {
+  data: ContentDetailsType;
+  isLoading: boolean;
+}) => {
   const { t } = useLanguage();
   const [isOnline, setIsOnline] = useState(true);
   const { firstName, lastName, title } = data.educator ?? {};
@@ -50,6 +56,7 @@ const CourseDetails = ({ data }: { data: ContentDetailsType }) => {
           isThisLessonAlreadyCompleted={true}
           videoUrl={data?.adVideo}
           isOnline={isOnline}
+          isLoading={isLoading}
         />
 
         {/* Instructor Info */}

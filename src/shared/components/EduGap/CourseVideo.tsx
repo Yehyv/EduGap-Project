@@ -10,56 +10,63 @@ const CourseVideo = ({
   videoUrl,
   isOnline,
   isThisLessonAlreadyCompleted,
+  isLoading = false,
+  videoHeight = "400px",
 }: {
   videoUrl: string;
   isOnline: boolean;
   isThisLessonAlreadyCompleted: boolean;
+  videoHeight?: string;
+  isLoading?: boolean;
 }) => {
   const { t } = useLanguage();
   const { lessonId, courseId } = useParams();
 
   const [videoError, setVideoError] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isReported, setIsReported] = useState(false);
 
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // reset state when video changes
     setVideoError(false);
     setIsReported(false);
   }, [videoUrl]);
 
   const handleTimeUpdate = () => {
-    if (!videoRef.current) return;
-    if (isThisLessonAlreadyCompleted) return;
+    if (!videoRef.current || isThisLessonAlreadyCompleted) return;
   };
 
   const handleEnded = async () => {
-    if (isThisLessonAlreadyCompleted) return;
-
-    if (isReported) return;
+    if (isThisLessonAlreadyCompleted || isReported) return;
     setIsReported(true);
 
-    completeLesson(lessonId ?? "")
-      .then(() => {
-        toast.success(t("complete_lesson"));
-        queryClient.invalidateQueries({
-          queryKey: ["getTopicsInContentForUser", courseId],
-        });
-      })
-      .catch(() => {
-        console.log("❌ Failed to report completion");
-        setIsReported(false);
+    try {
+      await completeLesson(lessonId ?? "");
+      toast.success(t("complete_lesson"));
+      queryClient.invalidateQueries({
+        queryKey: ["getTopicsInContentForUser", courseId],
       });
+    } catch {
+      console.log("❌ Failed to report completion");
+      setIsReported(false);
+    }
   };
 
   return (
-    <div className="h-[300px] md:h-[400px]">
-      {!isOnline || videoError ? (
+    <div className={`h-[300px] md:h-[${videoHeight}]`}>
+      {!isOnline ? (
         <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-xl shadow overflow-hidden">
-          <StatusMessage
-            message={!isOnline ? t("no_internet") : t("failed_to_load")}
-          />
+          <StatusMessage message={t("no_internet")} />
+        </div>
+      ) : videoError && !isLoading && !videoRef ? (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-xl shadow overflow-hidden">
+          <StatusMessage message={t("failed_to_load")} />
+        </div>
+      ) : isLoading ? (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-xl shadow overflow-hidden">
+          <StatusMessage message={t("loading")} />
         </div>
       ) : (
         <video

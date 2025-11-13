@@ -12,7 +12,7 @@ import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 const RightArrow = lazy(() => import("@/assets/svgs/RightArrow.svg?react"));
 const TimeIcon = lazy(() => import("@/assets/svgs/TimeIcon.svg?react"));
 
-const LessonHeader = () => {
+const LessonHeader = ({ linkTo }: { linkTo: string | number }) => {
   const { lang } = useLanguage();
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -53,7 +53,9 @@ const LessonHeader = () => {
         transition={{ delay: 0.2 }}
       >
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            navigate(linkTo);
+          }}
           className="flex items-center gap-2 hover:opacity-80 transition cursor-pointer"
         >
           <Suspense fallback={null}>

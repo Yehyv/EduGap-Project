@@ -31,7 +31,7 @@ const SavedLessons = () => {
     );
   return (
     <div className="container mb-20">
-      <LessonHeader />
+      <LessonHeader linkTo={-1} />
       <div className="container border border-[#9E9C9C] rounded-lg p-0 mt-5">
         <h4 className="border-b flex items-center gap-2 border-[#9E9C9C] p-5">
           <FavStarIcon />
