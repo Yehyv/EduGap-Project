@@ -11,6 +11,10 @@ export type ChangePasswordValues = {
   newPassword: string;
   confirmPassword: string;
 };
+export type ChangePasswordForForgotPasswordValues = {
+  newPassword: string;
+  confirmPassword: string;
+};
 
 export type AuthContextType = {
   token: string | null;
@@ -21,6 +25,7 @@ export type AuthContextType = {
 
 export type ForgotPasswordFormValues = {
   number: string;
+  username: string;
 };
 
 export type ApiErrorResponse = {

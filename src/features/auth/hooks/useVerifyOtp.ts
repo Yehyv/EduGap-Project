@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 const VERIFY_OTP_DURATION = 10; // 3 minutes
 const STORAGE_KEY = "otpEndTime";
 
-const useVerifyOtp = () => {
+const useVerifyOtp = (isForForgotPassword: boolean = false) => {
   const { t } = useLanguage();
 
   const challengeId = sessionStorage.getItem("challengeId");
@@ -37,7 +37,11 @@ const useVerifyOtp = () => {
         toast.success(t("otp_verified_successfully"));
         sessionStorage.removeItem("challengeId");
         sessionStorage.setItem("token", response.data.data.accessToken);
-        navigate("/reset-password");
+        if (isForForgotPassword) {
+          navigate("/change-password");
+        } else {
+          navigate("/reset-password");
+        }
       } else {
         navigate("/login");
       }
@@ -79,7 +83,6 @@ const useVerifyOtp = () => {
         response.data.data.data.challengeId
       );
       toast.success(t("otp_resent_successfully"));
-      console.log(response);
     } catch (error: unknown) {
       const err = error as AxiosError<ApiErrorResponse>;
       const errorMessage = Array.isArray(err.response?.data?.message)

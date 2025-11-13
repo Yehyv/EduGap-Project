@@ -13,7 +13,6 @@ const CourseDetailsPageForUser = () => {
   const { data, isLoading, error } = useQuery<ContentDetailsType>({
     queryKey: ["getContentDetailsForEnrolledUsers", courseId, user?.programId],
     queryFn: () => getBaseContentDetails(courseId!, user!.programId!),
-    enabled: !!user?.programId && !!courseId,
   });
 
   if (isLoading) return <Loader />;

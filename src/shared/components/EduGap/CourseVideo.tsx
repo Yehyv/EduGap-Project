@@ -44,7 +44,7 @@ const CourseVideo = ({
       .then(() => {
         toast.success(t("complete_lesson"));
         queryClient.invalidateQueries({
-          queryKey: ["getTopicsInContent", courseId],
+          queryKey: ["getTopicsInContentForUser", courseId],
         });
       })
       .catch(() => {

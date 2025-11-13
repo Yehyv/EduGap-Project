@@ -31,11 +31,11 @@ const item = {
 const PopularCoursesSlider = () => {
   const { t } = useLanguage();
   const { user } = useUser();
-  const token = localStorage.getItem("token");
+  // const token = localStorage.getItem("token");
   const { data, isLoading, error } = useQuery<CourseType[]>({
     queryKey: ["coursesForSlider", user?.programId],
     queryFn: () => getPopularCoursesForSlider(user?.programId ?? 0),
-    enabled: user?.programId !== undefined || !token,
+    // enabled: user?.programId !== undefined || !token,
   });
 
   const { slidesToShow, windowWidth } = useResponsiveSlides(
@@ -48,7 +48,7 @@ const PopularCoursesSlider = () => {
   );
 
   const settings = {
-    dots: true,
+    dots: windowWidth <= 1180,
     infinite: true,
     speed: 500,
     slidesToShow,
@@ -74,20 +74,15 @@ const PopularCoursesSlider = () => {
           ))}
         </div>
       ) : (
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={container}
-        >
+        <div>
           <Slider {...settings}>
             {data?.map((courseData, idx) => (
-              <motion.div key={idx} className="px-2" variants={item}>
+              <motion.div key={idx} className="px-2">
                 <CourseCard course={courseData} />
               </motion.div>
             ))}
           </Slider>
-        </motion.div>
+        </div>
       )}
     </div>
   );

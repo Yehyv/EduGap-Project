@@ -245,6 +245,21 @@ const translations = {
     footer_google_play: "Google Play",
     footer_app_store: "App Store",
     footer_logo_alt: "Platform Logo",
+    password_requirements:
+      "Password must be at least 8 characters and include: an uppercase letter - a lowercase letter - a number - a symbol",
+    enter_phone_number: "Enter phone number",
+    back: "Back",
+    invalid_phone_number: "Invalid phone number",
+    required_field: "This field is required",
+    search_loading: "Searching...",
+    search_no_results: "No results found",
+    search_show_all: "Show All Results",
+    search_results: "Search Results",
+    no_results_found: "No Results Found",
+    try_different_keyword: "Try Different Keyword",
+    conent_unsaved: "Course removed from saved list successfully",
+    enroll: "Enroll Course",
+    go_to_lesson: "Go To Lesson",
   },
 
   ar: {
@@ -491,6 +506,21 @@ const translations = {
     footer_google_play: "جوجل بلاي",
     footer_app_store: "آب ستور",
     footer_logo_alt: "شعار المنصة",
+    password_requirements:
+      "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل وتشمل: حرف كبير - حرف صغير - رقم - رمز",
+    enter_phone_number: "ادخل رقم الهاتف",
+    back: "رجوع",
+    invalid_phone_number: "رقم الهاتف غير صالح",
+    required_field: "هذا الحقل مطلوب",
+    search_loading: "جارٍ البحث...",
+    search_no_results: "لا توجد نتائج",
+    search_show_all: "إظهار جميع النتائج",
+    search_results: "نتائج البحث",
+    no_results_found: "لا توجد نتائج",
+    try_different_keyword: "جرّب كتابة كلمة مختلفة",
+    conent_unsaved: "تمت إزالة الكورس من قائمة المحفوظات بنجاح",
+    enroll: "الانضمام إلى الدورة",
+    go_to_lesson: "الذهاب الي الدرس",
   },
 } as const;
 

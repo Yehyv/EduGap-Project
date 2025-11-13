@@ -17,7 +17,7 @@ const InstituteCoursesSection = () => {
   const { data, isLoading, error } = useQuery<InstituteCoursesType[]>({
     queryKey: ["InstituteCoursesSection", user?.programId],
     queryFn: () => getInstituteCoursesForSlider(user?.programId),
-    enabled: !!user?.programId,
+    // enabled: !!user?.programId,
   });
 
   const { slidesToShow, windowWidth } = useResponsiveSlides(
@@ -29,7 +29,7 @@ const InstituteCoursesSection = () => {
     3
   );
   const settings = {
-    dots: true,
+    dots: windowWidth <= 1180,
     infinite: true,
     speed: 500,
     slidesToShow,
@@ -49,7 +49,9 @@ const InstituteCoursesSection = () => {
     <div className="mb-5 container">
       <div className="flex justify-between items-start">
         <SectionTitle
-          textTitle={`${t("institute_courses_title")} ${user?.instituteName}`}
+          textTitle={`${t("institute_courses_title")} ${
+            user?.instituteName ?? ""
+          }`}
         />
         <GhostButton buttonText={t("more")} to="/institute-courses" />
       </div>

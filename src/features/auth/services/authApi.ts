@@ -3,6 +3,8 @@ import type {
   LoginFormValues,
   VerifyOtpValues,
   ChangePasswordValues,
+  ForgotPasswordFormValues,
+  ChangePasswordForForgotPasswordValues,
 } from "../auth.types";
 
 export function loginUser(data: LoginFormValues) {
@@ -23,6 +25,20 @@ export function changePassword(data: ChangePasswordValues, token: string) {
     },
   });
 }
+export function restPasswordForForgetPassword(
+  data: ChangePasswordForForgotPasswordValues,
+  token: string
+) {
+  return api.post("/auth/reset-password", data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
 export function logoutUser() {
   return api.post("/auth/logout");
+}
+
+export function forgotPassword(data: ForgotPasswordFormValues) {
+  return api.post("/auth/forgot-password", data);
 }

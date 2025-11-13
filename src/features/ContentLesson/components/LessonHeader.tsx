@@ -6,7 +6,7 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import { formatDuration } from "@/shared/utils/globals";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense, lazy, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 
 const RightArrow = lazy(() => import("@/assets/svgs/RightArrow.svg?react"));
@@ -15,6 +15,7 @@ const TimeIcon = lazy(() => import("@/assets/svgs/TimeIcon.svg?react"));
 const LessonHeader = () => {
   const { lang } = useLanguage();
   const { courseId } = useParams();
+  const navigate = useNavigate();
 
   const { data } = useQuery({
     queryKey: ["getContentNameAndDuration", courseId],
@@ -46,6 +47,30 @@ const LessonHeader = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
+      <motion.div
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 hover:opacity-80 transition cursor-pointer"
+        >
+          <Suspense fallback={null}>
+            <RightArrow className={lang === "en" ? "rotate-180" : ""} />
+          </Suspense>
+
+          <h4 className="m-0 line-clamp-1">{data?.name}</h4>
+        </button>
+
+        <div className="flex gap-2 mt-2 text-sm text-secondary">
+          <Suspense fallback={null}>
+            <TimeIcon className="w-4" />
+          </Suspense>
+
+          <span>{formatDuration(data?.totalDuration ?? 0, lang)}</span>
+        </div>
+      </motion.div>
       <div className="flex items-center gap-2">
         <motion.span
           className="text-secondary font-semibold"
@@ -64,31 +89,6 @@ const LessonHeader = () => {
           />
         </div>
       </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Link
-          to={`/user-course-details/${courseId}`}
-          className="flex items-center gap-2 hover:opacity-80 transition"
-        >
-          <h4 className="m-0 line-clamp-1">{data?.name}</h4>
-
-          <Suspense fallback={null}>
-            <RightArrow className={lang === "ar" ? "rotate-180" : ""} />
-          </Suspense>
-        </Link>
-
-        <div className="flex gap-2 mt-2 text-sm text-secondary">
-          <Suspense fallback={null}>
-            <TimeIcon className="w-4" />
-          </Suspense>
-
-          <span>{formatDuration(data?.totalDuration ?? 0, lang)}</span>
-        </div>
-      </motion.div>
     </motion.div>
   );
 };

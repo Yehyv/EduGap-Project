@@ -5,6 +5,7 @@ import { useLanguage } from "../localization/useLanguage";
 import { useClickOutside } from "../hooks/useClickOutside";
 import { useUser } from "@/features/auth/context/UserContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const smoothLazy = <P extends {}>(
   importFunc: () => Promise<{ default: React.ComponentType<P> }>,
@@ -36,14 +37,14 @@ const UserIcon = smoothLazy(
   () => import("@/assets/svgs/UserIcon.svg?react"),
   "w-6 h-6"
 );
-const NotificationIcon = smoothLazy(
-  () => import("@/assets/svgs/Notification.svg?react"),
-  "w-7 h-7"
-);
-const WalletIcon = smoothLazy(
-  () => import("@/assets/svgs/WalletIcon.svg?react"),
-  "w-5 h-5"
-);
+// const NotificationIcon = smoothLazy(
+//   () => import("@/assets/svgs/Notification.svg?react"),
+//   "w-7 h-7"
+// );
+// const WalletIcon = smoothLazy(
+//   () => import("@/assets/svgs/WalletIcon.svg?react"),
+//   "w-5 h-5"
+// );
 const CoursesIcon = smoothLazy(
   () => import("@/assets/svgs/MyCoursesIcon.svg?react"),
   "w-5 h-5"
@@ -82,12 +83,17 @@ const UserNav = () => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { user } = useUser();
-
+  const navigate = useNavigate();
   useClickOutside(menuRef, () => setOpen(false));
 
   const handleLogOut = () => {
-    logoutUser().then(logout).catch(console.error);
-    clearUserData();
+    logoutUser()
+      .then(() => {
+        logout();
+        navigate("/login");
+        clearUserData();
+      })
+      .catch(console.error);
   };
 
   // Menu Animation
@@ -128,29 +134,34 @@ const UserNav = () => {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="absolute top-12 max-sm:-ms-40 -ms-12 w-72 bg-white rounded-lg shadow-[0_6px_20px_-2px_rgba(0,0,0,0.15)] border border-gray-200 z-50"
+            className="absolute top-12 max-sm:-end-12 end-0 w-72 bg-white rounded-lg shadow-[0_6px_20px_-2px_rgba(0,0,0,0.15)] border border-gray-200 z-50"
           >
-            {/* Avatar */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-11 h-11 bg-primary rounded-full mx-auto text-secondary font-bold grid place-items-center mt-4"
-            >
-              {user?.userName?.[0]}
-            </motion.div>
-
             {/* Info */}
-            <div className="text-center mx-4">
-              <div className="font-semibold mt-2">{user?.userName}</div>
-              <div className="text-sm text-[#797979]">
-                {user?.instituteName}
+            <div className="flex justify-start gap-4 items-center mx-4">
+              {/* Avatar */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-11 h-11 bg-primary rounded-full overflow-hidden text-secondary font-bold grid place-items-center mt-4"
+              >
+                {/* {user?.userName?.[0]} */}
+                {user?.userImage ? (
+                  <img className="w-full h-full" src={user?.userImage}></img>
+                ) : (
+                  user?.userName?.[0]
+                )}
+              </motion.div>
+              <div>
+                <div className="font-semibold mt-2">{user?.userName}</div>
+                <div className="text-sm text-[#797979]">
+                  {user?.instituteName}
+                </div>
               </div>
-
-              <div className="text-sm text-secondary flex justify-center gap-2 mt-2">
+              {/* <div className="text-sm text-secondary flex justify-center gap-2 mt-2">
                 <span>{t("total_points")}</span>
                 <span>400</span>
                 <WalletIcon />
-              </div>
+              </div> */}
             </div>
 
             {/* Items */}
@@ -214,7 +225,7 @@ const UserNav = () => {
       </AnimatePresence>
 
       {/* Notification */}
-      <NotificationIcon />
+      {/* <NotificationIcon /> */}
     </div>
   );
 };

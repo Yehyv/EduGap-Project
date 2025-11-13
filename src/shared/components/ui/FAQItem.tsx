@@ -1,11 +1,13 @@
+import { useLanguage } from "@/shared/localization/useLanguage";
 import type { LessonType } from "@/shared/types/sharedTypes";
+import { formatDuration } from "@/shared/utils/globals";
 import { useState } from "react";
 
 type FAQItemProps = {
   question: string;
   lessons: LessonType[];
   indx: number;
-  duration: number;
+  duration: string;
 };
 
 const FAQItem: React.FC<FAQItemProps> = ({
@@ -14,6 +16,7 @@ const FAQItem: React.FC<FAQItemProps> = ({
   indx,
   duration,
 }) => {
+  const { lang } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -29,7 +32,7 @@ const FAQItem: React.FC<FAQItemProps> = ({
           {question}
         </h5>
         <div className="flex gap-2">
-          {duration >= 0 && <span className="text-[#797979]">{duration}</span>}
+          <span className="text-[#797979]">{duration}</span>
           <svg
             className={`w-5 h-5 text-gray-500 transform transition-transform ${
               isOpen ? "rotate-180" : ""
@@ -49,9 +52,9 @@ const FAQItem: React.FC<FAQItemProps> = ({
             {lessons.map((ans, i) => (
               <li key={i} className="flex justify-between px-2">
                 <span>{ans?.name}</span>
-                {ans?.duration >= 0 && (
-                  <span className="text-[#797979]">{ans.duration}</span>
-                )}
+                <span className="text-[#797979]">
+                  {formatDuration(ans?.duration ?? 0, lang)}
+                </span>
               </li>
             ))}
           </ul>

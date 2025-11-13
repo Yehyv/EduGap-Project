@@ -28,7 +28,7 @@ export type CourseType = {
   level?: LevelName;
   image?: string;
   educator: Educator;
-  totalDuration: string;
+  totalDuration: number;
   whatToLearn: [];
   enrollmentsCount: number;
   ratersCount: number;
@@ -49,7 +49,7 @@ export type ContentDetailsType = {
   id: number;
   name: string;
   isSaved: boolean;
-  totalDuration: string;
+  totalDuration: number;
   previousBackground: string;
   levelName: string;
   description: string;

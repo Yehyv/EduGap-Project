@@ -29,7 +29,6 @@ const LessonNotes = () => {
   const page = Number(searchParams.get("page")) || 1;
   const queryClient = useQueryClient();
 
-  // --- States for Modals ---
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<{

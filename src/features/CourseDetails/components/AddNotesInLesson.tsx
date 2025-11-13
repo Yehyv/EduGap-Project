@@ -18,7 +18,7 @@ const AddNotesInLesson = ({
   noteslessonCount?: number;
 }) => {
   const { t } = useLanguage();
-  const { courseId } = useParams();
+  const { courseId, lessonId } = useParams();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
@@ -61,7 +61,7 @@ const AddNotesInLesson = ({
 
   return (
     <Formik
-      initialValues={{ notes: "", lessonName: "" }}
+      initialValues={{ notes: "", lessonName: lessonId ?? "" }}
       validationSchema={Yup.object({
         notes: Yup.string()
           .max(200, t("note_max"))

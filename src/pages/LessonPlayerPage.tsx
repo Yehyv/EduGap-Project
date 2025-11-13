@@ -69,7 +69,12 @@ const LessonPlayerPage = () => {
 
       <div className="container">
         <LessonHeader />
-        <div className="flex h-full justify-start flex-col-reverse gap-6 lg:flex-row">
+        <div className="flex h-full justify-start flex-col gap-6 lg:flex-row">
+          <CourseContentCard
+            data={getContentTopicsAndLessons ?? []}
+            isLoading={isLoading}
+            error={error}
+          />
           <div className="w-full lg:w-[80%]">
             <CourseVideo
               key={lessonId}
@@ -93,12 +98,6 @@ const LessonPlayerPage = () => {
               </Suspense>
             </div>
           </div>
-
-          <CourseContentCard
-            data={getContentTopicsAndLessons ?? []}
-            isLoading={isLoading}
-            error={error}
-          />
         </div>
       </div>
     </div>

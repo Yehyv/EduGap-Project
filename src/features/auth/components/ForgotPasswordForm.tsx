@@ -3,9 +3,12 @@ import { Link } from "react-router-dom";
 import { TextField, GradientButton } from "@/shared/components";
 import type { ForgotPasswordFormValues } from "../auth.types";
 import useForgotPassword from "../hooks/useForgotPassword";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const ForgotPasswordForm = () => {
-  const { handleSubmit, initialValues, validationSchema } = useForgotPassword();
+  const { t } = useLanguage();
+  const { handleSubmit, initialValues, validationSchema, isLoading } =
+    useForgotPassword();
 
   return (
     <Formik<ForgotPasswordFormValues>
@@ -15,17 +18,29 @@ const ForgotPasswordForm = () => {
     >
       <Form className="flex flex-col gap-4 max-w-sm mx-auto w-full">
         <TextField
-          label="ادخل رقم الهاتف"
+          label={t("national_id")}
+          name="username"
+          type="username"
+          placeholder={t("national_id")}
+        />
+
+        <TextField
+          label={t("enter_phone_number")}
           name="number"
           type="tel"
-          placeholder="ادخل رقم الهاتف"
+          placeholder="01* **** ****"
           maxLength={11}
           onlyNumbers
         />
 
-        <GradientButton text="تأكيد" type="submit" moreStyle="mt-10" />
+        <GradientButton
+          text={t("confirm")}
+          type="submit"
+          moreStyle="mt-5 w-full mx-auto"
+          isLoading={isLoading}
+        />
         <Link to={"/login"} className="text-[#767676] text-center">
-          رجوع
+          {t("back")}
         </Link>
       </Form>
     </Formik>

@@ -35,7 +35,7 @@ const Footer = () => {
       transition={{ duration: 0.6 }}
     >
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center md:text-left">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center md:text-left">
           {/* Logo + Main Links */}
           <motion.div
             className="space-y-6 mx-auto text-center"
@@ -62,7 +62,7 @@ const Footer = () => {
           </motion.div>
 
           {/* Discover & Business */}
-          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Discover */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}

@@ -1,6 +1,6 @@
 import LogoSm from "@/assets/svgs/LogoSm.svg?react";
 import NavListIcon from "@/assets/svgs/NavListIcon.svg?react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import DefaultButton from "./ui/DefaultButton";
 import { useState } from "react";
 import UserNav from "./UserNav";
@@ -16,6 +16,7 @@ const Header = ({
 }) => {
   const { t, lang } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <header
@@ -46,12 +47,14 @@ const Header = ({
         {/* Not Auth */}
         {!isLoggedIn && (
           <div className="hidden md:flex gap-4 items-center">
-            <Link to="/login">{t("auth_login")}</Link>
+            {/* <Link to="/login">{t("auth_login")}</Link> */}
             <DefaultButton
-              text={t("auth_register")}
+              text={t("auth_login")}
               type="reset"
               moreStyle="px-6 !py-1"
-              onClick={() => {}}
+              onClick={() => {
+                navigate("/login");
+              }}
             />
           </div>
         )}

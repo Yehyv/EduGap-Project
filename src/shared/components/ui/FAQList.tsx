@@ -1,9 +1,10 @@
 import type { ContentTopicsType } from "@/shared/types/sharedTypes";
 import FAQItem from "./FAQItem";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import { formatDuration } from "@/shared/utils/globals";
 
 const FAQList = ({ topics }: { topics: ContentTopicsType[] }) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   return (
     <div className="w-full mx-auto">
       <div>
@@ -13,7 +14,7 @@ const FAQList = ({ topics }: { topics: ContentTopicsType[] }) => {
               key={i}
               question={faq.name}
               lessons={faq.lessons}
-              duration={faq.duration}
+              duration={formatDuration(faq.duration ?? 0, lang)}
               indx={i + 1}
             />
           ))

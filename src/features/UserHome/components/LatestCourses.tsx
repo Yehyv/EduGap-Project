@@ -19,7 +19,7 @@ const LatestCourses = () => {
   const { data, isLoading, error } = useQuery<CourseType[]>({
     queryKey: ["latestCoursesSlider", user?.programId],
     queryFn: () => getLatestCoursesForSlider(user!.programId),
-    enabled: !!user?.programId,
+    // enabled: !!user?.programId,
   });
 
   const { slidesToShow, windowWidth } = useResponsiveSlides(
@@ -32,7 +32,7 @@ const LatestCourses = () => {
   );
 
   const settings = {
-    dots: true,
+    dots: windowWidth <= 1180,
     infinite: true,
     speed: 500,
     slidesToShow,

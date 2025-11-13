@@ -1,26 +1,20 @@
 import { Formik, Form } from "formik";
 import { TextField, GradientButton } from "@/shared/components";
-import type { ChangePasswordValues } from "../auth.types";
-import useResetPassword from "../hooks/useResetPassword";
+import type { ChangePasswordForForgotPasswordValues } from "../auth.types";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import useChangePassword from "../hooks/useChangePassword";
 
-const ResetPasswordForm = () => {
-  const { handleSubmit, initialValues, validationSchema } = useResetPassword();
+const ChangePasswordForm = () => {
+  const { handleSubmit, initialValues, validationSchema } = useChangePassword();
   const { t } = useLanguage();
 
   return (
-    <Formik<ChangePasswordValues>
+    <Formik<ChangePasswordForForgotPasswordValues>
       initialValues={initialValues}
       validationSchema={validationSchema}
       onSubmit={handleSubmit}
     >
       <Form className="flex flex-col gap-2 max-w-sm mx-auto w-full">
-        <TextField
-          label={t("old_password")}
-          name="oldPassword"
-          type="password"
-          placeholder={t("old_password")}
-        />
         <TextField
           label={t("new_password")}
           name="newPassword"
@@ -43,4 +37,4 @@ const ResetPasswordForm = () => {
   );
 };
 
-export default ResetPasswordForm;
+export default ChangePasswordForm;

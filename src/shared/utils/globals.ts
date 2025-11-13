@@ -8,11 +8,14 @@ export const formatDuration = (seconds: number, lang: "ar" | "en") => {
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
 
+  const formatNum = (n: number) =>
+    lang === "ar" ? n.toLocaleString("ar-EG") : n.toString();
+
   if (lang === "ar") {
     const parts = [];
-    if (h) parts.push(`${h} ساعة`);
-    if (m) parts.push(`${m} دقيقة`);
-    if (s) parts.push(`${s} ثانية`);
+    if (h) parts.push(`${formatNum(h)} ساعة`);
+    if (m) parts.push(`${formatNum(m)} دقيقة`);
+    if (s) parts.push(`${formatNum(s)} ثانية`);
     return parts.join(" و ");
   } else {
     const parts = [];
@@ -20,5 +23,16 @@ export const formatDuration = (seconds: number, lang: "ar" | "en") => {
     if (m) parts.push(`${m}m`);
     if (s) parts.push(`${s}s`);
     return parts.join(" ");
+  }
+};
+export const formatDate = (dateStr: string): string => {
+  if (!dateStr) return "";
+
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return ""; // invalid date
+    return date.toISOString().split("T")[0]; // returns YYYY-MM-DD
+  } catch {
+    return "";
   }
 };

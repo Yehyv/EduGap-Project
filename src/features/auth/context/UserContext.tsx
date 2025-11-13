@@ -24,12 +24,17 @@ type UserProviderProps = {
 };
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    // Load user from localStorage on init
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   const fetchUser = async () => {
     try {
       const response = await api.get("/users/me");
       setUser(response.data.data);
+      localStorage.setItem("user", JSON.stringify(response.data.data));
     } catch (error) {
       console.error("Error fetching user:", error);
     }
@@ -37,12 +42,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
+    const hasUser = localStorage.getItem("user");
+
+    if (token && !hasUser) {
       fetchUser();
     }
   }, []);

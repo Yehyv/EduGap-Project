@@ -40,6 +40,8 @@ const ContinueWhereLeftOff = () => {
   if (error)
     return <SliderErrorFallback componentTitle={t("continue_title")} />;
 
+  if (data?.items?.length == 0) return <></>;
+
   return (
     <div className="mb-5 container">
       <SectionTitle textTitle={t("continue_title")} />

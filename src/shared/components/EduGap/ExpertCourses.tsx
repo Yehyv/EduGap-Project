@@ -20,8 +20,6 @@ const ExpertCourses = () => {
     queryFn: () => getAllExpertCourses(expertId ?? "", page, RESULTS_PER_PAGE),
   });
 
-  console.log(data);
-
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString() });
   };
@@ -29,7 +27,7 @@ const ExpertCourses = () => {
   if (error) return <ErrorMessage message={error?.message} />;
 
   return (
-    <div className="mb-5 mt-20">
+    <div className="mt-10">
       <ScrollToTop />
       <SectionTitle textTitle={t("expert_course")} />
 

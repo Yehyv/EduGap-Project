@@ -1,15 +1,15 @@
 import AuthHeader from "@/features/auth/components/AuthHeader";
-import ForgotPasswordForm from "@/features/auth/components/ForgotPasswordForm";
+import ChangePasswordForm from "@/features/auth/components/ChangePasswordForm";
 import { useLanguage } from "@/shared/localization/useLanguage";
 
-const ForgotPassword = () => {
+const ChangePassword = () => {
   const { t } = useLanguage();
   return (
     <>
       <AuthHeader headerTitle={t("change_password")} />
-      <ForgotPasswordForm />
+      <ChangePasswordForm />
     </>
   );
 };
 
-export default ForgotPassword;
+export default ChangePassword;

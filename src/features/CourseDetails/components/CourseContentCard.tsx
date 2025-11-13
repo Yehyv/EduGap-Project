@@ -23,13 +23,13 @@ const CourseContentCard = ({
   return (
     <div className="w-full lg:w-[30%] h-full mb-10">
       {/* Lessons List */}
-      <div className="shadow-custom overflow-auto top-16 rounded-xl py-5 min-lg:h-[400px]">
-        <h5 className="flex gap-2 text-lg font-semibold mb-4 border-b pb-3 border-[#D0CDCD] px-5">
+      <div className="shadow-custom rounded-xl py-5 min-lg:h-[400px]">
+        <h5 className="flex gap-2 text-lg font-semibold mb-4 border-b pb-3 border-[#D0CDCD] px-5 sticky top-0 bg-white z-10">
           <ComputerIcon />
           <span>{t("course_content")}</span>
         </h5>
 
-        <section className="px-6 my-2 space-y-2">
+        <div className="overflow-y-auto overflow-x-hidden mx-1 pe-3 ms-2 my-2 space-y-2 max-h-[300px]">
           {isLoading && (
             <div className="text-center py-4 text-gray-500">
               {t("loading_content")}...
@@ -61,7 +61,7 @@ const CourseContentCard = ({
               ))}
             </Suspense>
           )}
-        </section>
+        </div>
       </div>
 
       {/* Quick Links */}

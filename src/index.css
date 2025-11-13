@@ -40,6 +40,16 @@
 
   --shadow-custom: 0px 4px 4px 0px #00000040;
 }
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c5c5c5;
+  border-radius: 20px;
+}
+::-webkit-scrollbar-track {
+  background: #eee;
+}
 
 /* Base styles */
 .stretched-line {

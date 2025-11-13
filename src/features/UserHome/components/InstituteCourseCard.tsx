@@ -4,9 +4,10 @@ import TimeIcon from "@/assets/svgs/TimeIcon.svg?react";
 import VideoIcon from "@/assets/svgs/VideoIcon.svg?react";
 import courseImage from "@/assets/imgs/ForDev/CourseInsitituteImage.png";
 import { Link } from "react-router-dom";
+import { formatDuration } from "@/shared/utils/globals";
 
 const InstituteCourseCard = ({ course }: { course: InstituteCoursesType }) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   return (
     <div
@@ -36,7 +37,7 @@ const InstituteCourseCard = ({ course }: { course: InstituteCoursesType }) => {
       <div className=" p-2 flex-1 text-sm px-6 mt-7">
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-2">
-            <div>{course?.totalDuration}</div>
+            <div>{formatDuration(course?.totalDuration ?? 0, lang)}</div>
             <TimeIcon className="h-4" />
           </div>
           <div className="flex items-center gap-2">

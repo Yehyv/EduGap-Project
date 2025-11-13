@@ -122,7 +122,7 @@ export async function enrollContent(contentId: string) {
   return res.data.data;
 }
 export async function saveContent(contentId: number) {
-  const res = await api.post(`/saved-contents/${contentId}/save`);
+  const res = await api.post(`/saved-contents/${contentId}/toggle`);
   return res.data.data;
 }
 export async function getContentReviews(

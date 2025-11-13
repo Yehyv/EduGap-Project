@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import StarIcon from "@/assets/svgs/StarIcon.svg?react";
-import SaveIcon from "@/assets/svgs/SaveIcon.svg?react";
+import SaveIcon from "@/assets/svgs/SaveIconWhite.svg?react";
+import SavedIcon from "@/assets/svgs/SavedIcon.svg?react";
 import MedalIcon from "@/assets/svgs/Medalcon.svg?react";
 import InstructorAvatar from "@/assets/svgs/InstructorAvatar.svg";
 import DefaultButton from "../ui/DefaultButton";
@@ -25,7 +26,11 @@ const CourseCard = ({ course }: { course: CourseType }) => {
   const { mutateAsync, isPending } = useMutation<void, Error, number>({
     mutationFn: (contentId: number) => saveContent(contentId),
     onSuccess: () => {
-      toast.success(t("content_saved_successfully"));
+      if (course?.isSaved) {
+        toast.warn(t("conent_unsaved"));
+      } else {
+        toast.success(t("content_saved_successfully"));
+      }
       queryClient.invalidateQueries({
         queryKey: ["coursesForSlider", user?.programId],
       });
@@ -60,14 +65,14 @@ const CourseCard = ({ course }: { course: CourseType }) => {
       <div className="p-2 pt-2 flex-1">
         <div className="flex justify-between items-start mb-2">
           <div className="w-full">
-            <p className="text-sm font-semibold text-gray-400">
-              {course?.name}
-            </p>
+            <h4 className="text-sm font-semibold text-gray-400">
+              {course?.category?.name}
+            </h4>
             <h5
               className="font-semibold text-gray-800 line-clamp-1"
-              title={course?.description}
+              title={course?.name}
             >
-              {course?.description}
+              {course?.name}
             </h5>
           </div>
         </div>
@@ -89,23 +94,38 @@ const CourseCard = ({ course }: { course: CourseType }) => {
           </span>
         </div>
 
-        <div className="flex mt-auto max-sm:gap-4 justify-center relative z-20">
-          {!course?.isSaved && (
-            <button
-              type="button"
-              disabled={isPending}
-              className="absolute max-sm:static end-0 cursor-pointer transition-all duration-300 hover:scale-110 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => {
-                if (token) {
-                  mutateAsync(course.id);
-                } else {
-                  toast.warning(t("must_be_logged_in"));
-                }
-              }}
-            >
-              <SaveIcon />
-            </button>
-          )}
+        <div className="flex mt-auto gap-4 justify-center relative z-20">
+          <motion.button
+            className="bg-white rounded-full grid place-items-center cursor-pointer relative"
+            whileHover={!isPending ? { scale: 1.1 } : {}}
+            whileTap={!isPending ? { scale: 0.9 } : {}}
+            disabled={isPending}
+            onClick={() => {
+              if (token) {
+                mutateAsync(course?.id ?? 0);
+              } else {
+                toast.warning(t("must_be_logged_in"));
+              }
+            }}
+          >
+            {!isPending &&
+              (course?.isSaved ? (
+                <SavedIcon className="w-5 h-5" />
+              ) : (
+                <SaveIcon className="w-5 h-5" />
+              ))}
+            {isPending && (
+              <motion.div
+                className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 0.8,
+                  ease: "linear",
+                }}
+              />
+            )}
+          </motion.button>
 
           <DefaultButton
             text={

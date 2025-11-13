@@ -42,7 +42,7 @@ const CourseDetails = ({ data }: { data: ContentDetailsType }) => {
   }, []);
 
   return (
-    <div className="container flex flex-col-reverse gap-6 my-10 xl:flex-row">
+    <div className="container flex justify-between flex-col-reverse my-10 xl:flex-row">
       <ScrollToTop />
       {/* Main content */}
       <div className="w-full xl:w-[70%]">

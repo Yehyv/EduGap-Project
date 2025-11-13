@@ -31,19 +31,28 @@ const ExpertProfile = () => {
 
   return (
     <div className="container my-10">
-      <div className="flex flex-col md:flex-row gap-4 items-start">
+      <div className="flex flex-col md:flex-row gap-6">
         {/* Profile Image & Rating */}
-        <div className="w-full md:w-[20%] flex flex-col items-center md:items-start">
-          <img
-            src={data?.image}
-            className="w-48 h-48 object-cover rounded-lg shadow-md"
-            alt={t("expert_profile_image")}
-          />
-          <div className="flex items-center gap-1 mt-4">
-            <span className="text-yellow-500">5.0</span>
+        <div className="w-40 md:w-48  flex flex-col items-center md:items-start">
+          <div className="w-40 h-40 md:w-48 md:h-48 mx-auto rounded-lg overflow-hidden bg-gray-100 shadow-md">
+            <img
+              src={data?.image}
+              alt={t("expert_profile_image")}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+
+          <div className="flex items-center justify-center w-full gap-1 mt-2">
             {[...Array(5)].map((_, i) => (
-              <StarIcon key={i} className="w-5 h-5 text-yellow-400" />
+              <StarIcon
+                key={i}
+                className="w-5 h-5 text-yellow-400 inline-block"
+              />
             ))}
+            <span className="text-yellow-500 font-medium inline-block">
+              5.0
+            </span>
           </div>
         </div>
 

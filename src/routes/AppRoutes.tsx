@@ -29,6 +29,9 @@ import LatestCoursesPage from "@/pages/LatestCoursesPage";
 import SavedLessons from "@/pages/SavedLessons";
 import MyNotes from "@/pages/MyNotes";
 import CourseMaterials from "@/pages/CourseMaterials";
+import ChangePassword from "@/pages/ChangePassword";
+import VerifyOtpForForgotPassword from "@/pages/VerifyOtpForForgotPassword";
+import SearchResults from "@/pages/SearchResults";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -46,6 +49,7 @@ export default function AppRoutes() {
           path="/institute-course-details/:instituteCourseId"
           element={<InstituteCourseDetails />}
         />
+        <Route path="/search-results" element={<SearchResults />} />
       </Route>
 
       {/* Public Routes with AuthLayout */}
@@ -67,10 +71,26 @@ export default function AppRoutes() {
           }
         />
         <Route
+          path="/forgot-password-verify-otp"
+          element={
+            <ProtectVerifyOtp>
+              <VerifyOtpForForgotPassword />
+            </ProtectVerifyOtp>
+          }
+        />
+        <Route
           path="/reset-password"
           element={
             <ProtectResetPassword>
               <ResetPassword />
+            </ProtectResetPassword>
+          }
+        />
+        <Route
+          path="/change-password"
+          element={
+            <ProtectResetPassword>
+              <ChangePassword />
             </ProtectResetPassword>
           }
         />

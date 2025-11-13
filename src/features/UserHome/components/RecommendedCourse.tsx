@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import DefaultButton from "@/shared/components/ui/DefaultButton";
 import SaveIcon from "@/assets/svgs/SaveIconWhite.svg?react";
 import userIcon from "@/assets/svgs/userIcon.svg";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/features/auth/context/UserContext";
 import { getRecommenedCourse } from "../services/userHomeApis";
 import type { CourseType } from "@/shared/types/sharedTypes";
@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { saveContent } from "@/features/CourseDetails/services/contentDetails";
 import { toast } from "react-toastify";
-
+import SavedIcon from "@/assets/svgs/SaveIcon.svg?react";
 const RecommendedCourse = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -24,13 +24,21 @@ const RecommendedCourse = () => {
   const { data, isLoading, error } = useQuery<CourseType>({
     queryKey: ["getRecommenedCourse", user?.programId],
     queryFn: () => getRecommenedCourse(user?.programId),
-    enabled: !!user?.programId,
+    // enabled: !!user?.programId,
   });
+  const queryClient = useQueryClient();
 
   const { mutateAsync, isPending } = useMutation<void, Error, number>({
     mutationFn: (contentId: number) => saveContent(contentId),
     onSuccess: () => {
-      toast.success(t("content_saved_successfully"));
+      if (data?.isSaved) {
+        toast.warn(t("conent_unsaved"));
+      } else {
+        toast.success(t("content_saved_successfully"));
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["getRecommenedCourse", user?.programId],
+      });
     },
     onError: () => {
       toast.error(t("save_failed"));
@@ -52,8 +60,6 @@ const RecommendedCourse = () => {
     return (
       <div className="container my-5 animate-pulse">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-[#F1F1F1] rounded-2xl overflow-hidden">
-          {/* Video Skeleton */}
-          <div className="md:col-span-3 h-[350px] bg-gray-200" />
           {/* Content Skeleton */}
           <div className="md:col-span-2 px-6 py-6 space-y-4">
             <div className="h-6 bg-gray-200 w-3/4 rounded"></div>
@@ -71,6 +77,8 @@ const RecommendedCourse = () => {
             </div>
             <div className="h-10 bg-gray-300 rounded w-32 mx-auto mt-6"></div>
           </div>
+          {/* Video Skeleton */}
+          <div className="md:col-span-3 h-[350px] bg-gray-200" />
         </div>
       </div>
     );
@@ -86,31 +94,9 @@ const RecommendedCourse = () => {
       animate={{ opacity: 1, y: 0 }}
     >
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-[#F1F1F1] rounded-2xl overflow-hidden">
-        {/* Video Section */}
-        <div className="relative w-full min-h-[300px] md:min-h-[350px] md:col-span-3">
-          {!isOnline ? (
-            <div className="flex items-center justify-center w-full h-full bg-gray-100 text-red-500">
-              ⚠️ No internet connection
-            </div>
-          ) : videoError ? (
-            <div className="flex items-center justify-center w-full h-full bg-gray-600 text-white font-bold">
-              ❌ Video failed to load
-            </div>
-          ) : (
-            <video
-              className="w-full h-full object-cover shadow"
-              controls
-              onError={() => setVideoError(true)}
-            >
-              <source src={data?.ad_video} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          )}
-        </div>
-
         {/* Content Section */}
         <motion.div
-          className="md:col-span-2 px-6 py-6 flex flex-col"
+          className="md:col-span-2 px-6 py-6 flex flex-col max-md:order-1"
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
@@ -153,7 +139,7 @@ const RecommendedCourse = () => {
           </motion.p>
 
           <motion.div
-            className="center items-center gap-5 mt-auto mb-7 mx-auto"
+            className="center items-center gap-5 mt-auto mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.6 }}
@@ -163,7 +149,7 @@ const RecommendedCourse = () => {
                 text={t("course_details")}
                 onClick={() => navigate(`/user-course-details/${data?.id}`)}
                 type="button"
-                moreStyle="px-10"
+                moreStyle="lg:px-10"
               />
             </motion.div>
 
@@ -180,8 +166,12 @@ const RecommendedCourse = () => {
                 }
               }}
             >
-              {!isPending && <SaveIcon className="w-5 h-5" />}
-
+              {!isPending &&
+                (data?.isSaved ? (
+                  <SavedIcon className="w-10 h-10" />
+                ) : (
+                  <SaveIcon className="w-5 h-5" />
+                ))}
               {isPending && (
                 <motion.div
                   className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full"
@@ -196,6 +186,27 @@ const RecommendedCourse = () => {
             </motion.button>
           </motion.div>
         </motion.div>
+        {/* Video Section */}
+        <div className="relative w-full min-h-[300px] md:min-h-[350px] md:col-span-3">
+          {!isOnline ? (
+            <div className="flex items-center justify-center w-full h-full bg-gray-100 text-red-500">
+              ⚠️ No internet connection
+            </div>
+          ) : videoError ? (
+            <div className="flex items-center justify-center w-full h-full bg-gray-600 text-white font-bold">
+              ❌ Video failed to load
+            </div>
+          ) : (
+            <video
+              className="w-full h-full object-cover shadow"
+              controls
+              onError={() => setVideoError(true)}
+            >
+              <source src={data?.ad_video} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          )}
+        </div>
       </div>
     </div>
   );

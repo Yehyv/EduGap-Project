@@ -5,7 +5,11 @@ import useVerifyOtp from "../hooks/useVerifyOtp";
 import OtpInput from "react-otp-input";
 import { useLanguage } from "@/shared/localization/useLanguage";
 
-const VerifyOtpForm = () => {
+const VerifyOtpForm = ({
+  isForForgotPassword = false,
+}: {
+  isForForgotPassword?: boolean;
+}) => {
   const { t } = useLanguage();
   const {
     handleSubmit,
@@ -13,9 +17,8 @@ const VerifyOtpForm = () => {
     validationSchema,
     handleResend,
     timeLeft,
-
     formatTime,
-  } = useVerifyOtp();
+  } = useVerifyOtp(isForForgotPassword);
 
   return (
     <Formik<VerifyOtpValues>

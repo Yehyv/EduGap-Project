@@ -17,7 +17,7 @@ const InnovaFooter = () => {
       {/* Top Footer */}
       <div
         dir="rtl"
-        className="bg-[#E7EDFF] text-secondary text-lg py-6 max-md:text-sm flex flex-col md:flex-row items-center justify-between px-6 md:px-10 gap-4 md:gap-0"
+        className="bg-[#E7EDFF] text-secondary text-lg py-3 max-md:text-sm flex flex-col md:flex-row items-center justify-between px-6 md:px-10 gap-4 md:gap-0"
       >
         {/* Right – Email or Logo */}
         <div className="flex items-center justify-end md:flex-1 md:justify-end mt-2 md:mt-0"></div>
@@ -60,7 +60,7 @@ const InnovaFooter = () => {
       {/* Bottom Footer */}
       <footer
         dir="rtl"
-        className="bg-primary text-secondary text-lg max-md:text-sm py-4 px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0"
+        className="bg-primary text-secondary text-lg max-md:text-sm py-0 px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0"
       >
         {/* Left Empty */}
         <div className="flex-1"></div>

@@ -6,7 +6,7 @@ import ErrorMessage from "@/shared/components/ErrorMessage";
 
 import { lazy, useState } from "react";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import type { MyNotesInContentTypeResponse } from "@/shared/types/sharedTypes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import MyModal from "@/shared/components/ui/MyModal";
@@ -20,7 +20,7 @@ import {
   deleteNoteInLesson,
   getMyNotesInContent,
 } from "@/features/ContentLesson/services/lessonsApis";
-import { RESULTS_PER_PAGE } from "@/shared/utils/globals";
+import { formatDate, RESULTS_PER_PAGE } from "@/shared/utils/globals";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -167,30 +167,43 @@ const MyNotes = () => {
                     <h5 className="text-[#EF9F00] mb-2">
                       {t("note")} {i + 1}
                     </h5>
-                    <span>{noteItem.notes}</span>
+                    <span>{noteItem?.notes}</span>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 absolute bottom-2 end-2">
-                      <EditIcon
-                        className="cursor-pointer hover:scale-110 transition"
-                        onClick={() => {
-                          setSelectedNote({
-                            id: noteItem.id,
-                            text: noteItem.notes,
-                          });
-                          setEditModalOpen(true);
-                        }}
-                      />
-                      <TrashIcon
-                        className="cursor-pointer hover:scale-110 transition"
-                        onClick={() => {
-                          setSelectedNote({
-                            id: noteItem.id,
-                            text: noteItem.notes,
-                          });
-                          setDeleteModalOpen(true);
-                        }}
-                      />
+                    <div className="flex items-center justify-between w-full absolute bottom-2 end-0 px-4">
+                      <Link
+                        to={`/course-lesson/${courseId}/${noteItem?.lessonId}`}
+                        className="text-secondary underline"
+                      >
+                        {t("go_to_lesson")}
+                      </Link>
+                      <div className="center gap-2">
+                        <span className="text-gray-400">
+                          <span>{t("last_update")} </span>
+                          {formatDate(noteItem?.updated_at ?? "")}
+                        </span>
+
+                        <EditIcon
+                          className="cursor-pointer hover:scale-110 transition"
+                          onClick={() => {
+                            setSelectedNote({
+                              id: noteItem.id,
+                              text: noteItem.notes,
+                            });
+                            setEditModalOpen(true);
+                          }}
+                        />
+                        <TrashIcon
+                          className="cursor-pointer hover:scale-110 transition"
+                          onClick={() => {
+                            setSelectedNote({
+                              id: noteItem.id,
+                              text: noteItem.notes,
+                            });
+                            setDeleteModalOpen(true);
+                          }}
+                        />
+                      </div>
                     </div>
                   </motion.div>
                 </motion.div>

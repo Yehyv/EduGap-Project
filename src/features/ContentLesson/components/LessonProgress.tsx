@@ -30,13 +30,13 @@ const LessonProgress = ({
 
   return (
     <>
-      <div className="px-4 flex items-center gap-1 text-sm text-secondary w-full">
-        <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+      <div className="px-4 flex items-center gap-2 text-sm text-secondary w-full">
+        <div className="w-full h-[5px] rounded-full bg-[#939393] overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${percent}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="h-full rounded-full bg-secondary"
+            className="h-full rounded-full bg-[#E68C3A]"
           />
         </div>
         <div className="flex justify-between items-center">

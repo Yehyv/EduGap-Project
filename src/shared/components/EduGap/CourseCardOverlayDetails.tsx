@@ -4,9 +4,10 @@ import TimeLeftIcon from "@/assets/svgs/TimeLeftIcon.svg?react";
 import type { CourseType } from "@/shared/types/sharedTypes";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { motion } from "framer-motion";
+import { formatDuration } from "@/shared/utils/globals";
 
 const CourseCardOverlayDetails = ({ course }: { course: CourseType }) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   return (
     <motion.div
@@ -54,7 +55,9 @@ const CourseCardOverlayDetails = ({ course }: { course: CourseType }) => {
           className="flex items-center gap-2 text-sm text-gray-600"
         >
           <TimeLeftIcon className="inline-block me-1" />
-          <span>{course?.totalDuration}</span>
+          {course?.totalDuration !== undefined && (
+            <span>{formatDuration(Number(course.totalDuration), lang)}</span>
+          )}
         </motion.div>
 
         <div className="h-[1px] bg-gray-300 w-full my-1"></div>
