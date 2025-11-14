@@ -33,7 +33,7 @@ const PopularCoursesList = () => {
   return (
     <div className="mb-5 mt-10 container">
       <ScrollToTop />
-      <SectionTitle textTitle={t("courses_list")} />
+      <SectionTitle textTitle={t("courses_title")} />
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 my-10">

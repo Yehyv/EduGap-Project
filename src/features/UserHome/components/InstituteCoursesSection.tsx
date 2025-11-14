@@ -11,6 +11,7 @@ import InstituteCourseCard from "./InstituteCourseCard";
 import { getInstituteCoursesForSlider } from "../services/userHomeApis";
 import { useUser } from "@/features/auth/context/UserContext";
 import type { InstituteCoursesType } from "@/shared/types/sharedTypes";
+import { useState } from "react";
 const InstituteCoursesSection = () => {
   const { t } = useLanguage();
   const { user } = useUser();
@@ -28,18 +29,37 @@ const InstituteCoursesSection = () => {
     ],
     3
   );
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const totalSlides = data?.length ?? 0;
+  const isFirstSlide = currentSlide === 0;
+  const isLastSlide = currentSlide >= totalSlides - slidesToShow;
+
   const settings = {
-    dots: windowWidth <= 1180,
-    infinite: true,
+    dots: true,
+    infinite: false,
     speed: 500,
     slidesToShow,
-    slidesToScroll: 1,
-    waitForAnimate: false,
+    slidesToScroll: windowWidth >= 1180 ? 3 : 1,
     accessibility: true,
-    nextArrow: windowWidth >= 1180 ? <ArrowButton direction="right" /> : <></>,
-    prevArrow: windowWidth >= 1180 ? <ArrowButton direction="left" /> : <></>,
-  };
 
+    // track slide index
+    beforeChange: (_: number, next: number) => setCurrentSlide(next),
+
+    nextArrow:
+      windowWidth >= 1180 ? (
+        <ArrowButton direction="right" disabled={isLastSlide} />
+      ) : (
+        <></>
+      ),
+
+    prevArrow:
+      windowWidth >= 1180 ? (
+        <ArrowButton direction="left" disabled={isFirstSlide} />
+      ) : (
+        <></>
+      ),
+  };
   if (error)
     return (
       <SliderErrorFallback componentTitle={t("institute_courses_title")} />

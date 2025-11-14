@@ -10,6 +10,7 @@ import ExpertSkeleton from "../ui/ExpertSkeleton";
 import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
+import { useState } from "react";
 
 const Experts = () => {
   const { t } = useLanguage();
@@ -26,15 +27,36 @@ const Experts = () => {
     5 // default
   );
 
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const totalSlides = data?.length ?? 0;
+  const isFirstSlide = currentSlide === 0;
+  const isLastSlide = currentSlide >= totalSlides - slidesToShow;
+
   const settings = {
     dots: true,
-    infinite: true,
+    infinite: false,
     speed: 500,
     slidesToShow,
-    slidesToScroll: 1,
+    slidesToScroll: windowWidth >= 1180 ? 3 : 1,
     accessibility: true,
-    nextArrow: windowWidth >= 1180 ? <ArrowButton direction="right" /> : <></>,
-    prevArrow: windowWidth >= 1180 ? <ArrowButton direction="left" /> : <></>,
+
+    // track slide index
+    beforeChange: (_: number, next: number) => setCurrentSlide(next),
+
+    nextArrow:
+      windowWidth >= 1180 ? (
+        <ArrowButton direction="right" disabled={isLastSlide} />
+      ) : (
+        <></>
+      ),
+
+    prevArrow:
+      windowWidth >= 1180 ? (
+        <ArrowButton direction="left" disabled={isFirstSlide} />
+      ) : (
+        <></>
+      ),
   };
 
   if (error) return <SliderErrorFallback componentTitle={t("experts")} />;

@@ -75,7 +75,7 @@ const RecommendedCourse = () => {
               <div className="h-4 bg-gray-200 rounded w-5/6"></div>
               <div className="h-4 bg-gray-200 rounded w-2/3"></div>
             </div>
-            <div className="h-10 bg-gray-300 rounded w-32 mx-auto mt-6"></div>
+            <div className="h-10 bg-gray-300 rounded w-32 mx-auto mt-24"></div>
           </div>
           {/* Video Skeleton */}
           <div className="md:col-span-3 h-[350px] bg-gray-200" />
@@ -189,7 +189,7 @@ const RecommendedCourse = () => {
         {/* Video Section */}
         <div className="relative w-full min-h-[300px] md:min-h-[300px] md:col-span-3">
           <CourseVideo
-            videoHeight="350px"
+            videoHeight="md:h-[350px]"
             isThisLessonAlreadyCompleted={true}
             isOnline={isOnline}
             videoUrl={data?.ad_video ?? ""}

@@ -1,6 +1,7 @@
 const translations = {
   en: {
-    hero_title: "Your smart platform to develop skills and connect education with real-world careers. Learn online through interactive courses, gain hands-on experience, and get ready to stand out in the future job market.",
+    hero_title:
+      "Your smart platform to develop skills and connect education with real-world careers. earn online through interactive courses, gain hands-on experience, and get ready to stand out in the future job market.",
     hero_subtitle:
       "Level up from your phone! Sign up now and start learning what you love, anytime you want",
     nav_courses: "Courses",
@@ -258,6 +259,8 @@ const translations = {
     conent_unsaved: "Course removed from saved list successfully",
     enroll: "Enroll Course",
     go_to_lesson: "Go To Lesson",
+    lecture: "Lecture",
+    about_institute_course: "About Course",
   },
 
   ar: {
@@ -333,7 +336,7 @@ const translations = {
     certificate: "شهادة إتمام الدورة",
     institute_courses_title: "المقررات الدراسية الخاصة ",
     expert_course: "الدورات التدريبية",
-    program_title: "برنامج التعلم",
+    program_title: "مسار التعلم",
     courses_list: "الدورات التدريبية",
     expert: "الخبير",
     verify_otp: "التحقق من الرمز",
@@ -489,7 +492,7 @@ const translations = {
     untitled: "untitled",
     error_fetching_package_details: "حدث خطأ أثناء جلب تفاصيل البرنامج",
     program_image_alt: "صورة البرنامج",
-    about_learning_program: "عن برنامج التعلم",
+    about_learning_program: "عن مسار التعلم",
     no_courses_available: "لا توجد كورسات متاحة",
     error_fetching_expert_data: "حدث خطأ أثناء جلب بيانات الخبير",
     expert_profile_image: "صورة الخبير",
@@ -519,6 +522,8 @@ const translations = {
     conent_unsaved: "تمت إزالة الكورس من قائمة المحفوظات بنجاح",
     enroll: "الانضمام إلى الدورة",
     go_to_lesson: "الذهاب الي الدرس",
+    lecture: "المحاضرة",
+    about_institute_course: "عن المقرر",
   },
 } as const;
 

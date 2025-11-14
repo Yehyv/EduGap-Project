@@ -44,12 +44,14 @@ const LessonProgress = ({
         </div>
       </div>
 
-      <div className="flex text-secondary text-sm mt-2">
-        <span className="line-clamp-1 flex-1 pe-3">{courseName}</span>
-        <span className="whitespace-nowrap pe-3">
-          {completed}/{total}
-        </span>
-      </div>
+      {courseName && (
+        <div className="flex text-secondary text-sm mt-2">
+          <span className="line-clamp-1 flex-1 pe-3">{courseName}</span>
+          <span className="whitespace-nowrap pe-3">
+            {completed}/{total}
+          </span>
+        </div>
+      )}
     </>
   );
 };

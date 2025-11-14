@@ -64,6 +64,9 @@ export type ContentAccessType = {
   access: string;
   enrollmentId: number;
 };
+export type NextLessonType = {
+  lessonId: number;
+};
 export type ContentLessonType = {
   id: number;
   name: string;

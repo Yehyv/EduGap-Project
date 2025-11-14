@@ -12,30 +12,15 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
 import { useUser } from "@/features/auth/context/UserContext";
 import { motion } from "framer-motion";
-
-const container = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.15 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.5, ease: "easeOut" },
-  },
-};
+import { useState } from "react";
 
 const PopularCoursesSlider = () => {
   const { t } = useLanguage();
   const { user } = useUser();
-  // const token = localStorage.getItem("token");
+
   const { data, isLoading, error } = useQuery<CourseType[]>({
     queryKey: ["coursesForSlider", user?.programId],
     queryFn: () => getPopularCoursesForSlider(user?.programId ?? 0),
-    // enabled: user?.programId !== undefined || !token,
   });
 
   const { slidesToShow, windowWidth } = useResponsiveSlides(
@@ -47,15 +32,36 @@ const PopularCoursesSlider = () => {
     4
   );
 
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const totalSlides = data?.length ?? 0;
+  const isFirstSlide = currentSlide === 0;
+  const isLastSlide = currentSlide >= totalSlides - slidesToShow;
+
   const settings = {
-    dots: windowWidth <= 1180,
-    infinite: true,
+    dots: true,
+    infinite: false,
     speed: 500,
     slidesToShow,
-    slidesToScroll: 1,
+    slidesToScroll: windowWidth >= 1180 ? 3 : 1,
     accessibility: true,
-    nextArrow: windowWidth >= 1180 ? <ArrowButton direction="right" /> : <></>,
-    prevArrow: windowWidth >= 1180 ? <ArrowButton direction="left" /> : <></>,
+
+    // track slide index
+    beforeChange: (_: number, next: number) => setCurrentSlide(next),
+
+    nextArrow:
+      windowWidth >= 1180 ? (
+        <ArrowButton direction="right" disabled={isLastSlide} />
+      ) : (
+        <></>
+      ),
+
+    prevArrow:
+      windowWidth >= 1180 ? (
+        <ArrowButton direction="left" disabled={isFirstSlide} />
+      ) : (
+        <></>
+      ),
   };
 
   if (error) return <SliderErrorFallback componentTitle={t("courses_title")} />;

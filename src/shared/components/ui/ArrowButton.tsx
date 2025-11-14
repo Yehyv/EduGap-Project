@@ -3,12 +3,20 @@ type ArrowProps = {
   direction: "left" | "right";
   onClick?: () => void;
   bgColor?: string;
+  disabled?: boolean;
 };
 
-function ArrowButton({ direction, onClick, bgColor = "#F0F0F0" }: ArrowProps) {
+function ArrowButton({
+  direction,
+  onClick,
+  bgColor = "#F0F0F0",
+  disabled,
+}: ArrowProps) {
   const isLeft = direction === "left";
 
-  return (
+  return disabled ? (
+    <> </>
+  ) : (
     <button
       onClick={onClick}
       style={{ backgroundColor: bgColor }}

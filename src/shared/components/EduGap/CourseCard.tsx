@@ -2,19 +2,23 @@ import { motion } from "framer-motion";
 import StarIcon from "@/assets/svgs/StarIcon.svg?react";
 import SaveIcon from "@/assets/svgs/SaveIconWhite.svg?react";
 import SavedIcon from "@/assets/svgs/SavedIcon.svg?react";
-import MedalIcon from "@/assets/svgs/Medalcon.svg?react";
+// import MedalIcon from "@/assets/svgs/Medalcon.svg?react";
 import InstructorAvatar from "@/assets/svgs/InstructorAvatar.svg";
 import DefaultButton from "../ui/DefaultButton";
-import type { CourseType } from "@/shared/types/sharedTypes";
+import type { CourseType, NextLessonType } from "@/shared/types/sharedTypes";
 import CourseCardOverlayDetails from "./CourseCardOverlayDetails";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import LevelBadge from "../ui/LevelBadge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { saveContent } from "@/features/CourseDetails/services/contentDetails";
+import {
+  getNextLesson,
+  saveContent,
+} from "@/features/CourseDetails/services/contentDetails";
 import { useUser } from "@/features/auth/context/UserContext";
+import ButtonLoader from "../ButtonLoader";
 
 const CourseCard = ({ course }: { course: CourseType }) => {
   const { token } = useAuth();
@@ -22,6 +26,13 @@ const CourseCard = ({ course }: { course: CourseType }) => {
   const { user } = useUser();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isLoggedIn = localStorage.getItem("token") ? true : false;
+  const { refetch: fetchNextLesson, isFetching: isFetchingNext } =
+    useQuery<NextLessonType>({
+      queryKey: ["getNextLesson", course?.id],
+      queryFn: () => getNextLesson(course?.id!.toString() ?? ""),
+      enabled: false,
+    });
 
   const { mutateAsync, isPending } = useMutation<void, Error, number>({
     mutationFn: (contentId: number) => saveContent(contentId),
@@ -40,11 +51,24 @@ const CourseCard = ({ course }: { course: CourseType }) => {
     },
   });
 
+  const handleOpenCourse = async () => {
+    if (!isLoggedIn) {
+      navigate(`/guest-course-details/${course.id}`);
+      return;
+    }
+
+    const { data } = await fetchNextLesson();
+
+    const nextLessonId = data?.lessonId;
+
+    navigate(`/course-lesson/${course.id}/${nextLessonId}`);
+  };
+
   return (
     <motion.div
       whileHover={{ scale: 1.015, y: -4 }}
       transition={{ duration: 0.25 }}
-      className="group relative bg-white rounded-xl shadow-custom overflow-hidden w-full cursor-pointer"
+      className="group relative bg-white rounded-xl shadow-custom overflow-hidden w-full"
     >
       {/* Image Section */}
       <div className="relative overflow-hidden rounded-xl">
@@ -57,7 +81,7 @@ const CourseCard = ({ course }: { course: CourseType }) => {
           }}
         />
 
-        {course?.isSaved && <MedalIcon className="absolute top-2 end-2" />}
+        {/* {course?.isSaved && <MedalIcon className="absolute top-2 end-2" />} */}
         <LevelBadge level={course?.level ?? "Beginner"} />
       </div>
 
@@ -96,7 +120,7 @@ const CourseCard = ({ course }: { course: CourseType }) => {
 
         <div className="flex mt-auto gap-4 justify-center relative z-20">
           <motion.button
-            className="bg-white rounded-full grid place-items-center cursor-pointer relative"
+            className="bg-white rounded-full grid place-items-center cursor-pointer absolute start-2 top-1/2 -translate-y-1/2"
             whileHover={!isPending ? { scale: 1.1 } : {}}
             whileTap={!isPending ? { scale: 0.9 } : {}}
             disabled={isPending}
@@ -129,15 +153,18 @@ const CourseCard = ({ course }: { course: CourseType }) => {
 
           <DefaultButton
             text={
-              course?.isEnrolled ? t("Continue_Learning") : t("course_details")
+              course?.isEnrolled ? (
+                isFetchingNext ? (
+                  <ButtonLoader />
+                ) : (
+                  t("Continue_Learning")
+                )
+              ) : (
+                t("course_details")
+              )
             }
-            onClick={() => {
-              navigate(
-                token
-                  ? `/user-course-details/${course.id}`
-                  : `/guest-course-details/${course.id}`
-              );
-            }}
+            disabled={isFetchingNext}
+            onClick={handleOpenCourse}
             type="button"
             moreStyle="min-w-[150px] rounded-3xl !py-1"
           />

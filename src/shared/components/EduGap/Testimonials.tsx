@@ -8,6 +8,7 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { useResponsiveSlides } from "@/shared/utils/useResponsiveSlides";
+import { useState } from "react";
 
 const Testimonials = () => {
   const { t } = useLanguage();
@@ -58,17 +59,37 @@ const Testimonials = () => {
     3 // default
   );
 
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const totalSlides = data?.length ?? 0;
+  const isFirstSlide = currentSlide === 0;
+  const isLastSlide = currentSlide >= totalSlides - slidesToShow;
+
   const settings = {
     dots: true,
-    infinite: true,
+    infinite: false,
     speed: 500,
     slidesToShow,
-    slidesToScroll: 1,
+    slidesToScroll: windowWidth >= 1180 ? 3 : 1,
     accessibility: true,
-    nextArrow: windowWidth >= 1180 ? <ArrowButton direction="right" /> : <></>,
-    prevArrow: windowWidth >= 1180 ? <ArrowButton direction="left" /> : <></>,
-  };
 
+    // track slide index
+    beforeChange: (_: number, next: number) => setCurrentSlide(next),
+
+    nextArrow:
+      windowWidth >= 1180 ? (
+        <ArrowButton direction="right" disabled={isLastSlide} />
+      ) : (
+        <></>
+      ),
+
+    prevArrow:
+      windowWidth >= 1180 ? (
+        <ArrowButton direction="left" disabled={isFirstSlide} />
+      ) : (
+        <></>
+      ),
+  };
   return (
     <div className=" bg-testimonial-color py-5">
       <div className="container relative py-10">

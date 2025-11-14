@@ -12,6 +12,7 @@ import type {
   CurrentUserRating,
   ExpertProfileType,
   InstituteCourseDetailsTypes,
+  NextLessonType,
   PrgoramDetailsTypes,
 } from "@/shared/types/sharedTypes";
 
@@ -34,6 +35,12 @@ export async function getContentAccessStatusForUser(
 ): Promise<ContentAccessType> {
   const res = await api.get<ApiResponse<ContentAccessType>>(
     `/contents/${courseId}/access`
+  );
+  return res.data.data;
+}
+export async function getNextLesson(courseId: string): Promise<NextLessonType> {
+  const res = await api.get<ApiResponse<NextLessonType>>(
+    `/contents/${courseId}/next-lesson-id`
   );
   return res.data.data;
 }

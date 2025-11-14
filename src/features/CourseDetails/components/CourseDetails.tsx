@@ -39,7 +39,7 @@ const CourseDetails = ({
     window.addEventListener("online", updateStatus);
     window.addEventListener("offline", updateStatus);
 
-    updateStatus(); // initial run
+    updateStatus();
 
     return () => {
       window.removeEventListener("online", updateStatus);

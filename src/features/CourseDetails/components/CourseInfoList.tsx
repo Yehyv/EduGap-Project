@@ -13,6 +13,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   enrollContent,
   getContentAccessStatusForUser,
+  getContentProgressData,
+  getNextLesson,
   saveContent,
 } from "../services/contentDetails";
 import Swal from "sweetalert2";
@@ -21,11 +23,13 @@ import { AxiosError } from "axios";
 import type {
   ContentAccessType,
   ContentDetailsType,
+  NextLessonType,
 } from "@/shared/types/sharedTypes";
 import { toast } from "react-toastify";
 import { useUser } from "@/features/auth/context/UserContext";
 import { formatDuration } from "@/shared/utils/globals";
 import { motion } from "framer-motion";
+import LessonProgress from "@/features/ContentLesson/components/LessonProgress";
 
 type StickyCourseSummaryCardProps = {
   contentDetailsCardData: Partial<ContentDetailsType>;
@@ -49,8 +53,21 @@ const StickyCourseSummaryCard = ({
     queryFn: () => getContentAccessStatusForUser(courseId!),
     enabled: isLoggedIn && !!courseId,
   });
+  const { data: getNextLessonData } = useQuery<NextLessonType>({
+    queryKey: ["getNextLesson", courseId],
+    queryFn: () => getNextLesson(courseId!),
+    enabled: isLoggedIn && !!courseId,
+  });
+
+  const { data: progress } = useQuery({
+    queryKey: ["getContentProgress", courseId],
+    queryFn: () => getContentProgressData(courseId!),
+  });
+  const NextLesson = getNextLessonData?.lessonId;
 
   const isEnrolled = contentAccessStatus?.access === "enrolled";
+
+  console.log(progress);
 
   const mutation = useMutation({
     mutationFn: () => enrollContent(courseId ?? ""),
@@ -138,7 +155,7 @@ const StickyCourseSummaryCard = ({
     if (!isEnrolled && isLoggedIn) {
       mutation.mutate();
     } else {
-      navigate(`/course-lesson/${courseId}/${1}`);
+      navigate(`/course-lesson/${courseId}/${NextLesson}`);
     }
   };
   const handleShare = async () => {
@@ -167,7 +184,7 @@ const StickyCourseSummaryCard = ({
     <div className="w-full xl:sticky top-16 xl:w-[28%] bg-neutral-100 rounded-xl px-6 py-5 min-h-[300px] min-lg:h-[400px]">
       <h5 className="text-lg font-semibold mb-4">{t("about_course")}</h5>
 
-      <ul className="space-y-3 mb-7">
+      <ul className="space-y-3 mb-3">
         {infoItems.map(({ icon: Icon, label }, i) => (
           <li key={i} className="flex items-center gap-2">
             <Icon className="w-5 h-5 text-gray-600 shrink-0" />
@@ -175,6 +192,19 @@ const StickyCourseSummaryCard = ({
           </li>
         ))}
       </ul>
+
+      <div className="whitespace-nowrap pe-3 text-secondary">
+        <span className="mx-1">{t("lecture")}</span>
+        <span>
+          {progress?.completedLessons}/{progress?.totalLessons}
+        </span>
+      </div>
+      <div className="mb-2">
+        {isEnrolled && progress && (
+          <LessonProgress courseName="" courseStats={progress} />
+        )}
+      </div>
+
       {!isLoading && (
         <motion.div
           className="text-center"
@@ -214,7 +244,7 @@ const StickyCourseSummaryCard = ({
         <motion.div
           className="flex items-center gap-2 cursor-pointer relative"
           onClick={handleShare}
-          whileTap={{ scale: 0.9 }} // only animates on click
+          whileTap={{ scale: 0.9 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           <ShareIcon className="w-5 h-5" />
