@@ -239,7 +239,7 @@ const translations = {
     privacy_policy: "Privacy Policy",
     terms_of_use: "Terms of Use",
     footer_email: "edugap@",
-
+    footer_services: "Our Services",
     footer_download_title: "Download App",
     footer_google_play: "Google Play",
     footer_app_store: "App Store",
@@ -261,6 +261,89 @@ const translations = {
     go_to_lesson: "Go To Lesson",
     lecture: "Lecture",
     about_institute_course: "About Course",
+    about_edugap: "About EduGap",
+    empowering_education: "Empowering Education for Everyone",
+    about_description:
+      "EduGap is a comprehensive educational platform designed to bridge the gap between learners and quality education. We connect students with world-class courses, provide institutes with powerful tools to manage their educational offerings, and deliver certified learning experiences that make a real difference.",
+
+    our_vision: "Our Vision",
+    our_vision_desc:
+      "To become the leading educational platform that democratizes access to quality learning, enabling every student to achieve their full potential regardless of geographical or economic barriers. We envision a world where education is accessible, affordable, and effective for all.",
+
+    our_mission: "Our Mission",
+    our_mission_desc:
+      "To become the leading educational platform that democratizes access to quality learning, enabling every student to achieve their full potential regardless of geographical or economic barriers. We envision a world where education is accessible, affordable, and effective for all.",
+    our_services: "Our Services",
+    what_we_offer: "What We Offer",
+    services_description:
+      "Comprehensive educational solutions tailored for both individual learners and institutions",
+
+    diverse_courses: "Diverse Courses",
+    diverse_courses_desc:
+      "Access hundreds of courses across various subjects, designed by industry experts and educators.",
+
+    learning_paths: "Learning Paths",
+    learning_paths_desc:
+      "Structured learning journeys that guide you from beginner to expert in your chosen field.",
+
+    institute_subscriptions: "Institute Subscriptions",
+    institute_subscriptions_desc:
+      "Comprehensive solutions for educational institutions to manage courses, students, and certifications.",
+
+    digital_certificates: "Digital Certificates",
+    digital_certificates_desc:
+      "Professional, verifiable certificates upon course completion with multiple layout options.",
+    platform_features: "Platform Features",
+    why_choose_edugap: "Why Choose EduGap?",
+    why_choose_edugap_desc:
+      "Experience education reimagined with cutting-edge features designed for modern learners",
+
+    multi_language_support: "Multi-Language Support",
+    multi_language_support_desc:
+      "Learn in your preferred language with full support for English, Arabic, and more languages coming soon.",
+
+    easy_navigation: "Easy Navigation",
+    easy_navigation_desc:
+      "Intuitive interface designed for seamless learning experience across all devices and platforms.",
+
+    certificate_printing: "Certificate Printing",
+    certificate_printing_desc:
+      "Professional A4 and landscape certificates ready for printing with QR code verification.",
+
+    secure_verified: "Secure & Verified",
+    secure_verified_desc:
+      "All certificates and credentials are securely stored and easily verifiable by employers and institutions.",
+
+    progress_tracking: "Progress Tracking",
+    progress_tracking_desc:
+      "Monitor your learning journey with detailed analytics and progress reports for continuous improvement.",
+
+    accredited_content: "Accredited Content",
+    accredited_content_desc:
+      "Learn from accredited courses and programs recognized by leading educational bodies worldwide.",
+    join_edugap_today: "Join EduGap Today",
+    join_edugap_description:
+      "Whether you're a student seeking to expand your knowledge or an educational institute looking to enhance your offerings, EduGap has the perfect solution for you.",
+
+    for_students: "For Students",
+    for_students_desc:
+      "Start your learning journey today. Access thousands of courses, earn certificates, and achieve your goals.",
+
+    for_institutes: "For Institutes",
+    for_institutes_desc:
+      "Empower your institution with our comprehensive tools for course management and student success.",
+    join_us: "Join Us",
+    contact_us_title: "Contact Us",
+    contact_us_subtitle:
+      "Have questions or want to learn more? Reach out to us — we're here to help!",
+
+    contact_email_title: "Email Us",
+    contact_email_address: "info@edugap.com",
+    contact_email_desc: "We will respond within 24 hours",
+
+    contact_website_title: "Visit Our Website",
+    contact_website_link: "www.edugap.com",
+    contact_website_desc: "Explore our full platform",
   },
 
   ar: {
@@ -503,6 +586,7 @@ const translations = {
     privacy_policy: "سياسة الخصوصية",
     terms_of_use: "شروط الاستخدام",
     footer_email: "edugap@",
+    footer_services: "خدماتنا",
     footer_download_title: "حمل التطبيق",
     footer_google_play: "جوجل بلاي",
     footer_app_store: "آب ستور",
@@ -524,6 +608,89 @@ const translations = {
     go_to_lesson: "الذهاب الي الدرس",
     lecture: "المحاضرة",
     about_institute_course: "عن المقرر",
+    about_edugap: "عن منصة EduGap",
+    empowering_education: "تمكين التعليم للجميع",
+    about_description:
+      "إديوجاب هي منصة تعليمية شاملة مصممة لردم الفجوة بين المتعلمين والتعليم عالي الجودة. نربط الطلاب بدورات عالمية، ونوفر للمعاهد أدوات قوية لإدارة محتواها التعليمي، ونقدم تجارب تعليمية معتمدة تُحدث فرقًا حقيقيًا.",
+
+    our_vision: "رؤيتنا",
+    our_vision_desc:
+      "أن نصبح المنصة التعليمية الرائدة التي تُمكّن الجميع من الوصول إلى تعلم عالي الجودة، مما يساعد كل طالب على تحقيق إمكاناته الكاملة بغض النظر عن العوائق الجغرافية أو الاقتصادية. نطمح لعالم يصبح فيه التعليم متاحًا وبأسعار مناسبة وفعّالًا للجميع.",
+
+    our_mission: "مهمتنا",
+    our_mission_desc:
+      "أن نصبح المنصة التعليمية الرائدة التي تُمكّن الجميع من الوصول إلى تعلم عالي الجودة، مما يساعد كل طالب على تحقيق إمكاناته الكاملة بغض النظر عن العوائق الجغرافية أو الاقتصادية. نطمح لعالم يصبح فيه التعليم متاحًا وبأسعار مناسبة وفعّالًا للجميع.",
+    our_services: "خدماتنا",
+    what_we_offer: "ماذا نقدم",
+    services_description:
+      "حلول تعليمية شاملة مصممة للمتعلمين الأفراد والمؤسسات التعليمية",
+
+    diverse_courses: "دورات متنوعة",
+    diverse_courses_desc:
+      "يمكنك الوصول إلى مئات الدورات في مختلف المجالات، والمقدمة من خبراء الصناعة والمعلمين.",
+
+    learning_paths: "مسارات التعلم",
+    learning_paths_desc:
+      "مسارات تعليمية منظمة ترشدك من مستوى المبتدئ إلى الاحتراف في مجالك المختار.",
+
+    institute_subscriptions: "اشتراكات المعاهد",
+    institute_subscriptions_desc:
+      "حلول شاملة للمؤسسات التعليمية لإدارة الدورات والطلاب والشهادات.",
+
+    digital_certificates: "شهادات رقمية",
+    digital_certificates_desc:
+      "شهادات احترافية وقابلة للتحقق بعد إكمال الدورات، مع توفر عدة تصاميم.",
+    platform_features: "مميزات المنصة",
+    why_choose_edugap: "لماذا تختار EduGap؟",
+    why_choose_edugap_desc:
+      "اختبر تعليماً مبتكراً مع مميزات متطورة مصممة خصيصاً للمتعلمين الحديثين",
+
+    multi_language_support: "دعم متعدد اللغات",
+    multi_language_support_desc:
+      "تعلم بلغتك المفضلة مع دعم كامل للإنجليزية والعربية والمزيد قريباً.",
+
+    easy_navigation: "سهولة التصفح",
+    easy_navigation_desc:
+      "واجهة بسيطة وسهلة الاستخدام لتجربة تعلم سلسة عبر جميع الأجهزة والمنصات.",
+
+    certificate_printing: "طباعة الشهادات",
+    certificate_printing_desc:
+      "شهادات احترافية بقياس A4 وأفقي جاهزة للطباعة مع رمز QR للتحقق.",
+
+    secure_verified: "آمن وقابل للتحقق",
+    secure_verified_desc:
+      "جميع الشهادات والبيانات مخزنة بأمان وسهلة التحقق من قبل المؤسسات وأصحاب العمل.",
+
+    progress_tracking: "متابعة التقدم",
+    progress_tracking_desc:
+      "تابع رحلتك التعليمية من خلال تحليلات وتقارير تقدم مفصلة لتحسين مستمر.",
+
+    accredited_content: "محتوى معتمد",
+    accredited_content_desc:
+      "تعلم من دورات وبرامج معتمدة من جهات تعليمية رائدة حول العالم.",
+    join_edugap_today: "انضم إلى EduGap اليوم",
+    join_edugap_description:
+      "سواء كنت طالبًا تسعى لتطوير معرفتك أو مؤسسة تعليمية ترغب في تحسين خدماتك، تقدم منصة EduGap الحل الأمثل لك.",
+
+    for_students: "للطلاب",
+    for_students_desc:
+      "ابدأ رحلتك التعليمية اليوم. الوصول إلى آلاف الدورات، الحصول على شهادات، وتحقيق أهدافك.",
+
+    for_institutes: "للمؤسسات التعليمية",
+    for_institutes_desc:
+      "عزّز مؤسستك بأدواتنا المتكاملة لإدارة الدورات وتحقيق نجاح الطلاب.",
+    join_us: "انضم إلينا",
+    contact_us_title: "تواصل معنا",
+    contact_us_subtitle:
+      "لديك استفسار أو تريد معرفة المزيد؟ تواصل معنا، نحن هنا لمساعدتك!",
+
+    contact_email_title: "راسلنا عبر البريد",
+    contact_email_address: "info@edugap.com",
+    contact_email_desc: "سنقوم بالرد خلال ٢٤ ساعة",
+
+    contact_website_title: "زور موقعنا",
+    contact_website_link: "www.edugap.com",
+    contact_website_desc: "اكتشف منصتنا بالكامل",
   },
 } as const;
 

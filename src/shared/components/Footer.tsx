@@ -11,25 +11,24 @@ const Footer = () => {
 
   const footerLinks = {
     main: [
-      { label: t("footer_about"), to: "#" },
-      { label: t("footer_news"), to: "#" },
-      { label: t("footer_team"), to: "#" },
-      { label: t("footer_contact"), to: "#" },
+      { label: t("footer_about"), to: "/About-us" },
+      { label: t("footer_services"), to: "/our-services" },
+      // { label: t("footer_team"), to: "#" },
+      { label: t("footer_contact"), to: "/contact-us" },
     ],
     discover: [
-      { label: t("footer_discover_courses"), to: "#" },
-      { label: t("footer_discover_popular"), to: "#" },
-      { label: t("footer_discover_plans"), to: "#" },
-      { label: t("footer_discover_experts"), to: "#" },
+      { label: t("footer_discover_courses"), to: "/latest-courses" },
+      { label: t("footer_discover_popular"), to: "/popular-courses-list" },
+      // { label: t("footer_discover_plans"), to: "#" },
+      { label: t("footer_discover_experts"), to: "/experts-list" },
     ],
-    business: [{ label: t("footer_business_join_experts"), to: "#" }],
+    business: [{ label: t("footer_business_join_experts"), to: "/join-us" }],
   };
 
   return (
     <motion.footer
       className="bg-primary py-8"
       aria-labelledby="footer-heading"
-      dir="ltr"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
@@ -110,7 +109,7 @@ const Footer = () => {
                 ))}
                 <motion.li whileHover={{ scale: 1.05 }}>
                   <Link
-                    to="/"
+                    to={footerLinks.business[0].to}
                     className="border rounded-xl text-secondary border-secondary px-6 py-1.5 inline-block mt-2"
                   >
                     {t("join_now")}
@@ -122,6 +121,7 @@ const Footer = () => {
 
           {/* App Download */}
           <motion.div
+            dir="ltr"
             className="space-y-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -130,11 +130,11 @@ const Footer = () => {
             <h3 className="text-lg font-semibold text-gray-900 text-center">
               {t("footer_download_title")}
             </h3>
-            <ul role="list" className="mt-5 space-y-4 max-w-45 mx-auto">
+            <ul role="list" className="mt-5 space-y-4 max-w-40 mx-auto">
               <motion.li whileHover={{ scale: 1.05 }}>
                 <Link
                   to="/"
-                  className="border rounded-xl text-sm bg-white text-secondary border-secondary px-7 py-0.5 flex justify-center"
+                  className="border rounded-xl text-sm bg-white text-secondary border-secondary px-3 py-0.5 flex justify-start"
                 >
                   <div className="flex justify-between items-center gap-3">
                     <Suspense
@@ -154,7 +154,7 @@ const Footer = () => {
               <motion.li whileHover={{ scale: 1.05 }}>
                 <Link
                   to="/"
-                  className="border flex justify-center rounded-xl text-sm bg-white text-secondary border-secondary px-7 py-0.5"
+                  className="border rounded-xl text-sm bg-white text-secondary border-secondary px-3 py-0.5 flex justify-start"
                 >
                   <div className="flex justify-between items-center gap-3">
                     <Suspense

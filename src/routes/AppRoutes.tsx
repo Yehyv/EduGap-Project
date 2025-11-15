@@ -32,6 +32,11 @@ import CourseMaterials from "@/pages/CourseMaterials";
 import ChangePassword from "@/pages/ChangePassword";
 import VerifyOtpForForgotPassword from "@/pages/VerifyOtpForForgotPassword";
 import SearchResults from "@/pages/SearchResults";
+import AboutUs from "@/pages/AboutUs";
+import OurServices from "@/pages/OurServices";
+import OurFeatures from "@/pages/OurFeatures";
+import JoinUs from "@/pages/JoinUs";
+import ContactUs from "@/pages/ContactUs";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -50,6 +55,11 @@ export default function AppRoutes() {
           element={<InstituteCourseDetails />}
         />
         <Route path="/search-results" element={<SearchResults />} />
+        <Route path="/About-us" element={<AboutUs />} />
+        <Route path="/our-services" element={<OurServices />} />
+        <Route path="/our-features" element={<OurFeatures />} />
+        <Route path="/join-us" element={<JoinUs />} />
+        <Route path="/contact-us" element={<ContactUs />} />
       </Route>
 
       {/* Public Routes with AuthLayout */}
