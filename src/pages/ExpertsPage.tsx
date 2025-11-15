@@ -36,9 +36,11 @@ const ExpertsPage = () => {
         </div>
       ) : (
         <>
-          {data?.items?.map((expertData, index) => (
-            <ExpertsCard key={index} expertData={expertData} />
-          ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 justify-items-center xl:grid-cols-5 gap-2">
+            {data?.items?.map((expertData, index) => (
+              <ExpertsCard key={index} expertData={expertData} />
+            ))}
+          </div>
           <CustomPagination
             currentPage={data?.pagination.page ?? 1}
             onPageChange={handlePageChange}

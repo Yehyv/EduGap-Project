@@ -15,13 +15,14 @@ const TitleLine = lazy(() => import("@/assets/svgs/TitileLine.svg?react"));
 
 const LessonAttachments = () => {
   const { t } = useLanguage();
-
   const { lessonId } = useParams();
   const { data, isLoading, error } = useQuery<lessonMaterialsTypes[]>({
     queryKey: ["getLessonMaterials", lessonId],
     queryFn: () => getLessonsMaterials(lessonId ?? ""),
   });
+
   const hasFiles = data != undefined && data?.length > 0;
+  const materialsData = data?.[0]?.materials;
 
   if (error)
     return (
@@ -44,7 +45,7 @@ const LessonAttachments = () => {
 
       {/* If files exist */}
       {hasFiles ? (
-        data?.map((file, i) => (
+        materialsData?.map((file, i) => (
           <div key={i} className="mb-5">
             <div className="flex gap-4 border border-[#D6D6D6] hover:border-primary transition rounded-xl px-4 py-3 items-center">
               <AttachmentIcon className="text-primary" />
@@ -55,8 +56,17 @@ const LessonAttachments = () => {
                 <p className="text-gray-400">{file?.description}</p>
               </div>
 
-              {/* download icon */}
-              <DownloadIcon className="cursor-pointer hover:scale-105 transition" />
+              {/* Open PDF in new tab */}
+              {file?.file && (
+                <a
+                  href={file.file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer hover:scale-105 transition"
+                >
+                  <DownloadIcon />
+                </a>
+              )}
             </div>
           </div>
         ))
