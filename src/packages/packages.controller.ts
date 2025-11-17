@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   UseGuards,
   Req,
+  Headers,
 } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { CreatePackageDto } from './dto/create-package.dto';
@@ -36,6 +37,11 @@ export class PackagesController {
   findAll() {
     return this.packagesService.findAll();
   }
+  @Get('all/nav')
+  findAllForNav(@Headers('languageId') languageId?: number) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.packagesService.packagesNav(langId);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -55,7 +61,7 @@ export class PackagesController {
   @Get(':id/basic')
   async getBasic(
     @Param('id', ParseIntPipe) id: number,
-    @Query('languageId') languageId?: number,
+    @Headers('languageId') languageId?: number,
   ) {
     return this.packagesService.getPackageBasicById(id, {
       languageId: languageId ? Number(languageId) : undefined,

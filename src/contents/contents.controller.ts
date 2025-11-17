@@ -322,6 +322,20 @@ findLatestOne(
       programId: programId ? Number(programId) : undefined,
     });
   }
+  @UseGuards(JwtAuthGuard)
+  @Get('all/nav')
+  async contentsNav(
+    @Req() req: AuthenticatedRequest,
+    @Query('programId') programId?: string,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const instituteId = req.user?.instituteId;
+    return this.contentsService.contentsNav({
+      instituteId,
+      programId: programId ? Number(programId) : undefined,
+      languageId: languageId ? Number(languageId) : undefined,
+    });
+  }
   @UseGuards(JwtAuthGuard) // أو الجارديان عندك
   @Get(':id/next-lesson-id')
   async getNextLessonId(

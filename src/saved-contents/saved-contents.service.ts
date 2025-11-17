@@ -152,4 +152,69 @@ export class SavedContentsService {
     await this.savedRepo.softDelete(items.map((i) => i.id));
     return items.length;
   }
+  async savedContentsNav(
+    userId: number,
+    {
+      languageId,
+      limit = 12, // مناسب للـ navbar
+    }: { languageId?: number; limit?: number } = {},
+  ): Promise<
+    Array<{
+      id: number;
+      name: string;
+      image: string | null;
+      instructor: { id: number; name: string; title: string | null } | null;
+    }>
+  > {
+    const qb = this.savedRepo
+      .createQueryBuilder('s')
+      .leftJoin('s.user', 'u')
+      .leftJoinAndSelect('s.content', 'c')
+      .leftJoinAndSelect(
+        'c.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.educator', 'edu')
+      .leftJoinAndSelect('edu.user', 'eduUser')
+      .where('u.id = :userId', { userId })
+      .orderBy('s.createdAt', 'DESC')
+      .take(limit)
+      .distinct(true);
+
+    const rows = await qb.getMany();
+
+    const pickTr = <T extends { language?: { id?: number } }>(
+      list: T[] | undefined,
+      langId?: number,
+    ): T | undefined => {
+      if (!list || !list.length) return undefined;
+      if (langId == null) return list[0];
+      return (
+        list.find(
+          (t: any) => t?.language?.id === langId || t?.languageId === langId,
+        ) ?? list[0]
+      );
+    };
+
+    return rows.map((r) => {
+      const tr = pickTr(r.content?.translations, languageId);
+      const instructor = r.content?.educator
+        ? {
+            id: r.content.educator.id,
+            name: r.content.educator.user?.full_name ?? '',
+            title: r.content.educator.title ?? null,
+          }
+        : null;
+
+      return {
+        id: r.content.id,
+        name: tr?.name ?? '',
+        image: r.content.image ?? null,
+        instructor,
+        isSaved: true,
+      };
+    });
+  }
 }

@@ -54,6 +54,11 @@ export class EducatorsController {
     const oa = onlyActive !== undefined ? Number(onlyActive) : undefined;
     return this.educatorsService.findAll(search, p, l, oa);
   }
+  @Get('all/nav')
+  findAllForNav(@Query('onlyActive') onlyActive?: string) {
+    const oa = onlyActive !== undefined ? Number(onlyActive) : 1;
+    return this.educatorsService.educatorsNav(oa);
+  }
 
   /**
    * GET /educators/first-8 — أول 8 (افتراضيًا active فقط)

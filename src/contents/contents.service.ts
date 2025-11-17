@@ -44,6 +44,19 @@ export class ContentsService {
     @InjectRepository(SavedContent)
     private readonly savedContentRepo: Repository<SavedContent>,
   ) {}
+  private pickTr<T extends { language?: { id?: number } }>(
+    list: T[] | undefined,
+    languageId?: number,
+  ): T | undefined {
+    if (!list || !list.length) return undefined;
+    if (languageId == null) return list[0];
+    return (
+      list.find(
+        (t: any) =>
+          t?.language?.id === languageId || t?.languageId === languageId,
+      ) ?? list[0]
+    );
+  }
   private async buildSavedMap(userId: number | undefined, ids: number[]) {
     if (!userId || ids.length === 0) return new Map<number, boolean>();
 
@@ -1195,5 +1208,96 @@ export class ContentsService {
           }
         : null, // لو لسه ما اتعيَّن مدرّس
     };
+  }
+
+  async contentsNav({
+    instituteId,
+    programId,
+    languageId,
+    limitPerCategory = 50, // اختياري: أول N من كل كاتيجوري
+  }: {
+    instituteId: number;
+    programId?: number;
+    languageId?: number;
+    limitPerCategory?: number;
+  }) {
+    // هات كل المحتويات المرتبطة بالمعهد/البرنامج مع الترجمات المطلوبة
+    const rows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin(
+        'c.courseContents',
+        'cc',
+        'cc.deleted_at IS NULL AND cc.is_active != 0',
+      )
+      .leftJoin('cc.course', 'course')
+      .leftJoin('course.instituteProgramCourses', 'ipc')
+      .leftJoinAndSelect(
+        'c.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.contentCategory', 'cat')
+      .leftJoinAndSelect(
+        'cat.translations',
+        'catTr',
+        languageId ? 'catTr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.educator', 'edu')
+      .leftJoinAndSelect('edu.user', 'eduUser')
+      .where('c.deleted_at IS NULL')
+      .andWhere('c.is_active != 0')
+      .andWhere('ipc.instituteId = :instituteId', { instituteId })
+      .andWhere(programId ? 'ipc.programId = :programId' : '1=1', { programId })
+      .orderBy('c.created_at', 'DESC')
+      .getMany();
+
+    if (!rows.length) return { categories: [] };
+
+    // group by category
+    const byCategory = new Map<number, typeof rows>();
+    for (const c of rows) {
+      const catId = c.contentCategory?.id ?? 0; // 0 = بدون تصنيف
+      const arr = byCategory.get(catId) ?? [];
+      arr.push(c);
+      byCategory.set(catId, arr);
+    }
+
+    const categories = Array.from(byCategory.entries()).map(([catId, arr]) => {
+      const catTr = this.pickTr(
+        arr[0].contentCategory?.translations,
+        languageId,
+      );
+      const catName = catId === 0 ? 'General' : (catTr?.name ?? '');
+
+      const items = arr.slice(0, limitPerCategory).map((c) => {
+        const tr = this.pickTr(c.translations, languageId);
+        // const educatorName = c.educator?.user?.full_name ?? '';
+        return {
+          id: c.id,
+          name: tr?.name ?? '',
+          image: c.image ?? null,
+          educator: c.educator
+            ? {
+                id: c.educator.id,
+                title: c.educator.title,
+                name: c.educator.user?.full_name ?? '',
+              }
+            : null,
+        };
+      });
+
+      return {
+        id: catId || null,
+        name: catName,
+        items,
+      };
+    });
+
+    // ترتيب حسب اسم التصنيف (اختياري)
+    categories.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    return { categories };
   }
 }

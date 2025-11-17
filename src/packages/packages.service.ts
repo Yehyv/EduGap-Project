@@ -96,6 +96,23 @@ export class PackagesService {
       };
     });
   }
+  async packagesNav(languageId?: number) {
+    const rows = await this.pkgRepo.find({
+      relations: ['translations', 'translations.language'],
+      order: { id: 'DESC' },
+    })
+    return rows.map((p) => {
+      const tr = 
+        p.translations?.find((t) => t.language?.id === languageId) || 
+        p.translations?.[0];
+        return {
+          id: p.id,
+          title: tr?.title ?? '',
+          image: p.image,
+        }
+    })
+  }
+  
 
   /** FIND ONE */
   async findOne(id: number, languageId?: number) {

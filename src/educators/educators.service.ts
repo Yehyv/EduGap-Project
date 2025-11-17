@@ -115,6 +115,27 @@ export class EducatorsService {
     };
   }
 
+  async educatorsNav(onlyActive?: number) {
+    const base: FindOptionsWhere<Educator> = {};
+    if (onlyActive === 1) base.is_active = 1;
+
+    const items = await this.educatorRepo.find({
+      where: base,
+      relations: ['user'],
+      order: { title: 'ASC' },
+    });
+    const mapped = items.map((e) => ({
+      id: e.id,
+      title: e.title,
+      bio: e.bio,
+      image: e.image,
+      user: {
+        full_name: e.user?.full_name ?? '',
+      },
+    }));
+    return mapped;
+  }
+
   /** Find one (with user full_name) */
   async findOne(id: number) {
     const educator = await this.educatorRepo.findOne({

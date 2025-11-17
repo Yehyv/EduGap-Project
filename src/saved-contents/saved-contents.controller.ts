@@ -9,6 +9,7 @@ import {
   DefaultValuePipe,
   Req,
   UseGuards,
+  Headers,
 } from '@nestjs/common';
 import { SavedContentsService } from './saved-contents.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -70,5 +71,18 @@ export class SavedContentsController {
       limit,
       search,
     });
+  }
+  @Get('all/nav')
+  async listMinimal(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const userId = req.user?.sub; // حسب الـ JWT عندك
+    const items = await this.savedSrv.savedContentsNav(userId, {
+      languageId: languageId ? Number(languageId) : undefined,
+      limit: limit ? Math.min(50, Math.max(1, Number(limit))) : 12,
+    });
+    return { items };
   }
 }
