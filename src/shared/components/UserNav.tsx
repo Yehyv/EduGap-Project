@@ -156,6 +156,9 @@ const UserNav = () => {
                 <div className="text-sm text-[#797979]">
                   {user?.instituteName}
                 </div>
+                <div className="text-sm text-[#797979]">
+                  {user?.programName}
+                </div>
               </div>
               {/* <div className="text-sm text-secondary flex justify-center gap-2 mt-2">
                 <span>{t("total_points")}</span>

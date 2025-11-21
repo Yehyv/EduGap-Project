@@ -8,6 +8,7 @@ type User = {
   instituteName: string;
   logo: string;
   userImage: string;
+  programName: string;
 };
 
 type UserContextType = {

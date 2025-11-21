@@ -53,10 +53,10 @@
 
 /* Base styles */
 .stretched-line {
-  width: 200px; /* طول الخط */
-  height: 4px; /* سمك الخط */
-  background-color: #f97316; /* لون الخط */
-  border-radius: 50% / 100%; /* يجعل الخط مقوس */
+  width: 200px;
+  height: 4px;
+  background-color: #f97316;
+  border-radius: 50% / 100%;
 }
 @layer base {
   body {

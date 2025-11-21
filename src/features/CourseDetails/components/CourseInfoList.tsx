@@ -62,12 +62,11 @@ const StickyCourseSummaryCard = ({
   const { data: progress } = useQuery({
     queryKey: ["getContentProgress", courseId],
     queryFn: () => getContentProgressData(courseId!),
+    enabled: !!isLoggedIn,
   });
   const NextLesson = getNextLessonData?.lessonId;
 
   const isEnrolled = contentAccessStatus?.access === "enrolled";
-
-  console.log(progress);
 
   const mutation = useMutation({
     mutationFn: () => enrollContent(courseId ?? ""),
@@ -181,7 +180,7 @@ const StickyCourseSummaryCard = ({
   };
 
   return (
-    <div className="w-full xl:sticky top-16 xl:w-[28%] bg-neutral-100 rounded-xl px-6 py-5 min-h-[300px] min-lg:h-[400px]">
+    <div className="flex flex-col justify-between w-full xl:sticky top-16 xl:w-[28%] bg-neutral-100 rounded-xl px-6 py-5 min-h-[300px] min-lg:h-[400px]">
       <h5 className="text-lg font-semibold mb-4">{t("about_course")}</h5>
 
       <ul className="space-y-3 mb-3">
@@ -193,17 +192,21 @@ const StickyCourseSummaryCard = ({
         ))}
       </ul>
 
-      <div className="whitespace-nowrap pe-3 text-secondary">
-        <span className="mx-1">{t("lecture")}</span>
-        <span>
-          {progress?.completedLessons}/{progress?.totalLessons}
-        </span>
-      </div>
-      <div className="mb-2">
-        {isEnrolled && progress && (
-          <LessonProgress courseName="" courseStats={progress} />
-        )}
-      </div>
+      {isLoggedIn && isEnrolled && (
+        <>
+          <div className="whitespace-nowrap pe-3 text-secondary">
+            <span className="mx-1">{t("lecture")}</span>
+            <span>
+              {progress?.completedLessons}/{progress?.totalLessons}
+            </span>
+          </div>
+          <div className="mb-2">
+            {isEnrolled && progress && (
+              <LessonProgress courseName="" courseStats={progress} />
+            )}
+          </div>
+        </>
+      )}
 
       {!isLoading && (
         <motion.div

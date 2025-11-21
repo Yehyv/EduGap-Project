@@ -17,7 +17,29 @@ export type ApiResponseWithPagination<T> = {
   data: { data: T; pagination: T };
 };
 export type LevelName = "Beginner" | "Mid" | "Advanced";
+export type CategoriesResponse = {
+  categories: CategoriesTypes[];
+};
+export type CategoriesTypes = {
+  id: number;
+  name: string;
+  items: CourseType[];
+};
+export type savedContentDropdownType = {
+  id: number;
+  name: string;
+  image: string;
+  instructor: {
+    id: number;
+    name: string;
+    title: string;
+  };
+  isSaved: boolean;
+};
 
+export type savedContentDropdownResponse = {
+  items: savedContentDropdownType[];
+};
 export type CourseType = {
   id: number;
   description: string;
@@ -313,6 +335,9 @@ export type ExpertsData = {
   title: string;
   image: string;
   bio: string;
+  user?: {
+    full_name: string;
+  };
 };
 
 export type TokenPayload = {

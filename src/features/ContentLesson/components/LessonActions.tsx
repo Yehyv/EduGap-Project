@@ -106,14 +106,14 @@ const LessonActions = ({
     >
       <h4 className="font-semibold">{lessonTitle}</h4>
 
-      <div className="flex max-md:flex-col-reverse max-md:justify-center flex-wrap gap-2 text-secondary">
+      <div className="flex max-md:flex-col-reverse max-md:justify-center flex-wrap gap-2 text-secondary max-lg:mx-5">
         {/*  Share Button Animated */}
         <motion.button
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           transition={{ type: "spring", stiffness: 300 }}
           onClick={handleShare}
-          className="bg-[#F5F5F5] rounded-3xl text-sm px-6 py-2 center gap-2 cursor-pointer select-none"
+          className="bg-[#F5F5F5] rounded-3xl text-sm px-6 center gap-2 cursor-pointer select-none py-2"
         >
           <LazyIcon Icon={ShareIcon} />
           <span>{t("share")}</span>
@@ -124,7 +124,7 @@ const LessonActions = ({
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => saveLessonMutation.mutate()}
-          className="bg-[#F5F5F5] rounded-3xl text-sm px-6 ps-2 center gap-2 cursor-pointer select-none"
+          className="bg-[#F5F5F5] rounded-3xl text-sm px-6 ps-2 center gap-2 cursor-pointer select-none py-2"
         >
           <AnimatePresence mode="wait">
             {data?.savedStatus !== "unsaved" ? (
@@ -151,7 +151,7 @@ const LessonActions = ({
         </motion.button>
 
         {/*  Like / Dislike with smooth animation */}
-        <div className="bg-[#F5F5F5] rounded-3xl flex items-center justify-center gap-3 px-3">
+        <div className="bg-[#F5F5F5] rounded-3xl flex items-center justify-center gap-3 px-3 py-2">
           {/* Dislike */}
           <motion.div
             whileHover={{ scale: 1.15 }}
@@ -187,7 +187,7 @@ const LessonActions = ({
           <motion.div
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.9 }}
-            className="center gap-2 cursor-pointer select-none"
+            className="center gap-2 cursor-pointer select-none "
             onClick={() => likeMutation.mutate()}
           >
             <AnimatePresence mode="wait">

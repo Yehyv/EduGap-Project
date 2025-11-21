@@ -21,7 +21,7 @@ const CourseContentCard = ({
   const { t } = useLanguage();
 
   return (
-    <div className="w-full lg:w-[30%] h-full mb-10">
+    <div className="w-full lg:w-[30%] lg:h-full lg:mb-10">
       {/* Lessons List */}
       <div className="shadow-custom rounded-xl py-5 min-lg:h-[400px]">
         <h5 className="flex gap-2 text-lg font-semibold mb-4 border-b pb-3 border-[#D0CDCD] px-5 sticky top-0 bg-white z-10">

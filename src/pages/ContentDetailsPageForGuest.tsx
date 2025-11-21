@@ -18,6 +18,6 @@ const CourseDetailsPageForGuest = () => {
     return (
       <ErrorMessage message={error?.message ?? "Error in content details"} />
     );
-  return data && <CourseDetails data={data} />;
+  return data && <CourseDetails isLoading={isLoading} data={data} />;
 };
 export default CourseDetailsPageForGuest;

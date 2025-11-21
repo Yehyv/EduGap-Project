@@ -28,7 +28,7 @@ const SavedContentsList = () => {
   return (
     <div className="mb-5 mt-10 container">
       <ScrollToTop />
-      <SectionTitle textTitle={t("courses_title")} />
+      <SectionTitle textTitle={t("saved_courses_title")} />
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 my-10">
@@ -39,7 +39,7 @@ const SavedContentsList = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-            {data?.formattedContents?.map((courseData, idx) => (
+            {data?.items?.map((courseData, idx) => (
               <CourseCard key={idx} course={courseData} />
             ))}
           </div>
