@@ -9,7 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Request } from 'express';
-import { Lesson } from 'src/lessons/entities/lesson.entity';
+import { Lesson, LessonType } from 'src/lessons/entities/lesson.entity';
 import { LessonProgress } from './entities/lesson-progress.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonsService } from 'src/lessons/lessons.service';
@@ -33,18 +33,23 @@ export class ProgressService {
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
 
+    // ⛔ منع استخدام الـ endpoint ده مع الكويز
+    if (lesson.lesson_type === LessonType.QUESTIONS) {
+      throw new BadRequestException(
+        'Cannot complete a quiz lesson via this endpoint. Submit the quiz instead.',
+      );
+    }
+
     const enrollment = await this.enrollRepo.findOne({
       where: { user: { id: userId }, content: { id: lesson.topic.content.id } },
-      select: ['id', 'status'], // 👈 هات الـ status كمان عشان نعدّله
+      select: ['id', 'status'],
     });
     if (!enrollment)
       throw new ForbiddenException('Not enrolled in this course');
 
-    // هنحتاج كمان contentId من الدالة
     const { prev, next, contentId } =
       await this.lessonsService.getPrevAndNextInContent(lessonId);
 
-    // لازم تكون مكمّل السابق لو في سابق
     if (prev) {
       const prevCompleted = await this.progressRepo.exist({
         where: {
@@ -58,7 +63,6 @@ export class ProgressService {
       }
     }
 
-    // upsert progress (هنا زي ما هو)
     try {
       const entity = this.progressRepo.create({
         lesson: { id: lesson.id },
@@ -70,11 +74,7 @@ export class ProgressService {
       // already exists -> ignore
     }
 
-    // 👇👇 إضافة جزء الـ "آخر درس → كمّل الـ content"
     if (!next) {
-      // مفيش درس بعده في الـ content ده → احتمال يكون آخر واحد
-      // نتأكد بالأرقام (total vs completed)
-
       const totalLessons = await this.lessonRepo
         .createQueryBuilder('l')
         .innerJoin('l.topic', 't')
@@ -89,11 +89,7 @@ export class ProgressService {
         .getCount();
 
       if (totalLessons > 0 && completedLessons >= totalLessons) {
-        // ✅ كل الدروس في الـ content ده اتكمّلت
         await this.enrollRepo.update(enrollment.id, { status: 1 });
-        // أو:
-        // enrollment.status = 1;
-        // await this.enrollRepo.save(enrollment);
       }
     }
 

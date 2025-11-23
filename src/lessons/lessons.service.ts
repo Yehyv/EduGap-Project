@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DeepPartial  } from 'typeorm';
 
-import { Lesson } from './entities/lesson.entity';
+import { Lesson, LessonType } from './entities/lesson.entity';
 import { LessonTranslation } from './entities/lesson-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
@@ -203,18 +203,17 @@ export class LessonsService {
   async getLessonContent(lessonId: number, languageId?: number) {
   const qb = this.lessonRepo
     .createQueryBuilder('lesson')
-    // نجيب ترجمة واحدة حسب اللغة المطلوبة (إن وجدت)
     .leftJoinAndSelect(
       'lesson.translations',
       'tr',
       languageId ? 'tr.languageId = :languageId' : undefined,
       { languageId },
     )
-    // نرجّع الحقول الخفيفة فقط
     .select([
       'lesson.id',
       'lesson.order_id',
       'lesson.video_link',
+      'lesson.lesson_type',        // 👈 مهم
       'tr.id',
       'tr.name',
     ])
@@ -222,6 +221,11 @@ export class LessonsService {
 
   const entity = await qb.getOne();
   if (!entity) throw new NotFoundException('Lesson not found');
+
+  // ⛔ لو الدرس ده كويز → منستخدمش الـ content endpoint
+  if (entity.lesson_type === LessonType.QUESTIONS) {
+    throw new BadRequestException('This lesson is a quiz. Use quiz endpoint.');
+  }
 
   const name = entity.translations?.[0]?.name ?? '';
 
@@ -400,6 +404,7 @@ async getTopicsWithStatus(
 
         return {
           id: l.id,
+          type: l.lesson_type,
           name: ltr?.name || '',
           duration,
           order: l.order_id ?? 0,
@@ -412,6 +417,7 @@ async getTopicsWithStatus(
         id: t.id,
         name: ttr?.name || '',
         duration: topicDuration,
+        type_disc: '0 for video, 1 for quiz', // توضيح نوع الدرس
         lessons,
       };
     });

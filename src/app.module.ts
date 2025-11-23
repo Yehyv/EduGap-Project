@@ -34,6 +34,7 @@ import { PrerequiestContentsModule } from './prerequiest-contents/prerequiest-co
 import { SavedContentsModule } from './saved-contents/saved-contents.module';
 import { SavedPackagesModule } from './saved-packages/saved-packages.module';
 import { SearchModule } from './search/search.module';
+import { QuestionsModule } from './questions/questions.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -72,6 +73,7 @@ import { SearchModule } from './search/search.module';
     PrerequiestContentsModule,
     SavedPackagesModule,
     SearchModule,
+    QuestionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -275,4 +275,3 @@ export class PrerequisitesService {
 //     return { message: 'Unassigned successfully' };
 //   }
 // }
-

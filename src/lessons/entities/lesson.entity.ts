@@ -16,6 +16,11 @@ import { LessonComment } from 'src/lesson-comments/entities/lesson-comment.entit
 import { LessonMaterial } from 'src/lesson-materials/entities/lesson-material.entity';
 import { LessonNote } from 'src/lesson-notes/entities/lesson-note.entity';
 import { LessonReaction } from 'src/lesson-reactions/entities/lesson-reaction.entity';
+import { Question } from 'src/questions/entities/question.entity';
+export enum LessonType {
+  LESSON = 0,
+  QUESTIONS = 1,
+}
 @Entity()
 export class Lesson {
   @PrimaryGeneratedColumn()
@@ -30,8 +35,13 @@ export class Lesson {
   @Column({ name: 'video_link', type: 'text', nullable: true })
   video_link: string;
 
-  @Column({ name: 'lesson_type', type: 'enum', enum: [0, 1], default: 0 })
-  lesson_type: number; // 0 = lesson , 1 = questions
+  @Column({
+    name: 'lesson_type',
+    type: 'tinyint',
+    width: 1,
+    default: LessonType.LESSON,
+  })
+  lesson_type: LessonType; // 0 = lesson , 1 = questions
 
   @Column({ name: 'questions_percentage_score', type: 'int', nullable: true })
   questions_percentage_score: number; // ex: 70
@@ -73,4 +83,7 @@ export class Lesson {
 
   @OneToMany(() => LessonReaction, (reaction) => reaction.lesson)
   reactions: LessonReaction[];
+
+  @OneToMany(() => Question, (question) => question.lesson)
+  questions: Question[];
 }

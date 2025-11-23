@@ -36,7 +36,7 @@ import { LessonUnlockGuard } from './lesson-unlock.guard';
     ]),
   ],
   controllers: [LessonsController],
-  providers: [LessonsService],
+  providers: [LessonsService, LessonUnlockGuard],
   exports: [LessonsService],
 })
 export class LessonsModule {}
