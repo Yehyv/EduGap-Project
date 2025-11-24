@@ -6,6 +6,10 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+  Headers,
 } from '@nestjs/common';
 import { InstitutesService } from './institutes.service';
 import { CreateInstituteDto } from './dto/create-institute.dto';
@@ -23,6 +27,14 @@ export class InstitutesController {
   @Get()
   findAll() {
     return this.institutesService.findAll();
+  }
+  @Get('all/nav')
+  async instituteNav(
+    @Headers('languageId') languageId: number | undefined,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe)
+    limit: number,
+  ) {
+    return this.institutesService.instituteNav(languageId, limit);
   }
 
   @Get(':id')

@@ -35,6 +35,9 @@ export class Lesson {
   @Column({ name: 'video_link', type: 'text', nullable: true })
   video_link: string;
 
+  @Column()
+  image: string;
+
   @Column({
     name: 'lesson_type',
     type: 'tinyint',

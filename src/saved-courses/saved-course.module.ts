@@ -11,4 +11,4 @@ import { Course } from 'src/courses/entities/course.entity';
   controllers: [SavedContentsController],
   providers: [SavedCoursesService],
 })
-export class SavedContentsModule {}
+export class SavedCoursesModule {}

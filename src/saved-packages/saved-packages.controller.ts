@@ -9,6 +9,7 @@ import {
   DefaultValuePipe,
   Req,
   UseGuards,
+  Headers,
 } from '@nestjs/common';
 import { SavedPackagesService } from './saved-packages.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -64,11 +65,13 @@ export class SavedPackagesController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('search') search?: string,
+    @Headers('languageId') languageId?: string,
   ) {
     return this.savedSrv.listUserSavedPackages(req.user.sub, {
       page,
       limit,
       search,
+      languageId: languageId ? Number(languageId) : undefined,
     });
   }
 }

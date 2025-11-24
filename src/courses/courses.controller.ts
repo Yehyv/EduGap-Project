@@ -51,6 +51,20 @@ export class CoursesController {
     return this.coursesService.findAll(req.user!.instituteId, langId);
   }
   @UseGuards(JwtAuthGuard)
+  @Get('all/nav')
+coursesNav(
+  @Req() req: AuthenticatedRequest,
+  @Query('programId', ParseIntPipe) programId: number,
+  @Headers('languageId') languageId?: number,
+) {
+  const instituteId = req.user!.instituteId;
+  return this.coursesService.coursesNav(
+    instituteId, programId, {
+    languageId: languageId ? Number(languageId) : undefined,
+  });
+}
+
+  @UseGuards(JwtAuthGuard)
   @Get('first-8')
   async findInstituteProgramCoursesFirstEight(
     @Req() req: AuthenticatedRequest,

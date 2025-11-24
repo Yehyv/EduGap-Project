@@ -12,6 +12,7 @@ import {
   Query,
   Req,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ContentsService } from './contents.service';
 import { CreateContentDto, UpdateContentDto } from './dto/create-content.dto';
@@ -235,6 +236,59 @@ findLatestOne(
     userId,
   );
 }
+@UseGuards(JwtAuthGuard)
+@Get('in-progress')
+  async findInProgressConntentForUser(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '8',
+  ) {
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    const langIdNum = languageId ? Number(languageId) : undefined;
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 8;
+
+    return this.contentsService.findInProgressConntentForUser(
+      userId,
+      langIdNum,
+      pageNum,
+      limitNum,
+    );
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get('completed')
+  async findCompletedPaginatedForUser(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '8',
+    @Query('programId') programId?: string,
+  ) {
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    const langIdNum = languageId ? Number(languageId) : undefined;
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 8;
+    const instituteId = req.user?.instituteId;
+    const programIdNum = programId ? Number(programId) : undefined;
+
+    return this.contentsService.findCompletedPaginatedForUser(
+      userId,
+      langIdNum,
+      pageNum,
+      limitNum,
+      instituteId,
+      programIdNum,
+    );
+  }
 
   /** محتوى واحد بالتفصيل */
   @Get(':id')
@@ -322,7 +376,7 @@ findLatestOne(
       programId: programId ? Number(programId) : undefined,
     });
   }
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(OptionalJwtAuthGuard)
   @Get('all/nav')
   async contentsNav(
     @Req() req: AuthenticatedRequest,

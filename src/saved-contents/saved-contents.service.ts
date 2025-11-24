@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { SavedContent } from './entities/saved-content.entity';
 import { Content } from 'src/contents/entities/content.entity';
 import { User } from 'src/users/entities/user.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 
 @Injectable()
 export class SavedContentsService {
@@ -14,6 +15,8 @@ export class SavedContentsService {
     private readonly contentRepo: Repository<Content>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepo: Repository<Enrollment>,
   ) {}
 
   async save(userId: number, contentId: number): Promise<SavedContent> {
@@ -82,14 +85,43 @@ export class SavedContentsService {
 
   async listUserSavedContents(
     userId: number,
-    opts?: { page?: number; limit?: number; search?: string },
+    opts?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      languageId?: number;
+    },
   ): Promise<{
-    data: Array<{ savedId: number; savedAt: Date; content: Content }>;
-    page: number;
-    limit: number;
-    total: number;
+    items: Array<{
+      id: number;
+      name: string;
+      description: string;
+      image: string | null;
+      level: string;
+      rate: number;
+      ratersCount: number;
+      totalDuration: number;
+      isEnrolled: boolean;
+      isSaved: boolean;
+      educator: {
+        id: number;
+        title: string | null;
+        name: string;
+      } | null;
+      whatToLearn: string[];
+      category: { id: number | null; name: string };
+      enrollmentsCount: number;
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
   }> {
-    // sanitize
+    // -------- sanitize page/limit ----------
     const rawPage = Number(opts?.page);
     const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
 
@@ -97,49 +129,232 @@ export class SavedContentsService {
     const limit =
       Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(100, rawLimit) : 20;
 
+    const languageId = opts?.languageId;
+
+    // -------- base query على SavedContent ----------
     const qb = this.savedRepo
       .createQueryBuilder('s')
-      .leftJoinAndSelect('s.content', 'content')
       .leftJoin('s.user', 'u')
+      .leftJoinAndSelect('s.content', 'c')
+      .leftJoinAndSelect(
+        'c.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.contentCategory', 'cat')
+      .leftJoinAndSelect(
+        'cat.translations',
+        'catTr',
+        languageId ? 'catTr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('c.educator', 'educator')
+      .leftJoinAndSelect('educator.user', 'eduUser')
       .where('u.id = :userId', { userId });
 
-    // بحث في الترجمات (لو عندك ContentTranslation بعناوين)
+    // -------- search (على اسم المحتوى مثلاً) ----------
     if (opts?.search?.trim()) {
-      qb.leftJoin('content.translations', 't')
-        // PostgreSQL: ILIKE — لو MySQL استخدم LOWER(... ) LIKE LOWER(:q)
-        .andWhere('(t.title ILIKE :q OR t.short_title ILIKE :q)', {
-          q: `%${opts.search.trim()}%`,
-        })
-        .distinct(true);
+      const q = `%${opts.search.trim()}%`;
+      qb.andWhere('(tr.name ILIKE :q OR tr.description ILIKE :q)', { q });
     }
 
     qb.orderBy('s.createdAt', 'DESC')
       .skip((page - 1) * limit)
-      .take(limit);
+      .take(limit)
+      .distinct(true);
 
-    // عدّ منفصل لتجنّب مشاكل getManyAndCount مع distinct/joins
-    const countQb = qb
-      .clone()
+    // ---- count منفصل لتجنب مشاكل distinct/joins ----
+    const countQb = this.savedRepo
+      .createQueryBuilder('s')
+      .leftJoin('s.user', 'u')
+      .leftJoin('s.content', 'c')
+      .leftJoin('c.translations', 'trCount')
+      .where('u.id = :userId', { userId });
+
+    if (opts?.search?.trim()) {
+      const q = `%${opts.search.trim()}%`;
+      countQb.andWhere(
+        '(trCount.name ILIKE :q OR trCount.description ILIKE :q)',
+        { q },
+      );
+    }
+
+    const result: { cnt: string | number } | undefined = await countQb
       .select('COUNT(DISTINCT s.id)', 'cnt')
-      .orderBy()
-      .limit(undefined)
-      .offset(undefined);
-
-    const result: { cnt: string | number } | undefined =
-      await countQb.getRawOne();
+      .getRawOne();
     const total = Number(result?.cnt ?? 0);
+    const totalPages = Math.ceil(total / limit);
+
+    if (total === 0) {
+      return {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+        },
+      };
+    }
 
     const rows = await qb.getMany();
 
+    // -------- IDs للـ contents المحفوظه ----------
+    const contentIds = rows
+      .map((r) => r.content?.id)
+      .filter(Boolean) as number[];
+    if (!contentIds.length) {
+      return {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      };
+    }
+
+    // -------- enrollmentsCount لكل محتوى ----------
+    const countRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.enrollments', 'e')
+      .select('c.id', 'id')
+      .addSelect('COUNT(e.id)', 'cnt')
+      .where('c.id IN (:...ids)', { ids: contentIds })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; cnt: string }>();
+
+    const enrollmentsCountMap = new Map<number, number>(
+      countRows.map((r) => [Number(r.id), Number(r.cnt)]),
+    );
+
+    // -------- متوسط التقييم وتحديث content.rate ----------
+    const avgRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.enrollments', 'e2')
+      .select('c.id', 'id')
+      .addSelect(
+        `
+      CASE
+        WHEN SUM(CASE WHEN e2.rating > 0 THEN 1 ELSE 0 END) = 0
+        THEN 0
+        ELSE ROUND(
+          SUM(CASE WHEN e2.rating > 0 THEN e2.rating ELSE 0 END)
+          / SUM(CASE WHEN e2.rating > 0 THEN 1 ELSE 0 END), 2
+        )
+      END
+      `,
+        'avg',
+      )
+      .where('c.id IN (:...ids)', { ids: contentIds })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; avg: string }>();
+
+    for (const r of avgRows) {
+      await this.contentRepo.update(
+        { id: Number(r.id) },
+        { rate: Number(r.avg) },
+      );
+    }
+
+    // -------- مدة المحتوى + عدد المقيمين ----------
+    const statsRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.topics', 't')
+      .leftJoin('t.lessons', 'l')
+      .leftJoin('c.enrollments', 'e3')
+      .select('c.id', 'id')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .addSelect(
+        'SUM(CASE WHEN e3.rating > 0 THEN 1 ELSE 0 END)',
+        'ratersCount',
+      )
+      .where('c.id IN (:...ids)', { ids: contentIds })
+      .groupBy('c.id')
+      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+
+    const durationMap = new Map<number, number>(
+      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+    );
+    const ratersMap = new Map<number, number>(
+      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
+    // -------- isEnrolled لليوزر الحالي ----------
+    const enrRows = await this.enrollmentRepo
+      .createQueryBuilder('en')
+      .leftJoin('en.user', 'u')
+      .leftJoin('en.content', 'c')
+      .select('c.id', 'cid')
+      .where('u.id = :uid', { uid: userId })
+      .andWhere('c.id IN (:...ids)', { ids: contentIds })
+      .getRawMany<{ cid: number }>();
+
+    const enrolledMap = new Map<number, boolean>(
+      enrRows.map((r) => [Number(r.cid), true]),
+    );
+
+    // -------- تكوين الـ items بنفس شكل findCompletedPaginatedForUser ----------
+    const items = rows.map((r) => {
+      const c = r.content;
+      const tr =
+        c.translations?.find(
+          (t: any) =>
+            t?.language?.id === languageId || t?.languageId === languageId,
+        ) || c.translations?.[0];
+
+      const catTr =
+        c.contentCategory?.translations?.find(
+          (t: any) =>
+            t?.language?.id === languageId || t?.languageId === languageId,
+        ) || c.contentCategory?.translations?.[0];
+
+      return {
+        id: c.id,
+        name: tr?.name ?? '',
+        description: tr?.description ?? '',
+        image: c.image ?? null,
+        level: c.level,
+
+        rate: c.rate ?? 0,
+        ratersCount: ratersMap.get(c.id) ?? 0,
+        totalDuration: durationMap.get(c.id) ?? 0,
+        isEnrolled: enrolledMap.get(c.id) ?? false,
+        isSaved: true, // لأنه جاي من SavedContent
+
+        educator: c.educator
+          ? {
+              id: c.educator.id,
+              title: c.educator.title ?? null,
+              name: c.educator.user?.full_name ?? '',
+            }
+          : null,
+
+        whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+        category: {
+          id: c.contentCategory?.id ?? null,
+          name: catTr?.name ?? '',
+        },
+        enrollmentsCount: enrollmentsCountMap.get(c.id) ?? 0,
+      };
+    });
+
     return {
-      data: rows.map((r) => ({
-        savedId: r.id,
-        savedAt: r.createdAt,
-        content: r.content,
-      })),
-      page,
-      limit,
-      total,
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
     };
   }
 

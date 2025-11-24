@@ -46,6 +46,10 @@ export class CreateLessonDto {
   @IsOptional()
   videoLink?: string; // يروح لـ video_link
 
+  @IsString()
+  @IsNotEmpty()
+  image: string;
+
   @IsNumber()
   @IsOptional()
   @IsIn([0, 1])

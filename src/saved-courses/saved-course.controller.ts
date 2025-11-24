@@ -38,6 +38,23 @@ export class SavedContentsController {
   //   );
   // }
 
+  @Get()
+  list(
+    @Req() req: AuthenticatedRequest,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('search') search?: string,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const userId = req.user.sub;
+    return this.savedCoursesService.listUserSavedCourses(userId, {
+      page: Number(page),
+      limit: Number(limit),
+      search,
+      languageId: languageId ? Number(languageId) : undefined,
+    });
+  }
+
   @Post(':courseId/save')
   save(
     @Req() req: AuthenticatedRequest,
@@ -73,20 +90,5 @@ export class SavedContentsController {
   ) {
     const userId = req.user.sub;
     return this.savedCoursesService.isSaved(userId, courseId);
-  }
-
-  @Get()
-  list(
-    @Req() req: AuthenticatedRequest,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-    @Query('search') search?: string,
-  ) {
-    const userId = req.user.sub;
-    return this.savedCoursesService.listUserSavedCourses(userId, {
-      page: Number(page),
-      limit: Number(limit),
-      search,
-    });
   }
 }

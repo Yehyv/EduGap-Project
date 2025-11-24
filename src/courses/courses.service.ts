@@ -1015,4 +1015,48 @@ export class CoursesService {
     if (languageId == null) return list[0];
     return list.find((t) => (t as any)?.language?.id === languageId) ?? list[0];
   }
+  async coursesNav(
+    instituteId: number,
+    programId: number,
+    { languageId, limit = 12 }: { languageId?: number; limit?: number } = {},
+  ): Promise<
+    Array<{
+      id: number;
+      name: string;
+      image: string | null;
+    }>
+  > {
+    const rows = await this.ipcRepository
+      .createQueryBuilder('ipc')
+      .innerJoinAndSelect('ipc.course', 'course')
+      .leftJoinAndSelect(
+        'course.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .where('ipc.is_active != 0')
+      .andWhere('ipc.instituteId = :instituteId', { instituteId })
+      .andWhere('ipc.programId = :programId', { programId })
+      .orderBy('ipc.id', 'DESC')
+      .take(limit)
+      .getMany(); // InstituteProgramCourse[]
+
+    if (!rows.length) return [];
+
+    return rows.map((link) => {
+      const c = link.course;
+      const tr = this.pickTranslation<{
+        language?: { id?: number };
+        name?: string;
+        description?: string;
+      }>(c.translations, languageId);
+
+      return {
+        id: c.id,
+        name: tr?.name ?? '',
+        image: c.image ?? null,
+      };
+    });
+  }
 }

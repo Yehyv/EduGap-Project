@@ -15,6 +15,8 @@ export class SavedCoursesService {
     private readonly courseRepo: Repository<Course>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(Course)
+    private readonly courseRepository: Repository<Course>,
   ) {}
 
   /**
@@ -110,9 +112,21 @@ export class SavedCoursesService {
    */
   async listUserSavedCourses(
     userId: number,
-    opts?: { page?: number; limit?: number; search?: string },
+    opts?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      languageId?: number;
+    },
   ): Promise<{
-    data: Array<{ savedId: number; savedAt: Date; course: Course }>;
+    data: Array<{
+      id: number;
+      image: string | null;
+      name: string;
+      description: string;
+      contentsCount: number;
+      totalDuration: number;
+    }>;
     page: number;
     limit: number;
     total: number;
@@ -125,47 +139,159 @@ export class SavedCoursesService {
     const limit =
       Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(100, rawLimit) : 20;
 
+    const languageId = opts?.languageId;
+
     const qb = this.savedRepo
       .createQueryBuilder('sc')
-      .leftJoinAndSelect('sc.course', 'course')
       .leftJoin('sc.user', 'u')
+      .leftJoinAndSelect('sc.course', 'course')
+      .leftJoinAndSelect(
+        'course.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .where('u.id = :userId', { userId });
 
-    // search via translations if provided
+    // 🧐 search via translations if provided
     if (opts?.search?.trim()) {
-      qb.leftJoin('course.translations', 't')
-        // PostgreSQL: ILIKE. لو MySQL استخدم LOWER(...) LIKE LOWER(:q)
-        .andWhere('(t.title ILIKE :q OR t.short_title ILIKE :q)', {
-          q: `%${opts.search.trim()}%`,
-        })
-        .distinct(true); // منع تكرار الصفوف بسبب الترجمات
+      const q = `%${opts.search.trim()}%`;
+
+      qb.andWhere('(tr.name ILIKE :q OR tr.description ILIKE :q)', {
+        q,
+      }).distinct(true);
     }
 
-    // ⚠️ استخدم اسم الـ property هنا، مش اسم العمود
     qb.orderBy('sc.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
-    // ✅ total: احسبه بـ clone بدون orderBy/skip/take
-    const countQb = qb
-      .clone()
-      .select('COUNT(DISTINCT sc.id)', 'cnt')
-      .orderBy() // clear orderBy
-      .limit(undefined) // clear take
-      .offset(undefined); // clear skip
+    // ✅ total count (بدون pagination)
+    const countQb = this.savedRepo
+      .createQueryBuilder('sc')
+      .leftJoin('sc.user', 'u')
+      .leftJoin('sc.course', 'course')
+      .leftJoin(
+        'course.translations',
+        'trCount',
+        languageId ? 'trCount.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .where('u.id = :userId', { userId });
 
-    const result: { cnt: string | number } | undefined =
-      await countQb.getRawOne();
+    if (opts?.search?.trim()) {
+      const q = `%${opts.search.trim()}%`;
+      countQb.andWhere(
+        '(trCount.name ILIKE :q OR trCount.description ILIKE :q)',
+        { q },
+      );
+    }
+
+    const result: { cnt: string | number } | undefined = await countQb
+      .select('COUNT(DISTINCT sc.id)', 'cnt')
+      .getRawOne();
     const total = Number(result?.cnt ?? 0);
+
+    if (!total) {
+      return {
+        data: [],
+        page,
+        limit,
+        total: 0,
+      };
+    }
 
     const rows = await qb.getMany();
 
+    // IDs للكورسات المحفوظة
+    const courseIds = rows.map((r) => r.course?.id).filter(Boolean) as number[];
+
+    if (!courseIds.length) {
+      return {
+        data: [],
+        page,
+        limit,
+        total,
+      };
+    }
+
+    // 2️⃣ احسب عدد الـ contents و مجموع الـ durations (نفس لوجيك findInstituteProgramCoursesFirstEight)
+    const durRows = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin(
+        'course_content',
+        'cc',
+        'cc.courseId = course.id AND cc.deleted_at IS NULL',
+      )
+      .leftJoin('content', 'c', 'c.id = cc.contentId AND c.deleted_at IS NULL')
+      .leftJoin(
+        'topic',
+        't',
+        't.contentId = c.id AND t.deleted_at IS NULL AND t.is_active != 0',
+      )
+      .leftJoin(
+        'lesson',
+        'l',
+        'l.topicId = t.id AND l.deleted_at IS NULL AND l.is_active != 0',
+      )
+      .select('course.id', 'id')
+      .addSelect('COUNT(DISTINCT c.id)', 'contentsCount')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .where('course.id IN (:...courseIds)', { courseIds })
+      .groupBy('course.id')
+      .getRawMany<{
+        id: string;
+        contentsCount: string;
+        totalDuration: string;
+      }>();
+
+    const countMap = new Map<number, number>(
+      durRows.map((r) => [Number(r.id), Number(r.contentsCount)]),
+    );
+    const durationMap = new Map<number, number>(
+      durRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+    );
+
+    // نخلي ترتيب الـ data زي ترتيب السيف
+    const orderIndex = new Map<number, number>(
+      courseIds.map((id, i) => [id, i]),
+    );
+
+    const data = rows
+      .map((r) => {
+        const c = r.course;
+        if (!c) return null;
+
+        // pick translation by languageId أو أول واحدة كـ fallback
+        const tr =
+          c.translations?.find(
+            (t: any) =>
+              t?.language?.id === languageId || t?.languageId === languageId,
+          ) || c.translations?.[0];
+
+        return {
+          id: c.id,
+          image: c.image ?? null,
+          name: tr?.name ?? '',
+          description: tr?.description ?? '',
+          contentsCount: countMap.get(c.id) ?? 0,
+          totalDuration: durationMap.get(c.id) ?? 0,
+        };
+      })
+      .filter(Boolean)
+      .sort(
+        (a, b) => (orderIndex.get(a!.id) ?? 0) - (orderIndex.get(b!.id) ?? 0),
+      ) as Array<{
+      id: number;
+      image: string | null;
+      name: string;
+      description: string;
+      contentsCount: number;
+      totalDuration: number;
+    }>;
+
     return {
-      data: rows.map((r) => ({
-        savedId: r.id,
-        savedAt: r.createdAt,
-        course: r.course,
-      })),
+      data,
       page,
       limit,
       total,

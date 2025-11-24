@@ -158,4 +158,46 @@ async create(createInstituteDto: CreateInstituteDto) {
     await this.instituteRepository.softRemove(institute);
     return { message: `Institute ${id} has been removed` };
   }
+  async instituteNav(
+    languageId?: number,
+    limit: number = 20,
+  ): Promise<
+    Array<{
+      id: number;
+      name: string;
+      logo: string | null;
+      image_profile: string | null;
+    }>
+  > {
+    const qb = this.instituteRepository
+      .createQueryBuilder('inst')
+      .leftJoinAndSelect(
+        'inst.translations',
+        'tr',
+        languageId ? 'tr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoinAndSelect('tr.language', 'lang')
+      .orderBy('inst.id', 'ASC')
+      .limit(limit);
+
+    const institutes = await qb.getMany();
+
+    return institutes.map((inst) => {
+      const tr =
+        languageId != null
+          ? inst.translations.find(
+              (t: any) =>
+                t?.language?.id === languageId || t?.languageId === languageId,
+            ) || inst.translations[0]
+          : inst.translations[0];
+
+      return {
+        id: inst.id,
+        name: tr?.name ?? '',
+        logo: inst.logo ?? null,
+        image_profile: inst.image_profile ?? null,
+      };
+    });
+  }
 }

@@ -58,18 +58,19 @@ export class SavedContentsController {
   ) {
     return this.savedSrv.isSaved(req.user.sub, contentId);
   }
-
   @Get()
   list(
     @Req() req: AuthenticatedRequest,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('search') search?: string,
+    @Headers('languageId') languageId?: string,
   ) {
     return this.savedSrv.listUserSavedContents(req.user.sub, {
       page,
       limit,
       search,
+      languageId: languageId ? Number(languageId) : undefined,
     });
   }
   @Get('all/nav')

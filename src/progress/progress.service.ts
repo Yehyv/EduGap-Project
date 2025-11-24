@@ -153,9 +153,11 @@ export class ProgressService {
     // 1) IDs للـ enrollments اللي عندها progress لليوزر (distinct, ordered)
     const baseQb = this.progressRepo
       .createQueryBuilder('p')
+      .leftJoin('p.enrollment', 'en')
       .select('p.enrollment_id', 'enrollId')
       .addSelect('MAX(p.created_at)', 'lastAt')
       .where('p.user_id = :uid', { uid: userId })
+      .andWhere('en.status = 0') // بس اللي مُكتملة
       .groupBy('p.enrollment_id')
       .orderBy('lastAt', 'DESC');
 
@@ -189,7 +191,7 @@ export class ProgressService {
 
     // 2) هات الـ enrollments + contentId + userRating
     const enrollments = await this.enrollRepo.find({
-      where: { id: In(enrollmentIds) },
+      where: { id: In(enrollmentIds), status: 0, user: { id: userId } },
       select: ['id', 'rating'],
       relations: [
         'content',

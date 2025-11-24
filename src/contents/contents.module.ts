@@ -19,6 +19,7 @@ import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequie
 import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { Progress } from 'src/progress/entities/progress.entity';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
       SavedContent,
       Lesson,
       LessonProgress,
+      Lesson,
     ]),
     EnrollmentsModule,
   ],

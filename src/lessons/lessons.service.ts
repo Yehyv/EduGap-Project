@@ -81,6 +81,7 @@ export class LessonsService {
     order_id: order,
     video_link: dto.videoLink ?? undefined,
     lesson_type: dto.lessonType ?? 0,
+    image: dto.image,
     questions_percentage_score:
       (dto.lessonType ?? 0) === 1
         ? (dto.questionsPercentageScore ?? undefined)
