@@ -44,7 +44,7 @@ const HeroSection = () => {
           viewport={{ once: true, amount: 0.3 }}
         >
           <motion.h1
-            className="text-text-first text-2xl md:text-2xl font-second font-medium leading-snug pt-6 pb-3"
+            className="text-text-first text-2xl md:text-2xl font-second font-medium leading-snug pt-3 pb-2"
             variants={textVariant}
           >
             {t("hero_title")}
@@ -65,7 +65,7 @@ const HeroSection = () => {
               onClick={() => navigate("/login")}
               text={t("subscribe")}
               type="button"
-              moreStyle="px-12 md:px-16 text-lg md:text-xl mt-10 md:mt-16 !shadow-[0_4px_4px_0_rgba(0,0,0,0.25)]"
+              moreStyle="px-12 md:px-16 text-lg md:text-xl mt-10 md:mt-10 !shadow-[0_4px_4px_0_rgba(0,0,0,0.25)]"
             />
           </motion.div>
         </motion.div>

@@ -23,21 +23,31 @@ import type {
 } from "../types/sharedTypes";
 
 // ================= Types =================
-type NavKey = "courses" | "programs" | "experts" | "savedContents";
+type NavKey = "courses" | "programs" | "experts" | "savedContents" | "popular";
 
 interface NavItemConfig {
   key: NavKey;
   labelKey: string;
   path: string;
 }
-
+const token = localStorage.getItem("token");
 // ================= Constants =================
-const NAV_ITEMS: NavItemConfig[] = [
-  { key: "courses", labelKey: "courses", path: "/latest-courses" },
-  { key: "programs", labelKey: "programs", path: "/programs-list" },
-  { key: "experts", labelKey: "experts", path: "/experts-list" },
-  { key: "savedContents", labelKey: "saved_contents", path: "/saved-contents" },
-];
+const NAV_ITEMS: NavItemConfig[] = token
+  ? [
+      { key: "courses", labelKey: "courses", path: "/latest-courses" },
+      { key: "programs", labelKey: "programs", path: "/programs-list" },
+      { key: "experts", labelKey: "experts", path: "/experts-list" },
+      {
+        key: "savedContents",
+        labelKey: "saved_contents",
+        path: "/saved-contents",
+      },
+    ]
+  : [
+      { key: "popular", labelKey: "popular", path: "/popular-courses-list" },
+      { key: "programs", labelKey: "programs", path: "/programs-list" },
+      { key: "experts", labelKey: "experts", path: "/experts-list" },
+    ];
 
 const dropdownAnimation = {
   initial: { opacity: 0, y: -10, scaleY: 0.85 },
@@ -173,6 +183,7 @@ const Header = ({
   const { data: savedContentData } = useQuery({
     queryKey: ["savedContentsNav"],
     queryFn: navbarSavedContentsResults,
+    enabled: !!user?.programId,
   });
 
   return (
@@ -263,7 +274,7 @@ const Header = ({
         </nav>
 
         {!isLoggedIn && (
-          <div className="hidden lg:flex gap-4 items-center">
+          <div className="hidden lg:flex gap-4 items-center ms-2">
             <DefaultButton
               type="button"
               text={t("auth_login")}
@@ -314,9 +325,15 @@ const Header = ({
                   {t(item.labelKey)}
                 </Link>
               ))}
+              {!isLoggedIn && (
+                <Link
+                  to="/login"
+                  className="font-semibold px-5 py-2 block hover:bg-white rounded-xl "
+                >
+                  {t("auth_login")}
+                </Link>
+              )}
             </nav>
-
-            {!isLoggedIn && <Link to="/login">{t("auth_login")}</Link>}
           </motion.div>
         )}
       </AnimatePresence>

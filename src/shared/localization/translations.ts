@@ -375,6 +375,7 @@ const translations = {
     try_again: "Try Again",
     go_to_next_lesson: "Go To Next Lesson",
     watch_again: "Watch Again",
+    popular: "Popular Courses",
   },
 
   ar: {
@@ -754,6 +755,7 @@ const translations = {
     try_again: "حاول مرة اخري",
     go_to_next_lesson: "الذهاب الي الدرس التالي",
     watch_again: "مشاهدة مرة أخرى",
+    popular: "الأكثر شيوعا",
   },
 } as const;
 
