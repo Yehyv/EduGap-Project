@@ -46,7 +46,7 @@ const LanguageDropdown = ({ currentLang, onChange }: LanguageDropdownProps) => {
       {/* Button */}
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="text-gray-700 px-3 py-1 rounded-lg flex items-center hover:text-secondary cursor-pointer transition"
+        className="text-gray-700 max-sm:px-1.5 px-3 py-1 rounded-lg flex items-center hover:text-secondary cursor-pointer transition"
       >
         {languages.find((l) => l.code === currentLang)?.label ?? "Select"}
 

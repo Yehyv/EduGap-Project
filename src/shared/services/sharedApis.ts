@@ -2,8 +2,8 @@ import type {
   ApiResponse,
   CategoriesResponse,
   CoursesResponse,
-  CourseType,
   ExpertsData,
+  InstituteCoursesType,
   ProgramsType,
   savedContentDropdownResponse,
 } from "../types/sharedTypes";
@@ -29,6 +29,14 @@ export async function navbarExpertsResults(
 ): Promise<ExpertsData[]> {
   const res = await api.get<ApiResponse<ExpertsData[]>>(
     `/educators/all/nav?onlyActive=${isActive}`
+  );
+  return res.data.data;
+}
+export async function navbarInstitutionalSubjectsResults(
+  programId: number
+): Promise<InstituteCoursesType[]> {
+  const res = await api.get<ApiResponse<InstituteCoursesType[]>>(
+    `courses/all/nav?programId=${programId}`
   );
   return res.data.data;
 }

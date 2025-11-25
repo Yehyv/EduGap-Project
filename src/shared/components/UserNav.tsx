@@ -97,7 +97,7 @@ const UserNav = () => {
       ref={menuRef}
     >
       {/* Greeting */}
-      <div className="text-gray-400 text-nowrap">
+      <div className="max-sm:hidden text-gray-400 text-nowrap">
         <span className="me-1">{t("welcome_for_user")}</span>
         <span>{user?.userName}</span>
       </div>
@@ -123,20 +123,24 @@ const UserNav = () => {
             className="absolute top-12 max-sm:-end-12 end-0 w-72 bg-white rounded-lg shadow-[0_6px_20px_-2px_rgba(0,0,0,0.15)] border border-gray-200 z-50"
           >
             {/* Info */}
-            <div className="flex justify-start gap-4 items-center mx-4">
+            <div className="flex justify-between gap-4 items-center px-4">
               {/* Avatar */}
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="w-11 h-11 bg-primary rounded-full overflow-hidden text-secondary font-bold grid place-items-center mt-4"
+                className="w-12 h-12 flex-shrink-0 bg-primary rounded-full overflow-hidden text-secondary font-bold grid place-items-center mt-4"
               >
-                {/* {user?.userName?.[0]} */}
                 {user?.userImage ? (
-                  <img className="w-full h-full" src={user?.userImage}></img>
+                  <img
+                    src={user?.userImage}
+                    alt={user?.userName}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   user?.userName?.[0]
                 )}
               </motion.div>
+
               <div>
                 <div className="font-semibold mt-2">{user?.userName}</div>
                 <div className="text-sm text-[#797979]">
@@ -144,11 +148,6 @@ const UserNav = () => {
                   <span className="mx-1">{user?.programName}</span>
                 </div>
               </div>
-              {/* <div className="text-sm text-secondary flex justify-center gap-2 mt-2">
-                <span>{t("total_points")}</span>
-                <span>400</span>
-                <WalletIcon />
-              </div> */}
             </div>
 
             {/* Items */}

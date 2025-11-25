@@ -106,6 +106,7 @@ const CourseCard = ({ course }: { course: CourseType }) => {
             saveFunction={saveContent}
             invalidateQueriesKeys={[
               { queryKey: ["coursesForSlider", user?.programId] },
+              { queryKey: ["savedContentsNav"] },
               { queryKey: ["getSavedCoursesList"] },
             ]}
           />

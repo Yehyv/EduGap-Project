@@ -16,7 +16,12 @@ const ExpertCourses = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
   const { data, isLoading, error } = useQuery({
-    queryKey: ["getAllPopularCoursesForExpert", page],
+    queryKey: [
+      "getAllPopularCoursesForExpert",
+      expertId ?? "",
+      page,
+      RESULTS_PER_PAGE,
+    ],
     queryFn: () => getAllExpertCourses(expertId ?? "", page, RESULTS_PER_PAGE),
   });
 

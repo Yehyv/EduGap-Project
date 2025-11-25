@@ -350,7 +350,7 @@ const translations = {
     questions: "Questions",
     question_types: "Multiple choice or True/False",
     next_question: "Next question",
-    saved_contents: "Institutional Subjects",
+    saved_contents: "Saved Courses",
     programs: "Learning Paths",
     saved_items: "Saved Items",
     profile_settings: "Profile Settings",
@@ -380,6 +380,7 @@ const translations = {
     Institute_subject_saved: "Institute subject saved successfully",
     Save_Learning_unsaved: "learning path unsaved successfully",
     Save_Learning_saved: "learning path saved successfully",
+    institutionalSubjects: "institutional Subjects",
   },
 
   ar: {
@@ -731,7 +732,7 @@ const translations = {
     questions: "الأسئلة",
     question_types: "اختيار من متعدد أو صح / خطأ",
     next_question: "السؤال التالي",
-    saved_contents: "مقررات المعهد",
+    saved_contents: "الدورات المحفوظة",
     programs: "مسارات التعلم",
     saved_items: "محفوظاتي",
     profile_settings: "اعدادات الحساب",
@@ -764,6 +765,7 @@ const translations = {
     Institute_subject_saved: "تم حفظ مقرر المعهد",
     Save_Learning_unsaved: "تم حذف مسار التعلم من قائمة المحفوظات",
     Save_Learning_saved: "تم حفظ مسار التعلم",
+    institutionalSubjects: "مقررات المعهد",
   },
 } as const;
 
