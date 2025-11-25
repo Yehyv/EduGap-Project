@@ -12,7 +12,7 @@ import {
   OneToMany,
   OneToOne,
 } from 'typeorm';
-import { UserOtp } from './user-otp.entity';
+import { UserOtp } from 'src/users-otp/entities/users-otp.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { ContentReview } from 'src/content-reviews/entities/content-review.entity';
 import { SavedLesson } from 'src/saved-lesson/entities/saved-lesson.entity';

@@ -7,9 +7,10 @@ import { Institute } from 'src/institutes/entities/institute.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
-import { UserOtp } from './entities/user-otp.entity';
+import { UserOtp } from 'src/users-otp/entities/users-otp.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { PasswordAction } from './entities/password-action.entity';
+import { UsersOtpModule } from 'src/users-otp/users-otp.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PasswordAction } from './entities/password-action.entity';
       Program,
       PasswordAction,
     ]),
+    UsersOtpModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

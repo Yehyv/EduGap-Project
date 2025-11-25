@@ -36,6 +36,7 @@ import { SavedPackagesModule } from './saved-packages/saved-packages.module';
 import { SearchModule } from './search/search.module';
 import { QuestionsModule } from './questions/questions.module';
 import { SavedCoursesModule } from './saved-courses/saved-course.module';
+import { UsersOtpModule } from './users-otp/users-otp.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -76,6 +77,7 @@ import { SavedCoursesModule } from './saved-courses/saved-course.module';
     SearchModule,
     QuestionsModule,
     SavedCoursesModule,
+    UsersOtpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

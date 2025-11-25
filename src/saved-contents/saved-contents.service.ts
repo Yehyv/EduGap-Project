@@ -203,9 +203,7 @@ export class SavedContentsService {
     const rows = await qb.getMany();
 
     // -------- IDs للـ contents المحفوظه ----------
-    const contentIds = rows
-      .map((r) => r.content?.id)
-      .filter(Boolean) as number[];
+    const contentIds = rows.map((r) => r.content?.id).filter(Boolean);
     if (!contentIds.length) {
       return {
         items: [],

@@ -183,9 +183,7 @@ export class SavedPackagesService {
     const rows = await qb.getMany();
 
     // IDs للباكدجات المحفوظة
-    const packageIds = rows
-      .map((r) => r.package?.id)
-      .filter(Boolean) as number[];
+    const packageIds = rows.map((r) => r.package?.id).filter(Boolean);
 
     if (!packageIds.length) {
       return {

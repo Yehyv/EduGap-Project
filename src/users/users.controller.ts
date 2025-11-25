@@ -10,12 +10,14 @@ import {
   Headers,
   Req,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { UsersOtpService } from 'src/users-otp/users-otp.service';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -26,7 +28,10 @@ interface AuthenticatedRequest extends Request {
 }
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly usersOtpService: UsersOtpService,
+  ) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -78,22 +83,30 @@ export class UsersController {
   ) {
     return this.usersService.assignUserToInstitute(userId, instituteId);
   }
-  @Post('change-password')
-  async changePassword(
-    @Body()
-    body: {
-      userId: number;
-      oldPassword: string;
-      newPassword: string;
-      confirmPassword: string;
-    },
+  // @Post('change-password')
+  // async changePassword(
+  //   @Body()
+  //   body: {
+  //     userId: number;
+  //     oldPassword: string;
+  //     newPassword: string;
+  //     confirmPassword: string;
+  //   },
+  // ) {
+  //   return this.usersService.changePassword(
+  //     body.userId,
+  //     body.oldPassword,
+  //     body.newPassword,
+  //     body.confirmPassword,
+  //   );
+  // }
+  @UseGuards(JwtAuthGuard)
+  @Post('change-name')
+  async changeName(
+    @Body('newName') newName: string,
+    @Req() req: AuthenticatedRequest,
   ) {
-    return this.usersService.changePassword(
-      body.userId,
-      body.oldPassword,
-      body.newPassword,
-      body.confirmPassword,
-    );
+    return this.usersService.changeName(req.user.sub, newName);
   }
   @Patch(':id/assign-program/:programId')
   assignUserToProgram(
@@ -101,5 +114,52 @@ export class UsersController {
     @Param('programId', ParseIntPipe) programId: number,
   ) {
     return this.usersService.assignUserToProgram(userId, programId);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Post('change-phone/request')
+  async requestChangePhone(
+    @Body('newPhone') newPhone: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    // نجيب اليوزر عشان نمرره للـ OTP service
+    const user = await this.usersService.findById(req.user.sub);
+
+    // نولّد OTP مخصوص للـ CHANGE_PHONE و نبعت على الرقم الجديد (smsPhone)
+    const otp = await this.usersOtpService.generateOtpForChangePhone(
+      user,
+      newPhone,
+    );
+
+    return {
+      message: 'OTP sent to your new phone',
+      challengeId: otp.challengeId,
+      ...(process.env.OTP_STATS === 'true' ? { code: otp.code } : {}),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-phone/verify')
+  async verifyChangePhone(
+    @Body()
+    body: {
+      challengeId: string;
+      code: string;
+      newPhone: string;
+    },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { challengeId, code, newPhone } = body;
+
+    // 1) نتحقق من الـ OTP ونتأكد إن الـ purpose = CHANGE_PHONE
+    const { userId: otpUserId } =
+      await this.usersOtpService.verifyOtpForChangePhone(challengeId, code);
+
+    // 2) نتأكد إن اليوزر اللي بيحاول يغيّر هو نفس صاحب الـ OTP
+    if (otpUserId !== req.user.sub) {
+      throw new ForbiddenException('You cannot use this OTP');
+    }
+
+    // 3) نغيّر الرقم فعلًا (مع كل الـ validation جوه UsersService.changePhone)
+    return this.usersService.changePhone(req.user.sub, newPhone);
   }
 }

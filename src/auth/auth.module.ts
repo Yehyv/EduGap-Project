@@ -7,7 +7,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshStrategy } from './strategies/refresh.strategy';
 import { User } from 'src/users/entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserOtp } from 'src/users/entities/user-otp.entity';
+import { UserOtp } from 'src/users-otp/entities/users-otp.entity';
+import { UsersOtpModule } from 'src/users-otp/users-otp.module';
 @Module({
   imports: [
     JwtModule.register({
@@ -16,6 +17,7 @@ import { UserOtp } from 'src/users/entities/user-otp.entity';
     }),
     TypeOrmModule.forFeature([User, UserOtp]),
     UsersModule,
+    UsersOtpModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshStrategy],

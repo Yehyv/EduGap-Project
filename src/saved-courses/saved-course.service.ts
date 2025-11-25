@@ -204,7 +204,7 @@ export class SavedCoursesService {
     const rows = await qb.getMany();
 
     // IDs للكورسات المحفوظة
-    const courseIds = rows.map((r) => r.course?.id).filter(Boolean) as number[];
+    const courseIds = rows.map((r) => r.course?.id).filter(Boolean);
 
     if (!courseIds.length) {
       return {

@@ -249,4 +249,41 @@ export class UsersService {
       programName,
     };
   }
+  async changeName(
+    userId: number,
+    newName: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepositry.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException(`User with id ${userId} not found`);
+    user.full_name = newName;
+    await this.userRepositry.save(user);
+    return { message: 'Name updated successfully' };
+  }
+  async changePhone(
+    userId: number,
+    newPhone: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepositry.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    if (user.phone === newPhone) {
+      throw new BadRequestException('New phone must be different');
+    }
+
+    const existing = await this.userRepositry.findOne({
+      where: { phone: newPhone },
+    });
+
+    if (existing && existing.id !== userId) {
+      throw new BadRequestException('Phone number already in use');
+    }
+
+    user.phone = newPhone;
+    await this.userRepositry.save(user);
+
+    return { message: 'Phone updated successfully' };
+  }
+
 }

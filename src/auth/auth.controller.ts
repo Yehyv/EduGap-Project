@@ -59,15 +59,6 @@ export class AuthController {
       body.confirmPassword,
     );
   }
-  @Post('verify-otp')
-  async verifyOtp(@Body() body: { challengeId: string; code: string }) {
-    return this.authService.verifyOtp(body.challengeId, body.code);
-  }
-
-  @Post('resend-otp')
-  async resendOtp(@Body() body: { challengeId: string }) {
-    return this.authService.resendOtp(body.challengeId);
-  }
 
   @Post('forgot-password')
   async forgotPassword(@Body() body: { nationalId: string; phone: string }) {

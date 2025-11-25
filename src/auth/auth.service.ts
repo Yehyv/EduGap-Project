@@ -10,17 +10,16 @@ import * as bcrypt from 'bcrypt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
-import { UserOtp } from 'src/users/entities/user-otp.entity';
-import { randomUUID } from 'crypto';
+import { UsersOtpService } from 'src/users-otp/users-otp.service';
+
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(UserOtp)
-    private readonly otpRepository: Repository<UserOtp>,
     private userService: UsersService,
     private jwtService: JwtService,
+    private otpService: UsersOtpService,
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
@@ -34,81 +33,6 @@ export class AuthService {
     });
   }
 
-  // -------- Generate OTP ----------
-  async generateOtp(user: User): Promise<UserOtp> {
-    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
-    const otp = this.otpRepository.create({
-      challengeId: randomUUID(),
-      code,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-      user,
-    });
-    await this.otpRepository.save(otp);
-
-    // هنا تبعت SMS او Email
-    console.log(`📩 OTP for user ${user.email}: ${code}`);
-
-    return otp;
-  }
-
-  // -------- Verify OTP ----------
-  async verifyOtp(challengeId: string, code: string) {
-    const otp = await this.otpRepository.findOne({
-      where: { challengeId, isUsed: false },
-      relations: ['user'],
-    });
-
-    if (!otp) throw new BadRequestException('Invalid OTP');
-
-    if (otp.expiresAt < new Date()) {
-      throw new BadRequestException('OTP expired');
-    }
-    if (otp.code !== code) throw new BadRequestException('Invalid OTP');
-
-    otp.isUsed = true;
-    await this.otpRepository.save(otp);
-
-    // بعد ما تـ mark otp.isUsed = true ...
-    const tempPayload = {
-      sub: otp.user.id,
-      username: otp.user.username,
-      mustChangePassword: true,
-    };
-    const accessToken = await this.jwtService.signAsync(tempPayload, {
-      secret: process.env.JWT_ACCESS_TOKEN,
-      expiresIn: '10m', // مؤقت
-    });
-    return {
-      message: 'OTP verified successfully, please change your password',
-      mustChangePassword: true,
-      accessToken, // ندي للفرونت يستخدمه في /auth/change-password
-    };
-  }
-
-  // -------- Resend OTP ----------
-  async resendOtp(challengeId: string) {
-    const prev = await this.otpRepository.findOne({
-      where: { challengeId, isUsed: false },
-      relations: ['user'],
-    });
-    if (!prev) throw new BadRequestException('Invalid challenge');
-
-    // إبطال القديم
-    await this.otpRepository.update({ id: prev.id }, { isUsed: true });
-
-    // توليد جديد لنفس المستخدم
-    const next = await this.generateOtp(prev.user);
-
-    return {
-      message: 'OTP re-sent',
-      data: {
-        challengeId: next.challengeId,
-        ...(process.env.OTP_STATS === 'true' ? { otp: next.code } : {}),
-        // code: next.code,
-      },
-    };
-  }
-
   // -------- Login Flow ----------
   async signin(username: string, password: string) {
     const user = await this.userService.findByUsername(username);
@@ -119,7 +43,8 @@ export class AuthService {
 
     const isFirst = await this.userService.isFirstLogin(user);
     if (isFirst) {
-      const otp = await this.generateOtp(user);
+      // ✅ استخدم use-case المخصوص لأول لوجين
+      const otp = await this.otpService.generateOtpForFirstLogin(user);
       return {
         mustVerifyOtp: true,
         message: 'OTP sent to your phone',
@@ -206,6 +131,7 @@ export class AuthService {
     await this.revokeAllRefreshTokens(userId);
     return result;
   }
+
   async requestPasswordReset(nationalId: string, phone: string) {
     const user = await this.userRepository.findOne({
       where: {
@@ -219,7 +145,8 @@ export class AuthService {
       throw new BadRequestException('Invalid national id or phone');
     }
 
-    const otp = await this.generateOtp(user);
+    // ✅ استخدم use-case المخصوص للريست باسورد
+    const otp = await this.otpService.generateOtpForResetPassword(user);
 
     return {
       message: 'OTP sent to your phone',
@@ -227,6 +154,7 @@ export class AuthService {
       ...(process.env.OTP_STATS === 'true' ? { code: otp.code } : {}),
     };
   }
+
   async resetPasswordAfterOtp(
     userId: number,
     newPassword: string,
