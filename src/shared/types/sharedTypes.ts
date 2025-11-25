@@ -220,6 +220,7 @@ export type LessonType = {
   video: string;
   isUnlocked: boolean;
   isCompleted: boolean;
+  type: boolean;
 };
 
 export type ContinueCourseType = {

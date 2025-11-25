@@ -56,7 +56,7 @@ const Dropdown = ({
 }) => (
   <motion.div
     {...dropdownAnimation}
-    className="absolute top-full end-0 bg-white shadow-lg rounded-xl p-3 min-w-[240px] z-40"
+    className="absolute top-full end-0 bg-white shadow-lg rounded-xl p-3 min-w-[250px] z-40"
   >
     {data.map((item) => (
       <Link
@@ -69,7 +69,7 @@ const Dropdown = ({
           {item?.user?.full_name && (
             <span className="font-semibold">{item.user.full_name}</span>
           )}
-          <span className="text-sm">{item.title}</span>
+          <span className="">{item.title}</span>
         </div>
       </Link>
     ))}
@@ -80,17 +80,17 @@ const Dropdown = ({
 const ProgramsDropdown = ({ data }: { data: ProgramsType[] }) => (
   <motion.div
     {...dropdownAnimation}
-    className="absolute top-full end-0 bg-white shadow-lg rounded-xl p-3 min-w-[240px] z-40"
+    className="absolute top-full end-0 bg-white shadow-lg rounded-xl p-3 min-w-[250px] z-40"
   >
-    {data.map((item) => (
+    {data?.map((item) => (
       <Link
         key={item.id}
         to={`/program-details/${item.id}`}
         className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 rounded-md transition"
       >
         <img src={item.image} className="w-10 h-10 rounded-md object-cover" />
-        <div className="flex flex-col leading-tight">
-          <span className="text-sm">{item.title}</span>
+        <div className="leading-tight">
+          <span>{item.title}</span>
         </div>
       </Link>
     ))}
@@ -124,7 +124,7 @@ const DesktopNavItem = ({
     >
       <Link
         to={item.path}
-        className={`cursor-pointer py-3 ${
+        className={`cursor-pointer py-3 xl:text-lg ${
           isActive ? "text-secondary font-semibold" : ""
         }`}
       >
@@ -179,7 +179,7 @@ const Header = ({
     <header
       className={`bg-${
         color ?? "primary"
-      } py-2 z-50 sticky top-0 start-0 end-0`}
+      } py-2 z-50 sticky -top-1 start-0 end-0`}
     >
       <div className="container mx-auto flex items-center justify-between gap-2 px-4">
         <Link to="/userHome">
@@ -189,11 +189,11 @@ const Header = ({
         <SearchBar
           placeholder={t("search_placeholder")}
           lang={lang}
-          className="sm:max-w-md mx-auto max-md:hidden"
+          className="sm:max-w-md mx-auto max-lg:hidden"
         />
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex gap-3 relative text-nowrap">
+        <nav className="hidden lg:flex gap-3 relative text-nowrap">
           {NAV_ITEMS.map((item) => {
             const dataMap = {
               courses: coursesData,
@@ -263,7 +263,7 @@ const Header = ({
         </nav>
 
         {!isLoggedIn && (
-          <div className="hidden md:flex gap-4 items-center">
+          <div className="hidden lg:flex gap-4 items-center">
             <DefaultButton
               type="button"
               text={t("auth_login")}
@@ -276,7 +276,7 @@ const Header = ({
         <div className="flex gap-4">
           {isLoggedIn && <UserNav />}
           <button
-            className="md:hidden cursor-pointer flex items-center p-1"
+            className="lg:hidden cursor-pointer flex items-center p-1"
             onClick={() => setMenuOpen((prev) => !prev)}
           >
             <NavListIcon className="h-5 w-5" />
@@ -291,10 +291,10 @@ const Header = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="md:hidden bg-primary px-4 mt-2 py-4"
+            className="lg:hidden bg-primary px-4 mt-2 py-4"
           >
             <nav className="flex flex-col gap-2">
-              <div className="md:hidden py-2 center">
+              <div className="lg:hidden py-2 center">
                 <SearchBar
                   placeholder={t("search_placeholder")}
                   lang={lang}

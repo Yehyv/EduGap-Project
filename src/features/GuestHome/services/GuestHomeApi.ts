@@ -137,6 +137,16 @@ export async function getAllEducationsList(
   return res.data.data;
 }
 
+export async function getSavedPrograms(
+  page: string,
+  limit: number
+): Promise<ProgramsResponse> {
+  const res = await api.get<ApiResponse<ProgramsResponse>>("/saved-packages", {
+    params: { page, limit },
+  });
+  return res.data.data;
+}
+
 export async function getAllExpertsList(
   page: string,
   limit: number

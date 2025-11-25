@@ -1,10 +1,11 @@
 import type { ContentTopicsType } from "@/shared/types/sharedTypes";
-import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDuration } from "@/shared/utils/globals";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { toast } from "react-toastify";
+import ExamIcon from "@/assets/svgs/ExamIcon.svg?react";
+import { useEffect, useState } from "react";
 
 const LessonsList = ({
   indx,
@@ -21,9 +22,20 @@ const LessonsList = ({
     toast.error(t("complete_prev_lesson"));
   };
   const navigate = useNavigate();
-  const handleGoToLesson = (id: number) => {
-    navigate(`/course-lesson/${courseId}/${id}`);
+  const handleGoToLesson = (id: number, type: boolean) => {
+    const mainUrl = type == true ? "quiz-page" : "course-lesson";
+    navigate(`/${mainUrl}/${courseId}/${id}`);
   };
+
+  useEffect(() => {
+    const hasActiveLesson = ContentTopics?.lessons?.some(
+      (lesson) => lesson?.id == +lessonId!
+    );
+
+    if (hasActiveLesson) {
+      setIsOpen(true);
+    }
+  }, [lessonId, ContentTopics]);
 
   return (
     <div className="py-1">
@@ -72,13 +84,13 @@ const LessonsList = ({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="flex items-center gap-1"
+                    className="px-1"
                     onClick={() => {
                       if (!ans?.isUnlocked) {
                         return handleLockedClick();
                       } else {
                         window.scrollTo({ top: 0, behavior: "smooth" });
-                        return handleGoToLesson(ans?.id);
+                        return handleGoToLesson(ans?.id, ans.type);
                       }
                     }}
                   >
@@ -89,7 +101,7 @@ const LessonsList = ({
                           : { scale: 1, backgroundColor: "transparent" }
                       }
                       transition={{ duration: 0.25 }}
-                      className={`rounded px-1 py-0.5 flex items-center gap-2 flex-1
+                      className={`rounded px-0.5 py-0.5 flex justify-between items-center gap-1 flex-1
                         ${
                           !ans?.isUnlocked
                             ? "opacity-40 cursor-not-allowed"
@@ -97,35 +109,39 @@ const LessonsList = ({
                         }
                       `}
                     >
-                      <span className="text-yellow-500">
-                        {indx}.{i + 1}
-                      </span>
-                      {!ans?.isUnlocked ? (
-                        <span className="text-gray-500">{ans?.name}</span>
-                      ) : (
-                        <Link
-                          to={`/course-lesson/${courseId}/${ans?.id}`}
-                          className={`${
-                            isActive
-                              ? "text-secondary font-semibold"
-                              : "text-gray-700"
-                          }`}
-                        >
-                          {ans?.name}
-                        </Link>
-                      )}
-
-                      {/* duration */}
-                      <span className="text-xs text-gray-400">
-                        ({durationText})
-                      </span>
-
-                      {/* Completed Icon */}
-                      {ans?.isCompleted && (
-                        <span className="text-green-500 text-sm font-bold">
-                          ✓
+                      <div className="flex gap-1">
+                        <span className="text-yellow-500">
+                          {indx}.{i + 1}
                         </span>
-                      )}
+                        {!ans?.isUnlocked ? (
+                          <span className="text-gray-500">{ans?.name}</span>
+                        ) : (
+                          <span
+                            className={`${
+                              isActive
+                                ? "text-secondary font-semibold"
+                                : "text-gray-700"
+                            }`}
+                          >
+                            {ans?.name}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {/* duration */}
+                        <span className="text-xs text-gray-400 text-nowrap">
+                          ({durationText})
+                        </span>
+
+                        {/* Completed Icon */}
+                        {ans?.isCompleted && (
+                          <span className="text-green-500 text-sm font-bold">
+                            ✓
+                          </span>
+                        )}
+                        {ans?.type == true && <ExamIcon className="w-6" />}
+                      </div>
                     </motion.div>
                   </motion.li>
                 );

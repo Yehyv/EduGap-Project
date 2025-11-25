@@ -51,7 +51,7 @@ const Footer = () => {
                 <motion.li key={i} whileHover={{ scale: 1.05 }}>
                   <Link
                     to={item.to}
-                    className="text-sm text-[#575757] hover:text-secondary transition block"
+                    className=" text-[#575757] hover:text-secondary transition block"
                   >
                     {item.label}
                   </Link>
@@ -77,7 +77,7 @@ const Footer = () => {
                   <motion.li key={i} whileHover={{ scale: 1.05 }}>
                     <Link
                       to={item.to}
-                      className="text-sm text-[#575757] hover:text-secondary transition block"
+                      className=" text-[#575757] hover:text-secondary transition block"
                     >
                       {item.label}
                     </Link>
@@ -101,7 +101,7 @@ const Footer = () => {
                   <motion.li key={i} whileHover={{ scale: 1.05 }}>
                     <Link
                       to={item.to}
-                      className="text-sm text-[#575757] hover:text-secondary transition block"
+                      className=" text-[#575757] hover:text-secondary transition block"
                     >
                       {item.label}
                     </Link>
@@ -134,7 +134,7 @@ const Footer = () => {
               <motion.li whileHover={{ scale: 1.05 }}>
                 <Link
                   to="/"
-                  className="border rounded-xl text-sm bg-white text-secondary border-secondary px-3 py-0.5 flex justify-start"
+                  className="border rounded-xl  bg-white text-secondary border-secondary px-3 py-0.5 flex justify-start"
                 >
                   <div className="flex justify-between items-center gap-3">
                     <Suspense
@@ -154,7 +154,7 @@ const Footer = () => {
               <motion.li whileHover={{ scale: 1.05 }}>
                 <Link
                   to="/"
-                  className="border rounded-xl text-sm bg-white text-secondary border-secondary px-3 py-0.5 flex justify-start"
+                  className="border rounded-xl  bg-white text-secondary border-secondary px-3 py-0.5 flex justify-start"
                 >
                   <div className="flex justify-between items-center gap-3">
                     <Suspense

@@ -52,12 +52,8 @@ const CategoriesDropdown = ({
                       className="w-10 h-10 object-cover rounded-md"
                     />
                     <div className="flex flex-col leading-tight">
-                      {course.educator && (
-                        <span className="text-sm font-semibold">
-                          {course.educator.name}
-                        </span>
-                      )}
-                      <span className="text-sm">{course.name}</span>
+                      <span className="text-sm font-bold">{course.name}</span>
+                      {course.educator && <span>{course.educator.name}</span>}
                     </div>
                   </Link>
                 ))}

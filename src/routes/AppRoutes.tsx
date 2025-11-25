@@ -37,6 +37,8 @@ import OurServices from "@/pages/OurServices";
 import OurFeatures from "@/pages/OurFeatures";
 import JoinUs from "@/pages/JoinUs";
 import ContactUs from "@/pages/ContactUs";
+import SavedItems from "@/pages/SavedItems";
+import QuizPage from "@/pages/QuizPage";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -139,6 +141,7 @@ export default function AppRoutes() {
           path="/course-lesson/:courseId/:lessonId"
           element={<LessonPlayerPage />}
         />
+        <Route path="/quiz-page/:courseId/:lessonId" element={<QuizPage />} />
         <Route path="/institute-courses" element={<InstituteCourses />} />
         <Route path="/saved-contents" element={<SavedContentsList />} />
         <Route path="/saved-lessons/:courseId" element={<SavedLessons />} />
@@ -147,6 +150,7 @@ export default function AppRoutes() {
           path="/content-materials/:courseId"
           element={<CourseMaterials />}
         />
+        <Route path="/saved-items" element={<SavedItems />} />
       </Route>
 
       {/* Not Found */}

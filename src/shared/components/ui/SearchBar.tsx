@@ -69,7 +69,7 @@ const SearchBar = ({
     <div className={`relative ${className} w-full`} ref={inputRef}>
       <div className="relative text-gray-600 flex-1">
         <input
-          className="border border-[#8A8A8A] w-full h-8 px-2 pr-10 rounded-lg text-sm focus:outline-none"
+          className="border border-[#8A8A8A] w-full h-9 px-2 pr-10 rounded-lg text-sm focus:outline-none"
           type="search"
           placeholder={placeholder}
           dir={lang === "ar" ? "rtl" : "ltr"}

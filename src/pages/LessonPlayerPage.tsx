@@ -14,7 +14,6 @@ import CircleLoader from "@/shared/components/ui/CircleLoader";
 import LessonActions from "@/features/ContentLesson/components/LessonActions";
 import type { ContentTopicsType } from "@/shared/types/sharedTypes";
 
-import LessonQuestions from "@/features/ContentLesson/components/LessonQuestions";
 const LessonComments = lazy(
   () => import("@/features/ContentLesson/components/LessonComments")
 );
@@ -78,34 +77,28 @@ const LessonPlayerPage = () => {
             error={error}
           />
           <div className="w-full lg:w-[80%] mb-10">
-            {true ? (
-              <>
-                <CourseVideo
-                  key={lessonId}
-                  isThisLessonAlreadyCompleted={isLessonAlreadyCompleted}
-                  videoUrl={data?.video ?? ""}
-                  isOnline={isOnline}
-                  isLoading={isLoading}
-                />
+            <CourseVideo
+              key={lessonId}
+              isThisLessonAlreadyCompleted={isLessonAlreadyCompleted}
+              videoUrl={data?.video ?? ""}
+              isOnline={isOnline}
+              isLoading={isLoading}
+            />
 
-                <LessonActions
-                  lessonTitle={data?.name ?? ""}
-                  lessonId={lessonId ?? ""}
-                />
+            <LessonActions
+              lessonTitle={data?.name ?? ""}
+              lessonId={lessonId ?? ""}
+            />
 
-                <LessonTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+            <LessonTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-                <div className="my-10 mb-30">
-                  <Suspense fallback={<CircleLoader />}>
-                    {activeTab === "comments" && <LessonComments />}
-                    {activeTab === "attachments" && <LessonAttachments />}
-                    {activeTab === "notes" && <LessonNotes />}
-                  </Suspense>
-                </div>
-              </>
-            ) : (
-              <LessonQuestions />
-            )}
+            <div className="my-10 mb-30">
+              <Suspense fallback={<CircleLoader />}>
+                {activeTab === "comments" && <LessonComments />}
+                {activeTab === "attachments" && <LessonAttachments />}
+                {activeTab === "notes" && <LessonNotes />}
+              </Suspense>
+            </div>
           </div>
         </div>
       </div>

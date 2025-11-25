@@ -5,35 +5,10 @@ import { useLanguage } from "../localization/useLanguage";
 import { useClickOutside } from "../hooks/useClickOutside";
 import { useUser } from "@/features/auth/context/UserContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import SmoothLazy from "./SmoothLazy";
 
-const smoothLazy = <P extends {}>(
-  importFunc: () => Promise<{ default: React.ComponentType<P> }>,
-  className?: string
-): React.FC<P> => {
-  const Comp = lazy(importFunc);
-
-  const LazyIcon: React.FC<P> = (props) => (
-    <Suspense
-      fallback={
-        <div className={`w-5 h-5 bg-gray-300 rounded-full ${className}`} />
-      }
-    >
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.15 }}
-        className={className}
-      >
-        <Comp {...props} className={className} />
-      </motion.div>
-    </Suspense>
-  );
-
-  return LazyIcon;
-};
-
-const UserIcon = smoothLazy(
+const UserIcon = SmoothLazy(
   () => import("@/assets/svgs/UserIcon.svg?react"),
   "w-6 h-6"
 );
@@ -45,32 +20,40 @@ const UserIcon = smoothLazy(
 //   () => import("@/assets/svgs/WalletIcon.svg?react"),
 //   "w-5 h-5"
 // );
-const CoursesIcon = smoothLazy(
+const CoursesIcon = SmoothLazy(
   () => import("@/assets/svgs/MyCoursesIcon.svg?react"),
   "w-5 h-5"
 );
-const CertificateIcon = smoothLazy(
+const SavedIcon = SmoothLazy(
+  () => import("@/assets/svgs/SaveIconWhite.svg?react"),
+  "w-5 h-5"
+);
+const CertificateIcon = SmoothLazy(
   () => import("@/assets/svgs/CertificateBoldIcon.svg?react"),
   "w-5 h-5"
 );
-const EditIcon = smoothLazy(
-  () => import("@/assets/svgs/EditIcon.svg?react"),
-  "w-5 h-5"
-);
-const LanguageIcon = smoothLazy(
+// const EditIcon = SmoothLazy(
+//   () => import("@/assets/svgs/EditIcon.svg?react"),
+//   "w-5 h-5"
+// );
+const LanguageIcon = SmoothLazy(
   () => import("@/assets/svgs/LanguageIcon.svg?react"),
   "w-5 h-5"
 );
-const MoonIcon = smoothLazy(
+const MoonIcon = SmoothLazy(
   () => import("@/assets/svgs/MoonIcon.svg?react"),
   "w-5 h-5"
 );
-const QuestionIcon = smoothLazy(
+const QuestionIcon = SmoothLazy(
   () => import("@/assets/svgs/QuestitionIcon.svg?react"),
   "w-5 h-5"
 );
-const LogoutIcon = smoothLazy(
+const LogoutIcon = SmoothLazy(
   () => import("@/assets/svgs/LogoutIcon.svg?react"),
+  "w-5 h-5"
+);
+const SettingIcon = SmoothLazy(
+  () => import("@/assets/svgs/SettingIcon.svg?react"),
   "w-5 h-5"
 );
 
@@ -109,10 +92,13 @@ const UserNav = () => {
   };
 
   return (
-    <div className="flex items-center gap-4 relative" ref={menuRef}>
+    <div
+      className="flex items-center gap-2 relative xl:ms-4 text-lg max-xl:text-sm"
+      ref={menuRef}
+    >
       {/* Greeting */}
-      <div className="text-gray-700 max-xl:hidden">
-        <span className="me-2">{t("welcome_for_user")}</span>
+      <div className="text-gray-400 text-nowrap">
+        <span className="me-1">{t("welcome_for_user")}</span>
         <span>{user?.userName}</span>
       </div>
 
@@ -154,10 +140,8 @@ const UserNav = () => {
               <div>
                 <div className="font-semibold mt-2">{user?.userName}</div>
                 <div className="text-sm text-[#797979]">
-                  {user?.instituteName}
-                </div>
-                <div className="text-sm text-[#797979]">
-                  {user?.programName}
+                  <span>{user?.instituteName}</span> -
+                  <span className="mx-1">{user?.programName}</span>
                 </div>
               </div>
               {/* <div className="text-sm text-secondary flex justify-center gap-2 mt-2">
@@ -168,19 +152,37 @@ const UserNav = () => {
             </div>
 
             {/* Items */}
-            <div className="text-sm mt-3 flex flex-col gap-2 border-b border-t mx-4 border-[#DBDBDB] py-4">
+            <div className="text-[16px] mt-3 flex flex-col gap-2 border-b border-t mx-4 border-[#DBDBDB] py-4">
               {[
-                { icon: <CoursesIcon />, label: t("my_courses") },
-                { icon: <CertificateIcon />, label: t("my_certificates") },
-                { icon: <EditIcon />, label: t("edit_profile") },
+                {
+                  icon: <CoursesIcon />,
+                  label: t("my_courses"),
+                  to: "my-courses",
+                },
+                {
+                  icon: <CertificateIcon />,
+                  label: t("my_certificates"),
+                  to: "",
+                },
+                {
+                  icon: <SavedIcon />,
+                  label: t("saved_items"),
+                  to: "saved-items",
+                },
+                {
+                  icon: <SettingIcon />,
+                  label: t("profile_settings"),
+                  to: "profile-settings",
+                },
               ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  whileHover={{ x: 4, opacity: 0.9 }}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
+                <motion.div key={i} whileHover={{ x: 4, opacity: 0.9 }}>
+                  <Link
+                    className="flex items-center gap-2 cursor-pointer"
+                    to={item.to}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Link>
                 </motion.div>
               ))}
 
@@ -218,7 +220,7 @@ const UserNav = () => {
             <motion.button
               whileHover={{ x: 4, color: "#e11d48" }}
               onClick={handleLogOut}
-              className="w-full text-start text-sm px-4 py-3 flex gap-2 items-center cursor-pointer"
+              className="w-full text-start px-4 py-3 flex gap-2 items-center cursor-pointer"
             >
               <LogoutIcon />
               <span>{t("logout")}</span>
