@@ -1,7 +1,7 @@
 import SectionTitle from "@/shared/components/SectionTitle";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import SavedContentsPagination from "@/features/SavedIrems/components/SavedContentsPagination";
+import SavedContentsPagination from "@/features/SavedIrems/components/InstituteSavedContentsPagination";
 
 const SavedContentsList = () => {
   const { t } = useLanguage();

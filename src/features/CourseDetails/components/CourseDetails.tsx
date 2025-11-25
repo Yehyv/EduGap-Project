@@ -24,13 +24,15 @@ const CourseDetails = ({
   const [isOnline, setIsOnline] = useState(true);
   const { firstName, lastName, title } = data.educator ?? {};
   const fullName = firstName && `${firstName ?? ""} ${lastName ?? ""}`;
-  const { totalDuration, levelName, languageType, lastUpdate, id } = data;
+  const { totalDuration, levelName, languageType, lastUpdate, id, isSaved } =
+    data;
   const contentDetailsCardData = {
     totalDuration,
     levelName,
     languageType,
     lastUpdate,
     id,
+    isSaved,
   };
 
   useEffect(() => {
@@ -48,7 +50,7 @@ const CourseDetails = ({
   }, []);
 
   return (
-    <div className="container flex justify-between flex-col-reverse my-10 xl:flex-row">
+    <div className="container flex justify-between flex-col-reverse max-xl:gap-4 my-10 xl:flex-row">
       <ScrollToTop />
       {/* Main content */}
       <div className="w-full xl:w-[70%]">

@@ -376,6 +376,10 @@ const translations = {
     go_to_next_lesson: "Go To Next Lesson",
     watch_again: "Watch Again",
     popular: "Popular Courses",
+    Institute_subject_unsaved: "Institute subject unsaved successfully",
+    Institute_subject_saved: "Institute subject saved successfully",
+    Save_Learning_unsaved: "learning path unsaved successfully",
+    Save_Learning_saved: "learning path saved successfully",
   },
 
   ar: {
@@ -756,6 +760,10 @@ const translations = {
     go_to_next_lesson: "الذهاب الي الدرس التالي",
     watch_again: "مشاهدة مرة أخرى",
     popular: "الأكثر شيوعا",
+    Institute_subject_unsaved: "تم حذف مقرر المعهد من قائمة المحفوظات",
+    Institute_subject_saved: "تم حفظ مقرر المعهد",
+    Save_Learning_unsaved: "تم حذف مسار التعلم من قائمة المحفوظات",
+    Save_Learning_saved: "تم حفظ مسار التعلم",
   },
 } as const;
 

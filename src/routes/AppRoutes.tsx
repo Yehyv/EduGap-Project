@@ -143,6 +143,7 @@ export default function AppRoutes() {
         />
         <Route path="/quiz-page/:courseId/:lessonId" element={<QuizPage />} />
         <Route path="/institute-courses" element={<InstituteCourses />} />
+
         <Route path="/saved-contents" element={<SavedContentsList />} />
         <Route path="/saved-lessons/:courseId" element={<SavedLessons />} />
         <Route path="/content-notes/:courseId" element={<MyNotes />} />

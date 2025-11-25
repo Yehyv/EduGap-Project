@@ -1,7 +1,5 @@
 import { motion } from "framer-motion";
 import StarIcon from "@/assets/svgs/StarIcon.svg?react";
-import SaveIcon from "@/assets/svgs/SaveIconWhite.svg?react";
-import SavedIcon from "@/assets/svgs/SavedIcon.svg?react";
 // import MedalIcon from "@/assets/svgs/Medalcon.svg?react";
 import InstructorAvatar from "@/assets/svgs/InstructorAvatar.svg";
 import DefaultButton from "../ui/DefaultButton";
@@ -10,22 +8,19 @@ import CourseCardOverlayDetails from "./CourseCardOverlayDetails";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import LevelBadge from "../ui/LevelBadge";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/features/auth/context/AuthContext";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
+import { useQuery } from "@tanstack/react-query";
 import {
   getNextLesson,
   saveContent,
 } from "@/features/CourseDetails/services/contentDetails";
-import { useUser } from "@/features/auth/context/UserContext";
 import ButtonLoader from "../ButtonLoader";
+import SaveButton from "@/features/SavedIrems/components/SaveButton";
+import { useUser } from "@/features/auth/context/UserContext";
 
 const CourseCard = ({ course }: { course: CourseType }) => {
-  const { token } = useAuth();
   const { t } = useLanguage();
   const { user } = useUser();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const isLoggedIn = localStorage.getItem("token") ? true : false;
   const { refetch: fetchNextLesson, isFetching: isFetchingNext } =
     useQuery<NextLessonType>({
@@ -33,23 +28,6 @@ const CourseCard = ({ course }: { course: CourseType }) => {
       queryFn: () => getNextLesson(course?.id!.toString() ?? ""),
       enabled: false,
     });
-
-  const { mutateAsync, isPending } = useMutation<void, Error, number>({
-    mutationFn: (contentId: number) => saveContent(contentId),
-    onSuccess: () => {
-      if (course?.isSaved) {
-        toast.warn(t("conent_unsaved"));
-      } else {
-        toast.success(t("content_saved_successfully"));
-      }
-      queryClient.invalidateQueries({
-        queryKey: ["coursesForSlider", user?.programId],
-      });
-    },
-    onError: () => {
-      toast.error(t("save_failed"));
-    },
-  });
 
   const handleOpenCourse = async () => {
     if (!isLoggedIn) {
@@ -119,37 +97,18 @@ const CourseCard = ({ course }: { course: CourseType }) => {
         </div>
 
         <div className="flex mt-auto gap-4 justify-center relative z-20">
-          <motion.button
-            className="bg-white rounded-full grid place-items-center cursor-pointer absolute start-2 top-1/2 -translate-y-1/2"
-            whileHover={!isPending ? { scale: 1.1 } : {}}
-            whileTap={!isPending ? { scale: 0.9 } : {}}
-            disabled={isPending}
-            onClick={() => {
-              if (token) {
-                mutateAsync(course?.id ?? 0);
-              } else {
-                toast.warning(t("must_be_logged_in"));
-              }
-            }}
-          >
-            {!isPending &&
-              (course?.isSaved ? (
-                <SavedIcon className="w-5 h-5" />
-              ) : (
-                <SaveIcon className="w-5 h-5" />
-              ))}
-            {isPending && (
-              <motion.div
-                className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full"
-                animate={{ rotate: 360 }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 0.8,
-                  ease: "linear",
-                }}
-              />
-            )}
-          </motion.button>
+          {/* Saved Button */}
+          <SaveButton
+            id={course.id}
+            isSaved={course.isSaved}
+            messageForUnSaved={t("conent_unsaved")}
+            messageForSaved={t("content_saved_successfully")}
+            saveFunction={saveContent}
+            invalidateQueriesKeys={[
+              { queryKey: ["coursesForSlider", user?.programId] },
+              { queryKey: ["getSavedCoursesList"] },
+            ]}
+          />
 
           <DefaultButton
             text={

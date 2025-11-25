@@ -13,6 +13,8 @@ import { useParams } from "react-router-dom";
 import { getPackageDetails } from "@/features/CourseDetails/services/contentDetails";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { formatDuration } from "@/shared/utils/globals";
+import SaveButton from "@/features/SavedIrems/components/SaveButton";
+import { saveProgramLearningPath } from "@/features/SavedIrems/services/savedApis";
 
 const ProgramDetails = () => {
   const { t, lang } = useLanguage();
@@ -55,11 +57,26 @@ const ProgramDetails = () => {
                 <div>{formatDuration(data?.totalDuration ?? 0, lang)}</div>
               </div>
             </div>
+            <div className="relative mt-10 -ms-2">
+              <SaveButton
+                id={+data!.id}
+                isSaved={data?.isSaved ?? false}
+                messageForUnSaved={t("Save_Learning_unsaved")}
+                messageForSaved={t("Save_Learning_saved")}
+                saveFunction={saveProgramLearningPath}
+                invalidateQueriesKeys={[
+                  {
+                    queryKey: ["getPackageDetails", programId],
+                  },
+                ]}
+              />
+              <span className="inline-block ms-10">Save Learning Path</span>
+            </div>
           </div>
 
           <div className="relative w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] me-[50px]">
             <div className="absolute w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] start-6 bg-[#FCB737] rounded-2xl -rotate-[30deg]" />
-            <div className="absolute border inset-0 rounded-2xl overflow-hidden -rotate-[30deg]">
+            <div className="absolute rounded-2xl overflow-hidden -rotate-[30deg]">
               <img
                 src={data?.image ?? programImage}
                 alt={t("program_image_alt")}
@@ -88,7 +105,6 @@ const ProgramDetails = () => {
           </ul>
         </section>
 
-        {/* ✅ Courses */}
         <section className="py-10">
           <div className="flex gap-2">
             <VideoIcon />

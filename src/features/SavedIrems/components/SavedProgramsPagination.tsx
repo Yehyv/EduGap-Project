@@ -5,8 +5,9 @@ import CustomPagination from "@/shared/utils/CustomPagination";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useSearchParams } from "react-router-dom";
 import { RESULTS_PER_PAGE } from "@/shared/utils/globals";
-import { getSavedPrograms } from "@/features/GuestHome/services/GuestHomeApi";
 import { Suspense, lazy } from "react";
+import { getSavedPrograms } from "../services/savedApis";
+import EmptyData from "@/shared/components/ui/EmptyData";
 
 const ProgramsSectionCardSkeleton = lazy(
   () => import("@/shared/components/ui/ProgramsSectionCardSkeleton")
@@ -50,11 +51,7 @@ const SavedProgramsPagination = () => {
               ))}
             </div>
           ) : data?.items?.length === 0 ? (
-            <div className="flex justify-center items-center py-10">
-              <p className="text-gray-500 text-lg font-medium">
-                {t("no_data_available")}
-              </p>
-            </div>
+            <EmptyData messageToShow={t("no_data_available")} />
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

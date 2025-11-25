@@ -136,6 +136,7 @@ export type PrgoramDetailsTypes = {
   learning_outcoms: string;
   contentsCount: number;
   totalDuration: number;
+  isSaved: boolean;
 };
 export type InstituteCourseDetailsTypes = {
   contentsCount: number;
@@ -145,6 +146,7 @@ export type InstituteCourseDetailsTypes = {
   name: string;
   notes: string;
   totalDuration: number;
+  isSaved: boolean;
 };
 export type ContentTopicsTypeResponse = {
   items: ContentTopicsType[];
@@ -254,6 +256,7 @@ export type InstituteCoursesType = {
 };
 export type InstituteCoursesResponse = {
   items: InstituteCoursesType[];
+  data?: InstituteCoursesType[];
   pagination: PaginationType;
 };
 

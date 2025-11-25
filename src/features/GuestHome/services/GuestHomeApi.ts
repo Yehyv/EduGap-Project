@@ -104,19 +104,6 @@ export async function getLatestCoursesList(
   return res.data.data;
 }
 
-export async function getAllSavedContents(
-  page: string,
-  limit: number
-): Promise<CoursesResponse> {
-  const res = await api.get<ApiResponse<CoursesResponse>>(
-    "/saved-contents/user",
-    {
-      params: { page, limit },
-    }
-  );
-  return res.data.data;
-}
-
 export async function getEducationProgramsForSlider(): Promise<ProgramsType[]> {
   const res = await api.get<ApiResponse<ProgramsType[]>>(
     "/packages-contents/first-8"
@@ -134,16 +121,6 @@ export async function getAllEducationsList(
       params: { page, limit },
     }
   );
-  return res.data.data;
-}
-
-export async function getSavedPrograms(
-  page: string,
-  limit: number
-): Promise<ProgramsResponse> {
-  const res = await api.get<ApiResponse<ProgramsResponse>>("/saved-packages", {
-    params: { page, limit },
-  });
   return res.data.data;
 }
 

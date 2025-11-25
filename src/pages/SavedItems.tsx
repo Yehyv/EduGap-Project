@@ -1,10 +1,11 @@
-import { useState } from "react";
-import SavedContentsPagination from "@/features/SavedIrems/components/SavedContentsPagination";
+import { useState, useEffect } from "react";
+import InstituteSavedContentsPagination from "@/features/SavedIrems/components/InstituteSavedContentsPagination";
 import SavedCoursesPagination from "@/features/SavedIrems/components/SavedCoursesPagination";
 import SavedProgramsPagination from "@/features/SavedIrems/components/SavedProgramsPagination";
 import SmoothLazy from "@/shared/components/SmoothLazy";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import ScrollToTop from "@/shared/utils/ScrollToTop";
 
 const SavedIcon = SmoothLazy(
   () => import("@/assets/svgs/SaveIconWhite.svg?react"),
@@ -19,13 +20,34 @@ type TabKey = "courses" | "programs" | "contents";
 
 const SavedItems = () => {
   const { t, lang } = useLanguage();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const TABS: { key: TabKey; label: string }[] = [
     { key: "courses", label: t("saved_courses") },
     { key: "programs", label: t("programs") },
     { key: "contents", label: t("saved_contents") },
   ];
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabKey>("courses");
+
+  const tabFromUrl = searchParams.get("tab") as TabKey | null;
+
+  const [activeTab, setActiveTab] = useState<TabKey>(
+    tabFromUrl && TABS.some((t) => t.key === tabFromUrl)
+      ? tabFromUrl
+      : "courses"
+  );
+
+  // ✅ Sync tab with URL when refresh or direct link
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
 
   const renderActiveComponent = () => {
     switch (activeTab) {
@@ -34,7 +56,7 @@ const SavedItems = () => {
       case "programs":
         return <SavedProgramsPagination />;
       case "contents":
-        return <SavedContentsPagination />;
+        return <InstituteSavedContentsPagination />;
       default:
         return null;
     }
@@ -42,6 +64,8 @@ const SavedItems = () => {
 
   return (
     <div className="container mt-5">
+      <ScrollToTop />
+
       {/* Back Button */}
       <button
         className={`cursor-pointer ${lang === "ar" ? "" : "rotate-180"}`}
@@ -61,7 +85,7 @@ const SavedItems = () => {
         {TABS.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => handleTabChange(tab.key)}
             className={`px-10 py-2 w-full border rounded-md transition-all cursor-pointer
               ${
                 activeTab === tab.key

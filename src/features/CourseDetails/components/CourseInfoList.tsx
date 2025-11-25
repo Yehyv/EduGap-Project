@@ -5,11 +5,9 @@ import SignalIcon from "@/assets/svgs/SignalIcon.svg?react";
 import InternetIcon from "@/assets/svgs/InternetIcon.svg?react";
 import LastUpdateIcon from "@/assets/svgs/LastUpdateIcon.svg?react";
 import CertificateIcon from "@/assets/svgs/CertificateIcon.svg?react";
-import SaveIcon from "@/assets/svgs/SaveIconWhite.svg?react";
-import SavedIcon from "@/assets/svgs/SavedIcon.svg?react";
 import ShareIcon from "@/assets/svgs/ShareIcon.svg?react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   enrollContent,
   getContentAccessStatusForUser,
@@ -26,10 +24,11 @@ import type {
   NextLessonType,
 } from "@/shared/types/sharedTypes";
 import { toast } from "react-toastify";
-import { useUser } from "@/features/auth/context/UserContext";
 import { formatDuration } from "@/shared/utils/globals";
 import { motion } from "framer-motion";
 import LessonProgress from "@/features/ContentLesson/components/LessonProgress";
+import SaveButton from "@/features/SavedIrems/components/SaveButton";
+import { useUser } from "@/features/auth/context/UserContext";
 
 type StickyCourseSummaryCardProps = {
   contentDetailsCardData: Partial<ContentDetailsType>;
@@ -45,8 +44,8 @@ const StickyCourseSummaryCard = ({
   const { courseId } = useParams<{ courseId: string }>();
   const { t, lang } = useLanguage();
   const navigate = useNavigate();
-  const { user } = useUser();
   const isLoggedIn = !!localStorage.getItem("token");
+  const { user } = useUser();
 
   const { data: contentAccessStatus, isLoading } = useQuery<ContentAccessType>({
     queryKey: ["getContentAccessStatus", courseId],
@@ -93,28 +92,6 @@ const StickyCourseSummaryCard = ({
         icon: "error",
         confirmButtonText: t("ok"),
       });
-    },
-  });
-  const queryClient = useQueryClient();
-
-  const { mutateAsync, isPending } = useMutation<void, Error, number>({
-    mutationFn: (contentId: number) => saveContent(contentId),
-    onSuccess: () => {
-      if (contentDetailsCardData?.isSaved) {
-        toast.warn(t("conent_unsaved"));
-      } else {
-        toast.success(t("content_saved_successfully"));
-      }
-      queryClient.invalidateQueries({
-        queryKey: [
-          "getContentDetailsForEnrolledUsers",
-          courseId,
-          user?.programId,
-        ],
-      });
-    },
-    onError: () => {
-      toast.error(t("save_failed"));
     },
   });
 
@@ -247,9 +224,9 @@ const StickyCourseSummaryCard = ({
         </motion.div>
       )}
 
-      <div className="flex justify-center mt-6 gap-4">
+      <div className="mx-auto center justify-center mt-6 gap-4">
         <motion.div
-          className="flex items-center gap-2 cursor-pointer relative"
+          className="flex items-center gap-2 cursor-pointer"
           onClick={handleShare}
           whileTap={{ scale: 0.9 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -257,37 +234,24 @@ const StickyCourseSummaryCard = ({
           <ShareIcon className="w-5 h-5" />
           <span className="whitespace-nowrap">{t("share_course")}</span>
         </motion.div>
-        <motion.button
-          className="bg-white rounded-full grid place-items-center cursor-pointer relative"
-          whileHover={!isPending ? { scale: 1.1 } : {}}
-          whileTap={!isPending ? { scale: 0.9 } : {}}
-          disabled={isPending}
-          onClick={() => {
-            if (isLoggedIn) {
-              mutateAsync(contentDetailsCardData?.id ?? 0);
-            } else {
-              toast.warning(t("must_be_logged_in"));
-            }
-          }}
-        >
-          {!isPending &&
-            (contentDetailsCardData?.isSaved ? (
-              <SavedIcon className="w-5 h-5" />
-            ) : (
-              <SaveIcon className="w-5 h-5" />
-            ))}
-          {isPending && (
-            <motion.div
-              className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full"
-              animate={{ rotate: 360 }}
-              transition={{
-                repeat: Infinity,
-                duration: 0.8,
-                ease: "linear",
-              }}
-            />
-          )}
-        </motion.button>
+        <div className="relative">
+          <SaveButton
+            id={+courseId!}
+            isSaved={contentDetailsCardData?.isSaved ?? false}
+            messageForUnSaved={t("conent_unsaved")}
+            messageForSaved={t("content_saved_successfully")}
+            saveFunction={saveContent}
+            invalidateQueriesKeys={[
+              {
+                queryKey: [
+                  "getContentDetailsForEnrolledUsers",
+                  courseId,
+                  user?.programId,
+                ],
+              },
+            ]}
+          />
+        </div>
       </div>
     </div>
   );

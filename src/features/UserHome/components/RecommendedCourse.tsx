@@ -1,9 +1,8 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import DefaultButton from "@/shared/components/ui/DefaultButton";
-import SaveIcon from "@/assets/svgs/SaveIconWhite.svg?react";
 import userIcon from "@/assets/svgs/userIcon.svg";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useUser } from "@/features/auth/context/UserContext";
 import { getRecommenedCourse } from "../services/userHomeApis";
 import type { CourseType } from "@/shared/types/sharedTypes";
@@ -11,38 +10,17 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import { useNavigate } from "react-router-dom";
 import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { saveContent } from "@/features/CourseDetails/services/contentDetails";
-import { toast } from "react-toastify";
-import SavedIcon from "@/assets/svgs/SaveIcon.svg?react";
 import CourseVideo from "@/shared/components/EduGap/CourseVideo";
+import SaveButton from "@/features/SavedIrems/components/SaveButton";
 const RecommendedCourse = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [isOnline, setIsOnline] = useState(true);
   const { user } = useUser();
-  const token = localStorage.getItem("token");
 
   const { data, isLoading, error } = useQuery<CourseType>({
     queryKey: ["getRecommenedCourse", user?.programId],
     queryFn: () => getRecommenedCourse(user?.programId),
-    // enabled: !!user?.programId,
-  });
-  const queryClient = useQueryClient();
-
-  const { mutateAsync, isPending } = useMutation<void, Error, number>({
-    mutationFn: (contentId: number) => saveContent(contentId),
-    onSuccess: () => {
-      if (data?.isSaved) {
-        toast.warn(t("conent_unsaved"));
-      } else {
-        toast.success(t("content_saved_successfully"));
-      }
-      queryClient.invalidateQueries({
-        queryKey: ["getRecommenedCourse", user?.programId],
-      });
-    },
-    onError: () => {
-      toast.error(t("save_failed"));
-    },
   });
 
   useEffect(() => {
@@ -139,7 +117,7 @@ const RecommendedCourse = () => {
           </motion.p>
 
           <motion.div
-            className="center items-center gap-5 mt-auto mx-auto"
+            className="mt-auto w-full center relative"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.6 }}
@@ -153,37 +131,16 @@ const RecommendedCourse = () => {
               />
             </motion.div>
 
-            <motion.button
-              className="w-10 h-10 bg-white rounded-full grid place-items-center cursor-pointer relative"
-              whileHover={!isPending ? { scale: 1.1 } : {}}
-              whileTap={!isPending ? { scale: 0.9 } : {}}
-              disabled={isPending}
-              onClick={() => {
-                if (token) {
-                  mutateAsync(data?.id ?? 0);
-                } else {
-                  toast.warning(t("must_be_logged_in"));
-                }
-              }}
-            >
-              {!isPending &&
-                (data?.isSaved ? (
-                  <SavedIcon className="w-10 h-10" />
-                ) : (
-                  <SaveIcon className="w-5 h-5" />
-                ))}
-              {isPending && (
-                <motion.div
-                  className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full"
-                  animate={{ rotate: 360 }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 0.8,
-                    ease: "linear",
-                  }}
-                />
-              )}
-            </motion.button>
+            <SaveButton
+              id={data?.id ?? 0}
+              isSaved={data?.isSaved ?? false}
+              messageForUnSaved={t("conent_unsaved")}
+              messageForSaved={t("content_saved_successfully")}
+              saveFunction={saveContent}
+              invalidateQueriesKeys={[
+                { queryKey: ["getRecommenedCourse", user?.programId] },
+              ]}
+            />
           </motion.div>
         </motion.div>
         {/* Video Section */}

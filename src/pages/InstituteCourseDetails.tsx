@@ -6,12 +6,17 @@ import ExpandableText from "@/shared/components/ui/ExpandableText";
 import VideoIcon from "@/assets/svgs/VideoIcon.svg?react";
 import { Loader } from "@/shared/components";
 import { useQuery } from "@tanstack/react-query";
-import { getInstituteCourseDetails } from "@/features/CourseDetails/services/contentDetails";
+import {
+  getInstituteCourseDetails,
+  saveContent,
+} from "@/features/CourseDetails/services/contentDetails";
 import { useParams } from "react-router-dom";
 import { useUser } from "@/features/auth/context/UserContext";
 import { formatDuration } from "@/shared/utils/globals";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import CoursesInInstitute from "@/shared/components/EduGap/CoursesInInstitute";
+import SaveButton from "@/features/SavedIrems/components/SaveButton";
+import { saveInstituteSubject } from "@/features/SavedIrems/services/savedApis";
 
 const InstituteCourseDetails = () => {
   const { t, lang } = useLanguage();
@@ -52,6 +57,21 @@ const InstituteCourseDetails = () => {
                 <div>{formatDuration(data?.totalDuration ?? 0, lang)}</div>
               </div>
             </div>
+            <div className="relative mt-10 -ms-2">
+              <SaveButton
+                id={+data!.id}
+                isSaved={data?.isSaved ?? false}
+                messageForUnSaved={t("Institute_subject_unsaved")}
+                messageForSaved={t("Institute_subject_saved")}
+                saveFunction={saveInstituteSubject}
+                invalidateQueriesKeys={[
+                  {
+                    queryKey: ["getInstituteCourses", instituteCourseId],
+                  },
+                ]}
+              />
+              <span className="inline-block ms-10">Save Subject</span>
+            </div>
           </div>
           <div className="relative w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] me-[50px]">
             <div className="absolute w-[210px] h-[210px]  max-md:w-[160px] max-md:h-[160px] start-1 bottom-0 bg-[#FCB737] rounded-full" />
@@ -65,6 +85,7 @@ const InstituteCourseDetails = () => {
           </div>
         </div>
       </div>
+
       <div className="container">
         <div>
           <SectionTitle textTitle={t("about_institute_course")} />
