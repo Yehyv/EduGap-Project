@@ -374,6 +374,7 @@ const translations = {
     correct_answer: "Correct Answer",
     try_again: "Try Again",
     go_to_next_lesson: "Go To Next Lesson",
+    watch_again: "Watch Again",
   },
 
   ar: {
@@ -752,6 +753,7 @@ const translations = {
     correct_answer: "الإجابة الصحيحة",
     try_again: "حاول مرة اخري",
     go_to_next_lesson: "الذهاب الي الدرس التالي",
+    watch_again: "مشاهدة مرة أخرى",
   },
 } as const;
 

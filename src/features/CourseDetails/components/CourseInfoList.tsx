@@ -222,7 +222,11 @@ const StickyCourseSummaryCard = ({
                 mutation.isPending ? (
                   <ButtonLoader />
                 ) : isEnrolled ? (
-                  t("Continue_Learning")
+                  progress?.completedLessons == progress?.totalLessons ? (
+                    t("watch_again")
+                  ) : (
+                    t("Continue_Learning")
+                  )
                 ) : (
                   t("enroll")
                 )
