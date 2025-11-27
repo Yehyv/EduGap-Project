@@ -38,7 +38,7 @@ const CategoriesDropdown = ({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute top-0 right-full ml-0 bg-white shadow-lg rounded-xl p-3 min-w-[250px] z-50"
+                className="absolute top-0 end-full ml-0 bg-white shadow-lg rounded-xl p-3 min-w-[250px] z-50"
               >
                 {category?.items?.slice(0, 6).map((course) => (
                   <Link

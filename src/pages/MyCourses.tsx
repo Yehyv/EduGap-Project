@@ -1,29 +1,29 @@
 import { useState, useEffect } from "react";
-import InstituteSavedContentsPagination from "@/features/SavedIrems/components/InstituteSavedContentsPagination";
-import SavedCoursesPagination from "@/features/SavedIrems/components/SavedCoursesPagination";
-import SavedProgramsPagination from "@/features/SavedIrems/components/SavedProgramsPagination";
 import SmoothLazy from "@/shared/components/SmoothLazy";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useSearchParams } from "react-router-dom";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
+import CurrentCoursesPagination from "@/features/myCourses/components/CoursesPagination";
 import BackButton from "@/shared/components/ui/BackButton";
+import {
+  getMyCompletedCourses,
+  getMyCurrentCourses,
+} from "@/features/myCourses/services/myCoursesApis";
 
-const SavedIcon = SmoothLazy(
-  () => import("@/assets/svgs/SaveIconWhite.svg?react"),
+const ComputerIcon = SmoothLazy(
+  () => import("@/assets/svgs/ComputerIcon.svg?react"),
   "w-7 h-7"
 );
 
-type TabKey = "courses" | "programs" | "contents";
+type TabKey = "current" | "finished";
 
-const SavedItems = () => {
+const MyCourses = () => {
   const { t } = useLanguage();
-
   const [searchParams, setSearchParams] = useSearchParams();
 
   const TABS: { key: TabKey; label: string }[] = [
-    { key: "courses", label: t("saved_courses") },
-    { key: "programs", label: t("programs") },
-    { key: "contents", label: t("saved_contents") },
+    { key: "current", label: t("current_courses") },
+    { key: "finished", label: t("finished_courses") },
   ];
 
   const tabFromUrl = searchParams.get("tab") as TabKey | null;
@@ -31,10 +31,9 @@ const SavedItems = () => {
   const [activeTab, setActiveTab] = useState<TabKey>(
     tabFromUrl && TABS.some((t) => t.key === tabFromUrl)
       ? tabFromUrl
-      : "courses"
+      : "current"
   );
 
-  // ✅ Sync tab with URL when refresh or direct link
   useEffect(() => {
     if (tabFromUrl && tabFromUrl !== activeTab) {
       setActiveTab(tabFromUrl);
@@ -48,12 +47,21 @@ const SavedItems = () => {
 
   const renderActiveComponent = () => {
     switch (activeTab) {
-      case "courses":
-        return <SavedCoursesPagination />;
-      case "programs":
-        return <SavedProgramsPagination />;
-      case "contents":
-        return <InstituteSavedContentsPagination />;
+      case "current":
+        return (
+          <CurrentCoursesPagination
+            queryFunc={getMyCurrentCourses}
+            queryKey={"currentCourses"}
+          />
+        );
+      case "finished":
+        return (
+          <CurrentCoursesPagination
+            queryFunc={getMyCompletedCourses}
+            queryKey={"completedCourses"}
+          />
+        );
+
       default:
         return null;
     }
@@ -62,18 +70,15 @@ const SavedItems = () => {
   return (
     <div className="container mt-5">
       <ScrollToTop />
-
-      {/* Back Button */}
       <BackButton />
-
       {/* Title */}
       <div className="flex items-center gap-2 mt-2">
-        <SavedIcon />
-        <h2 className="text-2xl font-semibold">{t("saved_items")}</h2>
+        <ComputerIcon />
+        <h2 className="text-2xl font-semibold">{t("my_courses")}</h2>
       </div>
 
       {/* Tabs */}
-      <div className="flex max-md:flex-col justify-center gap-4 mt-6 text-[#9E9C9C]">
+      <div className="flex max-md:flex-col justify-center max-md:gap-4 gap-10 mt-6 text-[#9E9C9C]">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -97,4 +102,4 @@ const SavedItems = () => {
   );
 };
 
-export default SavedItems;
+export default MyCourses;

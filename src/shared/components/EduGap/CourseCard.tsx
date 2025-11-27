@@ -108,6 +108,8 @@ const CourseCard = ({ course }: { course: CourseType }) => {
               { queryKey: ["coursesForSlider", user?.programId] },
               { queryKey: ["savedContentsNav"] },
               { queryKey: ["getSavedCoursesList"] },
+              { queryKey: ["currentCourses"] },
+              { queryKey: ["completedCourses"] },
             ]}
           />
 

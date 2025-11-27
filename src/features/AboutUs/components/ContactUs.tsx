@@ -16,17 +16,17 @@ const ContactUs = () => {
   return (
     <>
       <ScrollToTop />
-      <div className="bg-[#2B2B2B] pb-20 pt-10">
+      <div className="bg-[#2B2B2B] py-30">
         <div className="container">
           {/* Header */}
           <motion.div
-            className="text-center py-10 text-white"
+            className="text-center mb-20 text-white"
             variants={fadeUp}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
           >
-            <h6 className="font-semibold mb-2 text-lg">
+            <h6 className="font-semibold mb-2 text-2xl">
               {t("contact_us_title")}
             </h6>
             <p>{t("contact_us_subtitle")}</p>

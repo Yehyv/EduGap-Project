@@ -33,12 +33,10 @@ import ChangePassword from "@/pages/ChangePassword";
 import VerifyOtpForForgotPassword from "@/pages/VerifyOtpForForgotPassword";
 import SearchResults from "@/pages/SearchResults";
 import AboutUs from "@/pages/AboutUs";
-import OurServices from "@/pages/OurServices";
-import OurFeatures from "@/pages/OurFeatures";
-import JoinUs from "@/pages/JoinUs";
-import ContactUs from "@/pages/ContactUs";
 import SavedItems from "@/pages/SavedItems";
 import QuizPage from "@/pages/QuizPage";
+import MyCourses from "@/pages/MyCourses";
+import ProfileSettings from "@/pages/ProfileSettings";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -58,10 +56,6 @@ export default function AppRoutes() {
         />
         <Route path="/search-results" element={<SearchResults />} />
         <Route path="/About-us" element={<AboutUs />} />
-        <Route path="/our-services" element={<OurServices />} />
-        <Route path="/our-features" element={<OurFeatures />} />
-        <Route path="/join-us" element={<JoinUs />} />
-        <Route path="/contact-us" element={<ContactUs />} />
       </Route>
 
       {/* Public Routes with AuthLayout */}
@@ -152,6 +146,8 @@ export default function AppRoutes() {
           element={<CourseMaterials />}
         />
         <Route path="/saved-items" element={<SavedItems />} />
+        <Route path="/my-courses" element={<MyCourses />} />
+        <Route path="/my-settings" element={<ProfileSettings />} />
       </Route>
 
       {/* Not Found */}

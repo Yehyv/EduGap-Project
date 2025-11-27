@@ -171,7 +171,7 @@ const UserNav = () => {
                 {
                   icon: <SettingIcon />,
                   label: t("profile_settings"),
-                  to: "profile-settings",
+                  to: "my-settings",
                 },
               ].map((item, i) => (
                 <motion.div key={i} whileHover={{ x: 4, opacity: 0.9 }}>

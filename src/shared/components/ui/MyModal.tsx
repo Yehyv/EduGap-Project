@@ -2,19 +2,25 @@ import * as Dialog from "@radix-ui/react-dialog";
 import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
 
 type MyModalProps = {
-  trigger?: React.ReactNode; // ✅ custom trigger
-  headerTitle: string;
-  children: React.ReactNode; // ✅ modal body content
-  open?: boolean; // ✅ optional controlled state
+  trigger?: React.ReactNode;
+  headerTitle?: string;
+  headerComponent?: React.ReactNode; // ← إضافة هذا
+  children: React.ReactNode;
+  open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  headerBgColor?: string;
+  headerTextColor?: string;
 };
 
 export default function MyModal({
   trigger,
   headerTitle,
+  headerComponent,
   children,
   open,
   onOpenChange,
+  headerBgColor = "bg-secondary",
+  headerTextColor = "text-white",
 }: MyModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -29,14 +35,21 @@ export default function MyModal({
             bg-white rounded-lg shadow-lg w-[90%] max-w-md overflow-hidden
           "
         >
-          <div className="relative bg-secondary px-4 py-2 pt-3">
-            <Dialog.Title className="font-semibold text-lg text-white  text-center">
-              {headerTitle}
-            </Dialog.Title>
-
-            <Dialog.Close className="absolute start-4 top-5 cursor-pointer hover:scale-110 transition">
-              <CloseIcon className="w-4 h-4" />
-            </Dialog.Close>
+          <div className={`relative ${headerBgColor} px-4 py-2 pt-3`}>
+            {headerComponent ? (
+              headerComponent
+            ) : (
+              <>
+                <Dialog.Title
+                  className={`font-semibold text-lg ${headerTextColor} text-center`}
+                >
+                  {headerTitle}
+                </Dialog.Title>
+                <Dialog.Close className="absolute start-4 top-5 cursor-pointer hover:scale-110 transition">
+                  <CloseIcon className="w-4 h-4" />
+                </Dialog.Close>
+              </>
+            )}
           </div>
 
           <div className="p-5">{children}</div>

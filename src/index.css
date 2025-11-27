@@ -30,6 +30,7 @@
   --color-text-first: var(--my-text-first, #000000); /* default fallback */
   --color-text-second: var(--my-text-second, #7d7d7d); /* default fallback */
 
+  --color-bg-primary: var(--bg-primary, #fbfbfb);
   --color-bg: var(--color-gray-50);
   --color-text: var(--color-gray-900);
   --color-link: var(--color-blue-600);

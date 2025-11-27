@@ -138,6 +138,11 @@ export type PrgoramDetailsTypes = {
   totalDuration: number;
   isSaved: boolean;
 };
+export type ChangePasswordTypes = {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
 export type InstituteCourseDetailsTypes = {
   contentsCount: number;
   description: string;
