@@ -16,6 +16,7 @@ import { EducatorsService } from './educators.service';
 import { CreateEducatorDto } from './dto/create-educator.dto';
 import { UpdateEducatorDto } from './dto/update-educator.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -91,7 +92,7 @@ export class EducatorsController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.educatorsService.remove(id);
   }
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/contents')
   async findContentsByEducator(
     @Param('id', ParseIntPipe) id: number,

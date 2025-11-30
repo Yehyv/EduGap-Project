@@ -13,6 +13,7 @@ import { UpdatePackageDto } from './dto/update-package.dto';
 import { Content } from 'src/contents/entities/content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
 function pickTranslation<T extends { language?: { id?: number } }>(
   list: T[] | undefined,
   languageId?: number,
@@ -31,6 +32,7 @@ export class PackagesService {
     @InjectRepository(Content) private readonly contentRepo: Repository<Content>,
     @InjectRepository(Enrollment) private readonly enrollmentRepo: Repository<Enrollment>,
     @InjectRepository(LessonProgress) private readonly progressRepo: Repository<LessonProgress>,
+    @InjectRepository(SavedPackage) private readonly savedPackage: Repository<SavedPackage>,
 
   ) {}
 
@@ -357,6 +359,7 @@ async findPackagesPaginated(
 async getPackageBasicById(
   packageId: number,
   { languageId }: { languageId?: number } = {},
+  userId?: number,
 ) {
   // هات الباكيدج + الترجمات
   const pkg = await this.pkgRepo.findOne({
@@ -393,6 +396,18 @@ async getPackageBasicById(
     .select('COUNT(DISTINCT c.id)', 'contentsCount')
     .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
     .getRawOne<{ contentsCount: string; totalDuration: string }>();
+    let isSaved = false;
+    if (userId) {
+      // لو TypeORM >= 0.3 يدعم getExists()
+      const exists = await this.savedPackage
+        .createQueryBuilder('s')
+        .leftJoin('s.user', 'u')
+        .leftJoin('s.package', 'p')
+        .where('u.id = :uid', { uid: userId })
+        .andWhere('p.id = :pid', { pid: pkg.id })
+        .getExists(); // إن لم تتوفر، استخدم getCount()>0
+      isSaved = exists;
+    }
 
   return {
     id: pkg.id,
@@ -403,6 +418,7 @@ async getPackageBasicById(
     learning_outcoms: tr?.learning_outcoms ?? '',
     contentsCount: Number(agg?.contentsCount ?? 0),
     totalDuration: Number(agg?.totalDuration ?? 0), // بالثواني
+    isSaved,
   };
 }
 async getPackageContentsPaginated(

@@ -197,7 +197,7 @@ removeCourseFromInstituteProgram(
     courseId,
   );
 }
-
+@UseGuards(OptionalJwtAuthGuard)
 @Get(':courseId/basic')
   async getCourseBasicById(
     @Param('courseId', ParseIntPipe) courseId: number,
@@ -215,7 +215,8 @@ removeCourseFromInstituteProgram(
       languageId,
       instituteId,
       programId,
-    });
+    }, req.user?.sub
+  );
   }
   @UseGuards(OptionalJwtAuthGuard)
   // GET /courses/:courseId/contents?page=&limit=&languageId=&instituteId=&programId=&userId=

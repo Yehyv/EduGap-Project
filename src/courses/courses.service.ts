@@ -18,6 +18,7 @@ import { InstitutePrograms } from 'src/institutes/entities/institute-programs.en
 import { Content } from 'src/contents/entities/content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 // type LangRef = { id: number };
 // type WithLanguage = { language?: LangRef };
 
@@ -75,6 +76,9 @@ export class CoursesService {
 
     @InjectRepository(LessonProgress)
     private readonly progressRepo: Repository<LessonProgress>,
+
+    @InjectRepository(SavedCourse)
+    private readonly savedCourse: Repository<SavedCourse>,
   ) {}
 
   /** 1) إنشاء كورس عام بدون أي ربط */
@@ -677,6 +681,7 @@ export class CoursesService {
       instituteId,
       programId,
     }: { languageId?: number; instituteId?: number; programId?: number } = {},
+    userId?: number,
   ) {
     // الكورس + الترجمات
     const course = await this.courseRepository.findOne({
@@ -756,7 +761,18 @@ export class CoursesService {
       .select('COALESCE(SUM(l.duration), 0)', 'totalDuration')
       .where('course.id = :courseId', { courseId })
       .getRawOne<{ totalDuration: string }>();
-
+      let isSaved = false;
+    if (userId) {
+      // لو TypeORM >= 0.3 يدعم getExists()
+      const exists = await this.savedCourse
+        .createQueryBuilder('s')
+        .leftJoin('s.user', 'u')
+        .leftJoin('s.content', 'c')
+        .where('u.id = :uid', { uid: userId })
+        .andWhere('c.id = :cid', { cid: course.id })
+        .getExists(); // إن لم تتوفر، استخدم getCount()>0
+      isSaved = exists;
+    }
     return {
       id: course.id,
       image: course.image,
@@ -765,6 +781,7 @@ export class CoursesService {
       notes: course.notes,
       contentsCount,
       totalDuration: Number(durRow?.totalDuration ?? 0),
+      isSaved,
     };
   }
   async getCourseContentsPaginated(

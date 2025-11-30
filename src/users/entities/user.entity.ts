@@ -45,8 +45,14 @@ export class User {
   @Column({ type: 'varchar', length: 20 })
   phone: string;
 
-  @Column({ type: 'text' })
-  user_image: string;
+  @Column({
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+    default:
+      'https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg',
+  })
+  user_image: string | null;
 
   @Column({ type: 'varchar', length: 30 })
   username: string;

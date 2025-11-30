@@ -10,6 +10,8 @@ import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequie
 import { formatHumanDate } from 'src/common/date-format';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { LessonType } from 'src/lessons/entities/lesson.entity';
+import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
 type AccessFlag = 'notLoggedIn' | 'notEnrolled' | 'enrolled';
 
 @Injectable()
@@ -21,6 +23,7 @@ export class ContentDetailsService {
     @InjectRepository(PrerequisiteContent) private readonly prereqRepo: Repository<PrerequisiteContent>,
     @InjectRepository(Lesson) private readonly lessonRepo: Repository<Lesson>,                    // ⬅️ جديد
     @InjectRepository(LessonProgress) private readonly progressRepo: Repository<LessonProgress>, // ⬅️ جديد
+    @InjectRepository(SavedContent) private readonly savedContentRepo: Repository<SavedContent>, // ⬅️ جديد
   ) {}
 
   /** Helper: يضمن ان الـcontent موجود ومتاح داخل معهد/برنامج (لو اتبعتوا) */
@@ -59,7 +62,7 @@ export class ContentDetailsService {
   /** 1) بيانات المحتوى الأساسية + educator */
   async getBase(
   contentId: number,
-  params: { languageId?: number; instituteId?: number; programId?: number }
+  params: { languageId?: number; instituteId?: number; programId?: number, userId?: number }
 ) {
   await this.ensureContentScope(contentId, params);
 
@@ -94,6 +97,18 @@ export class ContentDetailsService {
 
   const ctr = content.translations?.[0] ?? null;
   const lastUpdate = formatHumanDate(content.updated_at);
+  let isSaved = false;
+    if (params.userId) {
+      // لو TypeORM >= 0.3 يدعم getExists()
+      const exists = await this.savedContentRepo
+        .createQueryBuilder('s')
+        .leftJoin('s.user', 'u')
+        .leftJoin('s.content', 'c')
+        .where('u.id = :uid', { uid: params.userId })
+        .andWhere('c.id = :cid', { cid: content.id })
+        .getExists(); // إن لم تتوفر، استخدم getCount()>0
+      isSaved = exists;
+    }
 
   return {
     id: content.id,
@@ -107,6 +122,7 @@ export class ContentDetailsService {
     previousBackground: ctr?.previous_background || '',
     languageType: ctr?.language_type || '',
     lastUpdate,
+    isSaved,
     totalDuration, // ⬅️ الإضافة الجديدة
     educator: content.educator
       ? {
@@ -525,31 +541,40 @@ async getContentSummary(
   async getNextOpenLessonId(
   contentId: number,
   userId: number,
-): Promise<{ lessonId: number | null }> {
+): Promise<{ lessonId: number | null; lessonType: LessonType | null }> {
   // 0) لازم يكون ملتحق بالمحتوى ده
   const enrollment = await this.enrollmentRepo.findOne({
     where: { user: { id: userId }, content: { id: contentId } },
     select: ['id'],
   });
-  // لو مش ملتحق، هنرجّع null بدل ما نرمى Forbidden عشان الـUI يتصرف ببساطة
-  if (!enrollment) return { lessonId: null };
 
-  // 1) هات IDs الدروس مرتبة بالترتيب الطبيعي (topic ثم order ثم id)
+  // لو مش ملتحق، هنرجّع null عشان الـ UI يتصرف
+  if (!enrollment) {
+    return { lessonId: null, lessonType: null };
+  }
+
+  // 1) هات IDs الدروس + نوعها مرتبة بالترتيب الطبيعي
   const lessonRows = await this.lessonRepo
     .createQueryBuilder('l')
     .leftJoin('l.topic', 't')
     .leftJoin('t.content', 'c')
     .where('c.id = :cid', { cid: contentId })
-    .select(['l.id AS id'])
+    .select([
+      'l.id AS id',
+      'l.lesson_type AS lessonType',
+    ])
     .orderBy('t.id', 'ASC')
     .addOrderBy('l.order_id', 'ASC')
     .addOrderBy('l.id', 'ASC')
-    .getRawMany<{ id: number }>();
+    .getRawMany<{ id: number; lessonType: LessonType }>();
 
-  if (!lessonRows.length) return { lessonId: null };
-  const orderedIds = lessonRows.map(r => Number(r.id));
+  if (!lessonRows.length) {
+    return { lessonId: null, lessonType: null };
+  }
 
-  // 2) هات الدروس المكتملة للمستخدم داخل نفس الـenrollment
+  const orderedIds = lessonRows.map((r) => Number(r.id));
+
+  // 2) هات الدروس المكتملة للمستخدم داخل نفس الـ enrollment
   const completedRows = await this.progressRepo
     .createQueryBuilder('p')
     .select(['p.lesson_id AS lessonId'])
@@ -557,23 +582,36 @@ async getContentSummary(
     .andWhere('p.user_id = :userId', { userId })
     .getRawMany<{ lessonId: number }>();
 
-  const completed = new Set(completedRows.map(r => Number(r.lessonId)));
+  const completed = new Set(completedRows.map((r) => Number(r.lessonId)));
 
   // 3) أول درس غير مكتمل ومسموح (الأول أو يلي درسًا مكتملًا)
   let nextId: number | null = null;
+  let nextType: LessonType | null = null;
+
   for (let i = 0; i < orderedIds.length; i++) {
     const cur = orderedIds[i];
+
+    // لو الدرس ده مكتمل، نعدّيه
     if (completed.has(cur)) continue;
+
     const isFirst = i === 0;
     const prevCompleted = isFirst ? true : completed.has(orderedIds[i - 1]);
+
+    // نفس اللوجيك بتاعك: أول درس أو يلي درس مكتمل
     if (isFirst || prevCompleted) {
       nextId = cur;
+      // lessonRows[i] هو نفس الدرس لأننا بنبني orderedIds من lessonRows بنفس الترتيب
+      nextType = lessonRows[i].lessonType;
       break;
     }
   }
 
-  return { lessonId: nextId };
+  return {
+    lessonId: nextId,
+    lessonType: nextType,
+  };
 }
+
 }
 
 // // src/contents/content-details.service.ts

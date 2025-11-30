@@ -285,5 +285,32 @@ export class UsersService {
 
     return { message: 'Phone updated successfully' };
   }
-
+  async getProfileInfo(userId: number) {
+    const user = await this.userRepositry.findOne({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException(`User with id ${userId} not found`);
+    return {
+      full_name: user.full_name,
+      user_image: user.user_image,
+      phone_key: user.phone_key,
+      phone: user.phone,
+    };
+  }
+  async changeProfileImage(
+    userId: number,
+    imageUrl: string,
+  ): Promise<{ message: string; user_image: string }> {
+    const user = await this.userRepositry.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException(` user with id ${userId} not found`);
+    if (!imageUrl || !imageUrl.trim()) {
+      throw new BadRequestException(' Invalid image URL ');
+    }
+    user.user_image = imageUrl;
+    await this.userRepositry.save(user);
+    return {
+      message: 'User image updated successfully',
+      user_image: user.user_image,
+    };
+  }
 }

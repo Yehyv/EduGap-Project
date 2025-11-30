@@ -15,6 +15,7 @@ import { Content } from 'src/contents/entities/content.entity';
 import { ContentsModule } from 'src/contents/contents.module'; // <-- هنا
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
       Content,
       Enrollment,
       LessonProgress,
+      SavedPackage,
     ]),
     ContentsModule, // <-- أهم سطر: عشان يوفر ContentsService للكنترولر
   ],

@@ -74,6 +74,7 @@ export class ContentsController {
       languageId: languageId ? Number(languageId) : undefined,
       instituteId,
       programId: programId ? Number(programId) : undefined,
+      userId: req.user?.sub,
     });
   }
   @UseGuards(OptionalJwtAuthGuard)

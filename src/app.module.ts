@@ -37,8 +37,14 @@ import { SearchModule } from './search/search.module';
 import { QuestionsModule } from './questions/questions.module';
 import { SavedCoursesModule } from './saved-courses/saved-course.module';
 import { UsersOtpModule } from './users-otp/users-otp.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

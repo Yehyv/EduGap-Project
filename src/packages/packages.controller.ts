@@ -58,14 +58,20 @@ export class PackagesController {
     return this.packagesService.remove(+id);
   }
   // packages.controller.ts
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/basic')
   async getBasic(
     @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
     @Headers('languageId') languageId?: number,
   ) {
-    return this.packagesService.getPackageBasicById(id, {
-      languageId: languageId ? Number(languageId) : undefined,
-    });
+    return this.packagesService.getPackageBasicById(
+      id,
+      {
+        languageId: languageId ? Number(languageId) : undefined,
+      },
+      req.user?.sub,
+    );
   }
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/contents')

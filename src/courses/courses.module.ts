@@ -12,6 +12,7 @@ import { InstituteProgramCourse } from 'src/institutes/entities/institute-progra
 import { ProgramCourse } from 'src/programs/entities/program-course.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
       ProgramCourse,
       InstitutePrograms,
       LessonProgress,
+      SavedCourse,
     ]),
   ],
   controllers: [CoursesController],
