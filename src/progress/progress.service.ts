@@ -249,6 +249,7 @@ export class ProgressService {
         'l.id',
         'l.order_id',
         'l.video_link',
+        'l.lesson_type',
         't.id',
         'c.id',
         'ltr.id',
