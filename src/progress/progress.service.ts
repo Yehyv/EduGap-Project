@@ -338,7 +338,7 @@ export class ProgressService {
           lesson: {
             id: next.id,
             order: next.order_id ?? 0,
-            lesson_type: next.lesson_type,
+            lesson_type: next.lesson_type ?? null,
             name: next.translations?.[0]?.name ?? '',
             video: next.video_link ?? null,
           },
