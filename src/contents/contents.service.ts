@@ -418,15 +418,31 @@ export class ContentsService {
     );
 
     // 4) فلاج الالتحاق (يكفي وجود صف)
-    let enrolledMap = new Map<number, boolean>();
+    let enrolledMap = new Map<
+      number,
+      { isEnrolled: boolean; isCompleted: boolean }
+    >();
+
     if (userId) {
       const enrRows = await this.enrollmentRepo
         .createQueryBuilder('en')
-        .select(['en.contentId AS cid'])
+        .select([
+          'en.contentId AS cid',
+          'CASE WHEN en.status = 1 THEN 1 ELSE 0 END AS completed',
+        ])
         .where('en.userId = :uid', { uid: userId })
         .andWhere('en.contentId IN (:...ids)', { ids })
-        .getRawMany<{ cid: number }>();
-      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
+        .getRawMany<{ cid: number; completed: number }>();
+
+      enrolledMap = new Map(
+        enrRows.map((r) => [
+          Number(r.cid),
+          {
+            isEnrolled: true,
+            isCompleted: r.completed === 1,
+          },
+        ]),
+      );
     }
     const savedMap = await this.buildSavedMap(userId, ids);
 
@@ -467,7 +483,7 @@ export class ContentsService {
           (t: any) =>
             t?.language?.id === languageId || t?.languageId === languageId,
         ) || c.contentCategory?.translations?.[0];
-
+      const enrollInfo = enrolledMap.get(c.id);
       return {
         id: c.id,
         name: tr?.name ?? '',
@@ -479,7 +495,8 @@ export class ContentsService {
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
 
-        isEnrolled: enrolledMap.get(c.id) ?? false,
+        isEnrolled: enrollInfo?.isEnrolled ?? false,
+        isCompleted: enrollInfo?.isCompleted ?? false,
         isSaved: savedMap.get(c.id) ?? false,
 
         educator: c.educator
@@ -597,15 +614,31 @@ export class ContentsService {
     );
 
     // 4) فلاج الالتحاق (يكفي وجود صف في enrollments)
-    let enrolledMap = new Map<number, boolean>();
+    let enrolledMap = new Map<
+      number,
+      { isEnrolled: boolean; isCompleted: boolean }
+    >();
+
     if (userId) {
       const enrRows = await this.enrollmentRepo
         .createQueryBuilder('en')
-        .select(['en.contentId AS cid'])
+        .select([
+          'en.contentId AS cid',
+          'CASE WHEN en.status = 1 THEN 1 ELSE 0 END AS completed',
+        ])
         .where('en.userId = :uid', { uid: userId })
         .andWhere('en.contentId IN (:...ids)', { ids })
-        .getRawMany<{ cid: number }>();
-      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
+        .getRawMany<{ cid: number; completed: number }>();
+
+      enrolledMap = new Map(
+        enrRows.map((r) => [
+          Number(r.cid),
+          {
+            isEnrolled: true,
+            isCompleted: r.completed === 1,
+          },
+        ]),
+      );
     }
     const savedMap = await this.buildSavedMap(userId, ids);
 
@@ -646,7 +679,7 @@ export class ContentsService {
           (t: any) =>
             t?.language?.id === languageId || t?.languageId === languageId,
         ) || c.contentCategory?.translations?.[0];
-
+      const enrollInfo = enrolledMap.get(c.id);
       return {
         id: c.id,
         name: tr?.name ?? '',
@@ -657,7 +690,8 @@ export class ContentsService {
         rate: c.rate ?? 0,
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
-        isEnrolled: enrolledMap.get(c.id) ?? false,
+        isEnrolled: enrollInfo?.isEnrolled ?? false,
+        isCompleted: enrollInfo?.isCompleted ?? false,
         isSaved: savedMap.get(c.id) ?? false,
 
         educator: c.educator
@@ -862,17 +896,33 @@ export class ContentsService {
     );
 
     // 2) فلاج التحاق المستخدم (لو متاح userId)
-    let enrolledMap = new Map<number, boolean>();
+    let enrolledMap = new Map<
+      number,
+      { isEnrolled: boolean; isCompleted: boolean }
+    >();
+
     if (userId) {
       const enrRows = await this.enrollmentRepo
         .createQueryBuilder('en')
-        .select(['en.contentId AS cid'])
+        .select([
+          'en.contentId AS cid',
+          'CASE WHEN en.status = 1 THEN 1 ELSE 0 END AS completed',
+        ])
         .where('en.userId = :uid', { uid: userId })
         .andWhere('en.contentId IN (:...ids)', { ids })
-        .getRawMany<{ cid: number }>();
+        .getRawMany<{ cid: number; completed: number }>();
 
-      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
+      enrolledMap = new Map(
+        enrRows.map((r) => [
+          Number(r.cid),
+          {
+            isEnrolled: true,
+            isCompleted: r.completed === 1,
+          },
+        ]),
+      );
     }
+
     const savedMap = await this.buildSavedMap(userId, ids);
 
     const items = rows.map((c) => {
@@ -884,6 +934,7 @@ export class ContentsService {
           (t: any) =>
             t?.language?.id === languageId || t?.languageId === languageId,
         ) || c.contentCategory?.translations?.[0];
+      const enrollInfo = enrolledMap.get(c.id);
       return {
         id: c.id,
         name: tr?.name ?? '',
@@ -895,7 +946,8 @@ export class ContentsService {
         rate: c.rate ?? 0,
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
-        isEnrolled: enrolledMap.get(c.id) ?? false,
+        isEnrolled: enrollInfo?.isEnrolled ?? false,
+        isCompleted: enrollInfo?.isCompleted ?? false,
         isSaved: savedMap.get(c.id) ?? false,
 
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
@@ -985,17 +1037,33 @@ export class ContentsService {
     );
 
     // فلاج التحاق
-    let enrolledMap = new Map<number, boolean>();
+    let enrolledMap = new Map<
+      number,
+      { isEnrolled: boolean; isCompleted: boolean }
+    >();
+
     if (userId) {
       const enrRows = await this.enrollmentRepo
         .createQueryBuilder('en')
-        .select(['en.contentId AS cid'])
+        .select([
+          'en.contentId AS cid',
+          'CASE WHEN en.status = 1 THEN 1 ELSE 0 END AS completed',
+        ])
         .where('en.userId = :uid', { uid: userId })
         .andWhere('en.contentId IN (:...ids)', { ids })
-        .getRawMany<{ cid: number }>();
+        .getRawMany<{ cid: number; completed: number }>();
 
-      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
+      enrolledMap = new Map(
+        enrRows.map((r) => [
+          Number(r.cid),
+          {
+            isEnrolled: true,
+            isCompleted: r.completed === 1,
+          },
+        ]),
+      );
     }
+
     const savedMap = await this.buildSavedMap(userId, ids);
 
     return rows.map((c) => {
@@ -1007,7 +1075,7 @@ export class ContentsService {
           (t: any) =>
             t?.language?.id === languageId || t?.languageId === languageId,
         ) || c.contentCategory?.translations?.[0];
-
+      const enrollInfo = enrolledMap.get(c.id);
       return {
         id: c.id,
         name: tr?.name ?? '',
@@ -1019,7 +1087,8 @@ export class ContentsService {
         rate: c.rate ?? 0,
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
-        isEnrolled: enrolledMap.get(c.id) ?? false,
+        isEnrolled: enrollInfo?.isEnrolled ?? false,
+        isCompleted: enrollInfo?.isCompleted ?? false,
         isSaved: savedMap.get(c.id) ?? false,
 
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
@@ -1079,11 +1148,17 @@ export class ContentsService {
 
     // ✅ فلاج isEnrolled
     let isEnrolled = false;
+    let isCompleted = false;
     if (userId) {
       const enr = await this.enrollmentRepo.findOne({
         where: { user: { id: userId }, content: { id: row.id } },
       });
-      if (enr) isEnrolled = true;
+      if (enr) {
+        isEnrolled = true;
+        if (enr.status == 1) {
+          isCompleted = true;
+        }
+      }
     }
     let isSaved = false;
     if (userId) {
@@ -1125,6 +1200,7 @@ export class ContentsService {
       created_at: row.created_at,
       isEnrolled, // 👈 الفلاج الجديد
       isSaved,
+      isCompleted,
 
       educator: e
         ? {
