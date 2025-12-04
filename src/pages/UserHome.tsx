@@ -10,14 +10,14 @@ import ContinueWhereLeftOff from "@/shared/components/EduGap/ContinueWhereLeftOf
 const Home = () => {
   return (
     <>
-      <RecommendedCourse />,
-      <ContinueWhereLeftOff />,
-      <PopularCoursesSlider />,
-      <InstituteCoursesSection />,
-      <LatestCourses />,
-      <ProgramsSection />,
-      <Testimonials />,
-      <Experts />,
+      <RecommendedCourse />
+      <ContinueWhereLeftOff />
+      <PopularCoursesSlider />
+      <InstituteCoursesSection />
+      <LatestCourses />
+      <ProgramsSection />
+      <Testimonials />
+      <Experts />
     </>
   );
 };

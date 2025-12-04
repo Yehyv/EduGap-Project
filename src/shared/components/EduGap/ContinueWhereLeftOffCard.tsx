@@ -3,6 +3,7 @@ import type { ContinueCourseType } from "@/shared/types/sharedTypes";
 import { Link } from "react-router-dom";
 import { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { LESSON_TYPES } from "@/shared/utils/globals";
 
 const ContinueWhereLeftOffCard = ({
   course,
@@ -12,7 +13,8 @@ const ContinueWhereLeftOffCard = ({
   const educator = course?.educator;
   const courseName = course?.content?.name ?? "دورة بدون عنوان";
   const lessonName = course.lesson.name ?? "—";
-
+  const isQuiz = course?.lesson?.lesson_type == LESSON_TYPES.QUIZ;
+  const path = isQuiz ? "quiz-page" : "course-lesson";
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isHovering, setIsHovering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -119,7 +121,7 @@ const ContinueWhereLeftOffCard = ({
 
   return (
     <Link
-      to={`/course-lesson/${course?.content?.id}/${course?.lesson?.id}`}
+      to={`/${path}/${course?.content?.id}/${course?.lesson?.id}`}
       className="group relative w-full bg-white rounded-xl shadow-custom block overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-2 my-3 p-3 cursor-pointer"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

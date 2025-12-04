@@ -1,5 +1,5 @@
 import EditIcon from "@/assets/svgs/EditIcon.svg?react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FormikInput } from "@/shared/components/forms/FormikInput";
 import { Formik, Form } from "formik";
 import { useState } from "react";
@@ -15,9 +15,12 @@ export const EditableInput = ({
   validationSchema,
   updateFunction,
   refetchFunction,
+  refetchFunctionKey,
   successMessage,
 }: any) => {
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
   const [isEditing, setIsEditing] = useState(false);
   const { mutate, isPending } = useMutation({
     mutationFn: updateFunction,
@@ -25,6 +28,7 @@ export const EditableInput = ({
       if (refetchFunction) refetchFunction();
       setIsEditing(false);
       toast.success(successMessage);
+      queryClient.invalidateQueries({ queryKey: [refetchFunctionKey] });
     },
   });
 
@@ -32,7 +36,13 @@ export const EditableInput = ({
     <Formik
       initialValues={{ [name]: initialValue }}
       validationSchema={validationSchema}
-      onSubmit={(values) => mutate(values[name])}
+      onSubmit={(values) => {
+        if (initialValue == values[name]) {
+          toast.warn(t("nothing_change"));
+          return;
+        }
+        mutate(values[name]);
+      }}
       enableReinitialize
     >
       {() => (

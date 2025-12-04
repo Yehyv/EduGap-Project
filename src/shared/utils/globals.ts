@@ -1,4 +1,8 @@
 export const RESULTS_PER_PAGE = 10;
+export const LESSON_TYPES = {
+  QUIZ: 1,
+  LESSON: 0,
+};
 
 export const formatDuration = (seconds: number, lang: "ar" | "en") => {
   if (!seconds || seconds <= 0)

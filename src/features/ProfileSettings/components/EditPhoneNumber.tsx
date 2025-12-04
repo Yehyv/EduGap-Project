@@ -1,5 +1,5 @@
 import EditIcon from "@/assets/svgs/EditIcon.svg?react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FormikInput } from "@/shared/components/forms/FormikInput";
 import { Formik, Form } from "formik";
 import { useState, useEffect } from "react";
@@ -20,12 +20,14 @@ export const EditPhoneNumber = ({
   initialValue,
   validationSchema,
   updateFunction,
+  refetchFunctionKey,
   successMessage,
 }: any) => {
   const [isEditing, setIsEditing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentPhone, setCurrentPhone] = useState(initialValue);
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
   const { initialValues } = useVerifyOtp();
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export const EditPhoneNumber = ({
       setModalOpen(false);
       sessionStorage.removeItem("changeNumber");
       sessionStorage.removeItem("phone");
+      queryClient.invalidateQueries({ queryKey: [refetchFunctionKey] });
     },
     onError: (error: any) => {
       console.log(error);
@@ -92,6 +95,10 @@ export const EditPhoneNumber = ({
         initialValues={{ [name]: currentPhone }}
         validationSchema={validationSchema}
         onSubmit={(values) => {
+          if (initialValue == values[name]) {
+            toast.warn(t("nothing_change"));
+            return;
+          }
           setCurrentPhone(values[name]);
           mutate(values[name]);
         }}

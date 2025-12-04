@@ -70,7 +70,7 @@ const ProgramDetails = () => {
                   },
                 ]}
               />
-              <span className="inline-block ms-10">Save Learning Path</span>
+              <span className="inline-block ms-12">Save Learning Path</span>
             </div>
           </div>
 

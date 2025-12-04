@@ -404,6 +404,276 @@ const translations = {
     min_6_chars: "Minimum 6 characters",
     current_password: "Current Password",
     save_password: "Save Password",
+    nothing_change: "No changes were made to the profile data",
+    terms_title: "Terms Of Use",
+    terms_subtitle:
+      "By using our platform, you acknowledge that you’ve read and understood these Terms of Use",
+
+    introduction_title: "Introduction",
+    introduction_text:
+      "Welcome to our educational platform. These Terms of Use ('Terms') govern your access to and use of our platform, services, and content. By creating an account or using our services, you agree to be bound by these Terms.\nOur platform provides high-quality learning experiences in a safe and supportive environment. If you do not agree with any part of these Terms, you may not access or use our platform. We may update these Terms at any time, and continued use indicates acceptance.",
+
+    user_resp_title: "User Responsibilities",
+    user_resp_intro:
+      "As a user of our platform, you are responsible for keeping your account credentials secure. You agree to:",
+    user_resp_1: "Provide accurate and complete registration information",
+    user_resp_2: "Keep your account details up to date",
+    user_resp_3: "Use the platform in accordance with applicable laws",
+    user_resp_4: "Respect the intellectual property rights of others",
+    user_resp_5: "Maintain respectful and professional interactions",
+    user_resp_6: "Not share your credentials with unauthorized individuals",
+    user_resp_outro:
+      "You are solely responsible for any content or activity under your account.",
+
+    account_title: "Account & Security",
+    account_text:
+      "To access certain features, you must create an account and provide accurate information. You are responsible for securing your password and notifying us of any unauthorized access. We may suspend or terminate accounts that violate these Terms or show suspicious activity.",
+
+    payments_title: "Payments & Subscriptions",
+    payments_text:
+      "Some courses or features require payment. By purchasing, you agree to pay all applicable fees. Subscriptions renew automatically unless cancelled. Pricing may change and will be communicated before renewal. Refunds follow our refund policy.",
+
+    course_access_title: "Course Access",
+    course_access_text:
+      "When enrolled, you receive access to videos, documents, quizzes, and more. Content is for personal, non-commercial use only. Reproduction or distribution is prohibited. Course availability may change without prior notice.",
+
+    prohibited_title: "Prohibited Activities",
+    prohibited_intro: "When using our platform, you agree not to engage in:",
+    prohibited_1: "Violating any applicable laws",
+    prohibited_2: "Infringing intellectual property rights",
+    prohibited_3: "Uploading harmful software or code",
+    prohibited_4: "Attempting unauthorized access",
+    prohibited_5: "Harassing or threatening others",
+    prohibited_6: "Sharing course content without permission",
+    prohibited_7: "Creating multiple accounts for abuse",
+    prohibited_8: "Using automated scraping tools",
+    prohibited_9: "Impersonating individuals or entities",
+    prohibited_10: "Engaging in fraudulent or deceptive activity",
+    prohibited_outro:
+      "Violation may result in account termination and legal action.",
+
+    termination_title: "Termination",
+    termination_text:
+      "We may suspend or terminate your account at any time for violations, fraud, or inactivity. You may close your account through settings. Upon termination, access to all content is removed.",
+
+    contact_title: "Contact Information",
+    contact_intro:
+      "If you have questions regarding these Terms, please contact us:",
+    contact_email_label: "Email",
+    contact_phone_label: "Phone",
+    contact_outro: "We aim to provide fast and supportive customer service.",
+
+    last_updated: "Last updated: November 24, 2025",
+    terms_footer:
+      "By using our platform, you acknowledge that you have read and understood these Terms of Use.",
+
+    privacy_policy_title: "Privacy Policy",
+    privacy_policy_platform: "EduGap Learning Platform",
+    privacy_policy_effective_date:
+      "Effective Date: November 24, 2025 | Last Updated: November 24, 2025",
+    introduction_paragraph:
+      "Welcome to EduGap, a comprehensive educational platform designed to connect students with educational institutes and provide access to quality courses, learning paths, institute subscriptions, and digital certificates. At EduGap, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, store, share, and protect your personal data when you use our platform. By creating an account or using EduGap services, you acknowledge that you have read, understood, and agree to the practices described in this Privacy Policy. We recognize and respect your fundamental rights regarding your personal data, including the right to access, correct, delete, and control how your information is used. This policy is designed to be transparent and help you make informed decisions about your privacy while using our platform. If you have any questions or concerns about how we handle your personal information, please do not hesitate to contact us using the information provided at the end of this document.",
+
+    information_we_collect_title: "Information We Collect",
+    information_we_collect_intro:
+      "To provide you with our services and improve your learning experience, we collect various types of information when you use EduGap. The information we collect includes:",
+    personal_information_title: "Personal Information",
+    personal_information_items: [
+      "Full name",
+      "Email address",
+      "Phone number",
+      "Profile photograph (if uploaded)",
+      "Date of birth",
+      "Postal address (when required)",
+    ],
+    account_information_title: "Account Information",
+    account_information_items: [
+      "Username and password (encrypted)",
+      "Account preferences and settings",
+      "Security questions and answers",
+      "Two-factor authentication data",
+    ],
+    educational_data_title: "Educational Data",
+    educational_data_items: [
+      "Enrolled courses and learning paths",
+      "Course progress and completion status",
+      "Quiz and assessment results",
+      "Certificates earned and achievements",
+      "Study habits and learning patterns",
+    ],
+    subscription_information_title: "Subscription Information",
+    subscription_information_items: [
+      "Institute subscriptions and memberships",
+      "Subscription status and duration",
+      "Payment history and transaction records",
+      "Billing information (processed securely through payment providers)",
+    ],
+    technical_usage_data_title: "Technical and Usage Data",
+    technical_usage_data_items: [
+      "IP address and device information",
+      "Browser type and operating system",
+      "Pages visited and time spent on platform",
+      "Click patterns and navigation paths",
+      "Date and time of access",
+      "Referring website or source",
+    ],
+    communication_data_title: "Communication Data",
+    communication_data_items: [
+      "Messages sent through our platform",
+      "Support ticket content and correspondence",
+      "Feedback and survey responses",
+      "Comments and forum posts",
+    ],
+
+    how_we_use_information_title: "How We Use Your Information",
+    how_we_use_information_intro:
+      "EduGap uses the information we collect for various legitimate purposes to provide, maintain, and improve our services. The ways we use your information include:",
+    how_we_use_account_management_title: "Account Management",
+    how_we_use_account_management_text:
+      "To create, maintain, and manage your account; authenticate your identity; process registrations; and provide access to personalized features and content.",
+    how_we_use_service_delivery_title: "Service Delivery",
+    how_we_use_service_delivery_text:
+      "To grant access to courses, learning paths, and educational content; track your learning progress; deliver course materials; and facilitate interactions with instructors and institutes.",
+    how_we_use_certificate_issuance_title: "Certificate Issuance",
+    how_we_use_certificate_issuance_text:
+      "To generate, verify, and issue digital certificates upon course completion; maintain records of your achievements; and provide proof of learning credentials.",
+    how_we_use_communication_title: "Communication",
+    how_we_use_communication_text:
+      "To send important notifications about your account, courses, and subscriptions; respond to inquiries and support requests; provide updates about platform features; and deliver educational content recommendations.",
+    how_we_use_platform_improvement_title: "Platform Improvement",
+    how_we_use_platform_improvement_text:
+      "To analyze usage patterns and user behavior; improve platform functionality and user experience; develop new features and services; and optimize content delivery and recommendations.",
+    how_we_use_security_title: "Security and Fraud Prevention",
+    how_we_use_security_text:
+      "To protect against unauthorized access; detect and prevent fraudulent activities; ensure platform security and integrity; and comply with legal obligations and enforce our Terms of Service.",
+    how_we_use_analytics_title: "Analytics and Research",
+    how_we_use_analytics_text:
+      "To understand learning trends and educational outcomes; conduct research to improve educational methodologies; generate aggregated statistical reports; and measure platform effectiveness.",
+
+    sharing_disclosure_title: "Sharing and Disclosure",
+    sharing_disclosure_intro:
+      "EduGap values your privacy and does not sell your personal information to third parties. However, we may share your information in certain circumstances as described below:",
+    sharing_educational_institutes_title: "Educational Institutes",
+    sharing_educational_institutes_text:
+      "When you enroll in courses or subscribe to an educational institute through EduGap, we share relevant information (such as your name, email, course progress, and completion status) with that institute. This enables them to provide you with proper support, track your learning journey, and issue certificates when applicable.",
+    sharing_service_providers_title: "Service Providers",
+    sharing_service_providers_text:
+      "We work with trusted third-party service providers who assist us in operating our platform, including cloud hosting services, payment processors, email delivery services, analytics providers, and customer support tools. These providers are contractually obligated to protect your data and use it only for the specific services they provide to us.",
+    sharing_legal_requirements_title: "Legal Requirements",
+    sharing_legal_requirements_text:
+      "We may disclose your information when required by law, legal process, litigation, or requests from governmental authorities. This includes responding to subpoenas, court orders, or legal proceedings; protecting our rights, property, or safety; or preventing fraud and security threats.",
+    sharing_business_transfers_title: "Business Transfers",
+    sharing_business_transfers_text:
+      "In the event of a merger, acquisition, reorganization, sale of assets, or bankruptcy, your personal information may be transferred to the acquiring entity. We will notify you of any such change in ownership or control of your personal data.",
+    sharing_aggregated_data_title: "Aggregated Data",
+    sharing_aggregated_data_text:
+      "We may share aggregated, anonymized data that does not identify you personally for research, marketing, analytics, or other purposes. This data cannot be traced back to any individual user.",
+    sharing_with_consent_title: "With Your Consent",
+    sharing_with_consent_text:
+      "We may share your information with other parties when you explicitly provide consent for us to do so, such as when you choose to share your achievements on social media or authorize integration with third-party applications.",
+
+    data_storage_security_title: "Data Storage & Security Measures",
+    data_storage_security_intro:
+      "Protecting your personal information is a top priority at EduGap. We implement industry-standard security measures and best practices to safeguard your data against unauthorized access, disclosure, alteration, or destruction.",
+    data_storage_encryption_title: "Encryption",
+    data_storage_encryption_text:
+      "All data transmitted between your device and our servers is encrypted using Transport Layer Security (TLS) protocols. Sensitive information, including passwords and payment data, is encrypted at rest using advanced encryption standards (AES-256).",
+    data_storage_access_controls_title: "Access Controls",
+    data_storage_access_controls_text:
+      "We restrict access to personal information to authorized employees, contractors, and agents who need to know that information to operate, develop, or improve our services. All personnel with access to sensitive data undergo background checks and security training.",
+    data_storage_infrastructure_security_title: "Infrastructure Security",
+    data_storage_infrastructure_security_text:
+      "Our servers are hosted in secure, certified data centers with physical security measures including 24/7 monitoring, biometric access controls, and redundant systems. We regularly conduct security audits and vulnerability assessments.",
+    data_storage_authentication_title: "Authentication",
+    data_storage_authentication_text:
+      "We support multi-factor authentication (MFA) to add an extra layer of security to your account. We strongly recommend enabling this feature to protect against unauthorized access.",
+    data_storage_backups_title: "Regular Backups",
+    data_storage_backups_text:
+      "Your data is regularly backed up to prevent loss in case of system failures or disasters. Backups are encrypted and stored in geographically distributed locations.",
+    data_storage_incident_response_title: "Incident Response",
+    data_storage_incident_response_text:
+      "We maintain an incident response plan to quickly address any security breaches or data incidents. In the unlikely event of a breach affecting your personal information, we will notify you in accordance with applicable laws.",
+    data_storage_user_role_text:
+      "While we implement robust security measures, no system is completely secure. You also play an important role in protecting your account by using strong passwords, not sharing your credentials, and logging out when using shared devices.",
+
+    cookies_tracking_title: "Cookies & Tracking Technologies",
+    cookies_tracking_intro:
+      "EduGap uses cookies and similar tracking technologies to enhance your experience on our platform, analyze usage patterns, and provide personalized content. Understanding how these technologies work helps you make informed decisions about your privacy preferences.",
+    cookies_tracking_what_are_cookies_title: "What Are Cookies?",
+    cookies_tracking_what_are_cookies_text:
+      "Cookies are small text files stored on your device when you visit our platform. They help us recognize your browser and remember certain information about your visits and preferences.",
+    cookies_tracking_types_title: "Types of Cookies We Use",
+    cookies_tracking_types_text_essential:
+      "Essential Cookies: Required for the platform to function properly, including authentication, security, and maintaining your session.",
+    cookies_tracking_types_text_performance:
+      "Performance Cookies: Help us understand how users interact with our platform by collecting anonymous usage statistics and analytics data.",
+    cookies_tracking_types_text_functionality:
+      "Functionality Cookies: Remember your preferences and settings to provide a personalized experience, such as language preferences and theme choices.",
+    cookies_tracking_types_text_targeting:
+      "Targeting Cookies: Used to deliver relevant content and recommendations based on your learning interests and activities.",
+    cookies_tracking_analytics_title: "Analytics and Tracking",
+    cookies_tracking_analytics_text:
+      "We use analytics services (such as Google Analytics) to collect information about how users navigate our platform, which pages are most visited, and how long users spend on different sections. These analytics tools may use their own cookies and tracking technologies.",
+    cookies_tracking_manage_title: "Managing Cookies",
+    cookies_tracking_manage_text:
+      "Most web browsers allow you to control cookies through their settings. You can choose to block or delete cookies, but please note that disabling certain cookies may affect the functionality of our platform and limit your ability to use some features. You can also manage your cookie preferences through our platform settings.",
+
+    user_rights_title: "User Rights",
+    user_rights_intro:
+      "At EduGap, we respect your rights regarding your personal information. You have control over your data and can exercise the following rights at any time:",
+    user_rights_access_title: "Right to Access",
+    user_rights_access_text:
+      "You have the right to access and review all personal information we hold about you. You can view most of your data directly through your account settings and profile dashboard.",
+    user_rights_rectification_title: "Right to Rectification",
+    user_rights_rectification_text:
+      "You can update and correct your personal information at any time through your account settings. If you're unable to make changes yourself, contact our support team for assistance.",
+    user_rights_deletion_title: "Right to Deletion",
+    user_rights_deletion_text:
+      "You have the right to request deletion of your account and associated personal data. Please note that we may retain certain information as required by law or for legitimate business purposes (such as transaction records and certificates issued).",
+    user_rights_portability_title: "Right to Data Portability",
+    user_rights_portability_text:
+      "You can request a copy of your personal data in a structured, commonly used, machine-readable format. This allows you to transfer your data to another service if you choose.",
+    user_rights_restrict_title: "Right to Restrict Processing",
+    user_rights_restrict_text:
+      "You can request that we limit how we use your personal information in certain circumstances, such as while we verify the accuracy of disputed data.",
+    user_rights_object_title: "Right to Object",
+    user_rights_object_text:
+      "You have the right to object to certain types of processing, including direct marketing and profiling. You can opt out of marketing communications at any time.",
+    user_rights_withdraw_consent_title: "Right to Withdraw Consent",
+    user_rights_withdraw_consent_text:
+      "Where we rely on your consent to process your personal information, you have the right to withdraw that consent at any time. This will not affect the lawfulness of processing based on consent before its withdrawal.",
+
+    retention_policy_title: "Retention Policy",
+    retention_policy_intro:
+      "EduGap retains your personal information only for as long as necessary to fulfill the purposes outlined in this Privacy Policy, comply with legal obligations, resolve disputes, and enforce our agreements.",
+    retention_policy_active_accounts_title: "Active Accounts",
+    retention_policy_active_accounts_text:
+      "While your account is active, we retain your personal information, course data, and learning progress to provide you with ongoing access to our services and maintain your learning history.",
+    retention_policy_account_deletion_title: "Account Deletion",
+    retention_policy_account_deletion_text:
+      "When you request account deletion, we will remove your personal information from our active databases within 30 days. However, some information may be retained in backup systems for up to 90 days before being permanently deleted.",
+    retention_policy_certificates_title: "Certificate Records",
+    retention_policy_certificates_text:
+      "Digital certificates and completion records are retained indefinitely to verify your credentials and achievements. This is necessary to maintain the integrity and value of the certificates we issue.",
+    retention_policy_transaction_records_title: "Transaction Records",
+    retention_policy_transaction_records_text:
+      "Payment and transaction records are retained for a minimum of 7 years to comply with financial regulations, tax requirements, and accounting standards.",
+    retention_policy_legal_requirements_title: "Legal Requirements",
+    retention_policy_legal_requirements_text:
+      "In some cases, we may be required to retain certain information for longer periods to comply with legal obligations, resolve legal disputes, or enforce our policies.",
+    retention_policy_anonymized_data_title: "Anonymized Data",
+    retention_policy_anonymized_data_text:
+      "We may retain anonymized or aggregated data that does not identify you personally for analytical and research purposes indefinitely. This data helps us improve our platform and educational offerings.",
+    retention_policy_note:
+      "We regularly review the data we hold and delete information that is no longer necessary. If you have questions about how long we retain specific types of information, please contact us.",
+    privacy_footer_text:
+      "© 2025 EduGap Learning Platform. All rights reserved.",
+    privacy_footer_updated:
+      "This Privacy Policy was last updated on November 24, 2025",
+
+    privacy_banner_title: "Your Privacy Matters",
+    privacy_banner_text:
+      "At EduGap, protecting your personal information is fundamental to everything we do. We are committed to transparency, security, and giving you control over your data.",
   },
 
   ar: {
@@ -812,6 +1082,313 @@ const translations = {
     min_6_chars: "اقل شئ 6 حروف",
     current_password: "كلمة المرور الحالية",
     save_password: "حفظ كلمة المرور",
+    nothing_change: "لم يتم إجراء أي تغيير على بيانات الملف الشخصي.",
+    terms_title: "شروط الاستخدام",
+    terms_subtitle: "باستخدامك منصتنا، فإنك تقر بأنك قرأت وفهمت شروط الاستخدام",
+
+    introduction_title: "المقدمة",
+    introduction_text:
+      "مرحبًا بك في منصتنا التعليمية. توضح شروط الاستخدام هذه طريقة وصولك إلى منصتنا وخدماتها ومحتواها. عند إنشاء حساب أو استخدام خدماتنا، فأنت توافق على الالتزام بهذه الشروط.\nتهدف منصتنا إلى تقديم تجربة تعليمية عالية الجودة في بيئة آمنة وداعمة. إذا كنت لا توافق على أي جزء من هذه الشروط، فيُرجى التوقف عن استخدام المنصة. قد نقوم بتحديث الشروط في أي وقت، ويُعد استمرارك في الاستخدام موافقة ضمنية على التعديلات.",
+
+    user_resp_title: "مسؤوليات المستخدم",
+    user_resp_intro: "أنت مسؤول عن الحفاظ على سرية بيانات حسابك. وتوافق على:",
+    user_resp_1: "تقديم معلومات دقيقة وكاملة عند التسجيل",
+    user_resp_2: "تحديث بيانات حسابك عند الحاجة",
+    user_resp_3: "استخدام المنصة بما يتوافق مع القوانين المطبقة",
+    user_resp_4: "احترام حقوق الملكية الفكرية للآخرين",
+    user_resp_5: "الالتزام بالاحترام والسلوك المهني في جميع التفاعلات",
+    user_resp_6: "عدم مشاركة بيانات الدخول مع أي شخص غير مخوّل",
+    user_resp_outro: "أنت وحدك المسؤول عن أي محتوى أو نشاط يحدث عبر حسابك.",
+
+    account_title: "الحساب والأمان",
+    account_text:
+      "للوصول لميزات معينة، يجب إنشاء حساب وتقديم معلومات صحيحة. أنت مسؤول عن حماية كلمة مرورك وإبلاغنا فورًا بأي وصول غير مصرح به. نحتفظ بالحق في تعليق أو حذف أي حساب يخالف الشروط أو يظهر نشاطًا مريبًا.",
+
+    payments_title: "الدفع والاشتراكات",
+    payments_text:
+      "بعض الدورات أو الميزات تتطلب دفع رسوم. عند الشراء، فإنك توافق على دفع جميع الرسوم المستحقة. يتم تجديد الاشتراك تلقائيًا ما لم يتم إلغاؤه. قد تتغير الأسعار وسيتم إبلاغك قبل التجديد. يتم التعامل مع طلبات الاسترداد وفقًا لسياستنا.",
+
+    course_access_title: "الوصول إلى الدورات",
+    course_access_text:
+      "عند التسجيل في دورة، ستحصل على وصول لمقاطع الفيديو والملفات والاختبارات وغيرها. المحتوى للاستخدام الشخصي فقط ولا يجوز نسخه أو مشاركته دون إذن. قد يتغير توفر المحتوى في أي وقت.",
+
+    prohibited_title: "الأنشطة المحظورة",
+    prohibited_intro: "عند استخدام المنصة، يُحظر عليك:",
+    prohibited_1: "مخالفة أي قوانين أو أنظمة",
+    prohibited_2: "انتهاك حقوق الملكية الفكرية",
+    prohibited_3: "رفع أو نشر برمجيات ضارة",
+    prohibited_4: "محاولة الوصول غير المصرح به للأنظمة",
+    prohibited_5: "مضايقة أو تهديد المستخدمين",
+    prohibited_6: "مشاركة محتوى الدورات دون إذن",
+    prohibited_7: "إنشاء حسابات متعددة لاستغلال العروض",
+    prohibited_8: "استخدام أدوات آلية لجمع البيانات",
+    prohibited_9: "انتحال شخصية أفراد أو جهات",
+    prohibited_10: "القيام بأي ممارسات احتيالية أو خادعة",
+    prohibited_outro: "قد يؤدي ذلك لإغلاق الحساب واتخاذ إجراءات قانونية.",
+
+    termination_title: "إنهاء الحساب",
+    termination_text:
+      "يجوز لنا تعليق أو حذف حسابك في أي وقت بسبب المخالفات أو النشاط المشبوه. ويمكنك إغلاق حسابك من الإعدادات. بعد الإنهاء، ستفقد الوصول لجميع المحتوى.",
+
+    contact_title: "معلومات التواصل",
+    contact_intro: "لأي استفسارات بخصوص شروط الاستخدام، يرجى التواصل معنا:",
+    contact_email_label: "البريد الإلكتروني",
+    contact_phone_label: "رقم الهاتف",
+    contact_outro: "نلتزم بالرد على استفساراتكم في أسرع وقت.",
+
+    last_updated: "آخر تحديث: 24 نوفمبر 2025",
+    terms_footer: "باستخدامك للمنصة، فإنك تقر بأنك قرأت وفهمت شروط الاستخدام.",
+    privacy_policy_title: "سياسة الخصوصية",
+    privacy_policy_platform: "منصة EduGap التعليمية",
+    privacy_policy_effective_date:
+      "تاريخ النفاذ: 24 نوفمبر 2025 | آخر تحديث: 24 نوفمبر 2025",
+
+    introduction_paragraph:
+      "مرحبًا بكم في EduGap، منصة تعليمية شاملة تهدف إلى ربط الطلاب بالمؤسسات التعليمية وتوفير الوصول إلى الدورات التعليمية، ومسارات التعلم، واشتراكات المؤسسات، والشهادات الرقمية. نحن ملتزمون بحماية خصوصيتك وضمان أمان معلوماتك الشخصية. تشرح سياسة الخصوصية هذه كيفية جمع واستخدام وتخزين ومشاركة وحماية بياناتك الشخصية عند استخدام منصتنا. باستخدام حسابك أو خدمات EduGap، فإنك تقر بأنك قرأت وفهمت ووافقت على الممارسات الموضحة في هذه السياسة. نحن نحترم حقوقك الأساسية المتعلقة ببياناتك الشخصية، بما في ذلك الحق في الوصول والتصحيح والحذف والتحكم في كيفية استخدام معلوماتك.",
+
+    information_we_collect_title: "المعلومات التي نجمعها",
+    information_we_collect_intro:
+      "لتقديم خدماتنا وتحسين تجربة التعلم الخاصة بك، نقوم بجمع أنواع مختلفة من المعلومات عند استخدامك لمنصة EduGap. تشمل المعلومات التي نجمعها:",
+
+    personal_information_title: "المعلومات الشخصية",
+    personal_information_items: [
+      "الاسم الكامل",
+      "البريد الإلكتروني",
+      "رقم الهاتف",
+      "الصورة الشخصية (إذا تم تحميلها)",
+      "تاريخ الميلاد",
+      "العنوان البريدي (عند الحاجة)",
+    ],
+
+    account_information_title: "معلومات الحساب",
+    account_information_items: [
+      "اسم المستخدم وكلمة المرور (مشفر)",
+      "تفضيلات وإعدادات الحساب",
+      "أسئلة الأمان وإجاباتها",
+      "بيانات التحقق بخطوتين",
+    ],
+
+    educational_data_title: "البيانات التعليمية",
+    educational_data_items: [
+      "الدورات ومسارات التعلم المسجلة",
+      "تقدم الدورة وحالة الإكمال",
+      "نتائج الاختبارات والتقييمات",
+      "الشهادات المكتسبة والإنجازات",
+      "عادات الدراسة وأنماط التعلم",
+    ],
+
+    subscription_information_title: "معلومات الاشتراك",
+    subscription_information_items: [
+      "اشتراكات وعضويات المؤسسات",
+      "حالة الاشتراك ومدته",
+      "سجل المدفوعات والمعاملات",
+      "معلومات الفوترة (معالج بأمان عبر مزودي الدفع)",
+    ],
+
+    technical_usage_data_title: "البيانات التقنية وبيانات الاستخدام",
+    technical_usage_data_items: [
+      "عنوان IP ومعلومات الجهاز",
+      "نوع المتصفح ونظام التشغيل",
+      "الصفحات التي تمت زيارتها ومدة التصفح",
+      "نمط النقر ومسارات التنقل",
+      "تاريخ ووقت الوصول",
+      "الموقع أو المصدر المحيل",
+    ],
+
+    communication_data_title: "بيانات التواصل",
+    communication_data_items: [
+      "الرسائل المرسلة عبر المنصة",
+      "محتوى تذاكر الدعم والمراسلات",
+      "ردود الاستبيانات والتعليقات",
+      "المشاركات في المنتديات",
+    ],
+
+    how_we_use_information_title: "كيفية استخدام معلوماتك",
+    how_we_use_information_intro:
+      "نستخدم المعلومات التي نجمعها لأغراض مشروعة مختلفة لتقديم وصيانة وتحسين خدماتنا. تشمل طرق استخدامنا لمعلوماتك:",
+
+    how_we_use_account_management_title: "إدارة الحساب",
+    how_we_use_account_management_text:
+      "لإنشاء وصيانة وإدارة حسابك؛ التحقق من هويتك؛ معالجة التسجيلات؛ وتوفير الوصول إلى الميزات والمحتوى الشخصي.",
+
+    how_we_use_service_delivery_title: "تقديم الخدمة",
+    how_we_use_service_delivery_text:
+      "لمنحك الوصول إلى الدورات ومسارات التعلم والمحتوى التعليمي؛ تتبع تقدمك التعليمي؛ تقديم مواد الدورات؛ وتسهيل التفاعل مع المعلمين والمؤسسات.",
+
+    how_we_use_certificate_issuance_title: "إصدار الشهادات",
+    how_we_use_certificate_issuance_text:
+      "لإنشاء والتحقق وإصدار الشهادات الرقمية عند إكمال الدورة؛ الاحتفاظ بسجلات إنجازاتك؛ وتوفير إثبات على المهارات المكتسبة.",
+
+    how_we_use_communication_title: "التواصل",
+    how_we_use_communication_text:
+      "لإرسال إشعارات مهمة حول حسابك والدورات والاشتراكات؛ الرد على الاستفسارات وطلبات الدعم؛ تقديم تحديثات حول ميزات المنصة؛ وتقديم توصيات تعليمية.",
+
+    how_we_use_platform_improvement_title: "تحسين المنصة",
+    how_we_use_platform_improvement_text:
+      "لتحليل أنماط الاستخدام وسلوك المستخدم؛ تحسين وظائف وتجربة المنصة؛ تطوير ميزات وخدمات جديدة؛ وتحسين توصيل المحتوى والتوصيات.",
+
+    how_we_use_security_title: "الأمان ومنع الاحتيال",
+    how_we_use_security_text:
+      "لحماية المنصة من الوصول غير المصرح به؛ كشف ومنع الأنشطة الاحتيالية؛ ضمان أمان المنصة وسلامتها؛ والامتثال للالتزامات القانونية وتنفيذ شروط الخدمة.",
+
+    how_we_use_analytics_title: "التحليلات والبحث",
+    how_we_use_analytics_text:
+      "لفهم اتجاهات التعلم والنتائج التعليمية؛ إجراء أبحاث لتحسين المنهجيات التعليمية؛ توليد تقارير إحصائية مجمعة؛ وقياس فعالية المنصة.",
+
+    sharing_disclosure_title: "المشاركة والإفصاح",
+    sharing_disclosure_intro:
+      "نحن نقدر خصوصيتك ولا نبيع معلوماتك الشخصية لأطراف ثالثة. ومع ذلك، قد نشارك معلوماتك في ظروف معينة كما يلي:",
+
+    sharing_educational_institutes_title: "المؤسسات التعليمية",
+    sharing_educational_institutes_text:
+      "عند التسجيل في الدورات أو الاشتراك في مؤسسة تعليمية من خلال EduGap، نشارك المعلومات ذات الصلة (مثل الاسم والبريد الإلكتروني وتقدم الدورة وحالة الإكمال) مع المؤسسة لتمكينهم من تقديم الدعم وتتبع رحلة التعلم وإصدار الشهادات.",
+
+    sharing_service_providers_title: "مزودو الخدمات",
+    sharing_service_providers_text:
+      "نحن نتعاون مع مزودي خدمات طرف ثالث موثوقين لمساعدتنا في تشغيل المنصة، بما في ذلك خدمات استضافة السحابة، معالجة المدفوعات، خدمات البريد الإلكتروني، أدوات التحليلات، وأدوات الدعم الفني. هؤلاء المزودون ملزمون قانونيًا بحماية بياناتك واستخدامها فقط للخدمات المقدمة.",
+
+    sharing_legal_requirements_title: "المتطلبات القانونية",
+    sharing_legal_requirements_text:
+      "قد نكشف عن معلوماتك عندما يقتضي القانون أو الإجراءات القانونية أو الطلبات الحكومية ذلك. يشمل ذلك الاستجابة للاستدعاءات أو أوامر المحكمة أو الإجراءات القانونية؛ حماية حقوقنا وممتلكاتنا وسلامتنا؛ أو منع الاحتيال والتهديدات الأمنية.",
+
+    sharing_business_transfers_title: "نقل الأعمال",
+    sharing_business_transfers_text:
+      "في حالة الدمج أو الاستحواذ أو إعادة الهيكلة أو بيع الأصول أو الإفلاس، قد يتم نقل بياناتك الشخصية إلى الكيان المستحوذ. سنقوم بإبلاغك بأي تغيير في ملكية أو تحكم بياناتك الشخصية.",
+
+    sharing_aggregated_data_title: "البيانات المجمعة",
+    sharing_aggregated_data_text:
+      "قد نشارك البيانات المجمعة والمجهولة الهوية التي لا تحدد هويتك لأغراض البحث أو التسويق أو التحليلات. هذه البيانات لا يمكن تتبعها لأي مستخدم.",
+
+    sharing_with_consent_title: "بموافقتك",
+    sharing_with_consent_text:
+      "قد نشارك معلوماتك مع أطراف أخرى عندما تمنحنا موافقة صريحة على ذلك، مثل مشاركة إنجازاتك على وسائل التواصل الاجتماعي أو السماح بتكامل التطبيقات الخارجية.",
+
+    data_storage_security_title: "تخزين البيانات وتدابير الأمان",
+    data_storage_security_intro:
+      "حماية معلوماتك الشخصية أولوية قصوى في EduGap. نحن نطبق معايير أمان عالمية وأفضل الممارسات لحماية بياناتك من الوصول أو الكشف أو التعديل أو الحذف غير المصرح به.",
+
+    data_storage_encryption_title: "التشفير",
+    data_storage_encryption_text:
+      "جميع البيانات المرسلة بين جهازك وخوادمنا مشفرة باستخدام بروتوكولات TLS. المعلومات الحساسة، بما في ذلك كلمات المرور وبيانات الدفع، مشفرة عند التخزين باستخدام معايير AES-256.",
+
+    data_storage_access_controls_title: "ضوابط الوصول",
+    data_storage_access_controls_text:
+      "نقتصر على الموظفين والمقاولين والوكلاء المصرح لهم الذين يحتاجون لمعرفة هذه المعلومات لتشغيل أو تطوير أو تحسين خدماتنا. جميع الأشخاص الذين لديهم وصول للبيانات الحساسة يخضعون لفحوصات خلفية وتدريبات أمنية.",
+
+    data_storage_infrastructure_security_title: "أمان البنية التحتية",
+    data_storage_infrastructure_security_text:
+      "خوادمنا مستضافة في مراكز بيانات آمنة ومعتمدة مع إجراءات أمان مادية، بما في ذلك المراقبة 24/7، والتحكم البيومتري، والأنظمة الاحتياطية. نقوم بانتظام بإجراء تدقيقات أمنية وتقييم الثغرات.",
+
+    data_storage_authentication_title: "المصادقة",
+    data_storage_authentication_text:
+      "ندعم المصادقة متعددة العوامل MFA لإضافة طبقة أمان إضافية لحسابك. نوصي بشدة بتمكين هذه الميزة.",
+
+    data_storage_backups_title: "النسخ الاحتياطية المنتظمة",
+    data_storage_backups_text:
+      "يتم عمل نسخ احتياطية لبياناتك بانتظام لتجنب الفقد في حالة الأعطال أو الكوارث. النسخ الاحتياطية مشفرة ومخزنة في مواقع جغرافية متعددة.",
+
+    data_storage_incident_response_title: "الاستجابة للحوادث",
+    data_storage_incident_response_text:
+      "نحتفظ بخطة للاستجابة للحوادث لمعالجة أي خروقات أو حوادث بيانات بسرعة. في حالة حدوث اختراق، سيتم إعلامك وفقًا للقوانين المعمول بها.",
+
+    data_storage_user_role_text:
+      "بينما نطبق تدابير أمان قوية، لا يوجد نظام آمن بالكامل. يلعب المستخدم دورًا مهمًا في حماية حسابه باستخدام كلمات مرور قوية وعدم مشاركة بيانات الدخول وتسجيل الخروج عند استخدام أجهزة مشتركة.",
+
+    cookies_tracking_title: "الكوكيز وتقنيات التتبع",
+    cookies_tracking_intro:
+      "تستخدم EduGap الكوكيز وتقنيات التتبع لتحسين تجربتك، تحليل أنماط الاستخدام، وتقديم محتوى مخصص.",
+
+    cookies_tracking_what_are_cookies_title: "ما هي الكوكيز؟",
+    cookies_tracking_what_are_cookies_text:
+      "الكوكيز هي ملفات نصية صغيرة تُخزن على جهازك عند زيارة المنصة. تساعدنا على التعرف على المتصفح وتذكر بعض معلومات زياراتك وتفضيلاتك.",
+
+    cookies_tracking_types_title: "أنواع الكوكيز التي نستخدمها",
+    cookies_tracking_types_text_essential:
+      "كوكيز أساسية: مطلوبة لعمل المنصة بشكل صحيح، بما في ذلك المصادقة والأمان والمحافظة على الجلسة.",
+    cookies_tracking_types_text_performance:
+      "كوكيز الأداء: تساعدنا على فهم كيفية تفاعل المستخدمين مع المنصة من خلال جمع بيانات إحصائية مجهولة.",
+    cookies_tracking_types_text_functionality:
+      "كوكيز الوظائف: تتذكر تفضيلاتك وإعداداتك لتوفير تجربة مخصصة، مثل اللغة والثيم.",
+    cookies_tracking_types_text_targeting:
+      "كوكيز الاستهداف: تستخدم لتقديم محتوى وتوصيات مناسبة لاهتماماتك التعليمية.",
+
+    cookies_tracking_analytics_title: "التحليلات والتتبع",
+    cookies_tracking_analytics_text:
+      "نستخدم خدمات التحليل مثل Google Analytics لجمع معلومات حول كيفية تصفح المستخدمين للمنصة والصفحات الأكثر زيارة.",
+
+    cookies_tracking_manage_title: "إدارة الكوكيز",
+    cookies_tracking_manage_text:
+      "يمكنك التحكم في الكوكيز من خلال إعدادات متصفحك، وحظرها أو حذفها، مع مراعاة أن بعض الكوكيز ضرورية لتشغيل المنصة.",
+
+    user_rights_title: "حقوق المستخدم",
+    user_rights_intro:
+      "نحترم حقوقك المتعلقة بمعلوماتك الشخصية ويمكنك ممارسة الحقوق التالية:",
+
+    user_rights_access_title: "الحق في الوصول",
+    user_rights_access_text:
+      "لديك الحق في الوصول ومراجعة جميع المعلومات الشخصية التي نحتفظ بها عنك.",
+
+    user_rights_rectification_title: "الحق في التصحيح",
+    user_rights_rectification_text:
+      "يمكنك تحديث وتصحيح بياناتك الشخصية من إعدادات الحساب، أو التواصل مع الدعم.",
+
+    user_rights_deletion_title: "الحق في الحذف",
+    user_rights_deletion_text:
+      "يمكنك طلب حذف حسابك وبياناتك الشخصية المرتبطة به.",
+
+    user_rights_portability_title: "الحق في نقل البيانات",
+    user_rights_portability_text:
+      "يمكنك طلب نسخة من بياناتك الشخصية بصيغة منظمة وقابلة للقراءة آليًا.",
+
+    user_rights_restrict_title: "الحق في تقييد المعالجة",
+    user_rights_restrict_text:
+      "يمكنك طلب تقييد استخدام معلوماتك الشخصية في ظروف معينة.",
+
+    user_rights_object_title: "الحق في الاعتراض",
+    user_rights_object_text:
+      "يمكنك الاعتراض على بعض أنواع المعالجة، مثل التسويق المباشر والتصنيف الشخصي.",
+
+    user_rights_withdraw_consent_title: "الحق في سحب الموافقة",
+    user_rights_withdraw_consent_text:
+      "يمكنك سحب موافقتك في أي وقت، ولن يؤثر ذلك على قانونية المعالجة قبل سحبها.",
+
+    retention_policy_title: "سياسة الاحتفاظ بالبيانات",
+    retention_policy_intro:
+      "نحتفظ بمعلوماتك الشخصية فقط للمدة اللازمة لتحقيق أهداف سياسة الخصوصية والالتزام بالمتطلبات القانونية.",
+
+    retention_policy_active_accounts_title: "الحسابات النشطة",
+    retention_policy_active_accounts_text:
+      "أثناء نشاط حسابك، نحتفظ بمعلوماتك الشخصية وبيانات الدورة لضمان الوصول المستمر للخدمات.",
+
+    retention_policy_account_deletion_title: "حذف الحساب",
+    retention_policy_account_deletion_text:
+      "عند طلب حذف الحساب، نزيل المعلومات من قاعدة البيانات النشطة خلال 30 يومًا، وقد تبقى في النسخ الاحتياطية حتى 90 يومًا.",
+
+    retention_policy_certificates_title: "سجلات الشهادات",
+    retention_policy_certificates_text:
+      "يتم الاحتفاظ بالسجلات الرقمية للشهادات بشكل دائم للتحقق من الإنجازات.",
+
+    retention_policy_transaction_records_title: "سجلات المعاملات",
+    retention_policy_transaction_records_text:
+      "يتم الاحتفاظ بسجلات المدفوعات والمعاملات لمدة لا تقل عن 7 سنوات للامتثال للقوانين المالية.",
+
+    retention_policy_legal_requirements_title: "المتطلبات القانونية",
+    retention_policy_legal_requirements_text:
+      "قد نحتفظ ببعض المعلومات لفترات أطول للامتثال للقوانين أو حل النزاعات.",
+
+    retention_policy_anonymized_data_title: "البيانات المجهولة",
+    retention_policy_anonymized_data_text:
+      "نحتفظ بالبيانات المجهولة أو المجمعة لأغراض التحليل والبحث بشكل دائم.",
+
+    retention_policy_note:
+      "نراجع البيانات بانتظام ونحذف المعلومات غير الضرورية.",
+
+    privacy_banner_title: "خصوصيتك مهمة",
+    privacy_banner_text:
+      "حماية معلوماتك الشخصية أساسية لكل ما نقوم به. نحن ملتزمون بالشفافية والأمان ومنحك السيطرة على بياناتك.",
+
+    privacy_footer_text: "© 2025 منصة EduGap التعليمية. جميع الحقوق محفوظة.",
+    privacy_footer_updated: "تم تحديث سياسة الخصوصية آخر مرة في 24 نوفمبر 2025",
   },
 } as const;
 

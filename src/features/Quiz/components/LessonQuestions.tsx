@@ -6,10 +6,8 @@ import QuizQuestion from "./QuizQuestion";
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { submitQuizAnswers } from "../services/quizApis";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getNextLesson } from "@/features/CourseDetails/services/contentDetails";
-import type { NextLessonType } from "@/shared/types/sharedTypes";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 const LessonQuestions = ({ data }: { data: QuizDetailsType }) => {
   const { t } = useLanguage();
@@ -19,7 +17,6 @@ const LessonQuestions = ({ data }: { data: QuizDetailsType }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { courseId } = useParams();
-  const navigate = useNavigate();
   const [result, setResult] = useState<null | {
     scorePercent: number;
     passPercent: number;
@@ -31,12 +28,6 @@ const LessonQuestions = ({ data }: { data: QuizDetailsType }) => {
       isCorrect: boolean;
     }[];
   }>(null);
-
-  const { refetch: fetchNextLesson } = useQuery<NextLessonType>({
-    queryKey: ["getNextLesson", courseId],
-    queryFn: () => getNextLesson(courseId ?? ""),
-    enabled: false,
-  });
 
   const localStorageKey = `quiz-answers-lesson-${data.lessonId}`;
 
@@ -127,13 +118,6 @@ const LessonQuestions = ({ data }: { data: QuizDetailsType }) => {
     setSearchParams({ page: "1" });
     setResult(null);
     window.scrollTo(0, 0);
-  };
-  const handleGoToNextLesson = async () => {
-    const { data } = await fetchNextLesson();
-
-    const nextLessonId = data?.lessonId;
-
-    navigate(`/course-lesson/${courseId}/${nextLessonId}`);
   };
 
   return (
@@ -292,7 +276,11 @@ const LessonQuestions = ({ data }: { data: QuizDetailsType }) => {
                               disabled
                               checked={isCorrect || isWrongSelected}
                             />
-                            <span>{option.label}</span>
+                            <span>
+                              {option.label} <span>-</span>
+                            </span>
+
+                            <span>{option.title}</span>
                           </div>
                         );
                       })
@@ -312,16 +300,6 @@ const LessonQuestions = ({ data }: { data: QuizDetailsType }) => {
               className="max-sm:text-sm center rounded-lg border border-secondary px-10 py-2 text-secondary cursor-pointer transition disabled:opacity-50"
             >
               {t("try_again")}
-            </motion.button>
-
-            {/* Go To The Next Lesson Button */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleGoToNextLesson}
-              className="max-sm:text-sm center rounded-lg bg-secondary px-10 py-2 text-white cursor-pointer transition disabled:opacity-50"
-            >
-              {t("go_to_next_lesson")}
             </motion.button>
           </div>
         </motion.div>

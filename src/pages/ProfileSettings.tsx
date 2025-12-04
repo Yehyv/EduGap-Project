@@ -5,6 +5,7 @@ import { useState } from "react";
 import ChangePasswordFromProfile from "@/features/ProfileSettings/components/ChangePasswordFromProfile";
 import ChangeProfileData from "@/features/ProfileSettings/components/ChangeProfileData";
 import ProfileSettingsTabs from "@/features/ProfileSettings/components/ProfileSettingsTabs";
+import ScrollToTop from "@/shared/utils/ScrollToTop";
 
 const ProfileSettings = () => {
   const { t } = useLanguage();
@@ -12,6 +13,7 @@ const ProfileSettings = () => {
 
   return (
     <div className="container mt-5 mb-20 min-h-[80vh]">
+      <ScrollToTop />
       <BackButton />
 
       <div className="flex items-center gap-2 mt-2">

@@ -11,11 +11,11 @@ const Footer = () => {
 
   const footerLinks = {
     main: [
-      { label: t("footer_about"), to: "/About-us" },
-      { label: t("footer_services"), to: "/About-us#services" },
+      { label: t("footer_about"), to: "/about-us" },
+      { label: t("footer_services"), to: "/about-us#services" },
       // { label: t("footer_team"), to: "#" },
-      { label: t("footer_contact"), to: "/About-us#contact" },
-      { label: t("footer_features"), to: "/About-us#features" },
+      { label: t("footer_contact"), to: "/about-us#contact" },
+      { label: t("footer_features"), to: "/about-us#features" },
     ],
     discover: [
       { label: t("footer_discover_courses"), to: "/latest-courses" },
@@ -24,7 +24,7 @@ const Footer = () => {
       { label: t("footer_discover_experts"), to: "/experts-list" },
     ],
     business: [
-      { label: t("footer_business_join_experts"), to: "/About-us#join" },
+      { label: t("footer_business_join_experts"), to: "/about-us#join" },
     ],
   };
 

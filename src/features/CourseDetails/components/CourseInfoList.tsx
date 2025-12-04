@@ -24,7 +24,7 @@ import type {
   NextLessonType,
 } from "@/shared/types/sharedTypes";
 import { toast } from "react-toastify";
-import { formatDuration } from "@/shared/utils/globals";
+import { formatDuration, LESSON_TYPES } from "@/shared/utils/globals";
 import { motion } from "framer-motion";
 import LessonProgress from "@/features/ContentLesson/components/LessonProgress";
 import SaveButton from "@/features/SavedIrems/components/SaveButton";
@@ -131,7 +131,14 @@ const StickyCourseSummaryCard = ({
     if (!isEnrolled && isLoggedIn) {
       mutation.mutate();
     } else {
-      navigate(`/course-lesson/${courseId}/${NextLesson}`);
+      const path =
+        getNextLessonData?.lessonType == LESSON_TYPES.LESSON
+          ? "course-lesson"
+          : "quiz-page";
+
+      console.log(getNextLessonData?.type);
+
+      navigate(`/${path}/${courseId}/${NextLesson}`);
     }
   };
   const handleShare = async () => {

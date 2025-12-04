@@ -8,13 +8,9 @@ const GuestHome = () => {
   return (
     <>
       <HeroSection />
-
       <PopularCoursesSlider />
-
       <ProgramsSection />
-
       <Testimonials />
-
       <Experts />
     </>
   );

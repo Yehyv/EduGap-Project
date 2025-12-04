@@ -88,6 +88,7 @@ export type ContentAccessType = {
 };
 export type NextLessonType = {
   lessonId: number;
+  lessonType: boolean;
 };
 export type ContentLessonType = {
   id: number;
@@ -137,6 +138,12 @@ export type PrgoramDetailsTypes = {
   contentsCount: number;
   totalDuration: number;
   isSaved: boolean;
+};
+export type ProfileDataTypes = {
+  full_name: string;
+  phone: string;
+  phone_key: string;
+  user_image: string;
 };
 export type ChangePasswordTypes = {
   oldPassword: string;
@@ -228,6 +235,7 @@ export type LessonType = {
   isUnlocked: boolean;
   isCompleted: boolean;
   type: boolean;
+  lesson_type: boolean;
 };
 
 export type ContinueCourseType = {

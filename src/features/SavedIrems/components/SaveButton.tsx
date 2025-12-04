@@ -53,7 +53,7 @@ const SaveButton = ({
   return (
     <>
       <motion.button
-        className="rounded-full grid place-items-center cursor-pointer absolute start-2 top-1/2 -translate-y-1/2"
+        className="rounded-full bg-[#E8E5E5] w-8 h-8 grid place-items-center cursor-pointer absolute start-2 top-1/2 -translate-y-1/2"
         whileHover={!isPending ? { scale: 1.1 } : {}}
         whileTap={!isPending ? { scale: 0.9 } : {}}
         disabled={isPending}

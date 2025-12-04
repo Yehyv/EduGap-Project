@@ -1,19 +1,14 @@
 import { motion } from "framer-motion";
 import StarIcon from "@/assets/svgs/StarIcon.svg?react";
-// import MedalIcon from "@/assets/svgs/Medalcon.svg?react";
+import MedalIcon from "@/assets/svgs/Medalcon.svg?react";
 import InstructorAvatar from "@/assets/svgs/InstructorAvatar.svg";
 import DefaultButton from "../ui/DefaultButton";
-import type { CourseType, NextLessonType } from "@/shared/types/sharedTypes";
+import type { CourseType } from "@/shared/types/sharedTypes";
 import CourseCardOverlayDetails from "./CourseCardOverlayDetails";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import LevelBadge from "../ui/LevelBadge";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import {
-  getNextLesson,
-  saveContent,
-} from "@/features/CourseDetails/services/contentDetails";
-import ButtonLoader from "../ButtonLoader";
+import { saveContent } from "@/features/CourseDetails/services/contentDetails";
 import SaveButton from "@/features/SavedIrems/components/SaveButton";
 import { useUser } from "@/features/auth/context/UserContext";
 
@@ -21,25 +16,13 @@ const CourseCard = ({ course }: { course: CourseType }) => {
   const { t } = useLanguage();
   const { user } = useUser();
   const navigate = useNavigate();
-  const isLoggedIn = localStorage.getItem("token") ? true : false;
-  const { refetch: fetchNextLesson, isFetching: isFetchingNext } =
-    useQuery<NextLessonType>({
-      queryKey: ["getNextLesson", course?.id],
-      queryFn: () => getNextLesson(course?.id!.toString() ?? ""),
-      enabled: false,
-    });
 
   const handleOpenCourse = async () => {
-    if (!isLoggedIn) {
-      navigate(`/guest-course-details/${course.id}`);
-      return;
-    }
+    const path = user
+      ? `/user-course-details/${course.id}`
+      : `/guest-course-details/${course.id}`;
 
-    const { data } = await fetchNextLesson();
-
-    const nextLessonId = data?.lessonId;
-
-    navigate(`/course-lesson/${course.id}/${nextLessonId}`);
+    navigate(path);
   };
 
   return (
@@ -59,7 +42,9 @@ const CourseCard = ({ course }: { course: CourseType }) => {
           }}
         />
 
-        {/* {course?.isSaved && <MedalIcon className="absolute top-2 end-2" />} */}
+        {course?.hasCertificate && (
+          <MedalIcon className="absolute top-2 end-2" />
+        )}
         <LevelBadge level={course?.level ?? "Beginner"} />
       </div>
 
@@ -115,17 +100,8 @@ const CourseCard = ({ course }: { course: CourseType }) => {
 
           <DefaultButton
             text={
-              course?.isEnrolled ? (
-                isFetchingNext ? (
-                  <ButtonLoader />
-                ) : (
-                  t("Continue_Learning")
-                )
-              ) : (
-                t("course_details")
-              )
+              course?.isEnrolled ? t("Continue_Learning") : t("course_details")
             }
-            disabled={isFetchingNext}
             onClick={handleOpenCourse}
             type="button"
             moreStyle="min-w-[150px] rounded-3xl !py-1"

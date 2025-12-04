@@ -123,7 +123,7 @@ const UserNav = () => {
             className="absolute top-12 max-sm:-end-12 end-0 w-72 bg-white rounded-lg shadow-[0_6px_20px_-2px_rgba(0,0,0,0.15)] border border-gray-200 z-50"
           >
             {/* Info */}
-            <div className="flex justify-between gap-4 items-center px-4">
+            <div className="flex gap-4 items-center px-4">
               {/* Avatar */}
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}

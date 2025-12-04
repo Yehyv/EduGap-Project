@@ -25,11 +25,6 @@ import type {
 } from "../types/sharedTypes";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import LanguageDropdown from "./ui/LanguageDropdown";
-import SmoothLazy from "./SmoothLazy";
-const LanguageIcon = SmoothLazy(
-  () => import("@/assets/svgs/LanguageIcon.svg?react"),
-  "w-5 h-5"
-);
 
 // ================= Types =================
 type NavKey =

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { useLanguage } from "../localization/useLanguage";
+import { Link } from "react-router-dom";
 
 const InnovaLogo = lazy(() => import("@/assets/svgs/InnovaLogo.svg?react"));
 const TwitterIcon = lazy(() => import("@/assets/svgs/twitter.svg?react"));
@@ -24,15 +25,24 @@ const InnovaFooter = () => {
 
         {/* Center Text */}
         <div className="text-center flex flex-col md:flex-row items-center gap-2 md:gap-4 text-black flex-1 justify-center">
-          <span className="cursor-pointer hover:text-secondary transition">
+          <Link
+            to={"/privacy-policy"}
+            className="cursor-pointer font-bold hover:text-secondary transition"
+          >
             {t("privacy_policy")}
-          </span>
-          <span className="cursor-pointer hover:text-secondary transition">
+          </Link>
+          <Link
+            to={"/terms-of-use"}
+            className="cursor-pointer font-bold hover:text-secondary transition"
+          >
             {t("terms_of_use")}
-          </span>
-          <span className="text-secondary cursor-default">
+          </Link>
+          <Link
+            to={"#"}
+            className="cursor-pointer font-bold text-secondary transition"
+          >
             {t("footer_email")}
-          </span>
+          </Link>
         </div>
 
         {/* Left – Social Icons */}

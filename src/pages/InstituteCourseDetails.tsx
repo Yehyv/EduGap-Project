@@ -6,10 +6,7 @@ import ExpandableText from "@/shared/components/ui/ExpandableText";
 import VideoIcon from "@/assets/svgs/VideoIcon.svg?react";
 import { Loader } from "@/shared/components";
 import { useQuery } from "@tanstack/react-query";
-import {
-  getInstituteCourseDetails,
-  saveContent,
-} from "@/features/CourseDetails/services/contentDetails";
+import { getInstituteCourseDetails } from "@/features/CourseDetails/services/contentDetails";
 import { useParams } from "react-router-dom";
 import { useUser } from "@/features/auth/context/UserContext";
 import { formatDuration } from "@/shared/utils/globals";
@@ -70,7 +67,7 @@ const InstituteCourseDetails = () => {
                   },
                 ]}
               />
-              <span className="inline-block ms-10">Save Subject</span>
+              <span className="inline-block ms-12">Save Subject</span>
             </div>
           </div>
           <div className="relative w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] me-[50px]">

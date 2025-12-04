@@ -37,6 +37,9 @@ import SavedItems from "@/pages/SavedItems";
 import QuizPage from "@/pages/QuizPage";
 import MyCourses from "@/pages/MyCourses";
 import ProfileSettings from "@/pages/ProfileSettings";
+import TermsOfUse from "@/pages/TermsOfUse";
+import AboutLayout from "@/layouts/AboutLayout/AboutLayout";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -55,7 +58,12 @@ export default function AppRoutes() {
           element={<InstituteCourseDetails />}
         />
         <Route path="/search-results" element={<SearchResults />} />
-        <Route path="/About-us" element={<AboutUs />} />
+      </Route>
+
+      <Route path="/" element={<AboutLayout />}>
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/terms-of-use" element={<TermsOfUse />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       </Route>
 
       {/* Public Routes with AuthLayout */}
