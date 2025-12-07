@@ -40,6 +40,8 @@ import ProfileSettings from "@/pages/ProfileSettings";
 import TermsOfUse from "@/pages/TermsOfUse";
 import AboutLayout from "@/layouts/AboutLayout/AboutLayout";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import InstitutesPage from "@/pages/dashboard/InstitutesPage";
+import DashboardLayout from "@/layouts/DashboardLayout/DashboardLayout";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -64,6 +66,11 @@ export default function AppRoutes() {
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/terms-of-use" element={<TermsOfUse />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      </Route>
+
+      {/* Dashboard */}
+      <Route path="/" element={<DashboardLayout />}>
+        <Route path="/admin-dashboard" element={<InstitutesPage />} />
       </Route>
 
       {/* Public Routes with AuthLayout */}

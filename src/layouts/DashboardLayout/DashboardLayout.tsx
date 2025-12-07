@@ -1,0 +1,104 @@
+import { Link, Outlet } from "react-router-dom";
+import { useState } from "react";
+import LogoSm from "@/assets/svgs/LogoSm.svg?react";
+import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
+import DashboardIcon from "@/assets/svgs/DashboardIcon.svg?react";
+import GovernmentIcon from "@/assets/svgs/GovernmentIcon.svg?react";
+import Arrow from "@/assets/svgs/RightArrow.svg?react";
+import PersonIcon from "@/assets/imgs/ForDev/Person.jpg";
+import SearchBar from "@/features/Dashboard/components/SearchBar";
+const InstitutesPage = () => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex min-h-screen gap-2 bg-gray-50 dark:bg-gray-900">
+      <aside
+        className={`
+          fixed top-0 left-0 h-screen w-64 bg-white dark:bg-gray-800
+          transform transition-transform duration-200
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0 md:static
+        `}
+      >
+        <button
+          onClick={() => setOpen(false)}
+          className="bg-gray-200 cursor-pointer w-7 h-7 center rounded-full absolute end-2 top-2 md:!hidden"
+        >
+          <CloseIcon className="w-3 h-3" />
+        </button>
+
+        <div className="h-16 flex items-center justify-center">
+          <Link to="/userHome">
+            <LogoSm className="cursor-pointer" />
+          </Link>
+        </div>
+
+        <h5 className="text-[#ACACAC] px-4 mx-2 mt-4">Menu</h5>
+        {/* Sidebar Links */}
+        <nav className="p-4 flex flex-col gap-1 overflow-y-auto">
+          <Link
+            className="p-2 flex items-center gap-2 text-[#ACACAC] hover:text-secondary hover:font-bold rounded-xl text-sm hover:bg-[#ECF8FF] dark:hover:bg-gray-700"
+            to="#"
+          >
+            <DashboardIcon />
+            <span>Dashboard</span>
+          </Link>
+          <Link
+            className="p-2 flex items-center gap-2 text-[#ACACAC] hover:text-secondary hover:font-bold rounded-xl text-sm hover:bg-[#ECF8FF] dark:hover:bg-gray-700"
+            to="#"
+          >
+            <GovernmentIcon />
+            <span>Institutes</span>
+          </Link>
+        </nav>
+      </aside>
+
+      {/* Main Area */}
+      <div className="flex-1 flex flex-col min-h-screen ml-0 md:me-4 mt-2">
+        {/* Header */}
+        <header className="h-16 max-md:gap-2 bg-white dark:bg-gray-900 rounded-2xl flex items-center mx-6 justify-between px-4">
+          <button
+            onClick={() => setOpen(true)}
+            className="md:hidden p-2 cursor-pointer rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+
+          <SearchBar placeholder="Search" />
+          <div className="bg-[#F5F5F5] px-2 py-1 rounded-xl flex items-center gap-2 text-sm relative cursor-pointer">
+            <img
+              src={PersonIcon}
+              alt=""
+              className="w-12 max-h-12 rounded-xl"
+              loading="lazy"
+            />
+
+            <div>
+              <h5>Abdullah Shaaban</h5>
+              <span className="text-[#ACACAC]">Admin</span>
+            </div>
+            <Arrow className="rotate-90 w-5 ms-4" />
+          </div>
+        </header>
+
+        {/* Outlet Content */}
+        <main className="flex-1 p-4 md:p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default InstitutesPage;
