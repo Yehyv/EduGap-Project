@@ -20,12 +20,12 @@ export class LanguagesController {
     return this.languagesService.create(createLanguageDto);
   }
 
-  @Get()
+  @Get('super-admin/languages-list')
   findAll() {
     return this.languagesService.findAll();
   }
 
-  @Get(':id')
+  @Get(':id/super-admin/language')
   findOne(@Param('id') id: number) {
     return this.languagesService.findOne(+id);
   }

@@ -24,7 +24,7 @@ export class InstitutesController {
     return this.institutesService.create(createInstituteDto);
   }
 
-  @Get()
+  @Get('super-admin/institutes-list')
   findAll() {
     return this.institutesService.findAll();
   }
@@ -37,7 +37,7 @@ export class InstitutesController {
     return this.institutesService.instituteNav(languageId, limit);
   }
 
-  @Get(':id')
+  @Get(':id/super-admin/institute')
   findOne(@Param('id') id: string) {
     return this.institutesService.findOne(+id);
   }

@@ -351,8 +351,46 @@ export class CoursesService {
   }
 
   /** بقية الدوال القديمة (findAll / findOne / update / remove) تبقى كما هي تقريبًا */
+  async findAll(languageId?: number) {
+    const courses = await this.courseRepository.find({
+      relations: ['translations', 'translations.language'],
+    });
+    if (!courses.length) return [];
+    return courses.map((c) => {
+      const tr =
+        c.translations.find((t) => t.language.id === languageId) ||
+        c.translations[0];
+      return {
+        id: c.id,
+        image: c.image,
+        name: tr?.name,
+        description: tr?.description,
+        whatToLearn: tr?.whatToLearn ?? [],
+      };
+    });
+  }
+  async findOne(id: number, languageId?: number) {
+    const course = await this.courseRepository.findOne({
+      where: { id },
+      relations: ['translations', 'translations.language'],
+    });
+    if (!course) throw new NotFoundException(`Course ${id} not found`);
+    const tr =
+      course.translations.find((t) => t.language.id === languageId) ||
+      course.translations[0];
+    return {
+      id: course.id,
+      image: course.image,
+      name: tr?.name,
+      description: tr?.description,
+      whatToLearn: tr?.whatToLearn ?? [],
+    };
+  }
 
-  async findAll(userInstituteId: number, languageId?: number) {
+  async findAllCoursesForInstitute(
+    userInstituteId?: number,
+    languageId?: number,
+  ) {
     const links = await this.ipcRepository.find({
       where: { institute: { id: userInstituteId }, is_active: 1 },
       relations: [
@@ -377,7 +415,11 @@ export class CoursesService {
     });
   }
 
-  async findOne(id: number, userInstituteId?: number, languageId?: number) {
+  async findCourseForInstitute(
+    id: number,
+    userInstituteId?: number,
+    languageId?: number,
+  ) {
     const link = await this.ipcRepository.findOne({
       where: { institute: { id: userInstituteId }, course: { id } },
       relations: [
@@ -761,7 +803,7 @@ export class CoursesService {
       .select('COALESCE(SUM(l.duration), 0)', 'totalDuration')
       .where('course.id = :courseId', { courseId })
       .getRawOne<{ totalDuration: string }>();
-      let isSaved = false;
+    let isSaved = false;
     if (userId) {
       // لو TypeORM >= 0.3 يدعم getExists()
       const exists = await this.savedCourse

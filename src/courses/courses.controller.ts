@@ -41,14 +41,19 @@ export class CoursesController {
     return this.coursesService.create(dto);
   }
 
+  @Get('super-admin/courses-list')
+  getCoursesListForAdmin( @Headers('languageId') languageId?: string,) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.coursesService.findAll(langId);
+  }
   /** جميع كورسات المعهد الحالي (من IPC) */
   @Get()
-  findAll(
+  findAllCoursesForInstitute(
     @Req() req: AuthenticatedRequest,
     @Headers('languageId') languageId?: string,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
-    return this.coursesService.findAll(req.user!.instituteId, langId);
+    return this.coursesService.findAllCoursesForInstitute(req.user!.instituteId, langId);
   }
   @UseGuards(JwtAuthGuard)
   @Get('all/nav')
@@ -115,16 +120,23 @@ coursesNav(
       l,
     );
   }
-
+  @Get(':id/super-admin/course')
+  getCourseForAdmin(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('languageId') languageId?: string,
+  ){
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.coursesService.findOne(id, langId);
+  }
   /** كورس واحد (مع العزل بالمعهد) */
   @Get(':id')
-  findOne(
+  findCourseForInstitute(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
     @Headers('languageId') languageId?: string,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
-    return this.coursesService.findOne(id, req.user!.instituteId, langId);
+    return this.coursesService.findCourseForInstitute(id, req.user!.instituteId, langId);
   }
 
   /** كورسات برنامج معيّن (كتالوج عام من PC) */

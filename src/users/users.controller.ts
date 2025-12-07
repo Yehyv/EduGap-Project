@@ -46,7 +46,7 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @Get()
+  @Get('super-admin/users-list')
   findAll() {
     console.log('IBRAHIIIIIIIIIIIIIIM');
     return this.usersService.findAll();
@@ -114,7 +114,7 @@ export class UsersController {
     return this.usersService.changeProfileImage(userId, imageUrl);
   }
 
-  @Get(':id')
+  @Get(':id/super-admin/user')
   async findById(@Param('id', ParseIntPipe) id: number) {
     console.log('=== Controller.findById ===');
     console.log('Received ID:', id);
