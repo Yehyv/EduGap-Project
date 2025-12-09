@@ -42,6 +42,7 @@ import AboutLayout from "@/layouts/AboutLayout/AboutLayout";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import InstitutesPage from "@/pages/dashboard/InstitutesPage";
 import DashboardLayout from "@/layouts/DashboardLayout/DashboardLayout";
+import AddNewInstitute from "@/pages/dashboard/AddNewInstitute";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -71,6 +72,7 @@ export default function AppRoutes() {
       {/* Dashboard */}
       <Route path="/" element={<DashboardLayout />}>
         <Route path="/admin-dashboard" element={<InstitutesPage />} />
+        <Route path="/add-new-institute" element={<AddNewInstitute />} />
       </Route>
 
       {/* Public Routes with AuthLayout */}

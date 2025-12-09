@@ -1,4 +1,4 @@
-import LogoSm from "@/assets/svgs/LogoSm.svg?react";
+import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
 import NavListIcon from "@/assets/svgs/NavListIcon.svg?react";
 import { Link, useLocation, useNavigate } from "react-router";
 import DefaultButton from "./ui/DefaultButton";
@@ -219,7 +219,7 @@ const Header = ({
     <header
       className={`bg-${
         color ?? "primary"
-      } py-2 z-50 sticky -top-1 start-0 end-0`}
+      } py-2 z-50 sticky -top-1 start-0 end-0 shadow-sm`}
     >
       <div className="container mx-auto flex items-center justify-between gap-2 px-4">
         <Link to="/userHome">

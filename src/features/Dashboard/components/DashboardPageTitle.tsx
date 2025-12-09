@@ -12,8 +12,8 @@ const DashboardPageTitle = ({
   buttonText?: React.ReactNode;
 }) => {
   return (
-    <div className="flex justify-between items-center">
-      <h1 className="mb-5">{text}</h1>
+    <div className="flex flex-col md:flex-row justify-between items-center mb-1">
+      <h2 className="mb-5">{text}</h2>
       {button && (
         <button
           type={"button"}

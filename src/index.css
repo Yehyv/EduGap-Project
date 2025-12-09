@@ -219,3 +219,54 @@
     #f2f5ff 100%
   );
 }
+/* Dropdown Style */
+
+.react-select__control {
+  border-radius: 14px !important;
+  min-height: 40px !important;
+  border-color: #acacac !important;
+  box-shadow: none !important;
+}
+.react-select__control--is-focused {
+  border-color: var(--color-secondary) !important;
+  box-shadow: 0 0 0 0.2px var(--color-secondary) !important;
+}
+
+.react-select__placeholder {
+  color: #9ca3af !important;
+}
+
+.react-select__option--is-focused {
+  background: #f3f4f6 !important;
+  box-shadow: none !important;
+}
+
+.react-select__option--is-selected {
+  background: #e5e7eb !important;
+  color: #111 !important;
+}
+
+/* Video  */
+
+.video-wrapper {
+  width: 100%;
+  max-width: 800px; /* أقصى عرض */
+  height: 320px; /* ارتفاع ثابت */
+  margin: 0 auto;
+}
+
+.video-wrapper .plyr {
+  height: 100% !important; /* مهم */
+}
+
+.plyr {
+  --plyr-color-main: #e68c3a;
+}
+
+.plyr__progress--played {
+  background: #e68c3a;
+}
+
+.plyr__time {
+  color: #333333;
+}

@@ -10,8 +10,8 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import { useNavigate } from "react-router-dom";
 import SliderErrorFallback from "@/shared/utils/SliderErrorFallback";
 import { saveContent } from "@/features/CourseDetails/services/contentDetails";
-import CourseVideo from "@/shared/components/EduGap/CourseVideo";
 import SaveButton from "@/features/SavedIrems/components/SaveButton";
+import CourseVideo from "@/shared/components/ui/CourseVideo";
 const RecommendedCourse = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -71,10 +71,10 @@ const RecommendedCourse = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-[#F1F1F1] rounded-2xl overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-5  bg-[#F1F1F1] rounded-2xl overflow-hidden">
         {/* Content Section */}
         <motion.div
-          className="md:col-span-2 px-6 py-6 flex flex-col max-md:order-1"
+          className="md:col-span-2 px-6 py-6 flex flex-col max-md:order-1 max-md:rounded-xl"
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
@@ -145,13 +145,14 @@ const RecommendedCourse = () => {
         </motion.div>
         {/* Video Section */}
         <div className="relative w-full min-h-[300px] md:min-h-[300px] md:col-span-3">
-          <CourseVideo
+          {/* <CourseVideo
             videoHeight="md:h-[350px]"
             isThisLessonAlreadyCompleted={true}
             isOnline={isOnline}
             videoUrl={data?.ad_video ?? ""}
             isLoading={isLoading}
-          />
+          /> */}
+          <CourseVideo videoUrl={data?.ad_video ?? ""} />
         </div>
       </div>
     </div>

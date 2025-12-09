@@ -1,6 +1,6 @@
 import { Link, Outlet } from "react-router-dom";
 import { useState } from "react";
-import LogoSm from "@/assets/svgs/LogoSm.svg?react";
+import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
 import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
 import DashboardIcon from "@/assets/svgs/DashboardIcon.svg?react";
 import GovernmentIcon from "@/assets/svgs/GovernmentIcon.svg?react";
@@ -11,13 +11,13 @@ const InstitutesPage = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen gap-2 bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen gap-2 bg-gray-50 dark:bg-gray-900">
       <aside
         className={`
-          fixed top-0 left-0 h-screen w-64 bg-white dark:bg-gray-800
+          fixed top-0 start-0 h-screen w-64 bg-white z-40 dark:bg-gray-800
           transform transition-transform duration-200
           ${open ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0 md:static
+          md:translate-x-0 md:fixed
         `}
       >
         <button
@@ -54,9 +54,9 @@ const InstitutesPage = () => {
       </aside>
 
       {/* Main Area */}
-      <div className="flex-1 flex flex-col min-h-screen ml-0 md:me-4 mt-2">
+      <div className="flex-1 flex flex-col min-h-screen ml-0 md:me-4 md:ms-64 pt-2">
         {/* Header */}
-        <header className="h-16 max-md:gap-2 bg-white dark:bg-gray-900 rounded-2xl flex items-center mx-6 justify-between px-4">
+        <header className="py-2 max-md:gap-2 bg-white  dark:bg-gray-900 rounded-2xl flex items-center mx-6 justify-between px-4">
           <button
             onClick={() => setOpen(true)}
             className="md:hidden p-2 cursor-pointer rounded hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -76,24 +76,24 @@ const InstitutesPage = () => {
           </button>
 
           <SearchBar placeholder="Search" />
-          <div className="bg-[#F5F5F5] px-2 py-1 rounded-xl flex items-center gap-2 text-sm relative cursor-pointer">
+
+          <div className="bg-[#F5F5F5] px-2 max-sm:px-0 py-1 rounded-lg flex items-center gap-3 text-xs sm:text-sm relative cursor-pointer shadow-sm hover:shadow-md transition-shadow">
             <img
               src={PersonIcon}
-              alt=""
-              className="w-12 max-h-12 rounded-xl"
+              alt="Person"
+              className="h-10 rounded-lg object-cover"
               loading="lazy"
             />
-
-            <div>
-              <h5>Abdullah Shaaban</h5>
-              <span className="text-[#ACACAC]">Admin</span>
+            <div className="flex-1 overflow-hidden max-sm:hidden ">
+              <h5 className="font-medium truncate">Abdullah Shaaban</h5>
+              <span className="text-[#ACACAC] truncate block">Admin</span>
             </div>
-            <Arrow className="rotate-90 w-5 ms-4" />
+            <Arrow className="w-4 sm:w-5 rotate-90 ms-2 sm:ms-4 flex-shrink-0 max-sm:hidden" />
           </div>
         </header>
 
         {/* Outlet Content */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="p-4 md:p-6">
           <Outlet />
         </main>
       </div>

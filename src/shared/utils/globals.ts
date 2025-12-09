@@ -3,6 +3,17 @@ export const LESSON_TYPES = {
   QUIZ: 1,
   LESSON: 0,
 };
+export const phoneKeys = [
+  { label: "+971", value: "971" },
+  { label: "+966", value: "966" },
+  { label: "+20", value: "20" },
+  { label: "+965)", value: "965" },
+  { label: "+974", value: "974" },
+  { label: "+973", value: "973" },
+  { label: "+962", value: "962" },
+  { label: "+90", value: "90" },
+  { label: "+1", value: "1" },
+];
 
 export const formatDuration = (seconds: number, lang: "ar" | "en") => {
   if (!seconds || seconds <= 0)

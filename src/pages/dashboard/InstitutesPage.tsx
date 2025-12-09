@@ -1,26 +1,22 @@
 import { useState, useMemo } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
-import { getInstitutes } from "@/features/Dashboard/services/dashboardApis";
+import {
+  deleteInstitute,
+  getInstitutes,
+} from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
 import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
-import DeleteIcon from "@/assets/svgs/TrashIconDashboard.svg?react";
 import SearchIcon from "@/assets/svgs/SearchIconDashboard.svg?react";
 import FilterIcon from "@/assets/svgs/FilterIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
+import DeleteButton from "@/features/Dashboard/components/DeleteButton";
+import { Link } from "react-router-dom";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
-  subHeader: {
-    style: {
-      borderRadius: "12px 12px 0px 0px",
-    },
-  },
-  pagination: {
-    style: {
-      borderRadius: "0px 0px 12px 12px",
-    },
-  },
+  subHeader: { style: { borderRadius: "12px 12px 0px 0px" } },
+  pagination: { style: { borderRadius: "0px 0px 12px 12px" } },
   headCells: {
     style: {
       fontSize: "14px",
@@ -45,9 +41,9 @@ const columns = [
   {
     name: "Num",
     selector: (row, index) => index + 1,
-    sortable: true,
-    width: "60px",
-    style: { justifyContent: "center", borderRight: "1px solid #D1D5DB" },
+    sortable: false,
+    width: "40px",
+    style: { justifyContent: "center" },
   },
   {
     name: "Logo",
@@ -59,7 +55,7 @@ const columns = [
       />
     ),
     sortable: false,
-    width: "80px",
+    minWidth: "80px",
     style: { justifyContent: "center" },
   },
   {
@@ -113,27 +109,30 @@ const columns = [
     name: "Edit",
     style: { justifyContent: "center" },
     cell: (row) => (
-      <button className="cursor-pointer">
+      <Link to={`/edit-institute/${row.id}`} className="cursor-pointer">
         <EditIcon />
-      </button>
+      </Link>
     ),
     ignoreRowClick: true,
     allowOverflow: true,
     button: true,
-    width: "60px",
+    minWidth: "50px",
   },
   {
     name: "Delete",
     style: { justifyContent: "center" },
     cell: (row) => (
-      <button className="cursor-pointer">
-        <DeleteIcon />
-      </button>
+      <DeleteButton
+        deleteApi={() => deleteInstitute(row.id)}
+        successMessage="تم حذف المستخدم بنجاح"
+        errorMessage="حدث خطأ أثناء الحذف"
+        refetchFunction="getInstitutesForDashboard"
+      />
     ),
     ignoreRowClick: true,
     allowOverflow: true,
     button: true,
-    width: "60px",
+    minWidth: "60px",
   },
 ];
 
@@ -158,12 +157,12 @@ const InstitutesPage = () => {
 
   const subHeaderComponent = useMemo(() => {
     return (
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div className="relative">
+      <div className="flex gap-2 max-md:justify-center max-md:w-full">
+        <div className="relative w-full sm:w-auto">
           <input
             type="text"
             placeholder="Search by name"
-            className="border py-2 border-[#ACACAC] w-full h-9 px-10 ps-10 rounded-2xl text-sm focus:outline-none"
+            className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
           />
@@ -174,7 +173,7 @@ const InstitutesPage = () => {
             <SearchIcon className="w-7 h-7" />
           </button>
         </div>
-        <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4  rounded-2xl text-sm focus:outline-none">
+        <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm focus:outline-none">
           <FilterIcon />
           <span>Filter</span>
         </div>
@@ -188,27 +187,27 @@ const InstitutesPage = () => {
         text="Institutes"
         button
         buttonText={
-          <span className="center">
+          <Link to={"/add-new-institute"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
-            <span className="inline-block me-4">Add New Institute</span>
-          </span>
+            <span className="inline-block me-4 text-white">
+              Add New Institute
+            </span>
+          </Link>
         }
       />
-      <div className="w-full overflow-x-auto m-0 !p-0">
+      <div className="w-full overflow-x-auto">
         <DataTable
           columns={columns}
           data={filteredItems}
-          pagination
           highlightOnHover
-          responsive
           customStyles={customStyles}
           progressPending={isLoading}
           subHeader
           subHeaderComponent={subHeaderComponent}
+          pagination
         />
       </div>
     </>
   );
 };
-
 export default InstitutesPage;

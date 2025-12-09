@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import LogoSm from "@/assets/svgs/LogoSm.svg?react";
+import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
 import { Link } from "react-router";
 import { useLanguage } from "../localization/useLanguage";
 import { lazy, Suspense } from "react";

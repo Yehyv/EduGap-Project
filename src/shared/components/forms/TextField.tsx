@@ -8,6 +8,7 @@ type TextFieldProps = {
   onlyNumbers?: boolean;
   maxLength?: number;
   disabled?: boolean;
+  moreStyle?: string;
 };
 
 const TextField = ({
@@ -18,6 +19,7 @@ const TextField = ({
   onlyNumbers = false,
   maxLength,
   disabled = false,
+  moreStyle,
 }: TextFieldProps) => {
   const [, meta] = useField(name);
 
@@ -36,7 +38,7 @@ const TextField = ({
         placeholder={placeholder}
         disabled={disabled}
         inputMode={onlyNumbers ? "numeric" : "text"}
-        className={`border rounded-lg px-2 py-1.5 border-[#9E9C9C] focus:border-tertiary outline-none ${borderColor}`}
+        className={`border rounded-lg px-2 py-1.5 border-[#9E9C9C] focus:border-tertiary outline-none ${borderColor} ${moreStyle}`}
         maxLength={maxLength}
         onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
           if (onlyNumbers) {
