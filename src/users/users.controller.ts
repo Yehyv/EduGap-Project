@@ -26,6 +26,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Request } from 'express';
+import { imageStorage } from 'src/common/helpers/upload.helper';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -67,32 +68,7 @@ export class UsersController {
   }
   @UseGuards(JwtAuthGuard)
   @Patch('profile/image')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/profile-images',
-        filename: (req, file, cb) => {
-          const typedReq = req as AuthenticatedRequest;
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          cb(null, `user-${typedReq.user.sub}-${uniqueSuffix}${ext}`);
-        },
-      }),
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
-      },
-      fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/^image\/(jpeg|png|jpg|gif|webp)$/)) {
-          return cb(
-            new BadRequestException('Only image files are allowed'),
-            false,
-          );
-        }
-        cb(null, true);
-      },
-    }),
-  )
+  @UseInterceptors(FileInterceptor('image', imageStorage('profile-images')))
   async uploadProfileImage(
     @Req() req: AuthenticatedRequest,
     @UploadedFile() file: Express.Multer.File,
@@ -101,16 +77,13 @@ export class UsersController {
       throw new BadRequestException('Image file is required');
     }
 
-    // لو بتقدم /uploads من الـ ServeStatic فوق
     const relativePath = `/uploads/profile-images/${file.filename}`;
+    const baseUrl = process.env.APP_URL || '';
+    const imageUrl = baseUrl + relativePath;
 
-    // ممكن تبني URL كامل (يفضل لو عندك ENV)
-    const baseUrl = process.env.APP_URL || ''; // مثال: https://api.taheel-hub.com
-    const imageUrl = baseUrl ? `${baseUrl}${relativePath}` : relativePath;
     const userId = req.user?.sub;
-    if (!userId) {
-      throw new UnauthorizedException('User not authenticated');
-    }
+    if (!userId) throw new UnauthorizedException();
+
     return this.usersService.changeProfileImage(userId, imageUrl);
   }
 

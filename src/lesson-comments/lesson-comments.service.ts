@@ -12,7 +12,7 @@ import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { User } from 'src/users/entities/user.entity';
 import { CreateLessonCommentDto } from './dto/create-lesson-comment.dto';
 import { UpdateLessonCommentDto } from './dto/update-lesson-comment.dto';
-import { formatRelativeDate } from 'src/common/date-format';
+import { formatRelativeDate } from 'src/common/helpers/date-format';
 @Injectable()
 export class LessonCommentsService {
   constructor(

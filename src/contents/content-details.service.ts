@@ -7,7 +7,7 @@ import { Content } from './entities/content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { ContentReview } from 'src/content-reviews/entities/content-review.entity';
 import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequiest-content.entity';
-import { formatHumanDate } from 'src/common/date-format';
+import { formatHumanDate } from 'src/common/helpers/date-format';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { LessonType } from 'src/lessons/entities/lesson.entity';
