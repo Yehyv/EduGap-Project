@@ -52,6 +52,10 @@ export class UsersController {
     console.log('IBRAHIIIIIIIIIIIIIIM');
     return this.usersService.findAll();
   }
+  @Patch('super-admin/user-status/:id')
+  async changeUserStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.toggleActive(id);
+  }
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getMeMinimal(

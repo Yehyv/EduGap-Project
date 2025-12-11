@@ -7,7 +7,14 @@ import { Institute } from './entities/institute.entity';
 import { In, Repository } from 'typeorm';
 import { instituteTranslation } from './entities/institute-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
-
+interface InstituteFiles {
+  logo?: Express.Multer.File[];
+  image_profile?: Express.Multer.File[];
+}
+interface InstituteDropDownRaw {
+  id: number;
+  name: string;
+}
 @Injectable()
 export class InstitutesService {
   constructor(
@@ -20,7 +27,7 @@ export class InstitutesService {
   ) {}
 
 
-async create(createInstituteDto: CreateInstituteDto) {
+async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
   const trs = createInstituteDto.translations ?? [];
   if (!trs.length) {
     throw new BadRequestException('At least one translation is required');
@@ -34,11 +41,19 @@ async create(createInstituteDto: CreateInstituteDto) {
     const missing = langIds.filter(id => !found.has(id));
     throw new NotFoundException(`Languages not found: ${missing.join(', ')}`);
   }
+  const baseUrl = process.env.APP_URL || '';
+  const logoFile = files?.logo?.[0];
+  const imageFile = files?.image_profile?.[0];
+
+  const logoPath = logoFile ? `${baseUrl}/uploads/institute-images/${logoFile.filename}` : null;
+  const imagePath = imageFile ? `${baseUrl}/uploads/institute-images/${imageFile.filename}` : null;
+
+  
 
   // 2) احفظ المعهد مرّة واحدة
   const institute = this.instituteRepository.create({
-    logo: createInstituteDto.logo,
-    image_profile: createInstituteDto.image_profile,
+    logo: logoPath,
+    image_profile: imagePath,
     email: createInstituteDto.email,
     phone_key: createInstituteDto.phone_key,
     phone: createInstituteDto.phone,
@@ -200,4 +215,26 @@ async create(createInstituteDto: CreateInstituteDto) {
       };
     });
   }
+  async instituteDropDown( languageId? : number  ) {
+    const query = this.instituteRepository
+    .createQueryBuilder('institute')
+    .leftJoin(
+      'institute.translations',
+      'translation',
+      languageId ? 'translation.language.id = :languageId' : undefined,
+      { languageId },
+    )
+    .leftJoin('translation.language', 'language');
+
+    const rows = await query.select([
+      'institute.id AS id',
+      'translation.name AS name',
+    ])
+    .getRawMany<InstituteDropDownRaw>();
+
+    return rows.map(r => ({
+      id: r.id,
+      name: r.name,
+    }));
+}
 }

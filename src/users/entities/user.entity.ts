@@ -69,7 +69,7 @@ export class User {
   @Column({ type: 'enum', enum: [0, 1] }) // 0 for phone , 1 for email
   verified_method: number;
 
-  @Column({ type: 'enum', enum: [0, 1] }) // 0 for not active , 1 for active
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   is_active: number;
 
   @CreateDateColumn()

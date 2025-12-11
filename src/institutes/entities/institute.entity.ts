@@ -21,10 +21,10 @@ export class Institute {
   id: number;
 
   @Column({ type: 'varchar', length: 100 })
-  logo: string;
+  logo: string | null;
 
   @Column({ type: 'text' })
-  image_profile: string;
+  image_profile: string | null;
 
   @Column({ type: 'varchar', length: 100 })
   email: string;

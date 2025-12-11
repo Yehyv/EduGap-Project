@@ -53,7 +53,8 @@ export class UsersService {
     const { instituteId, phone, national_id, ...rest } = createUserDto;
     const username = national_id;
     const hashedPassword = await this.hashPassword(phone);
-
+    const baseUrl = process.env.APP_URL || '';
+    const profileImage = `${baseUrl}/uploads/defaults/default-user.png`;
     const user = this.userRepositry.create({
       ...rest,
       username,
@@ -63,6 +64,7 @@ export class UsersService {
       institute: instituteId ? { id: instituteId } : undefined,
       is_verified: 0,
       is_active: 1,
+      user_image: profileImage,
     });
 
     return this.userRepositry.save(user);
@@ -311,6 +313,16 @@ export class UsersService {
     return {
       message: 'User image updated successfully',
       user_image: user.user_image,
+    };
+  }
+  async toggleActive(userId: number) {
+    const user = await this.userRepositry.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException(` user with id ${userId} not found`);
+    const userStatus = (user.is_active = user.is_active === 1 ? 0 : 1);
+    await this.userRepositry.save(user);
+    return {
+      message: `User is_active changed to ${userStatus}`,
+      is_active: user.is_active,
     };
   }
 }
