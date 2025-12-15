@@ -43,6 +43,10 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import InstitutesPage from "@/pages/dashboard/InstitutesPage";
 import DashboardLayout from "@/layouts/DashboardLayout/DashboardLayout";
 import AddNewInstitute from "@/pages/dashboard/AddNewInstitute";
+import InstituteCoursesDashboard from "@/pages/dashboard/InstituteCoursesDashboard";
+import StudentsPage from "@/pages/dashboard/StudentsPage";
+import AddNewStudent from "@/pages/dashboard/AddNewStudent";
+import EditStudentData from "@/pages/dashboard/EditStudentData";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -73,6 +77,13 @@ export default function AppRoutes() {
       <Route path="/" element={<DashboardLayout />}>
         <Route path="/admin-dashboard" element={<InstitutesPage />} />
         <Route path="/add-new-institute" element={<AddNewInstitute />} />
+        <Route
+          path="/institute-courses"
+          element={<InstituteCoursesDashboard />}
+        />
+        <Route path="/students" element={<StudentsPage />} />
+        <Route path="/add-new-student" element={<AddNewStudent />} />
+        <Route path="/edit-student/:studentId" element={<EditStudentData />} />
       </Route>
 
       {/* Public Routes with AuthLayout */}

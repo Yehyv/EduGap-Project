@@ -1,6 +1,6 @@
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import { TextField } from "@/shared/components";
-import SelectField from "@/shared/components/forms/SelectField";
+import FileUploadField from "@/shared/components/forms/FileUploadField";
 import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { phoneKeys } from "@/shared/utils/globals";
 import { Formik, Form } from "formik";
@@ -36,81 +36,99 @@ const AddNewInstitute = () => {
         }}
       >
         {({ values, handleChange }) => (
-          <Form className="grid grid-cols-2 gap-4 bg-white rounded-xl p-4">
-            <TextField
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
-              label="Name (English):"
-              name="translations[1].name"
-              type="text"
-            />
-            <TextField
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
-              label="Name (Arabic):"
-              name="translations[0].name"
-              type="text"
-            />
-            <TextField
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
-              label="Address (English):"
-              name="translations[1].address"
-              type="text"
-            />
-            <TextField
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
-              label="Address (Arabic):"
-              name="translations[0].address"
-              type="text"
-            />
-            <TextField
-              label="Email:"
-              name="email"
-              type="email"
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
-            />
-            <div className="flex gap-3">
-              <div className="w-[120px]">
-                <DropdownMenu
-                  label="Phone Key"
-                  name="phoneKey"
-                  options={phoneKeys}
-                />
+          <Form className="bg-white rounded-xl p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TextField
+                moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                label="Name of Institute in english:"
+                name="translations[1].name"
+                type="text"
+                placeholder="Name of Institute in english"
+              />
+              <TextField
+                moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                label="Name of Institute in arabic:"
+                name="translations[0].name"
+                type="text"
+                placeholder="Name of Institute in arabic"
+              />
+              <TextField
+                moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                label="Address of Institute in english:"
+                name="translations[1].address"
+                type="text"
+                placeholder="Address of Institute in english"
+              />
+              <TextField
+                moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                label="Address of Institute in arabic:"
+                name="translations[0].address"
+                type="text"
+                placeholder="Address of Institute in arabic"
+              />
+              <TextField
+                label="Email:"
+                name="email"
+                type="email"
+                moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                placeholder="Email:"
+              />
+              <div className="flex gap-3">
+                <div className="w-[120px]">
+                  <DropdownMenu
+                    label="Phone Key"
+                    name="phoneKey"
+                    options={phoneKeys}
+                  />
+                </div>
+                <div className="w-full">
+                  <TextField
+                    moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                    label="Phone:"
+                    name="phone"
+                    type="text"
+                    placeholder="phone number"
+                  />
+                </div>
               </div>
-              <div className="w-full">
-                <TextField
-                  moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
-                  label="Phone:"
-                  name="phone"
-                  type="text"
-                />
-              </div>
+
+              <TextField
+                moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                label="Contact Person:"
+                name="contact_person_name"
+                type="text"
+                placeholder="Contact Person"
+              />
+              <TextField
+                moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                label="Contact Person Position:"
+                name="contact_person_position"
+                type="text"
+                placeholder="Contact Person Position"
+              />
+
+              <FileUploadField
+                placeholder={"Photo"}
+                label="Logo:"
+                name="logo"
+              />
+
+              <FileUploadField
+                placeholder={"Photo"}
+                label="Profile Image:"
+                name="image_profile"
+                moreStyle="!bg-[#E3E3E3] !text-black hover:!bg-gray-300 "
+              />
             </div>
 
-            <TextField
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
-              label="Logo URL:"
-              name="logo"
-              type="text"
-            />
-            <TextField
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
-              label="Profile Image URL:"
-              name="image_profile"
-              type="text"
-            />
-
-            <TextField
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
-              label="Location:"
-              name="location"
-              type="text"
-            />
-
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-            >
-              Submit
-            </button>
+            <div className="text-end mt-10">
+              <button
+                type="submit"
+                className="bg-secondary hover:bg-secondary-dark cursor-pointer text-white px-12 py-1.5 rounded-xl me-auto"
+              >
+                Submit
+              </button>
+            </div>
           </Form>
         )}
       </Formik>

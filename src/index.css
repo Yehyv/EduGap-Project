@@ -223,7 +223,6 @@
 
 .react-select__control {
   border-radius: 14px !important;
-  min-height: 40px !important;
   border-color: #acacac !important;
   box-shadow: none !important;
 }

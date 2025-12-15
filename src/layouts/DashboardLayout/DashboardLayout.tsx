@@ -4,6 +4,7 @@ import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
 import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
 import DashboardIcon from "@/assets/svgs/DashboardIcon.svg?react";
 import GovernmentIcon from "@/assets/svgs/GovernmentIcon.svg?react";
+import StudentIcon from "@/assets/svgs/studentSidebarIcon.svg?react";
 import Arrow from "@/assets/svgs/RightArrow.svg?react";
 import PersonIcon from "@/assets/imgs/ForDev/Person.jpg";
 import SearchBar from "@/features/Dashboard/components/SearchBar";
@@ -49,6 +50,13 @@ const InstitutesPage = () => {
           >
             <GovernmentIcon />
             <span>Institutes</span>
+          </Link>
+          <Link
+            className="p-2 flex items-center gap-2 text-[#ACACAC] hover:text-secondary hover:font-bold rounded-xl text-sm hover:bg-[#ECF8FF] dark:hover:bg-gray-700"
+            to="/students"
+          >
+            <StudentIcon />
+            <span>Students</span>
           </Link>
         </nav>
       </aside>
