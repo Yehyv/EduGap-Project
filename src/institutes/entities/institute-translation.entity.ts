@@ -22,6 +22,12 @@ export class instituteTranslation {
   @Column({ type: 'varchar', length: 255 })
   address: string;
 
+  @Column({ type: 'varchar', length: 255 })
+  contactPersopnName: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  contactPersonPostion: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

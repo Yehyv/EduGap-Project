@@ -13,6 +13,13 @@ import { Language } from 'src/languages/entities/language.entity';
 import { ProgramTranslation } from './entities/program-translation.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
+interface ProgramRaw {
+  program_id: number;
+  program_logo: string;
+  translation_name: string;
+  translation_description: string;
+  language_id: number;
+}
 @Injectable()
 export class ProgramsService {
   constructor(
@@ -33,9 +40,13 @@ export class ProgramsService {
   ) {}
 
   // ✅ إنشاء برنامج بدون معهد (العزل لاحق بالـ assign)
-  async create(createProgramDto: CreateProgramDto) {
+  async create(createProgramDto: CreateProgramDto, logo?: Express.Multer.File) {
+    const baseUrl = process.env.APP_URL || '';
+    const logoPath = logo
+      ? `${baseUrl}/uploads/program-images/${logo.filename}`
+      : '';
     const program = this.programRepository.create({
-      logo: createProgramDto.logo,
+      logo: logoPath,
       isActive: 1,
     });
 
@@ -65,6 +76,62 @@ export class ProgramsService {
 
     return { ...savedProgram, translations };
   }
+  async findAll(languageId?: number) {
+    const query = this.programRepository
+      .createQueryBuilder('program')
+      .leftJoin(
+        'program.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .select([
+        'program.id',
+        'program.logo',
+        'translation.name',
+        'translation.description',
+        'language.id',
+      ]);
+    const rows = await query.getRawMany<ProgramRaw>();
+    return rows.map((row) => ({
+      id: row.program_id,
+      logo: row.program_logo,
+      name: row.translation_name,
+      description: row.translation_description,
+      languageId: row.language_id,
+    }));
+  }
+  async findOne(id: number, languageId?: number){
+    const query = this.programRepository
+      .createQueryBuilder('program')
+      .leftJoin(
+        'program.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .select([
+        'program.id',
+        'program.logo',
+        'translation.name',
+        'translation.description',
+        'language.id',
+      ])
+      .where('program.id = :id', { id });
+    const row = await query.getRawOne<ProgramRaw>();
+    if (!row) {
+      throw new NotFoundException(`Program with ID ${id} not found`);
+    }
+    return {
+      id: row.program_id,
+      logo: row.program_logo,
+      name: row.translation_name,
+      description: row.translation_description,
+      languageId: row.language_id,
+    };
+  }
   // ✅ برامج عامة متاحة لكل المعاهد للاختيار منها
   async findAllForSelection(languageId?: number) {
     const programs = await this.programRepository.find({
@@ -86,7 +153,10 @@ export class ProgramsService {
   }
 
   // ✅ عرض برامج معهد محدد فقط (بعزل كامل)
-  async findAll(languageId?: number, userInstituteId?: number) {
+  async findAProgramsForInstitute(
+    languageId?: number,
+    userInstituteId?: number,
+  ) {
     if (!userInstituteId)
       throw new BadRequestException('Institute ID is required.');
 
@@ -119,7 +189,11 @@ export class ProgramsService {
   }
 
   // // ✅ جلب برنامج واحد خاص بالمعهد الحالي فقط (Isolation)
-  async findOne(id: number, userInstituteId?: number, languageId?: number) {
+  async findOneAProgramForInstitute(
+    id: number,
+    userInstituteId?: number,
+    languageId?: number,
+  ) {
     const link = await this.ipRepository.findOne({
       where: {
         institute: { id: userInstituteId },
@@ -148,16 +222,17 @@ export class ProgramsService {
   }
 
   // ✅ تحديث البرنامج (logo + translations)
-  async update(id: number, dto: UpdateProgramDto) {
+  async update(id: number, dto: UpdateProgramDto, logo?: Express.Multer.File) {
     const program = await this.programRepository.findOne({
       where: { id },
       relations: ['translations', 'translations.language'],
     });
 
     if (!program) throw new NotFoundException(`Program ${id} not found`);
-
-    if (dto.logo) program.logo = dto.logo;
-
+    if (logo) {
+      const baseUrl = process.env.APP_URL || '';
+      program.logo = `${baseUrl}/uploads/program-images/${logo.filename}`;
+    }
     if (dto.translations?.length) {
       for (const t of dto.translations) {
         const lang = await this.languageRepository.findOne({
@@ -269,6 +344,17 @@ export class ProgramsService {
     await this.ipRepository.restore(link.id);
     return {
       message: `Program ${programId} restored for institute ${instituteId}.`,
+    };
+  }
+  async toggleActive(id: number) {
+    const program = await this.programRepository.findOne({ where: { id } });
+    if (!program) throw new NotFoundException(`Program ${id} not found`);
+    program.isActive = program.isActive ? 0 : 1;
+    await this.programRepository.save(program);
+    return {
+      message: `Program ${id} is now ${
+        program.isActive ? 'active' : 'inactive'
+      }.`,
     };
   }
 }

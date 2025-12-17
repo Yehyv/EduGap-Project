@@ -11,6 +11,26 @@ interface InstituteFiles {
   logo?: Express.Multer.File[];
   image_profile?: Express.Multer.File[];
 }
+interface InstituteRaw {
+  institute_id: number;
+  institute_logo: string | null;
+  institute_image_profile: string | null;
+  phone_key: string;
+  phone: string;
+  email: string;
+
+  it_name: string;
+  it_address: string;
+
+  region_id: number;
+  rt_name: string;
+
+  city_id: number;
+  ct_name: string;
+
+  country_id: number;
+  cot_name: string;
+}
 interface InstituteDropDownRaw {
   id: number;
   name: string;
@@ -57,7 +77,8 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
     email: createInstituteDto.email,
     phone_key: createInstituteDto.phone_key,
     phone: createInstituteDto.phone,
-    location: createInstituteDto.location,
+    region: { id: createInstituteDto.regionId },
+    is_active: 1,
   });
   const savedInstitute = await this.instituteRepository.save(institute);
 
@@ -68,6 +89,8 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
       const tr = this.instituteTranslationRepository.create({
         name: t.name,
         address: t.address,
+        contactPersopnName: t.contactPersopnName,
+        contactPersonPostion: t.contactPersonPostion,
         institute: savedInstitute,
         language: lang,
       });
@@ -80,61 +103,192 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
 
 
   async findAll(languageId?: number) {
-    const institutes = await this.instituteRepository
-      .createQueryBuilder('institute')
-      .leftJoinAndSelect(
-        'institute.translations',
-        'translation',
-        languageId ? 'translation.language.id = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoinAndSelect('translation.language', 'language')
-      .getMany();
+    const qb = this.instituteRepository
+    .createQueryBuilder('institute')
 
-    return institutes.map((institute) => {
-      let selectedTranslation: instituteTranslation;
-      if (languageId) {
-        selectedTranslation = institute.translations[0] || null;
-      } else {
-        selectedTranslation = institute.translations[0] || null;
-      }
-      return { ...institute, translation: selectedTranslation };
-    });
-  }
+    // Institute translation
+    .leftJoin(
+      'institute.translations',
+      'it',
+      languageId ? 'it.language.id = :languageId' : undefined,
+      { languageId },
+    )
+    .leftJoin('it.language', 'itLang')
+
+    // Region
+    .leftJoin('institute.region', 'region')
+    .leftJoin(
+      'region.translations',
+      'rt',
+      languageId ? 'rt.language.id = :languageId' : undefined,
+      { languageId },
+    )
+
+    // City
+    .leftJoin('region.city', 'city')
+    .leftJoin(
+      'city.translations',
+      'ct',
+      languageId ? 'ct.language.id = :languageId' : undefined,
+      { languageId },
+    )
+
+    // Country
+    .leftJoin('city.country', 'country')
+    .leftJoin(
+      'country.translations',
+      'cot',
+      languageId ? 'cot.language.id = :languageId' : undefined,
+      { languageId },
+    )
+
+    .select([
+      'institute.id',
+      'institute.logo',
+      'institute.image_profile',
+
+      'it.name',
+      'it.address',
+
+      'region.id',
+      'rt.name',
+
+      'city.id',
+      'ct.name',
+
+      'country.id',
+      'cot.name',
+    ]);
+
+  const rows = await qb.getRawMany<InstituteRaw>();
+
+      return rows.map(r => ({
+        id: r.institute_id,
+        logo: r.institute_logo,
+        image_profile: r.institute_image_profile,
+        phone_key: r.phone_key,
+        phone: r.phone,
+        email: r.email,
+
+        translation: {
+          name: r.it_name,
+          address: r.it_address,
+        },
+
+        region: {
+          id: r.region_id,
+          name: r.rt_name,
+          city: {
+            id: r.city_id,
+            name: r.ct_name,
+            country: {
+              id: r.country_id,
+              name: r.cot_name,
+            },
+          },
+        },
+      }));
+}
+
 
   async findOne(id: number, languageId?: number) {
-    const institute = await this.instituteRepository.findOne({
-      where: { id },
-      relations: ['translations', 'translations.language'],
-    });
+    const query = this.instituteRepository
+      .createQueryBuilder('institute')
+      .leftJoin(
+      'institute.translations',
+      'it',
+      languageId ? 'it.language.id = :languageId' : undefined,
+      { languageId },
+    )
+    .leftJoin('it.language', 'itLang')
+      // Region
+    .leftJoin('institute.region', 'region')
+    .leftJoin(
+      'region.translations',
+      'rt',
+      languageId ? 'rt.language.id = :languageId' : undefined,
+      { languageId },
+    )
+
+    // City
+    .leftJoin('region.city', 'city')
+    .leftJoin(
+      'city.translations',
+      'ct',
+      languageId ? 'ct.language.id = :languageId' : undefined,
+      { languageId },
+    )
+
+    // Country
+    .leftJoin('city.country', 'country')
+    .leftJoin(
+      'country.translations',
+      'cot',
+      languageId ? 'cot.language.id = :languageId' : undefined,
+      { languageId },
+    )
+    .select([
+      'institute.id',
+      'institute.logo',
+      'institute.image_profile',
+
+      'it.name',
+      'it.address',
+
+      'region.id',
+      'rt.name',
+
+      'city.id',
+      'ct.name',
+
+      'country.id',
+      'cot.name',
+    ])
+      .where('institute.id = :id', { id });
+      const institute = await query.getRawOne<InstituteRaw>();
     if (!institute) {
       throw new NotFoundException(`Institute with ID ${id} not found`);
     }
-
-    const selectedTranslation =
-      institute.translations.find(
-        (translation) => translation.language.id === languageId,
-      ) || institute.translations[0];
-
-    return { ...institute, translation: selectedTranslation };
+    return {
+      id: institute.institute_id,
+      logo: institute.institute_logo,
+      image_profile: institute.institute_image_profile,
+      phone_key: institute.phone_key,
+      phone: institute.phone,
+      email: institute.email,
+      
+      translation: {
+        name: institute.it_name,
+        address: institute.it_address,
+      },
+      region: {
+        id: institute.region_id,
+        name: institute.rt_name,
+        city: {
+          id: institute.city_id,
+          name: institute.ct_name,
+          country: {
+            id: institute.country_id,
+            name: institute.cot_name,
+          },
+        },
+    }
   }
-
+  }
   async update(id: number, updateInstituteDto: UpdateInstituteDto) {
     const institute = await this.instituteRepository.findOne({
       where: { id },
-      relations: ['translations', 'translations.language'],
+      relations: ['translations', 'translations.language', 'region'],
     });
     if (!institute) throw new NotFoundException(`Institute ${id} not found`);
 
     // تعديل بيانات الـ Institute
     Object.assign(institute, {
-      logo: updateInstituteDto.logo ?? institute.logo,
-      image_profile: updateInstituteDto.image_profile ?? institute.image_profile,
+      
       email: updateInstituteDto.email ?? institute.email,
       phone_key: updateInstituteDto.phone_key ?? institute.phone_key,
       phone: updateInstituteDto.phone ?? institute.phone,
-      location: updateInstituteDto.location ?? institute.location,
-    });
+      region: updateInstituteDto.regionId ?? institute.region,});
     await this.instituteRepository.save(institute);
 
     if (updateInstituteDto.translations) {
@@ -237,4 +391,14 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
       name: r.name,
     }));
 }
+  async toggleActive(instId: number) {
+    const institute = await this.instituteRepository.findOneBy({ id: instId})
+    if (!institute) throw new NotFoundException(`Institute with ID ${instId} not found`);
+    const instituteStatus = institute.is_active = institute.is_active ? 0 : 1;
+    await this.instituteRepository.save(institute);
+    return {
+      message: `Institute is_active changed to ${instituteStatus}`, 
+      id: institute.id,
+      is_active: institute.is_active};
+  }
 }

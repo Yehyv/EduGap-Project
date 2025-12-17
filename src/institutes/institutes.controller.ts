@@ -45,8 +45,9 @@ export class InstitutesController {
   }
 
   @Get('super-admin/institutes-list')
-  findAll() {
-    return this.institutesService.findAll();
+  findAll(@Headers('languageId') languageId: number) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.institutesService.findAll(langId);
   }
   @Get('all/nav')
   async instituteNav(
@@ -57,12 +58,16 @@ export class InstitutesController {
     return this.institutesService.instituteNav(languageId, limit);
   }
 
-  @Get(':id/super-admin/institute')
-  findOne(@Param('id') id: string) {
-    return this.institutesService.findOne(+id);
+  @Get('super-admin/institute/:id')
+  findOne(
+    @Param('id') id: string,
+    @Headers('languageId') languageId: number | undefined,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.institutesService.findOne(+id, langId);
   }
 
-  @Patch(':id')
+  @Patch('super-admin/institute/:id')
   update(
     @Param('id') id: string,
     @Body() updateInstituteDto: UpdateInstituteDto,
@@ -70,12 +75,17 @@ export class InstitutesController {
     return this.institutesService.update(+id, updateInstituteDto);
   }
 
-  @Delete(':id')
+  @Delete('super-admin/institute/:id')
   remove(@Param('id') id: string) {
     return this.institutesService.remove(+id);
   }
-  @Get('dropdown/list')
+  @Get('super-admin/dropdown/list')
   instituteDropdown(@Headers('languageId') languageId: number | undefined) {
-    return this.institutesService.instituteDropDown(languageId);
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.institutesService.instituteDropDown(langId);
+  }
+  @Patch('super-admin/institute-status/:id')
+  async changeInstituteStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.institutesService.toggleActive(id);
   }
 }

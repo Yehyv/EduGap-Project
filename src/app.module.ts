@@ -19,7 +19,6 @@ import { ProgressModule } from './progress/progress.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ContentCategoriesModule } from './course-categories/content-categories.module';
 import { SystemUsersModule } from './system-users/system-users.module';
-import { LocationsModule } from './locations/locations.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { SavedLessonModule } from './saved-lesson/saved-lesson.module';
 import { LessonMaterialsModule } from './lesson-materials/lesson-materials.module';
@@ -39,6 +38,9 @@ import { SavedCoursesModule } from './saved-courses/saved-course.module';
 import { UsersOtpModule } from './users-otp/users-otp.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { CountriesModule } from './countries/countries.module';
+import { CitiesModule } from './cities/cities.module';
+import { RegionsModule } from './regions/regions.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -67,7 +69,6 @@ import { join } from 'path';
     SavedContentsModule,
     ContentCategoriesModule,
     SystemUsersModule,
-    LocationsModule,
     TransactionsModule,
     SavedLessonModule,
     LessonMaterialsModule,
@@ -84,6 +85,9 @@ import { join } from 'path';
     QuestionsModule,
     SavedCoursesModule,
     UsersOtpModule,
+    CountriesModule,
+    CitiesModule,
+    RegionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

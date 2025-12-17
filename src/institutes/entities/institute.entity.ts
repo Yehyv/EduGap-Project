@@ -13,8 +13,8 @@ import {
 } from 'typeorm';
 import { instituteTranslation } from './institute-translation.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Region } from 'src/locations/entities/region.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
+import { Region } from 'src/regions/entities/region.entity';
 @Entity()
 export class Institute {
   @PrimaryGeneratedColumn()
@@ -35,8 +35,8 @@ export class Institute {
   @Column({ type: 'varchar', length: 20 })
   phone: string;
 
-  @Column({ type: 'text' })
-  location: string;
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
+  is_active: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -55,9 +55,9 @@ export class Institute {
   @OneToMany(() => User, (user) => user.institute, { cascade: true })
   users: User[];
 
-  @ManyToOne(() => Region, (region) => region.institute)
-  region: Region;
-
   @OneToMany(() => SystemUser, (sysUser) => sysUser.institute)
   systemUsers: SystemUser[];
+
+  @ManyToOne(() => Region, (region) => region.institutes)
+  region: Region;
 }

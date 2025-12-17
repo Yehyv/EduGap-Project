@@ -91,7 +91,7 @@ export class UsersController {
     return this.usersService.changeProfileImage(userId, imageUrl);
   }
 
-  @Get(':id/super-admin/user')
+  @Get(':id')
   async findById(@Param('id', ParseIntPipe) id: number) {
     console.log('=== Controller.findById ===');
     console.log('Received ID:', id);
@@ -104,6 +104,14 @@ export class UsersController {
       console.log('Error in controller:', error.message);
       throw error; // إعادة throw عشان الـ Exception Filter يشتغل
     }
+  }
+  @Get(':id/super-admin/user')
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.usersService.findOne(id, langId);
   }
   @Patch(':id')
   update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {

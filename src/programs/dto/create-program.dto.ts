@@ -16,16 +16,12 @@ export class ProgramTranslationDto {
   @IsNotEmpty()
   description: string;
 
+  @Type(() => Number)
   @IsNumber()
-  @IsNotEmpty()
   languageId: number;
 }
 
 export class CreateProgramDto {
-  @IsString()
-  @IsNotEmpty()
-  logo: string;
-
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProgramTranslationDto)

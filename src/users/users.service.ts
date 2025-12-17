@@ -12,7 +12,17 @@ import * as bcrypt from 'bcrypt';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { PasswordAction } from './entities/password-action.entity';
-
+interface userRow {
+  user_id: number;
+  user_full_name: string;
+  user_username: string;
+  user_email: string;
+  user_phone: string;
+  user_user_image: string;
+  institute_id: number;
+  institute_logo: string;
+  it_name: string;
+}
 @Injectable()
 export class UsersService {
   constructor(
@@ -89,6 +99,46 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
     return user;
+  }
+  async findOne(id: number, languageId?: number) {
+    const query = this.userRepositry
+      .createQueryBuilder('user')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin(
+        'institute.translations',
+        'it',
+        languageId ? 'it.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .where('user.id = :id', { id })
+      .select([
+        'user.id',
+        'user.full_name',
+        'user.username',
+        'user.email',
+        'user.phone',
+        'user.user_image',
+        'institute.id',
+        'institute.logo',
+        'it.name',
+      ]);
+    const row = await query.getRawOne<userRow>();
+    if (!row) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return {
+      id: row.user_id,
+      full_name: row.user_full_name,
+      username: row.user_username,
+      email: row.user_email,
+      phone: row.user_phone,
+      user_image: row.user_user_image,
+      institute: {
+        id: row.institute_id,
+        logo: row.institute_logo,
+        name: row.it_name,
+      },
+    };
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {

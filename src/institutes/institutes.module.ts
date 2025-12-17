@@ -9,6 +9,7 @@ import { Program } from 'src/programs/entities/program.entity';
 import { User } from 'src/users/entities/user.entity';
 import { InstitutePrograms } from './entities/institute-programs.entity';
 import { InstituteProgramCourse } from './entities/institute-program-course.entity';
+import { Region } from 'src/regions/entities/region.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { InstituteProgramCourse } from './entities/institute-program-course.enti
       Language,
       Program,
       User,
+      Region,
     ]),
   ],
   controllers: [InstitutesController],

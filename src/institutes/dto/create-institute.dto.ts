@@ -16,19 +16,19 @@ export class InstituteTranslationDto {
   @IsNotEmpty()
   address: string;
 
+  @Type(() => Number)
   @IsNumber()
-  @IsNotEmpty()
   languageId: number;
+
+  @IsString()
+  @IsNotEmpty()
+  contactPersopnName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  contactPersonPostion: string;
 }
 export class CreateInstituteDto {
-  @IsString()
-  @IsNotEmpty()
-  logo: string;
-
-  @IsString()
-  @IsNotEmpty()
-  image_profile: string;
-
   @IsEmail()
   @IsNotEmpty()
   email: string;
@@ -41,9 +41,9 @@ export class CreateInstituteDto {
   @IsNotEmpty()
   phone: string;
 
-  @IsString()
-  @IsNotEmpty()
-  location: string;
+  @Type(() => Number)
+  @IsNumber()
+  regionId: number;
 
   @IsArray()
   @ValidateNested({ each: true })

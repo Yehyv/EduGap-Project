@@ -11,12 +11,16 @@ import {
   UseGuards,
   ParseIntPipe,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ProgramsService } from './programs.service';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Request } from 'express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import { imageStorage } from 'src/common/helpers/upload.helper';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -34,8 +38,24 @@ export class ProgramsController {
   /** إنشاء برنامج (بدون ربط بمعهد) */
   @Post()
   // @UseGuards(JwtAuthGuard)
-  create(@Body() dto: CreateProgramDto) {
-    return this.programsService.create(dto);
+  @UseInterceptors(
+    FileInterceptor(
+      'logo',
+      imageStorage('program-images'),
+    ),
+  )
+  create(@Body() dto: CreateProgramDto, @UploadedFile() logo?: Express.Multer.File) {
+    return this.programsService.create(dto, logo);
+  }
+  @Get('super-admin/programs-list')
+  findAll(@Headers('languageId') languageId?: string) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.programsService.findAll(langId);
+  }
+  @Get('super-admin/program/:id')
+  findOne(@Param('id', ParseIntPipe) id: number, @Headers('languageId') languageId?: string) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.programsService.findOne(id, langId);
   }
 
   /** برامج عامة متاحة للاختيار (من غير عزل معهد) */
@@ -48,44 +68,57 @@ export class ProgramsController {
   /** برامج المعهد الحالي فقط (Isolation بالمعهد من الـ JWT) */
   @Get()
   // @UseGuards(JwtAuthGuard)
-  findAll(
+  findAllIsolatedByInstitute(
     @Req() req: AuthenticatedRequest,
     @Headers('languageId') languageId?: string,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
     const instituteId = req.user!.instituteId;
-    return this.programsService.findAll(langId, instituteId);
+    return this.programsService.findAProgramsForInstitute(langId, instituteId);
   }
 
   /** برنامج واحد (Isolation بالمعهد) */
   @Get(':id')
   // @UseGuards(JwtAuthGuard)
-  findOne(
+  findOneIsolatedByInstitute(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
     @Headers('languageId') languageId?: string,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
     const instituteId = req.user!.instituteId;
-    return this.programsService.findOne(id, instituteId, langId);
+    return this.programsService.findOneAProgramForInstitute(id, instituteId, langId);
   }
 
   /** تحديث برنامج (logo + translations) */
-  @Patch(':id')
+  @Patch('super-admin/:id')
   // @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor(
+      'logo',
+      imageStorage('program-images'),
+    )
+  )
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateProgramDto,
+    @UploadedFile() logo?: Express.Multer.File
+
   ) {
-    return this.programsService.update(id, dto);
+    return this.programsService.update(id, dto, logo);
   }
 
   /** حذف برنامج (soft delete) */
-  @Delete(':id')
+  @Delete('super-admin/:id')
   // @UseGuards(JwtAuthGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.programsService.remove(id);
   }
+  @Patch('super-admin/prorgram-status/:id')
+  async changeProgramStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.programsService.toggleActive(id);
+  }
+  
 
   /** تعيين برنامج لمعهد واحد (زي ما السيرفس معرف) */
   @Patch(':programId/institutes/:instituteId')
