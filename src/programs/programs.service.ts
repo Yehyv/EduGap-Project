@@ -19,6 +19,7 @@ interface ProgramRaw {
   translation_name: string;
   translation_description: string;
   language_id: number;
+  isActive: number;
 }
 @Injectable()
 export class ProgramsService {
@@ -89,6 +90,7 @@ export class ProgramsService {
       .select([
         'program.id',
         'program.logo',
+        'program.isActive AS isActive',
         'translation.name',
         'translation.description',
         'language.id',
@@ -97,6 +99,7 @@ export class ProgramsService {
     return rows.map((row) => ({
       id: row.program_id,
       logo: row.program_logo,
+      isActive: row.isActive,
       name: row.translation_name,
       description: row.translation_description,
       languageId: row.language_id,
@@ -115,6 +118,7 @@ export class ProgramsService {
       .select([
         'program.id',
         'program.logo',
+        'program.isActive AS isActive',
         'translation.name',
         'translation.description',
         'language.id',
@@ -127,6 +131,7 @@ export class ProgramsService {
     return {
       id: row.program_id,
       logo: row.program_logo,
+      isActive: row.isActive,
       name: row.translation_name,
       description: row.translation_description,
       languageId: row.language_id,

@@ -13,6 +13,8 @@ import {
   Req,
   BadRequestException,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -20,6 +22,8 @@ import { UpdateCourseDto } from './dto/update-course.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Request } from 'express';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageStorage } from 'src/common/helpers/upload.helper';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -37,8 +41,14 @@ export class CoursesController {
 
   /** إنشاء كورس عام (بدون ربط بمعهد/برنامج) */
   @Post()
-  create(@Body() dto: CreateCourseDto) {
-    return this.coursesService.create(dto);
+  @UseInterceptors(
+    FileInterceptor(
+      'image',
+    imageStorage('course-images'),
+    )
+  )
+  create(@Body() dto: CreateCourseDto, @UploadedFile() image?: Express.Multer.File) {
+    return this.coursesService.create(dto, image);
   }
 
   @Get('super-admin/courses-list')
@@ -120,13 +130,17 @@ coursesNav(
       l,
     );
   }
-  @Get(':id/super-admin/course')
+  @Get('super-admin/course/:id')
   getCourseForAdmin(
     @Param('id', ParseIntPipe) id: number,
     @Headers('languageId') languageId?: string,
   ){
     const langId = languageId ? Number(languageId) : undefined;
     return this.coursesService.findOne(id, langId);
+  }
+  @Patch('super-admin/course-status/:id')
+  async changeCourseStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.coursesService.toggleActive(id);
   }
   /** كورس واحد (مع العزل بالمعهد) */
   @Get(':id')
@@ -150,16 +164,23 @@ coursesNav(
   }
 
   /** تحديث كورس (للأدمن) */
-  @Patch(':id')
+  @Patch('super-admin/:id')
+  @UseInterceptors(
+    FileInterceptor(
+      'image',
+      imageStorage('course-images'),
+    )
+  )
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCourseDto,
+    @UploadedFile() image?: Express.Multer.File
   ) {
-    return this.coursesService.update(id, dto);
+    return this.coursesService.update(id, dto, image);
   }
 
   /** حذف كورس (Soft delete) */
-  @Delete(':id')
+  @Delete('super-admin/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.coursesService.remove(id);
   }

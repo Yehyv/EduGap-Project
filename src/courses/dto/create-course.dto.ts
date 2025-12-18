@@ -22,20 +22,12 @@ export class CourseTranslationDto {
   @IsString({ each: true })
   whatToLearn?: string[];
 
-  @IsString()
-  @IsOptional()
-  durationTime?: string;
-
+  @Type(() => Number)
   @IsNumber()
-  @IsNotEmpty()
   languageId: number;
 }
 
 export class CreateCourseDto {
-  @IsString()
-  @IsNotEmpty()
-  image: string;
-
   @IsString()
   @IsOptional()
   notes?: string;

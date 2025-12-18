@@ -19,31 +19,14 @@ import { Content } from 'src/contents/entities/content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
-// type LangRef = { id: number };
-// type WithLanguage = { language?: LangRef };
-
-/** يختار ترجمة مطابقة للّغة إن وُجدت، وإلا أول ترجمة صالحة—بدون any */
-// function pickTranslation<T extends WithLanguage>(
-//   arr: unknown,
-//   languageId?: number,
-// ): T | undefined {
-//   if (!Array.isArray(arr)) return undefined;
-
-//   const isT = (x: unknown): x is T =>
-//     typeof x === 'object' &&
-//     x !== null &&
-//     (typeof (x as any).language?.id === 'number' ||
-//       (x as any).language === undefined);
-
-//   if (typeof languageId === 'number') {
-//     const byLang = arr.find(
-//       (t): t is T => isT(t) && (t as any).language?.id === languageId,
-//     );
-//     if (byLang) return byLang;
-//   }
-//   return arr.find((t): t is T => isT(t));
-// }
-
+interface courseRow {
+  course_id: number;
+  course_image: string;
+  course_isActive: number;
+  translation_name: string;
+  translation_description: string;
+  translation_whatToLearn: string[];
+}
 @Injectable()
 export class CoursesService {
   constructor(
@@ -82,9 +65,13 @@ export class CoursesService {
   ) {}
 
   /** 1) إنشاء كورس عام بدون أي ربط */
-  async create(dto: CreateCourseDto) {
+  async create(dto: CreateCourseDto, image?: Express.Multer.File) {
+    const baseUrl = process.env.APP_URL || '';
+    const imagePath = image
+      ? `${baseUrl}/uploads/course-images/${image.filename}`
+      : '';
     const course = this.courseRepository.create({
-      image: dto.image,
+      image: imagePath,
       notes: dto.notes,
       isActive: 1,
     });
@@ -352,38 +339,61 @@ export class CoursesService {
 
   /** بقية الدوال القديمة (findAll / findOne / update / remove) تبقى كما هي تقريبًا */
   async findAll(languageId?: number) {
-    const courses = await this.courseRepository.find({
-      relations: ['translations', 'translations.language'],
-    });
-    if (!courses.length) return [];
-    return courses.map((c) => {
-      const tr =
-        c.translations.find((t) => t.language.id === languageId) ||
-        c.translations[0];
-      return {
-        id: c.id,
-        image: c.image,
-        name: tr?.name,
-        description: tr?.description,
-        whatToLearn: tr?.whatToLearn ?? [],
-      };
-    });
+    const query = this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin(
+        'course.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .select([
+        'course.id AS course_id',
+        'course.image AS course_image',
+        'course.isActive',
+        'translation.name AS translation_name',
+        'translation.description AS translation_description',
+        'translation.whatToLearn AS translation_whatToLearn',
+      ]);
+    const rows = await query.getRawMany<courseRow>();
+    return rows.map((row) => ({
+      id: row.course_id,
+      image: row.course_image,
+      isActive: row.course_isActive,
+      name: row.translation_name,
+      description: row.translation_description,
+      whatToLearn: row.translation_whatToLearn ?? [],
+    }));
   }
   async findOne(id: number, languageId?: number) {
-    const course = await this.courseRepository.findOne({
-      where: { id },
-      relations: ['translations', 'translations.language'],
-    });
-    if (!course) throw new NotFoundException(`Course ${id} not found`);
-    const tr =
-      course.translations.find((t) => t.language.id === languageId) ||
-      course.translations[0];
+    const query = this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin(
+        'course.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .where('course.id = :id', { id })
+      .select([
+        'course.id AS course_id',
+        'course.image AS course_image',
+        'course.isActive',
+        'translation.name AS translation_name',
+        'translation.description AS translation_description',
+        'translation.whatToLearn AS translation_whatToLearn',
+      ]);
+    const row = await query.getRawOne<courseRow>();
+    if (!row) throw new NotFoundException(`Course ${id} not found`);
     return {
-      id: course.id,
-      image: course.image,
-      name: tr?.name,
-      description: tr?.description,
-      whatToLearn: tr?.whatToLearn ?? [],
+      id: row.course_id,
+      image: row.course_image,
+      isActive: row.course_isActive,
+      name: row.translation_name,
+      description: row.translation_description,
+      whatToLearn: row.translation_whatToLearn ?? [],
     };
   }
 
@@ -449,14 +459,17 @@ export class CoursesService {
     };
   }
 
-  async update(id: number, dto: UpdateCourseDto) {
+  async update(id: number, dto: UpdateCourseDto, image?: Express.Multer.File) {
     const course = await this.courseRepository.findOne({
       where: { id },
       relations: ['translations', 'translations.language'],
     });
     if (!course) throw new NotFoundException(`Course ${id} not found`);
 
-    if (dto.image) course.image = dto.image;
+    if (image) {
+      const baseUrl = process.env.APP_URL || '';
+      course.image = `${baseUrl}/uploads/course-images/${image.filename}`;
+    }
     if (dto.notes) course.notes = dto.notes;
 
     if (dto.translations?.length) {
@@ -1117,5 +1130,22 @@ export class CoursesService {
         image: c.image ?? null,
       };
     });
+  }
+  async toggleActive(courseId: number) {
+    const course = await this.courseRepository.findOne({
+      where: { id: courseId },
+    });
+    if (!course) {
+      throw new NotFoundException(`Course with ID ${courseId} not found.`);
+    }
+    const courseStatuse = (course.isActive = course.isActive ? 0 : 1);
+    await this.courseRepository.save(course);
+    return {
+      message: `Course with ID ${courseId} is now ${
+        courseStatuse ? 'active' : 'inactive'
+      }.`,
+      id: courseId,
+      isActive: courseStatuse,
+    };
   }
 }

@@ -18,9 +18,13 @@ interface InstituteRaw {
   phone_key: string;
   phone: string;
   email: string;
+  is_active: number;
+  createdAt: Date;
 
   it_name: string;
   it_address: string;
+  it_contactPersopnName: string;
+  it_contactPersonPostion: string;
 
   region_id: number;
   rt_name: string;
@@ -143,12 +147,21 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
     )
 
     .select([
-      'institute.id',
+      'institute.id AS id',
       'institute.logo',
       'institute.image_profile',
+      'institute.phone_key AS phone_key',
+      'institute.phone AS phone',
+      'institute.email AS email',
+      'institute.is_active AS is_active',
+      'institute.createdAt AS createdAt',
+
+
 
       'it.name',
       'it.address',
+      'it.contactPersopnName',
+      'it.contactPersonPostion',
 
       'region.id',
       'rt.name',
@@ -169,10 +182,14 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
         phone_key: r.phone_key,
         phone: r.phone,
         email: r.email,
+        is_active: r.is_active,
+        createdAt: r.createdAt,
 
         translation: {
           name: r.it_name,
           address: r.it_address,
+          contactPersopnName: r.it_contactPersopnName,
+          contactPersonPostion: r.it_contactPersonPostion,
         },
 
         region: {
@@ -228,12 +245,19 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
       { languageId },
     )
     .select([
-      'institute.id',
+      'institute.id AS institute_id',
       'institute.logo',
       'institute.image_profile',
+      'institute.phone_key AS phone_key',
+      'institute.phone AS phone',
+      'institute.email AS email',
+      'institute.is_active AS is_active',
+      'institute.createdAt AS createdAt',
 
       'it.name',
       'it.address',
+      'it.contactPersopnName',
+      'it.contactPersonPostion',
 
       'region.id',
       'rt.name',
@@ -256,10 +280,14 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
       phone_key: institute.phone_key,
       phone: institute.phone,
       email: institute.email,
+      is_active: institute.is_active,
+      createdAt: institute.createdAt,
       
       translation: {
         name: institute.it_name,
         address: institute.it_address,
+        contactPersopnName: institute.it_contactPersopnName,
+        contactPersonPostion: institute.it_contactPersonPostion,
       },
       region: {
         id: institute.region_id,
