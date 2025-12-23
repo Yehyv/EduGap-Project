@@ -34,7 +34,7 @@ export class TopicsController {
    * GET /topics?languageId=&contentId=
    * جلب التوبيكس - يدعم فلترة باللغة وبالكونتنت
    */
-  @Get()
+  @Get('all')
   findAll(
     @Query('languageId') languageId?: string,
     @Query('contentId') contentId?: string,

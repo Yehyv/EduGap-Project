@@ -48,8 +48,8 @@ export class ContentTranslationDto {
   languageType?: 'Arabic' | 'English' | 'French';
 
   // علاقة اللغة الفعلية
+  @Type(() => Number)
   @IsNumber()
-  @IsNotEmpty()
   languageId: number;
 }
 
@@ -58,20 +58,20 @@ export class ContentTranslationDto {
  * لإنشاء المحتوى نفسه (Content)
  */
 export class CreateContentDto {
-  @IsString()
-  @IsOptional()
-  image?: string;
-
   @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
   @IsOptional()
   level?: 'Beginner' | 'Intermediate' | 'Advanced';
 
   // يطابق has_prerequiest في الـ entity
+  @Type(() => Number)
+  @IsNumber()
   @IsIn([0, 1])
   @IsOptional()
   hasPrerequiest?: 0 | 1;
 
   // يطابق has_certificate في الـ entity
+  @Type(() => Number)
+  @IsNumber()
   @IsEnum([0, 1])
   @IsOptional()
   hasCertificate?: 0 | 1;
@@ -87,6 +87,7 @@ export class CreateContentDto {
   rate?: number;
 
   // علاقة التصنيف (ContentCategory)
+  @Type(() => Number)
   @IsNumber()
   @IsNotEmpty()
   categoryId: number;

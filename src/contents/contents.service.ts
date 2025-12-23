@@ -20,7 +20,17 @@ import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
 import { Progress } from 'src/progress/entities/progress.entity';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
-
+interface contentRow {
+  content_id: number;
+  content_image: string;
+  content_level: string;
+  content_rate: number;
+  translation_name: string;
+  translation_description: string;
+  translation_what_to_learn: string[];
+  category_id: number;
+  categoryTranslation_name: string;
+}
 @Injectable()
 export class ContentsService {
   constructor(
@@ -83,14 +93,17 @@ export class ContentsService {
   /** ----------------------------------------------------------------
    * ✅ إنشاء محتوى جديد فقط (بدون أي ربط بالكورسات)
    * ---------------------------------------------------------------- */
-  async create(dto: CreateContentDto) {
+  async create(dto: CreateContentDto, image?: Express.Multer.File) {
     const category = await this.categoryRepo.findOne({
       where: { id: dto.categoryId },
     });
     if (!category) throw new NotFoundException('Category not found');
-
+    const baseUrl = process.env.BASE_URL || '';
+    const imageUrl = image
+      ? `${baseUrl}/uploads/content-images/${image.filename}`
+      : '';
     const content = this.contentRepo.create({
-      image: dto.image ?? '',
+      image: imageUrl,
       rate: dto.rate ?? 0,
       level: dto.level ?? 'Beginner',
       adVideo: dto.adVideo ?? '',
@@ -129,77 +142,134 @@ export class ContentsService {
    * ✅ عرض كل المحتويات
    * ---------------------------------------------------------------- */
   async findAll(languageId?: number) {
-    const contents = await this.contentRepo.find({
-      relations: ['translations', 'contentCategory'],
-      order: { id: 'DESC' },
-    });
+    // const contents = await this.contentRepo.find({
+    //   relations: ['translations', 'contentCategory'],
+    //   order: { id: 'DESC' },
+    // });
 
-    return contents.map((c) => {
-      const tr =
-        c.translations.find((t) => t.language?.id === languageId) ||
-        c.translations[0];
+    // return contents.map((c) => {
+    //   const tr =
+    //     c.translations.find((t) => t.language?.id === languageId) ||
+    //     c.translations[0];
 
-      return {
-        id: c.id,
-        name: tr?.name ?? '',
-        description: tr?.description ?? '',
-        image: c.image,
-        level: c.level,
-        rate: c.rate,
-        whatToLearn: tr?.what_to_learn?.split(',') ?? [],
-        category: {
-          id: c.contentCategory?.id ?? null,
-        },
-      };
-    });
+    //   return {
+    //     id: c.id,
+    //     name: tr?.name ?? '',
+    //     description: tr?.description ?? '',
+    //     image: c.image,
+    //     level: c.level,
+    //     rate: c.rate,
+    //     whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+    //     category: {
+    //       id: c.contentCategory?.id ?? null,
+    //     },
+    //   };
+    // });
+    const query = this.contentRepo
+      .createQueryBuilder('content')
+      .leftJoin(
+        'content.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .leftJoin('content.contentCategory', 'category')
+      .leftJoin(
+        'category.translations',
+        'categoryTranslation',
+        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .select([
+        'content.id',
+        'content.image',
+        'content.level',
+        'content.rate',
+        'translation.id',
+        'translation.name',
+        'translation.description',
+        'translation.what_to_learn',
+        'category.id',
+        'categoryTranslation.name',
+      ]);
+    const rows = await query.getRawMany<contentRow>();
+    return rows.map((r) => ({
+      id: r.content_id,
+      name: r.translation_name,
+      description: r.translation_description,
+      image: r.content_image,
+      level: r.content_level,
+      rate: r.content_rate,
+      whatToLearn: r.translation_what_to_learn,
+      categoryId: r.category_id,
+      categoryName: r.categoryTranslation_name,
+    }));
   }
 
   /** ----------------------------------------------------------------
    * ✅ عرض محتوى واحد بالتفصيل
    * ---------------------------------------------------------------- */
   async findOne(id: number, languageId?: number) {
-    const content = await this.contentRepo.findOne({
-      where: { id },
-      relations: [
-        'translations',
-        'translations.language',
-        'contentCategory',
-        'courseContents.course',
-      ],
-    });
-
-    if (!content) throw new NotFoundException('Content not found');
-
-    const tr =
-      content.translations.find((t) => t.language?.id === languageId) ||
-      content.translations[0];
-
+    const query = this.contentRepo
+      .createQueryBuilder('content')
+      .leftJoin(
+        'content.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .leftJoin('content.contentCategory', 'category')
+      .leftJoin(
+        'category.translations',
+        'categoryTranslation',
+        languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .where('content.id = :id', { id })
+      .select([
+        'content.id',
+        'content.image',
+        'content.level',
+        'content.rate',
+        'translation.id',
+        'translation.name',
+        'translation.description',
+        'translation.what_to_learn',
+        'category.id',
+        'categoryTranslation.name',
+      ]);
+    const row = await query.getRawOne<contentRow>();
+    if (!row) throw new NotFoundException('Content not found');
     return {
-      id: content.id,
-      name: tr?.name ?? '',
-      description: tr?.description ?? '',
-      level: content.level,
-      rate: content.rate,
-      adVideo: content.adVideo,
-      image: content.image,
-      categoryId: content.contentCategory?.id ?? null,
-      whatToLearn: tr?.what_to_learn?.split(',') ?? [],
-      previousBackground: tr?.previous_background ?? '',
+      id: row.content_id,
+      name: row.translation_name,
+      description: row.translation_description,
+      image: row.content_image,
+      level: row.content_level,
+      rate: row.content_rate,
+      whatToLearn: row.translation_what_to_learn,
+      categoryId: row.category_id,
+      categoryName: row.categoryTranslation_name,
     };
   }
 
   /** ----------------------------------------------------------------
    * ✅ تحديث المحتوى (مع الترجمات فقط)
    * ---------------------------------------------------------------- */
-  async update(id: number, dto: UpdateContentDto) {
+  async update(id: number, dto: UpdateContentDto, image?: Express.Multer.File) {
     const content = await this.contentRepo.findOne({
       where: { id },
       relations: ['translations'],
     });
     if (!content) throw new NotFoundException('Content not found');
-
+    const baseUrl = process.env.BASE_URL || '';
+    if (image) {
+      const imageUrl = `${baseUrl}/uploads/content-images/${image.filename}`;
+      content.image = imageUrl;
+    }
     Object.assign(content, {
-      image: dto.image ?? content.image,
       rate: dto.rate ?? content.rate,
       level: dto.level ?? content.level,
     });

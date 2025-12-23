@@ -13,7 +13,14 @@ import { Content } from 'src/contents/entities/content.entity';
 
 import { CreateTopicDto, TopicTranslationDto } from './dto/create-topic.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
-
+interface topicRow {
+  topic_id: number;
+  topic_order_id: number;
+  topic_is_active: number;
+  topic_translation_name: string;
+  topic_translation_description: string;
+  topic_content_id: number;
+}
 @Injectable()
 export class TopicsService {
   constructor(
@@ -62,40 +69,49 @@ export class TopicsService {
 
   /** عرض كل التوبيكس (اختياري: فلترة باللغة وبالكونتنت) */
   async findAll(languageId?: number, contentId?: number) {
-    const qb = this.topicRepo
+    const query = this.topicRepo
       .createQueryBuilder('topic')
-      .leftJoinAndSelect('topic.translations', 'translation');
+      .leftJoin('topic.translations', 'translation', languageId ? 'translation.languageId = :languageId' : undefined, { languageId})
+      .leftJoin('translation.language', 'language')
+      .leftJoin('topic.content', 'content')
+      .where('content.id = :contentId', {  contentId  })
+      .select([
+        'topic.id',
+        'topic.order_id',
+        'topic.is_active',
+        'translation.name',
+        'translation.description',
+        'content.id',
+      ]);
+    const rows = await query.getRawMany<topicRow>();
+    if( !rows ) throw new NotFoundException('topic not found');
+    return rows.map((r) => ({
+      id: r.topic_id,
+      order_id: r.topic_order_id,
+      is_active: r.topic_is_active,
+      name: r.topic_translation_name,
+      description: r.topic_translation_description,
+      contentId : r.topic_content_id      
+    }))
 
-    if (contentId) {
-      qb.where('topic.contentId = :contentId', { contentId });
-    }
-
-    if (languageId) {
-      qb.andWhere('translation.language_id = :languageId', { languageId });
-    }
-
-    qb.orderBy('topic.contentId', 'ASC')
-      .addOrderBy('topic.order_id', 'ASC')
-      .addOrderBy('topic.id', 'ASC');
-
-    return qb.getMany();
   }
 
   /** عرض توبيك واحد */
   async findOne(id: number, languageId?: number) {
-    const qb = this.topicRepo
-      .createQueryBuilder('topic')
-      .leftJoinAndSelect('topic.translations', 'translation')
-      .where('topic.id = :id', { id });
-
-    if (languageId) {
-      qb.andWhere('translation.language_id = :languageId', { languageId });
-    }
-
-    const topic = await qb.getOne();
-    if (!topic) throw new NotFoundException('Topic not found');
-
-    return topic;
+    // const query = this.topicRepo
+    //   .createQueryBuilder('topic')
+    //   .leftJoin('topic.translations', 'translation', languageId ? 'translation.language_id = :languageId' : undefined, { languageId})
+    //   .leftJoin('translation.language', 'language')
+    //   .leftJoin('topic.content', 'content')
+    //   .where('content.id = :contentId', {  contentId  })
+    //   .select([
+    //     'topic.id',
+    //     'topic.order_id',
+    //     'topic.is_active',
+    //     'translation.name',
+    //     'translation.description',
+    //     'content.id',
+    //   ]);
   }
 
   /** تحديث توبيك: تغيير content/order/is_active + replace translations (اختياري) */

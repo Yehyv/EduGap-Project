@@ -13,12 +13,16 @@ import {
   Req,
   UseGuards,
   UnauthorizedException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ContentsService } from './contents.service';
 import { CreateContentDto, UpdateContentDto } from './dto/create-content.dto';
 import { ContentDetailsService } from './content-details.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageStorage } from 'src/common/helpers/upload.helper';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -35,8 +39,14 @@ export class ContentsController {
 
   /** إنشاء محتوى (بدون أي عزل) */
   @Post()
-  create(@Body() dto: CreateContentDto) {
-    return this.contentsService.create(dto);
+  @UseInterceptors(
+    FileInterceptor(
+      'image',
+    imageStorage('content-images'),
+    )
+  )
+  create(@Body() dto: CreateContentDto, @UploadedFile() image?: Express.Multer.File) {
+    return this.contentsService.create(dto, image);
   }
 
   /** كل المحتويات (فلترة اختيارية باللغة عبر الهيدر languageId) */
@@ -303,11 +313,18 @@ findLatestOne(
 
   /** تحديث المحتوى/الترجمات */
   @Patch(':id')
+  @UseInterceptors(
+    FileInterceptor(
+      'image',
+    imageStorage('content-images'),
+    )
+  )
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateContentDto,
+    @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.contentsService.update(id, dto);
+    return this.contentsService.update(id, dto, image);
   }
 
   /** ربط المحتوى بكورسات */
