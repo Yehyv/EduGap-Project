@@ -62,7 +62,8 @@ export class LessonsService {
 
 
   /** إنشاء Lesson داخل Topic محدد (بدون أي عزل معهد/كورس) */
- async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
+ 
+async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
   const topic = await this.topicRepo.findOne({ where: { id: dto.topicId } });
   if (!topic) throw new NotFoundException('Topic not found');
   const baseUrl = process.env.BASE_URL || '';
@@ -76,6 +77,7 @@ export class LessonsService {
   let duration: number | undefined = undefined;
   if (dto.videoLink) {
     const dur = await getVideoDuration(dto.videoLink);
+    console.log('VIDEO DURATION =', dur);
     if (dur) duration = dur;
   }
 
@@ -97,9 +99,8 @@ export class LessonsService {
   const saved = await this.lessonRepo.save(lesson);
   await this.createOrReplaceTranslations(saved, dto.translations);
 
-  return this.findOne(saved.id);
+  return saved;
 }
-
 
   /** كل الدروس (فلترة اختيارية باللغة والـ topic) */
   async findAll(languageId?: number, topicId?: number) {
