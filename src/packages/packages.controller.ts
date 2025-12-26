@@ -41,7 +41,7 @@ export class PackagesController {
     return this.packagesService.create(createPackageDto, image);
   }
 
-  @Get('super-admin/package-list')
+  @Get('super-admin/packages-list')
   findAll(@Headers('languageId') languageId?: string,) {
     const langId = languageId ? Number(languageId) : undefined;
     return this.packagesService.findAll(langId);

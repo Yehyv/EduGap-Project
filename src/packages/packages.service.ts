@@ -98,9 +98,9 @@ export class PackagesService {
       .select([
         'pkg.id AS pkg_id',
         'pkg.image AS pkg_image',
-        'pkg.is_active',
-        'translation.title AS translation_name',
-        'translation.description AS translation_desc',
+        'pkg.is_active AS pkg_isActive',
+        'translation.title AS translation_title',
+        'translation.description AS translation_description',
         'translation.learning_outcoms AS translation_outcoms'
       ]);
       const rows = await query.getRawMany<pkgRow>();
@@ -133,31 +133,32 @@ export class PackagesService {
 
   /** FIND ONE */
   async findOne(id: number, languageId?: number) {
-    const p = await this.pkgRepo.findOne({
-      where: { id },
-      relations: ['translations', 'translations.language'],
-    });
-    if (!p) throw new NotFoundException(`Package ${id} not found`);
-
-    const tr =
-      p.translations?.find((t) => t.language?.id === languageId) ||
-      p.translations?.[0];
-
-    return {
-      id: p.id,
-      image: p.image,
-      is_active: p.is_active,
-      title: tr?.title ?? '',
-      description: tr?.description ?? '',
-      learning_outcoms: tr?.learning_outcoms ?? '',
-      translations: p.translations?.map((t) => ({
-        id: t.id,
-        languageId: t.language?.id,
-        title: t.title,
-        description: t.description,
-        learning_outcoms: t.learning_outcoms,
-      })) ?? [],
-    };
+    const query = this.pkgRepo
+      .createQueryBuilder('pkg')
+      .leftJoin(
+        'pkg.translations', 'translation', languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .where('pkg.id = :id', {id})
+      .select([
+        'pkg.id AS pkg_id',
+        'pkg.image AS pkg_image',
+        'pkg.is_active AS pkg_isActive',
+        'translation.title AS translation_title',
+        'translation.description AS translation_description',
+        'translation.learning_outcoms AS translation_outcoms'
+      ]);
+      const row = await query.getRawOne<pkgRow>();
+      if (!row) throw new NotFoundException('package not found');
+      return {
+        id: row.pkg_id,
+        image: row.pkg_image,
+        isActive: row.pkg_isActive,
+        title: row.translation_title,
+        description: row.translation_description,
+        learning_outcoms: row.translation_outcoms,
+      }
   }
 
   /** UPDATE (fields + upsert translations if provided) */
