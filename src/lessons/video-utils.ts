@@ -1,7 +1,5 @@
 import ffmpeg from 'fluent-ffmpeg';
-import ffmpegPath from '@ffmpeg-installer/ffmpeg';
 import os from 'os';
-ffmpeg.setFfmpegPath(ffmpegPath.path);
 if (os.platform() === 'win32') {
   // Windows (لوكال)
   ffmpeg.setFfprobePath('ffprobe');
