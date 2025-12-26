@@ -1,4 +1,5 @@
 // src/educators/dto/create-educator.dto.ts
+import { Type } from 'class-transformer';
 import { IsString, IsNotEmpty, IsOptional, IsIn, IsInt } from 'class-validator';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
@@ -19,6 +20,7 @@ export class CreateEducatorDto {
   @IsIn([0, 1])
   is_active?: number; // default 1
 
+  @Type(() => Number)
   @IsInt()
   userId: number; // ربط باليوزر
 }
