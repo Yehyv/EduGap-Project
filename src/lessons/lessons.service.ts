@@ -62,9 +62,13 @@ export class LessonsService {
 
 
   /** إنشاء Lesson داخل Topic محدد (بدون أي عزل معهد/كورس) */
- async create(dto: CreateLessonDto) {
+ async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
   const topic = await this.topicRepo.findOne({ where: { id: dto.topicId } });
   if (!topic) throw new NotFoundException('Topic not found');
+  const baseUrl = process.env.BASE_URL || '';
+  const imageUrl = image
+      ? `${baseUrl}/uploads/lesson-images/${image.filename}`
+      : '';
 
   const order = dto.orderId ?? (await this.getNextOrderForTopic(dto.topicId));
 
@@ -81,7 +85,7 @@ export class LessonsService {
     order_id: order,
     video_link: dto.videoLink ?? undefined,
     lesson_type: dto.lessonType ?? 0,
-    image: dto.image,
+    image: imageUrl,
     questions_percentage_score:
       (dto.lessonType ?? 0) === 1
         ? (dto.questionsPercentageScore ?? undefined)
@@ -133,10 +137,10 @@ export class LessonsService {
   }
 
   /** تحديث درس: تغيير topic/order/is_active/.. + استبدال الترجمات لو مبعوتة */
-  async update(id: number, dto: UpdateLessonDto) {
+  async update(id: number, dto: UpdateLessonDto, image?: Express.Multer.File) {
     const lesson = await this.lessonRepo.findOne({
       where: { id },
-      relations: ['topic', 'translations'],
+      relations: ['topic'],
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
 
@@ -151,8 +155,14 @@ export class LessonsService {
         lesson.order_id = await this.getNextOrderForTopic(newTopic.id);
       }
     }
+    if(image) {
+      const baseUrl = process.env.BASE_URL || '';
+      const imageUrl = image
+      ? `${baseUrl}/uploads/lesson-images/${image.filename}`
+      : '';
+      lesson.image = imageUrl;
+    }
 
-    if (dto.duration !== undefined) lesson.duration = dto.duration;
     if (dto.orderId !== undefined) lesson.order_id = dto.orderId;
     if (dto.videoLink !== undefined) lesson.video_link = dto.videoLink;
     if (dto.lessonType !== undefined) lesson.lesson_type = dto.lessonType;
@@ -165,9 +175,32 @@ export class LessonsService {
     if (dto.isActive !== undefined) lesson.is_active = dto.isActive;
 
     // استبدال الترجمات لو مبعوتة
-    if (dto.translations) {
-      await this.lessonTrRepo.delete({ lesson: { id } });
-      await this.createOrReplaceTranslations(lesson, dto.translations);
+    if(dto.translations?.length) {
+      for (const t of dto.translations) {
+        const lang = await this.langRepo.findOne({
+          where: { id: t.languageId}
+        });
+        if (!lang) throw new NotFoundException(`Language ${t.languageId} not found`);
+        const existing = await this.lessonTrRepo.findOne({ 
+          where: { lesson: {id}, language: { id: t.languageId } },
+        });
+        if (existing) {
+          existing.name = t.name ?? existing.name;
+          existing.description = t.description ?? existing.description;
+          await this.lessonTrRepo.save(existing);
+          console.log("EXIIIIIISTING",existing)
+        }
+        else {
+          const newTr = this.lessonTrRepo.create({
+            name: t.name,
+            description: t.description,
+            language: lang,
+            lesson,
+          });
+          await this.lessonTrRepo.save(newTr);
+          console.log("NEWWWWWWWWWWWW",newTr)
+        }
+      }
     }
 
     await this.lessonRepo.save(lesson);

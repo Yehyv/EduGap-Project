@@ -14,6 +14,14 @@ import { Content } from 'src/contents/entities/content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
+interface pkgRow {
+  pkg_id: number;
+  pkg_image: string;
+  translation_title: string;
+  translation_description: string;
+  translation_outcoms: string;
+  pkg_isActive: number;
+}
 function pickTranslation<T extends { language?: { id?: number } }>(
   list: T[] | undefined,
   languageId?: number,
@@ -65,11 +73,13 @@ export class PackagesService {
   }
 
   /** CREATE */
-  async create(dto: CreatePackageDto) {
+  async create(dto: CreatePackageDto, image?: Express.Multer.File ) {
+    const baseUrl = process.env.APP_URL || '';
+    const imagePath = image
+      ? `${baseUrl}/uploads/package-images/${image.filename}`
+      : '';
     const pkg = this.pkgRepo.create({
-      image: dto.image ?? undefined,
-      is_active: dto.is_active ?? 1,
-      created_by: dto.created_by ?? undefined,
+      image: imagePath,
     });
     const saved = await this.pkgRepo.save(pkg);
     await this.upsertTranslations(saved, dto.translations);
@@ -78,25 +88,30 @@ export class PackagesService {
 
   /** FIND ALL (supports languageId to pick the right translation) */
   async findAll(languageId?: number) {
-    const rows = await this.pkgRepo.find({
-      relations: ['translations', 'translations.language'],
-      order: { id: 'DESC' },
-    });
-
-    return rows.map((p) => {
-      const tr =
-        p.translations?.find((t) => t.language?.id === languageId) ||
-        p.translations?.[0];
-
-      return {
-        id: p.id,
-        image: p.image,
-        is_active: p.is_active,
-        title: tr?.title ?? '',
-        description: tr?.description ?? '',
-        learning_outcoms: tr?.learning_outcoms ?? '',
-      };
-    });
+    const query = this.pkgRepo
+      .createQueryBuilder('pkg')
+      .leftJoin(
+        'pkg.translations', 'translation', languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .select([
+        'pkg.id AS pkg_id',
+        'pkg.image AS pkg_image',
+        'pkg.is_active',
+        'translation.title AS translation_name',
+        'translation.description AS translation_desc',
+        'translation.learning_outcoms AS translation_outcoms'
+      ]);
+      const rows = await query.getRawMany<pkgRow>();
+      return rows.map((row) => ({
+        id: row.pkg_id,
+        image: row.pkg_image,
+        isActive: row.pkg_isActive,
+        title: row.translation_title,
+        description: row.translation_description,
+        learning_outcoms: row.translation_outcoms,
+      }));
   }
   async packagesNav(languageId?: number) {
     const rows = await this.pkgRepo.find({
@@ -146,18 +161,15 @@ export class PackagesService {
   }
 
   /** UPDATE (fields + upsert translations if provided) */
-  async update(id: number, dto: UpdatePackageDto) {
+  async update(id: number, dto: UpdatePackageDto, image?: Express.Multer.File) {
+
     const pkg = await this.pkgRepo.findOne({ where: { id } });
     if (!pkg) throw new NotFoundException(`Package ${id} not found`);
 
-    if (dto.image !== undefined) pkg.image = dto.image;
-    if (dto.is_active !== undefined) {
-      if (![0, 1].includes(dto.is_active)) {
-        throw new BadRequestException('is_active must be 0 or 1');
-      }
-      pkg.is_active = dto.is_active;
+    if (image) {
+      const baseUrl = process.env.APP_URL || '';
+      pkg.image = `${baseUrl}/uploads/package-images/${image.filename}`
     }
-
     await this.pkgRepo.save(pkg);
 
     if (dto.translations?.length) {
@@ -179,6 +191,21 @@ export class PackagesService {
   async restore(id: number) {
     await this.pkgRepo.restore(id);
     return { message: `Package ${id} restored successfully` };
+  }
+  async toggleActive(pkgId: number) {
+    const pkg = await this.pkgRepo.findOne({
+      where: { id : pkgId}
+    })
+    if (!pkg) throw new NotFoundException(`Package with ID ${pkgId} not found.`);
+    const pkgStatus = (pkg.is_active = pkg.is_active ? 0 : 1);
+    await this.pkgRepo.save(pkg);
+    return {
+      message: `Course with ID ${pkgId} is now ${
+        pkgStatus ? 'active' : 'inactive'
+      }.`,
+      id: pkgId,
+      isActive: pkgStatus,
+    };
   }
 
   /** أول 8 باكيدجز */

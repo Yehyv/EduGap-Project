@@ -1,8 +1,51 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateContentDto } from './create-content.dto';
-import { ContentTranslation } from '../entities/content-translation.entity';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
-export class UpdateContentTranslationDto extends PartialType(
-  ContentTranslation,
-) {}
-export class UpdateContentDto extends PartialType(CreateContentDto) {}
+export class UpdateContentTranslationDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  levelName?: string;
+
+  @IsString()
+  @IsArray({ each: true })
+  @IsOptional()
+  whatToLearn?: string[];
+
+  @IsString()
+  @IsOptional()
+  previousBackground?: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  languageId: number; // المفتاح الوحيد الإجباري
+}
+export class UpdateContentDto {
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateContentTranslationDto)
+  translations?: UpdateContentTranslationDto[];
+
+  @IsNumber()
+  @IsOptional()
+  rate?: number;
+
+  @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
+  @IsOptional()
+  level?: 'Beginner' | 'Intermediate' | 'Advanced';
+}

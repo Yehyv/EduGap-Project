@@ -11,15 +11,15 @@ import { Language } from 'src/languages/entities/language.entity';
 import { Course } from 'src/courses/entities/course.entity';
 import { CourseContent } from 'src/courses/entities/course-content.entity';
 import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
-import { CreateContentDto, UpdateContentDto } from './dto/create-content.dto';
+import { CreateContentDto } from './dto/create-content.dto';
 import { Package } from 'src/packages/entities/package.entity';
 import { PackageContent } from 'src/packages/entities/package-content.entity';
 import { Educator } from 'src/educators/entities/educator.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { SavedContent } from 'src/saved-contents/entities/saved-content.entity'; // عدّل المسار حسب مشروعك
-import { Progress } from 'src/progress/entities/progress.entity';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { UpdateContentDto } from './dto/update-content.dto';
 interface contentRow {
   content_id: number;
   content_image: string;
@@ -2202,5 +2202,41 @@ export class ContentsService {
         hasPrev: page > 1,
       },
     };
+  }
+  async toggleActive(contentId: number) {
+    const content = await this.contentRepo.findOne({
+      where: { id: contentId },
+    });
+    if (!content)
+      throw new NotFoundException(`Content with ID ${contentId} not found`);
+    const contentStatus = (content.is_active = content.is_active ? 0 : 1);
+    await this.contentRepo.save(content);
+    return {
+      message: `Content with ID ${contentId} is now ${
+        contentStatus ? 'active' : 'inactive'
+      }.`,
+      id: contentId,
+      isActive: contentStatus
+    };
+  }
+  async contentDropDown(languageId?: number) {
+    const query = this.contentRepo
+      .createQueryBuilder('content')
+      .leftJoin(
+        'content.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .select([
+        'content.id AS course_id',
+        'translation.name AS translation_name',
+      ]);
+    const rows = await query.getRawMany<contentRow>();
+    return rows.map((r) => ({
+      id: r.content_id,
+      name: r.translation_name,
+    }));
   }
 }

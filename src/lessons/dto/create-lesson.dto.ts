@@ -22,20 +22,16 @@ export class LessonTranslationDto {
   @IsNotEmpty()
   description: string;
 
+  @Type(() => Number)
   @IsNumber()
-  @IsNotEmpty()
   languageId: number; // إلزامي
 }
 
 export class CreateLessonDto {
+  @Type(() => Number)
   @IsNumber()
   @IsNotEmpty()
   topicId: number; // لازم نحدّد التوبيك
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  duration?: number;
 
   @IsNumber()
   @IsOptional()
@@ -46,21 +42,20 @@ export class CreateLessonDto {
   @IsOptional()
   videoLink?: string; // يروح لـ video_link
 
-  @IsString()
-  @IsNotEmpty()
-  image: string;
-
+  @Type(() => Number)
   @IsNumber()
   @IsOptional()
   @IsIn([0, 1])
   lessonType?: number; // 0=lesson, 1=questions
 
+  @Type(() => Number)
   @IsNumber()
   @IsOptional()
   @Min(0)
   @Max(100)
   questionsPercentageScore?: number; // ex: 70
 
+  @Type(() => Number)
   @IsNumber()
   @IsOptional()
   @IsIn([0, 1])

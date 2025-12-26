@@ -104,33 +104,33 @@ export class CreateContentDto {
  * 🟨 Update Content DTO
  * لتحديث المحتوى أو ترجماته
  */
-export class UpdateContentDto {
-  @IsString()
-  @IsOptional()
-  image?: string;
+// export class UpdateContentDto {
+//   @IsString()
+//   @IsOptional()
+//   image?: string;
 
-  @IsNumber()
-  @Min(0)
-  @Max(5)
-  @IsOptional()
-  rate?: number;
+//   @IsNumber()
+//   @Min(0)
+//   @Max(5)
+//   @IsOptional()
+//   rate?: number;
 
-  @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
-  @IsOptional()
-  level?: string;
+//   @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
+//   @IsOptional()
+//   level?: string;
 
-  @IsNumber()
-  @IsOptional()
-  numberOfReviewers?: number;
+//   @IsNumber()
+//   @IsOptional()
+//   numberOfReviewers?: number;
 
-  @IsArray()
-  @IsOptional()
-  @IsNumber({}, { each: true })
-  courseIds?: number[];
+//   @IsArray()
+//   @IsOptional()
+//   @IsNumber({}, { each: true })
+//   courseIds?: number[];
 
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ContentTranslationDto)
-  translations?: ContentTranslationDto[];
-}
+//   @IsArray()
+//   @IsOptional()
+//   @ValidateNested({ each: true })
+//   @Type(() => ContentTranslationDto)
+//   translations?: ContentTranslationDto[];
+// }

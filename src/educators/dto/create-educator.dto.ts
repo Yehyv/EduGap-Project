@@ -12,10 +12,6 @@ export class CreateEducatorDto {
   bio: string;
 
   @IsString()
-  @IsNotEmpty()
-  image: string;
-
-  @IsString()
   @IsOptional()
   video_intro?: string;
 

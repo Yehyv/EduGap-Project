@@ -22,26 +22,15 @@ export class PackageTranslationDto {
   @IsOptional()
   learning_outcoms?: string;
 
+  @Type(() => Number)
   @IsNumber()
   languageId: number;
 }
 
 export class CreatePackageDto {
-  @IsString()
-  @IsOptional()
-  image?: string;
-
   @IsArray()
   @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => PackageTranslationDto)
   translations: PackageTranslationDto[];
-
-  @IsNumber()
-  @IsOptional()
-  created_by?: number;
-
-  @IsNumber()
-  @IsOptional()
-  is_active?: number; // 0/1
 }

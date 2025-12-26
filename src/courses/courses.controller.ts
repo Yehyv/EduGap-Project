@@ -56,6 +56,24 @@ export class CoursesController {
     const langId = languageId ? Number(languageId) : undefined;
     return this.coursesService.findAll(langId);
   }
+  @Get('super-admin/dropdown/list')
+  courseDropDown(
+    @Headers('languageId') languageId: number | undefined,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.coursesService.courseDropDown(langId);
+  }
+  @Get('super-admin/dropdown/list/program')
+  courseProgramDropDown(
+    @Headers('languageId') languageId: number | undefined,
+    @Query('programId') programId: string,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    const pid = programId ? Number(programId) : undefined;
+    if (!pid) throw new BadRequestException('programId is required');
+    return this.coursesService.courseProgramDropDown(pid, langId);
+  }
+
   /** جميع كورسات المعهد الحالي (من IPC) */
   @Get()
   findAllCoursesForInstitute(

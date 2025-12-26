@@ -57,6 +57,13 @@ export class ProgramsController {
     const langId = languageId ? Number(languageId) : undefined;
     return this.programsService.findOne(id, langId);
   }
+  @Get('super-admin/dropdown/list')
+  programDropDown(
+    @Headers('languageId') languageId: number | undefined,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.programsService.ProgramDropDown(langId);
+  }
 
   /** برامج عامة متاحة للاختيار (من غير عزل معهد) */
   @Get('selection')

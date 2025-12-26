@@ -147,7 +147,7 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
     )
 
     .select([
-      'institute.id AS id',
+      'institute.id',
       'institute.logo',
       'institute.image_profile',
       'institute.phone_key AS phone_key',

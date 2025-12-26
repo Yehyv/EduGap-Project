@@ -98,54 +98,102 @@ export class TopicsService {
 
   /** عرض توبيك واحد */
   async findOne(id: number, languageId?: number) {
-    // const query = this.topicRepo
-    //   .createQueryBuilder('topic')
-    //   .leftJoin('topic.translations', 'translation', languageId ? 'translation.language_id = :languageId' : undefined, { languageId})
-    //   .leftJoin('translation.language', 'language')
-    //   .leftJoin('topic.content', 'content')
-    //   .where('content.id = :contentId', {  contentId  })
-    //   .select([
-    //     'topic.id',
-    //     'topic.order_id',
-    //     'topic.is_active',
-    //     'translation.name',
-    //     'translation.description',
-    //     'content.id',
-    //   ]);
+  }
+  async getTopics(contentId: number, params: { languageId?: number }) {
+    // هنا نجيب التوبيكس بالترجمة + الدروس بترجمتها
+    const qb = this.contentRepo
+      .createQueryBuilder('content')
+      .leftJoinAndSelect('content.topics', 'topic')
+      .leftJoinAndSelect(
+        'topic.translations',
+        'ttr',
+        params.languageId ? 'ttr.languageId = :languageId' : undefined,
+        { languageId: params.languageId },
+      )
+      .leftJoinAndSelect('topic.lessons', 'lesson')
+      
+      .leftJoinAndSelect(
+        'lesson.translations',
+        'ltr',
+        params.languageId ? 'ltr.languageId = :languageId' : undefined,
+        { languageId: params.languageId },
+      )
+      
+      .where('content.id = :id', { id: contentId });
+
+    const c = await qb.getOne();
+    if (!c) throw new NotFoundException();
+
+    const topics = (c.topics ?? []).map((t) => {
+      const ttr = t.translations?.[0] ?? null;
+      const lessons = (t.lessons ?? []).map((l) => {
+        const ltr = l.translations?.[0] ?? null;
+        const duration = typeof l.duration === 'number' ? l.duration : 0;
+        return { id: l.id, name: ltr?.name || '', duration };
+      });
+      const topicDuration = lessons.reduce((s, x) => s + (x.duration || 0), 0);
+      const lessonsCount = lessons.length;
+      return { id: t.id, name: ttr?.name || '', duration: topicDuration, lessonsCount, lessons };
+    });
+
+    return topics;
   }
 
   /** تحديث توبيك: تغيير content/order/is_active + replace translations (اختياري) */
   async update(id: number, dto: UpdateTopicDto) {
-    const existing = await this.topicRepo.findOne({
+    const topic = await this.topicRepo.findOne({
       where: { id },
-      relations: ['content', 'translations'],
+      relations: ['content'],
     });
-    if (!existing) throw new NotFoundException('Topic not found');
+    console.log("TOPIIIC", topic)
+    if (!topic) throw new NotFoundException('Topic not found');
 
     // تغيير الكونتنت لو اتبعت
-    if (dto.contentId && dto.contentId !== existing.content?.id) {
+    if (dto.contentId && dto.contentId !== topic.content?.id) {
       const newContent = await this.contentRepo.findOne({
         where: { id: dto.contentId },
       });
       if (!newContent) throw new NotFoundException('Content not found');
-      existing.content = newContent;
+      topic.content = newContent;
 
       // لو مفيش orderId مبعوت، نحافظ على الترتيب النسبي — أو نحسب ترتيب جديد
       if (dto.orderId === undefined) {
-        existing.order_id = await this.getNextOrderForContent(newContent.id);
+        topic.order_id = await this.getNextOrderForContent(newContent.id);
       }
     }
 
-    if (dto.orderId !== undefined) existing.order_id = dto.orderId;
-    if (dto.isActive !== undefined) existing.is_active = dto.isActive;
+    if (dto.orderId !== undefined) topic.order_id = dto.orderId;
+    if (dto.isActive !== undefined) topic.is_active = dto.isActive;
 
-    // replace translations لو مبعوتة
-    if (dto.translations) {
-      await this.topicTrRepo.delete({ topic: { id } });
-      await this.createOrReplaceTranslations(existing, dto.translations);
+    if(dto.translations?.length) {
+      for (const t of dto.translations) {
+        const lang = await this.langRepo.findOne({
+          where: { id: t.languageId}
+        });
+        if (!lang) throw new NotFoundException(`Language ${t.languageId} not found`);
+        const existing = await this.topicTrRepo.findOne({ 
+          where: { topic: {id}, language: { id: t.languageId } },
+        });
+        if (existing) {
+          existing.name = t.name ?? existing.name;
+          existing.description = t.description ?? existing.description;
+          await this.topicTrRepo.save(existing);
+          console.log("EXIIIIIISTING",existing)
+        }
+        else {
+          const newTr = this.topicTrRepo.create({
+            name: t.name,
+            description: t.description,
+            language: lang,
+            topic,
+          });
+          await this.topicTrRepo.save(newTr);
+          console.log("NEWWWWWWWWWWWW",newTr)
+        }
+      }
     }
 
-    await this.topicRepo.save(existing);
+    await this.topicRepo.save(topic);
     return this.findOne(id);
   }
 

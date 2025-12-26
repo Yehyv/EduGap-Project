@@ -11,6 +11,8 @@ import {
   Headers,
   UseGuards,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
@@ -18,6 +20,8 @@ import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { TopicWithLessonsStatus } from './types/lesson-status.types';
 import { LessonUnlockGuard } from './lesson-unlock.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageStorage } from 'src/common/helpers/upload.helper';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -35,8 +39,12 @@ export class LessonsController {
    * إنشاء Lesson داخل Topic محدد
    */
   @Post()
-  create(@Body() createLessonDto: CreateLessonDto) {
-    return this.lessonsService.create(createLessonDto);
+  @UseInterceptors(FileInterceptor('image', imageStorage('lesson-images')))
+  create(
+    @Body() createLessonDto: CreateLessonDto,
+    @UploadedFile() image?: Express.Multer.File,
+  ) {
+    return this.lessonsService.create(createLessonDto, image);
   }
 
   /**
@@ -73,11 +81,13 @@ export class LessonsController {
    * تحديث الدرس (topic/order/isActive/... + replace translations لو مبعوتة)
    */
   @Patch(':id')
+  @UseInterceptors(FileInterceptor('image', imageStorage('lesson-images')))
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateLessonDto: UpdateLessonDto,
+    @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.lessonsService.update(id, updateLessonDto);
+    return this.lessonsService.update(id, updateLessonDto, image);
   }
 
   /**

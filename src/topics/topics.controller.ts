@@ -43,11 +43,6 @@ export class TopicsController {
     const cId = contentId ? Number(contentId) : undefined;
     return this.topicsService.findAll(langId, cId);
   }
-
-  /**
-   * GET /topics/:id
-   * جلب توبيك واحد (يدعم languageId كـ هيدر اختياري)
-   */
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -76,5 +71,14 @@ export class TopicsController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.topicsService.remove(id);
+  }
+  @Get(':contentId/topics')
+  async getTopics(
+    @Param('contentId') contentId: string,
+    @Headers('languageId') languageId?: string,
+  ) {
+    return this.topicsService.getTopics(Number(contentId), {
+      languageId: languageId ? Number(languageId) : undefined,
+    });
   }
 }

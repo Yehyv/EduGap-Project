@@ -17,12 +17,13 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { ContentsService } from './contents.service';
-import { CreateContentDto, UpdateContentDto } from './dto/create-content.dto';
+import { CreateContentDto } from './dto/create-content.dto';
 import { ContentDetailsService } from './content-details.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { imageStorage } from 'src/common/helpers/upload.helper';
+import { UpdateContentDto } from './dto/update-content.dto';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -50,10 +51,17 @@ export class ContentsController {
   }
 
   /** كل المحتويات (فلترة اختيارية باللغة عبر الهيدر languageId) */
-  @Get()
+  @Get('super-admin/content-list')
   findAll(@Headers('languageId') languageId?: string) {
     const langId = languageId ? Number(languageId) : undefined;
     return this.contentsService.findAll(langId);
+  }
+  @Get('super-admin/dropdown/list')
+  contentDropDown(
+    @Headers('languageId') languageId: number | undefined,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.contentsService.contentDropDown(langId);
   }
   @Get(':id/prerequisites')
   async getPrerequisites(
@@ -70,6 +78,10 @@ export class ContentsController {
       programId: programId ? Number(programId) : undefined,
       userId
     });
+  }
+  @Patch('super-admin/content-status/:id')
+  async changeContentStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.contentsService.toggleActive(id);
   }
   @UseGuards(OptionalJwtAuthGuard)
    @Get(':id/base')
@@ -302,7 +314,7 @@ findLatestOne(
   }
 
   /** محتوى واحد بالتفصيل */
-  @Get(':id')
+  @Get('super-admin/content/:id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @Headers('languageId') languageId?: string,
@@ -312,7 +324,7 @@ findLatestOne(
   }
 
   /** تحديث المحتوى/الترجمات */
-  @Patch(':id')
+  @Patch('super-admin/:id')
   @UseInterceptors(
     FileInterceptor(
       'image',
@@ -346,7 +358,7 @@ findLatestOne(
   }
 
   /** حذف (Soft delete) */
-  @Delete(':id')
+  @Delete('super-admin/:id')
   softDelete(@Param('id', ParseIntPipe) id: number) {
     return this.contentsService.softDelete(id);
   }

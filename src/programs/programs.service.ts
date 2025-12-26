@@ -16,6 +16,7 @@ import { InstitutePrograms } from 'src/institutes/entities/institute-programs.en
 interface ProgramRaw {
   program_id: number;
   program_logo: string;
+  program_createdAt: Date;
   translation_name: string;
   translation_description: string;
   language_id: number;
@@ -91,6 +92,7 @@ export class ProgramsService {
         'program.id',
         'program.logo',
         'program.isActive AS isActive',
+        'program.createdAt AS program_createdAt',
         'translation.name',
         'translation.description',
         'language.id',
@@ -100,6 +102,7 @@ export class ProgramsService {
       id: row.program_id,
       logo: row.program_logo,
       isActive: row.isActive,
+      createdAt: row.program_createdAt,
       name: row.translation_name,
       description: row.translation_description,
       languageId: row.language_id,
@@ -361,5 +364,25 @@ export class ProgramsService {
         program.isActive ? 'active' : 'inactive'
       }.`,
     };
+  }
+  async ProgramDropDown(languageId?: number) {
+    const query = this.programRepository
+      .createQueryBuilder('program')
+      .leftJoin(
+        'program.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .select([
+        'program.id AS program_id',
+        'translation.name AS translation_name',
+      ]);
+    const rows = await query.getRawMany<ProgramRaw>();
+    return rows.map((r) => ({
+      id: r.program_id,
+      name: r.translation_name,
+    }));
   }
 }

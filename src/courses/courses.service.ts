@@ -23,6 +23,7 @@ interface courseRow {
   course_id: number;
   course_image: string;
   course_isActive: number;
+  course_createdAt: Date;
   translation_name: string;
   translation_description: string;
   translation_whatToLearn: string[];
@@ -352,6 +353,7 @@ export class CoursesService {
         'course.id AS course_id',
         'course.image AS course_image',
         'course.isActive',
+        'course.createdAt AS course_createdAt',
         'translation.name AS translation_name',
         'translation.description AS translation_description',
         'translation.whatToLearn AS translation_whatToLearn',
@@ -361,6 +363,7 @@ export class CoursesService {
       id: row.course_id,
       image: row.course_image,
       isActive: row.course_isActive,
+      createdAt: row.course_createdAt,
       name: row.translation_name,
       description: row.translation_description,
       whatToLearn: row.translation_whatToLearn ?? [],
@@ -1147,5 +1150,48 @@ export class CoursesService {
       id: courseId,
       isActive: courseStatuse,
     };
+  }
+  async courseDropDown(languageId?: number) {
+    const query = this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin(
+        'course.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .select([
+        'course.id AS course_id',
+        'translation.name AS translation_name',
+      ]);
+    const rows = await query.getRawMany<courseRow>();
+    return rows.map((r) => ({
+      id: r.course_id,
+      name: r.translation_name,
+    }));
+  }
+  async courseProgramDropDown(programId: number, languageId?: number){
+    const query = this.programCourseRepository
+      .createQueryBuilder('PC')
+      .leftJoin('PC.program', 'program')
+      .where('program.id = :programId', { programId })
+      .leftJoin('PC.course', 'course')
+      .leftJoin(
+        'course.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .select([
+        'course.id AS course_id',
+        'translation.name AS translation_name',
+      ]);
+    const rows = await query.getRawMany<courseRow>();
+    return rows.map((r) => ({
+      id: r.course_id,
+      name: r.translation_name,
+    }));
   }
 }

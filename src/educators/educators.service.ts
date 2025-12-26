@@ -27,7 +27,7 @@ export class EducatorsService {
   ) {}
 
   /** Create */
-  async create(dto: CreateEducatorDto) {
+  async create(dto: CreateEducatorDto, image?: Express.Multer.File) {
     // 1) هات اليوزر
     const user = await this.userRepo.findOne({ where: { id: dto.userId } });
     if (!user) throw new NotFoundException(`User ${dto.userId} not found`);
@@ -39,14 +39,16 @@ export class EducatorsService {
     });
     if (existing)
       throw new ConflictException('This user already has an educator profile');
-
+    const baseUrl = process.env.BASE_URL || '';
+    const imageUrl = image
+      ? `${baseUrl}/uploads/educator-images/${image.filename}`
+      : '';
     // 3) أنشئ ال educator واربطه باليوزر
     const educator = this.educatorRepo.create({
       title: dto.title,
       bio: dto.bio,
-      image: dto.image,
+      image: imageUrl,
       video_intro: dto.video_intro ?? undefined,
-      is_active: dto.is_active ?? 1,
       user, // الربط هنا
     });
 
@@ -163,7 +165,11 @@ export class EducatorsService {
   }
 
   /** Update (يدعم تبديل اليوزر مع ضمان 1:1) */
-  async update(id: number, dto: UpdateEducatorDto) {
+  async update(
+    id: number,
+    dto: UpdateEducatorDto,
+    image?: Express.Multer.File,
+  ) {
     const educator = await this.educatorRepo.findOne({
       where: { id },
       relations: ['user'],
@@ -192,11 +198,17 @@ export class EducatorsService {
     if (dto.is_active !== undefined && ![0, 1].includes(dto.is_active)) {
       throw new BadRequestException('is_active must be 0 or 1');
     }
+    if (image) {
+      const baseUrl = process.env.BASE_URL || '';
+      const imageUrl = image
+        ? `${baseUrl}/uploads/educator-images/${image.filename}`
+        : '';
+      educator.image = imageUrl;
+    }
 
     Object.assign(educator, {
       title: dto.title ?? educator.title,
       bio: dto.bio ?? educator.bio,
-      image: dto.image ?? educator.image,
       video_intro: dto.video_intro ?? educator.video_intro,
       is_active: dto.is_active ?? educator.is_active,
     });

@@ -23,18 +23,18 @@ export class ContentCategoriesController {
     return this.contentCategoriesService.create(createContentCategoryDto);
   }
 
-  @Get()
+  @Get('super-admin/category-list')
   findAll(@Headers('languageId') languageId?: string) {
     const langId = languageId !== undefined ? +languageId : 0;
     return this.contentCategoriesService.findAll(langId);
   }
 
-  @Get(':id')
+  @Get('super-admin/category/:id')
   findOne(@Param('id') id: string) {
     return this.contentCategoriesService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Patch('super-admin/:id')
   update(
     @Param('id') id: string,
     @Body() updateContentCategoryDto: UpdateContentCategoryDto,
@@ -42,7 +42,7 @@ export class ContentCategoriesController {
     return this.contentCategoriesService.update(+id, updateContentCategoryDto);
   }
 
-  @Delete(':id')
+  @Delete('super-admin/:id')
   remove(@Param('id') id: string) {
     return this.contentCategoriesService.remove(+id);
   }

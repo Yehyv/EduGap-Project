@@ -11,11 +11,15 @@ import {
   UseGuards,
   Req,
   Headers,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { CreatePackageDto } from './dto/create-package.dto';
 import { UpdatePackageDto } from './dto/update-package.dto';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageStorage } from 'src/common/helpers/upload.helper';
 interface AuthenticatedRequest extends Request {
   user?: {
     sub: number;
@@ -29,13 +33,18 @@ export class PackagesController {
   constructor(private readonly packagesService: PackagesService) {}
 
   @Post()
-  create(@Body() createPackageDto: CreatePackageDto) {
-    return this.packagesService.create(createPackageDto);
+  @UseInterceptors(FileInterceptor('image', imageStorage('package-images')))
+  create(
+    @Body() createPackageDto: CreatePackageDto,
+    @UploadedFile() image?: Express.Multer.File,
+  ) {
+    return this.packagesService.create(createPackageDto, image);
   }
 
-  @Get()
-  findAll() {
-    return this.packagesService.findAll();
+  @Get('super-admin/package-list')
+  findAll(@Headers('languageId') languageId?: string,) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.packagesService.findAll(langId);
   }
   @Get('all/nav')
   findAllForNav(@Headers('languageId') languageId?: number) {
@@ -43,19 +52,29 @@ export class PackagesController {
     return this.packagesService.packagesNav(langId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.packagesService.findOne(+id);
+  @Get('super-admin/package/:id')
+  findOne(@Param('id') id: number, @Headers('languageId') languageId?: string) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.packagesService.findOne(id, langId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePackageDto: UpdatePackageDto) {
-    return this.packagesService.update(+id, updatePackageDto);
+  @Patch('super-admin/:id')
+  @UseInterceptors(FileInterceptor('image', imageStorage('package-images')))
+  update(
+    @Param('id') id: number,
+    @Body() updatePackageDto: UpdatePackageDto,
+    @UploadedFile() image?: Express.Multer.File,
+  ) {
+    return this.packagesService.update(id, updatePackageDto, image);
   }
 
-  @Delete(':id')
+  @Delete('super-admin/:id')
   remove(@Param('id') id: string) {
     return this.packagesService.remove(+id);
+  }
+  @Patch('super-admin/package-status/:id')
+  async changePackageStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.packagesService.toggleActive(id);
   }
   // packages.controller.ts
   @UseGuards(OptionalJwtAuthGuard)

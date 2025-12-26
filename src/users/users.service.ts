@@ -19,6 +19,7 @@ interface userRow {
   user_email: string;
   user_phone: string;
   user_user_image: string;
+  user_is_active: number;
   institute_id: number;
   institute_logo: string;
   it_name: string;
@@ -81,7 +82,9 @@ export class UsersService {
   }
 
   async findAll() {
-    const users = await this.userRepositry.find({ relations: ['institute'] });
+    const users = await this.userRepositry.find({
+      relations: ['institute', 'institute.translations'],
+    });
     return { message: 'List of users', users };
   }
 
@@ -117,6 +120,7 @@ export class UsersService {
         'user.username',
         'user.email',
         'user.phone',
+        'user.is_active',
         'user.user_image',
         'institute.id',
         'institute.logo',
@@ -132,6 +136,7 @@ export class UsersService {
       username: row.user_username,
       email: row.user_email,
       phone: row.user_phone,
+      isActive: row.user_is_active,
       user_image: row.user_user_image,
       institute: {
         id: row.institute_id,
