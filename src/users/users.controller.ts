@@ -113,12 +113,12 @@ export class UsersController {
     const langId = languageId ? Number(languageId) : undefined;
     return this.usersService.findOne(id, langId);
   }
-  @Patch(':id')
+  @Patch('super-admin/:id')
   update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(+id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Delete('super-admin/:id')
   remove(@Param('id') id: number) {
     return this.usersService.remove(+id);
   }

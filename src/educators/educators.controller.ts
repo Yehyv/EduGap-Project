@@ -43,7 +43,7 @@ export class EducatorsController {
    *  - limit?: number (default 20)
    *  - onlyActive?: number (0/1)
    */
-  @Get()
+  @Get('super-admin/packages-list')
   findAll(
     @Query('search') search?: string,
     @Query('page') page?: string,
@@ -73,13 +73,13 @@ export class EducatorsController {
   }
 
   /** GET /educators/:id — محاضر واحد */
-  @Get(':id')
+  @Get('super-admin/educator/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.educatorsService.findOne(id);
   }
 
   /** PATCH /educators/:id — تحديث محاضر */
-  @Patch(':id')
+  @Patch('super-admin/:id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateEducatorDto,
@@ -88,7 +88,7 @@ export class EducatorsController {
   }
 
   /** DELETE /educators/:id — حذف (Soft delete) */
-  @Delete(':id')
+  @Delete('super-admin/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.educatorsService.remove(id);
   }
