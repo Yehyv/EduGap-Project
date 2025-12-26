@@ -11,12 +11,16 @@ import {
   Req,
   Headers,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { EducatorsService } from './educators.service';
 import { CreateEducatorDto } from './dto/create-educator.dto';
 import { UpdateEducatorDto } from './dto/update-educator.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageStorage } from 'src/common/helpers/upload.helper';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -31,8 +35,12 @@ export class EducatorsController {
 
   /** POST /educators — إنشاء محاضر */
   @Post()
-  create(@Body() dto: CreateEducatorDto) {
-    return this.educatorsService.create(dto);
+  @UseInterceptors(FileInterceptor('image', imageStorage('educator-images')))
+  create(
+    @Body() dto: CreateEducatorDto,
+    @UploadedFile() image?: Express.Multer.File,
+  ) {
+    return this.educatorsService.create(dto, image);
   }
 
   /**
@@ -43,7 +51,7 @@ export class EducatorsController {
    *  - limit?: number (default 20)
    *  - onlyActive?: number (0/1)
    */
-  @Get('super-admin/packages-list')
+  @Get('super-admin/educators-list')
   findAll(
     @Query('search') search?: string,
     @Query('page') page?: string,
@@ -80,11 +88,13 @@ export class EducatorsController {
 
   /** PATCH /educators/:id — تحديث محاضر */
   @Patch('super-admin/:id')
+  @UseInterceptors(FileInterceptor('image', imageStorage('educator-images')))
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateEducatorDto,
+    @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.educatorsService.update(id, dto);
+    return this.educatorsService.update(id, dto, image);
   }
 
   /** DELETE /educators/:id — حذف (Soft delete) */
