@@ -120,16 +120,25 @@ export class LessonsService {
   }
 
   /** درس واحد (يدعم languageId اختياري لتصفية الترجمة) */
-  async findOne(id: number, languageId?: number) {
+  async findOne(id: number, languageId?: number, topicId? :number) {
     const qb = this.lessonRepo
       .createQueryBuilder('lesson')
-      .leftJoinAndSelect('lesson.translations', 'tr')
-      .leftJoinAndSelect('tr.language', 'lang')
-      .leftJoinAndSelect('lesson.topic', 'topic')
-      .where('lesson.id = :id', { id });
-
-    if (languageId) qb.andWhere('tr.language_id = :languageId', { languageId });
-
+      .leftJoinAndSelect('lesson.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+      .leftJoin('lesson.topic', 'topic')
+      .leftJoin('topic.translations',
+        'tt',
+        languageId ? 'tt.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('tt.language', 'ttlang')
+      .where('lesson.id = :id', {id})
+      .andWhere('topic.id = :topicId', {topicId});
+      
     const lesson = await qb.getOne();
     if (!lesson) throw new NotFoundException('Lesson not found');
 

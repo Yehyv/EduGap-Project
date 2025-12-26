@@ -53,7 +53,7 @@ export class LessonsController {
    *  - languageId: لتصفية الترجمة
    *  - topicId: لتصفية الدروس الخاصة بتوبيك معين
    */
-  @Get()
+  @Get('super-admin/lessons-list')
   findAll(
     @Query('languageId') languageId?: string,
     @Query('topicId') topicId?: string,
@@ -67,20 +67,22 @@ export class LessonsController {
    * GET /lessons/:id
    * جلب درس واحد (يدعم languageId كهيدر اختياري)
    */
-  @Get(':id')
+  @Get('super-admin/lesson/:id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
+    @Query('topicId') topicId: string,
     @Headers('languageId') languageId?: string,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
-    return this.lessonsService.findOne(id, langId);
+    const topIc = topicId ? Number(topicId) : undefined;
+    return this.lessonsService.findOne(id, langId, topIc);
   }
 
   /**
    * PATCH /lessons/:id
    * تحديث الدرس (topic/order/isActive/... + replace translations لو مبعوتة)
    */
-  @Patch(':id')
+  @Patch('super-admin/:id')
   @UseInterceptors(FileInterceptor('image', imageStorage('lesson-images')))
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -94,7 +96,7 @@ export class LessonsController {
    * DELETE /lessons/:id
    * حذف (Soft delete)
    */
-  @Delete(':id')
+  @Delete('super-admin/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.lessonsService.remove(id);
   }

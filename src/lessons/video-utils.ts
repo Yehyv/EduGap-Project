@@ -5,43 +5,46 @@ import ffprobePath from '@ffprobe-installer/ffprobe';
 ffmpeg.setFfmpegPath(ffmpegPath.path);
 ffmpeg.setFfprobePath(ffprobePath.path);
 
-// نعرف نوع بسيط للنتيجة اللي احنا محتاجينها فقط
-interface SafeFfprobeFormat {
-  duration?: number;
+/* ---------- Types ---------- */
+
+interface FfprobeFormatSafe {
+  duration: number;
 }
 
-interface SafeFfprobeData {
-  format?: SafeFfprobeFormat;
+interface FfprobeSafe {
+  format: FfprobeFormatSafe;
 }
 
-/**
- * Safely extract video duration (in seconds) using ffprobe.
- */
+/* ---------- Type Guards ---------- */
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function hasDurationFormat(data: unknown): data is FfprobeSafe {
+  if (!isObject(data)) return false;
+  if (!isObject(data.format)) return false;
+
+  return typeof data.format.duration === 'number';
+}
+
+/* ---------- Function ---------- */
+
 export async function getVideoDuration(url: string): Promise<number | null> {
-  return new Promise<number | null>((resolve) => {
-    ffmpeg.ffprobe(
-      url,
-      (err: Error | null | undefined, metadataRaw: unknown) => {
+  return new Promise((resolve) => {
+    ffmpeg(url)
+      .inputOptions(['-analyzeduration 10000000', '-probesize 10000000'])
+      .ffprobe((err, metadata) => {
         if (err) {
-          console.warn(
-            '⚠️ Could not read duration for video:',
-            url,
-            err.message,
-          );
-          resolve(null);
-          return;
+          console.warn('⚠️ ffprobe failed:', err.message);
+          return resolve(null);
         }
 
-        // نعمل casting آمن للنوع اللي احنا محددينه
-        const metadata = metadataRaw as SafeFfprobeData;
+        if (hasDurationFormat(metadata)) {
+          return resolve(metadata.format.duration);
+        }
 
-        const dur =
-          typeof metadata?.format?.duration === 'number'
-            ? metadata.format.duration
-            : null;
-
-        resolve(dur);
-      },
-    );
+        resolve(null);
+      });
   });
 }

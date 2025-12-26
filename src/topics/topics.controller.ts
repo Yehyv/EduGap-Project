@@ -34,7 +34,7 @@ export class TopicsController {
    * GET /topics?languageId=&contentId=
    * جلب التوبيكس - يدعم فلترة باللغة وبالكونتنت
    */
-  @Get('all')
+  @Get('super-admin/topics-list')
   findAll(
     @Query('languageId') languageId?: string,
     @Query('contentId') contentId?: string,
@@ -43,20 +43,23 @@ export class TopicsController {
     const cId = contentId ? Number(contentId) : undefined;
     return this.topicsService.findAll(langId, cId);
   }
-  @Get(':id')
+  @Get('super-admin/topics/:id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
+    @Query('contentId') contentId: string,
     @Headers('languageId') languageId?: string,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
-    return this.topicsService.findOne(id, langId);
+    const contId = contentId ? Number(contentId) : undefined;
+
+    return this.topicsService.findOne(id, langId, contId);
   }
 
   /**
    * PATCH /topics/:id
    * تحديث التوبيك (content/order/isActive + replace translations لو مبعوتة)
    */
-  @Patch(':id')
+  @Patch('super-admin/:id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTopicDto: UpdateTopicDto,
@@ -68,7 +71,7 @@ export class TopicsController {
    * DELETE /topics/:id
    * حذف (Soft delete)
    */
-  @Delete(':id')
+  @Delete('super-admin/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.topicsService.remove(id);
   }
