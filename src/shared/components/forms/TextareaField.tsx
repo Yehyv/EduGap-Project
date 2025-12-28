@@ -7,6 +7,7 @@ type TextareaFieldProps = {
   rows?: number;
   maxLength?: number;
   className?: string;
+  moreStyle?: string;
 };
 
 const TextareaField = ({
@@ -16,6 +17,7 @@ const TextareaField = ({
   rows = 4,
   maxLength,
   className = "",
+  moreStyle,
 }: TextareaFieldProps) => {
   const [field, meta] = useField<string>(name);
   const hasError = Boolean(meta.touched && meta.error);
@@ -35,7 +37,7 @@ const TextareaField = ({
         rows={rows}
         maxLength={maxLength}
         aria-invalid={hasError}
-        className={`w-full resize-none bg-white border ${
+        className={`${moreStyle} w-full resize-none bg-white border ${
           hasError ? "border-red-500" : "border-gray-200"
         } px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary !border-[#9E9C9C] transition`}
       />

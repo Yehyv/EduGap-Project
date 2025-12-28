@@ -5,11 +5,13 @@ const DashboardPageTitle = ({
   button,
   buttonText,
   isLoading,
+  moreStyle,
 }: {
   text: string;
   button?: boolean;
   isLoading?: boolean;
   buttonText?: React.ReactNode;
+  moreStyle?: string;
 }) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mb-1">
@@ -17,7 +19,7 @@ const DashboardPageTitle = ({
       {button && (
         <button
           type={"button"}
-          className={`bg-gradient-to-r cursor-pointer  from-secondary to-secondary-dark text-white px-4 rounded-xl shadow-md hover:to-secondary transition`}
+          className={`bg-gradient-to-r cursor-pointer  from-secondary to-secondary-dark text-white px-4 rounded-xl shadow-md hover:to-secondary transition ${moreStyle}`}
         >
           {isLoading ? <ButtonLoader /> : buttonText}
         </button>

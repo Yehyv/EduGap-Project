@@ -16,6 +16,8 @@ export interface Translation {
   updatedAt: string;
   deletedAt: string | null;
   language: Language;
+  contactPersopnName: string;
+  contactPersonPostion: string;
 }
 
 export interface Institute {
@@ -25,13 +27,39 @@ export interface Institute {
   email: string;
   phone_key: string;
   phone: string;
+  is_active: boolean;
   location: string;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
   translations: Translation[];
   translation: Translation;
+  region: {
+    id: string;
+    name: string;
+    city: {
+      id: string;
+      name: string;
+      country: {
+        id: string;
+        name: string;
+      };
+    };
+  };
 }
+export type instituteResponse = {
+  data: Institute;
+};
+export interface ProgramDetailsForAdmin {
+  id: number;
+  logo: string;
+  name: string;
+  description: string;
+  languageId: number;
+}
+export type ProgramDetailsResponseForAdmin = {
+  data: ProgramDetailsForAdmin;
+};
 export interface InstituteCourses {
   id: number;
   image: string;
@@ -67,6 +95,48 @@ export type UsersResponse = {
     users: User[];
   };
 };
+export type ProgramsForAdmin = {
+  id: number;
+  logo: string;
+  name: string;
+  description: string;
+  languageId: number;
+};
+export type CoursesForDashboard = {
+  id: number;
+  image: string;
+  name: string;
+  description: string;
+  whatToLearn: string[];
+};
+export type CourseDetailsResponseForDashboard = {
+  data: CoursesForDashboard;
+};
+export type CoursesForDashboardResponse = {
+  data: CoursesForDashboard[];
+};
+
+export type ProgramsResponseForAdmin = {
+  data: {
+    users: ProgramsForAdmin[];
+  };
+};
 export type InstitutesCoursesResponse = {
   data: InstituteCourses[];
+};
+
+export type LearningPathType = {
+  id: number;
+  image: string;
+  isActive: boolean;
+  title: string;
+  description: string;
+  learning_outcoms: string;
+};
+
+export type LearningPathsForDashboard = {
+  data: LearningPathType[];
+};
+export type LearningPathsForDashboardResponse = {
+  data: LearningPathType;
 };

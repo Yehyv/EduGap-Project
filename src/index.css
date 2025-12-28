@@ -222,7 +222,7 @@
 /* Dropdown Style */
 
 .react-select__control {
-  border-radius: 14px !important;
+  border-radius: 11px !important;
   border-color: #acacac !important;
   box-shadow: none !important;
 }
@@ -268,4 +268,54 @@
 
 .plyr__time {
   color: #333333;
+}
+
+/* Border Dashed */
+.dashed-border {
+  position: relative;
+}
+
+.dashed-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background:
+    /* top */ repeating-linear-gradient(
+        to right,
+        #9ca3af 0,
+        #9ca3af 12px,
+        transparent 12px,
+        transparent 22px
+      )
+      top / 100% 1px no-repeat,
+    /* bottom */
+      repeating-linear-gradient(
+        to right,
+        #9ca3af 0,
+        #9ca3af 12px,
+        transparent 12px,
+        transparent 22px
+      )
+      bottom / 100% 1px no-repeat,
+    /* left */
+      repeating-linear-gradient(
+        to bottom,
+        #9ca3af 0,
+        #9ca3af 12px,
+        transparent 12px,
+        transparent 22px
+      )
+      left / 1px 100% no-repeat,
+    /* right */
+      repeating-linear-gradient(
+        to bottom,
+        #9ca3af 0,
+        #9ca3af 12px,
+        transparent 12px,
+        transparent 22px
+      )
+      right / 1px 100% no-repeat;
 }

@@ -674,6 +674,133 @@ const translations = {
     privacy_banner_title: "Your Privacy Matters",
     privacy_banner_text:
       "At EduGap, protecting your personal information is fundamental to everything we do. We are committed to transparency, security, and giving you control over your data.",
+    students: "Students",
+    edit_student_data: "Edit Student Data",
+    student_data: "Student Data",
+    active: "Active",
+    inactive: "Inactive",
+    student_name: "Student Name",
+    institute: "Institute",
+    phone: "Phone",
+    student_image: "Student Image",
+    created_at: "Created At",
+    created_by: "Created By",
+    student_program: "Student Program",
+    add_student_program: "Add Student Program",
+    marketing_program: "Marketing Program",
+    addNewInstitute: "Add New Institute",
+    instituteNameArabic: "Institute Name (Arabic)",
+    instituteAddressArabic: "Institute Address (Arabic)",
+    instituteNameEnglish: "Institute Name (English)",
+    instituteAddressEnglish: "Institute Address (English)",
+
+    phoneKey: "Phone Key",
+    country: "Country",
+    city: "City",
+    region: "Region",
+    contactPerson: "Contact Person",
+    contactPersonPosition: "Contact Person Position",
+    logo: "Logo",
+    profileImage: "Profile Image",
+    uploadPhoto: "Upload Photo",
+    saveInstitute: "Save Institute",
+
+    emailRequired: "Email is required",
+    invalidEmail: "Invalid email",
+    phoneRequired: "Phone is required",
+    phoneKeyRequired: "Phone key is required",
+    countryRequired: "Country is required",
+    cityRequired: "City is required",
+    regionRequired: "Region is required",
+    contactPersonNameRequired: "Contact person name is required",
+    contactPersonPositionRequired: "Contact person position is required",
+    logoRequired: "Logo is required",
+    profileImageRequired: "Profile image is required",
+    nameRequired: "Name is required",
+    addressRequired: "Address is required",
+    locationRequired: "Location is required",
+    descriptionArabic: "Description In Arabic",
+    descriptionEn: "Description In English",
+    addNewProgram: "Add New Program",
+    programName: "Program Name",
+    programNameEnglish: "Program Name In English",
+    saveProgram: "Save Program",
+
+    addNewCourse: "Add New Course",
+    saveCourse: "Save Course",
+
+    courseNameArabic: "Course Name (Arabic)",
+    courseNameEnglish: "Course Name (English)",
+
+    descriptionEnglish: "Course Description (English)",
+
+    durationTime: "Course Duration",
+    whatToLearn: "What You Will Learn",
+
+    courseImage: "Course Image",
+
+    imageRequired: "Course image is required",
+    descriptionRequired: "Description is required",
+    durationRequired: "Course duration is required",
+    whatToLearnRequired: "At least one learning outcome is required",
+
+    courseBasicData: "البيانات الأساسية للمقرر",
+
+    courseDetailsArabic: "تفاصيل المقرر باللغة العربية",
+    courseDetailsEnglish: "تفاصيل المقرر باللغة الإنجليزية",
+
+    courseDataEnglish: "بيانات المقرر باللغة الإنجليزية",
+
+    tabs_students: "Students",
+    tabs_data: "Data",
+    tabs_details: "Details",
+
+    tabs_content_students: "Students Content",
+    tabs_content_details: "Details Content",
+
+    institute_active: "Active",
+    institute_inactive: "Inactive",
+    institute_edit: "Edit Institute Details",
+    institute_data_ar: "Institute Data (Arabic)",
+    institute_data_en: "Institute Data (English)",
+    institute_error: "Error while getting institute details",
+
+    field_name: "Institute Name",
+    field_region: "Region",
+    field_address: "Address",
+    field_email: "Email",
+    field_phone: "Phone Number",
+
+    courseTitle: "Course",
+    courseActive: "Active",
+    courseInactive: "Inactive",
+    editCourse: "Edit Course Details",
+    tabCourseData: "Course Data",
+    tabCourseSessions: "Course Sessions",
+    courseDataTitle: "Course Data",
+    learningDataTitle: "Learning Path Data",
+    courseDataAr: "Course Data (Arabic)",
+    courseDataEn: "Course Data (English)",
+    fieldName: "Course Name",
+    fieldDescription: "Description",
+    fieldImage: "Course Image",
+    fieldWhatToLearn: "What You Will Learn",
+    fieldCreatedAt: "Created At",
+    fieldCreatedBy: "Created By",
+    sessionsContent: "Sessions related to this course will appear here",
+
+    addNewLearningPath: "Add New Learning Path",
+    learningPathBasicData: "Learning Path Basic Data",
+    learningPathNameArabic: "Learning Path Name (Arabic)",
+
+    learningPathImage: "Learning Path Image",
+    learningPathDetailsArabic: "Learning Path Details (Arabic)",
+    learningPathDataEnglish: "Learning Path Data (English)",
+    learningPathNameEnglish: "Learning Path Name (English)",
+    learningPathDetailsEnglish: "Learning Path Details (English)",
+
+    saveLearningPath: "Save Learning Path",
+    learning_path: "Learning Path",
   },
 
   ar: {
@@ -1389,6 +1516,143 @@ const translations = {
 
     privacy_footer_text: "© 2025 منصة EduGap التعليمية. جميع الحقوق محفوظة.",
     privacy_footer_updated: "تم تحديث سياسة الخصوصية آخر مرة في 24 نوفمبر 2025",
+    students: "الطلاب",
+    edit_student_data: "تعديل بيانات الطالب",
+    student_data: "بيانات الطالب",
+    active: "نشط",
+    inactive: "غير نشط",
+    student_name: "اسم الطالب",
+    institute: "المعهد",
+    phone: "رقم الهاتف",
+    student_image: "صورة الطالب",
+    created_at: "تاريخ الإضافة",
+    created_by: "تم الإنشاء بواسطة",
+    student_program: "برامج الطالب",
+    add_student_program: "إضافة برنامج للطالب",
+    marketing_program: "برنامج التسويق",
+    addNewInstitute: "إضافة معهد جديد",
+
+    instituteNameArabic: "اسم المعهد بالعربي",
+    instituteAddressArabic: "عنوان المعهد بالعربي",
+
+    instituteNameEnglish: "اسم المعهد بالإنجليزي",
+    instituteAddressEnglish: "عنوان المعهد بالإنجليزي",
+
+    phoneKey: "مفتاح الدولة",
+    country: "الدولة",
+    city: "المدينة",
+    region: "المنطقة",
+
+    contactPerson: "اسم شخص التواصل",
+    contactPersonPosition: "المنصب الوظيفي",
+
+    logo: "شعار المعهد",
+    profileImage: "صورة المعهد",
+    uploadPhoto: "رفع صورة",
+
+    saveInstitute: "حفظ المعهد",
+
+    emailRequired: "البريد الإلكتروني مطلوب",
+    invalidEmail: "البريد الإلكتروني غير صحيح",
+
+    phoneRequired: "رقم الهاتف مطلوب",
+    phoneKeyRequired: "مفتاح الدولة مطلوب",
+
+    countryRequired: "الدولة مطلوبة",
+    cityRequired: "المدينة مطلوبة",
+    regionRequired: "المنطقة مطلوبة",
+
+    contactPersonNameRequired: "اسم شخص التواصل مطلوب",
+    contactPersonPositionRequired: "منصب شخص التواصل مطلوب",
+
+    logoRequired: "شعار المعهد مطلوب",
+    profileImageRequired: "صورة المعهد مطلوبة",
+
+    nameRequired: "الاسم مطلوب",
+    addressRequired: "العنوان مطلوب",
+    locationRequired: "الموقع مطلوب",
+
+    descriptionArabic: "الوصف باللغة العربية",
+    descriptionEn: "الوصف باللغة الانلجيزية",
+    addNewProgram: "اضافة برنامج جديد",
+    programName: "اسم البرنامج",
+    programNameEnglish: "اسم البرنامج باللغة الانجليزية",
+    saveProgram: "حفظ البرنامج",
+
+    addNewCourse: "إضافة كورس جديد",
+    saveCourse: "حفظ الكورس",
+
+    courseNameArabic: "اسم الكورس (عربي)",
+    courseNameEnglish: "اسم الكورس (إنجليزي)",
+
+    descriptionEnglish: "وصف الكورس (إنجليزي)",
+
+    durationTime: "مدة الكورس",
+    whatToLearn: "ماذا ستتعلم",
+
+    courseImage: "صورة الكورس",
+
+    imageRequired: "صورة الكورس مطلوبة",
+    descriptionRequired: "الوصف مطلوب",
+    durationRequired: "مدة الكورس مطلوبة",
+    whatToLearnRequired: "يجب إضافة عنصر واحد على الأقل في ماذا ستتعلم",
+
+    courseBasicData: "البيانات الأساسية للمقرر",
+
+    courseDetailsArabic: "تفاصيل المقرر باللغة العربية",
+    courseDetailsEnglish: "تفاصيل المقرر باللغة الإنجليزية",
+
+    courseDataEnglish: "بيانات المقرر باللغة الإنجليزية",
+
+    tabs_students: "الطلاب",
+    tabs_data: "البيانات",
+    tabs_details: "التفاصيل",
+
+    tabs_content_students: "محتوى الطلاب",
+    tabs_content_details: "محتوى التفاصيل",
+
+    institute_active: "نشط",
+    institute_inactive: "غير نشط",
+    institute_edit: "تعديل بيانات المعهد",
+    institute_data_ar: "بيانات المعهد",
+    institute_data_en: "بيانات المعهد باللغة الإنجليزية",
+    institute_error: "حدث خطأ أثناء تحميل بيانات المعهد",
+
+    field_name: "اسم المعهد",
+    field_region: "المنطقة",
+    field_address: "العنوان",
+    field_email: "البريد الإلكتروني",
+    field_phone: "رقم الهاتف",
+
+    courseTitle: "المقرر",
+    courseActive: "نشط",
+    courseInactive: "غير نشط",
+    editCourse: "تعديل بيانات المقرر",
+    tabCourseData: "بيانات المقرر",
+    tabCourseSessions: "الدورات التدريبية الخاصة بالمقرر",
+    courseDataTitle: "بيانات المقرر",
+    learningDataTitle: "بيانات مسار التعلم",
+    courseDataAr: "بيانات المقرر (العربية)",
+    courseDataEn: "بيانات المقرر (الإنجليزية)",
+    fieldName: "اسم المقرر",
+    fieldDescription: "الوصف",
+    fieldImage: "صورة المقرر",
+    fieldWhatToLearn: "ماذا ستتعلم",
+    fieldCreatedAt: "تاريخ الإضافة",
+    fieldCreatedBy: "تم الإنشاء بواسطة",
+    sessionsContent: "ستظهر هنا الدورات التدريبية الخاصة بهذا المقرر",
+
+    addNewLearningPath: "إضافة مسار تعليمي جديد",
+    learningPathBasicData: "البيانات الأساسية للمسار التعليمي",
+    learningPathNameArabic: "اسم المسار بالعربية",
+
+    learningPathImage: "صورة المسار التعليمي",
+    learningPathDetailsArabic: "تفاصيل المسار التعليمي بالعربية",
+    learningPathDataEnglish: "بيانات المسار التعليمي بالإنجليزية",
+    learningPathNameEnglish: "اسم المسار بالإنجليزية",
+    learningPathDetailsEnglish: "تفاصيل المسار التعليمي بالإنجليزية",
+    saveLearningPath: "حفظ المسار التعليمي",
+    learning_path: "مسارات التعلم",
   },
 } as const;
 

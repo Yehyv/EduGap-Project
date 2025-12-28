@@ -47,6 +47,20 @@ import InstituteCoursesDashboard from "@/pages/dashboard/InstituteCoursesDashboa
 import StudentsPage from "@/pages/dashboard/StudentsPage";
 import AddNewStudent from "@/pages/dashboard/AddNewStudent";
 import EditStudentData from "@/pages/dashboard/EditStudentData";
+import StudentDetails from "@/pages/dashboard/StudentDetails";
+import InstituteDetails from "@/pages/dashboard/InstituteDetails";
+import AdminProgramsList from "@/pages/dashboard/AdminProgramsList";
+import AdminProgramDetails from "@/pages/dashboard/AdminProgramDetails";
+import AddNewProgram from "@/pages/dashboard/AddNewProgram";
+import EditProgramDetails from "@/pages/dashboard/EditProgramDetails";
+import CoursesDashboardPage from "@/pages/dashboard/CoursesDashboardPage";
+import AddNewCourse from "@/pages/dashboard/AddNewCourse";
+import CourseDetailsDashboard from "@/pages/dashboard/CourseDetailsDashboard";
+import EditCourseDetails from "@/pages/dashboard/EditCourseDetails";
+import LearningPathsDashboard from "@/pages/dashboard/LearningPathsDashboard";
+import AddNewLearningPath from "@/pages/dashboard/AddNewLearningPath";
+import EditLearningPath from "@/pages/dashboard/EditLearningPath";
+import LearningPathDashboard from "@/pages/dashboard/LearningPathDashboard";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -75,7 +89,7 @@ export default function AppRoutes() {
 
       {/* Dashboard */}
       <Route path="/" element={<DashboardLayout />}>
-        <Route path="/admin-dashboard" element={<InstitutesPage />} />
+        <Route path="/institutes" element={<InstitutesPage />} />
         <Route path="/add-new-institute" element={<AddNewInstitute />} />
         <Route
           path="/institute-courses"
@@ -84,6 +98,47 @@ export default function AppRoutes() {
         <Route path="/students" element={<StudentsPage />} />
         <Route path="/add-new-student" element={<AddNewStudent />} />
         <Route path="/edit-student/:studentId" element={<EditStudentData />} />
+        <Route
+          path="/student-details/:studentId"
+          element={<StudentDetails />}
+        />
+        <Route path="/institute/:instituteId" element={<InstituteDetails />} />
+        <Route path="/programs" element={<AdminProgramsList />} />
+        <Route
+          path="/admin-program-details/:programId"
+          element={<AdminProgramDetails />}
+        />
+        <Route path="/add-new-program" element={<AddNewProgram />} />
+        <Route
+          path="/edit-program/:programId"
+          element={<EditProgramDetails />}
+        />
+        <Route path="/dashboard-courses" element={<CoursesDashboardPage />} />
+        <Route path="/dashboard-add-new-course" element={<AddNewCourse />} />
+        <Route
+          path="/dashboard-edit-course/:courseId"
+          element={<EditCourseDetails />}
+        />
+        <Route
+          path="/dashboard/course/:courseId"
+          element={<CourseDetailsDashboard />}
+        />
+        <Route
+          path="/dashboard/learning-paths"
+          element={<LearningPathsDashboard />}
+        />
+        <Route
+          path="/dashboard/add-learning-path"
+          element={<AddNewLearningPath />}
+        />
+        <Route
+          path="/dashboard/edit-learning-path/:learningPathId"
+          element={<EditLearningPath />}
+        />
+        <Route
+          path="/dashboard/learning-path/:learningPathId"
+          element={<LearningPathDashboard />}
+        />
       </Route>
 
       {/* Public Routes with AuthLayout */}

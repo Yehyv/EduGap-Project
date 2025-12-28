@@ -15,13 +15,19 @@ export default function DropdownMenu({ label, name, options }) {
       <Select
         value={currentValue}
         options={options}
-        className="react-select-container"
+        className="react-select-container "
         classNamePrefix="react-select"
         onChange={(opt) => {
           setFieldValue(name, opt?.value ?? "");
         }}
         onBlur={() => {
           setFieldTouched(name, true);
+        }}
+        styles={{
+          control: (base) => ({
+            ...base,
+            backgroundColor: "#F9F8F8",
+          }),
         }}
       />
 

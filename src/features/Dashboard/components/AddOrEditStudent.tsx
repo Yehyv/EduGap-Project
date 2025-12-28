@@ -6,8 +6,14 @@ import { getInstitutesForDropdownList } from "../services/dashboardApis";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import ButtonLoader from "@/shared/components/ButtonLoader";
+import Swal from "sweetalert2";
 
-const AddOrEditStudent = ({ initialValues, mutate, isPending }) => {
+const AddOrEditStudent = ({
+  initialValues,
+  mutate,
+  isPending,
+  isForEdit = false,
+}) => {
   /* ================= QUERIES ================= */
   const { data: institutesData } = useQuery({
     queryKey: ["getInstitutesForDropdownList"],
@@ -37,9 +43,19 @@ const AddOrEditStudent = ({ initialValues, mutate, isPending }) => {
       initialValues={initialValues}
       validationSchema={addStudentSchema}
       onSubmit={(values, { resetForm }) => {
+        if (JSON.stringify(initialValues) == JSON.stringify(values)) {
+          Swal.fire({
+            icon: "warning",
+            title: "Warning",
+            text: "You didn't change the data",
+          });
+          return;
+        }
         mutate(values, {
           onSuccess: () => {
-            resetForm();
+            if (!isForEdit) {
+              resetForm();
+            }
           },
         });
       }}
@@ -48,7 +64,7 @@ const AddOrEditStudent = ({ initialValues, mutate, isPending }) => {
         <Form className="bg-white rounded-xl p-4">
           <div className="grid grid-cols-1 gap-4">
             <TextField
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
               label="Full Name:"
               name="full_name"
               type="text"
@@ -56,7 +72,7 @@ const AddOrEditStudent = ({ initialValues, mutate, isPending }) => {
             />
             <TextField
               onlyNumbers
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
               label="National Id:"
               name="national_id"
               type="text"
@@ -64,7 +80,7 @@ const AddOrEditStudent = ({ initialValues, mutate, isPending }) => {
             />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <TextField
-                moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
                 label="Email:"
                 name="email"
                 type="email"
@@ -80,7 +96,7 @@ const AddOrEditStudent = ({ initialValues, mutate, isPending }) => {
                 </div>
                 <div className="w-full">
                   <TextField
-                    moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl"
+                    moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
                     label="Phone:"
                     name="phone"
                     type="text"
@@ -99,7 +115,7 @@ const AddOrEditStudent = ({ initialValues, mutate, isPending }) => {
             <button
               disabled={isPending}
               type="submit"
-              className="bg-secondary disabled:bg-gray-200 hover:bg-secondary-dark cursor-pointer text-white w-42 py-1.5 rounded-xl me-auto"
+              className="bg-secondary disabled:bg-gray-200 hover:bg-secondary-dark cursor-pointer text-white w-42 py-1.5 rounded-xl me-auto bg-[#F9F8F8]"
             >
               {isPending ? <ButtonLoader /> : "Save Student"}
             </button>

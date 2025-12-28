@@ -58,6 +58,7 @@ const EditStudentData = () => {
           initialValues={initialValues}
           isPending={isPending}
           mutate={mutate}
+          isForEdit
         />
       )}
     </>

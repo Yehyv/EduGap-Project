@@ -12,6 +12,8 @@ import FilterIcon from "@/assets/svgs/FilterIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link } from "react-router-dom";
+import CircleLoader from "@/shared/components/ui/CircleLoader";
+import type { Institute } from "@/features/Dashboard/types/dashboardTypes";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -40,14 +42,14 @@ const customStyles = {
 const columns = [
   {
     name: "Num",
-    selector: (row, index) => index + 1,
+    selector: (_, index: number) => index + 1,
     sortable: false,
-    width: "40px",
+    width: "60px",
     style: { justifyContent: "center" },
   },
   {
     name: "Logo",
-    selector: (row) => (
+    selector: (row: Institute) => (
       <img
         src={row.logo}
         alt={row.translation.name}
@@ -60,30 +62,47 @@ const columns = [
   },
   {
     name: "Name",
-    selector: (row) => row.translation.name,
+    selector: (row: Institute) => (
+      <Link className="underline text-sm" to={`/institute/${row.id}`}>
+        {row?.translation?.name}
+      </Link>
+    ),
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
-    name: "Created At",
-    selector: (row) => row.createdAt,
+    name: "Email",
+    selector: (row: Institute) => row?.email,
+    sortable: true,
+    style: { justifyContent: "center" },
+  },
+
+  {
+    name: "Person To Contact",
+    selector: (row: Institute) => row?.translation?.contactPersopnName ?? "-",
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
     name: "Location",
-    selector: (row) => row.location,
+    selector: (row: Institute) => row?.translation?.address,
+    sortable: true,
+    style: { justifyContent: "center" },
+  },
+  {
+    name: "Created At",
+    selector: (row: Institute) => row?.createdAt,
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
     name: "Is Active",
     style: { justifyContent: "center" },
-    cell: (row) => {
-      const isActive = row.translations[0].language.isActive;
+    cell: (row: Institute) => {
+      const isActive = row?.is_active;
       return (
         <button
-          className={`px-6 py-1 rounded-full border font-medium text-sm relative ${
+          className={`px-6 py-1 rounded-full border font-medium text-sm text-nowrap relative ${
             isActive
               ? "border-green-500 text-green-500"
               : "border-red-500 text-red-500"
@@ -103,12 +122,12 @@ const columns = [
   {
     name: "Phone",
     style: { justifyContent: "center" },
-    selector: (row) => `${row.phone_key} ${row.phone}`,
+    selector: (row: Institute) => `${row?.phone_key} ${row?.phone}`,
   },
   {
     name: "Edit",
     style: { justifyContent: "center" },
-    cell: (row) => (
+    cell: (row: Institute) => (
       <Link to={`/edit-institute/${row.id}`} className="cursor-pointer">
         <EditIcon />
       </Link>
@@ -121,10 +140,10 @@ const columns = [
   {
     name: "Delete",
     style: { justifyContent: "center" },
-    cell: (row) => (
+    cell: (row: Institute) => (
       <DeleteButton
         deleteApi={() => deleteInstitute(row.id)}
-        successMessage="تم حذف المستخدم بنجاح"
+        successMessage="تم حذف المعهد بنجاح"
         errorMessage="حدث خطأ أثناء الحذف"
         refetchFunction="getInstitutesForDashboard"
       />
@@ -147,7 +166,7 @@ const InstitutesPage = () => {
   const filteredItems = useMemo(() => {
     if (!InstitutesData?.data) return [];
     return InstitutesData.data.filter(
-      (item) =>
+      (item: Institute) =>
         item.translation.name
           .toLowerCase()
           .includes(filterText.toLowerCase()) ||
@@ -205,6 +224,8 @@ const InstitutesPage = () => {
           subHeader
           subHeaderComponent={subHeaderComponent}
           pagination
+          pa
+          progressComponent={<CircleLoader />}
         />
       </div>
     </>

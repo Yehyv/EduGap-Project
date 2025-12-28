@@ -1,33 +1,62 @@
-// FileUploadField.jsx
 import { useField, useFormikContext } from "formik";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import FileIcon from "@/assets/svgs/FileIcon.svg?react";
 
 export default function FileUploadField({
   label,
   name,
   placeholder,
   moreStyle,
+  image,
 }: {
   label: string;
   name: string;
   placeholder: string;
   moreStyle?: string;
+  image?: string;
 }) {
-  const { setFieldValue } = useFormikContext();
+  const { setFieldValue, setFieldTouched } = useFormikContext();
   const [field, meta] = useField(name);
 
   const [fileName, setFileName] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleChange = (e) => {
-    const file = e.currentTarget.files[0];
-    setFieldValue(name, file);
+  /* ================= HANDLERS ================= */
 
-    if (file) {
+  const handleFile = useCallback(
+    (file: File | null) => {
+      if (!file) return;
+
+      setFieldValue(name, file, true);
+      setFieldTouched(name, true, false);
       setFileName(file.name);
-    } else {
-      setFileName("");
-    }
+    },
+    [name, setFieldValue, setFieldTouched]
+  );
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.currentTarget.files?.[0] || null;
+    handleFile(file);
   };
+
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0] || null;
+    handleFile(file);
+  };
+
+  /* ================= UI ================= */
 
   return (
     <div className="flex flex-col gap-1 my-2">
@@ -42,35 +71,48 @@ export default function FileUploadField({
         className="hidden"
       />
 
-      <div className="flex items-center gap-3">
-        {/* Clickable input */}
-        <input
-          type="text"
-          readOnly
-          onClick={() => document.getElementById(name).click()}
-          value={fileName || placeholder}
-          className="cursor-pointer outline-0 focus:border-secondary border border-[#ACACAC] rounded-xl p-2 text-sm w-full bg-white"
-        />
+      {/* Upload Area */}
+      <label
+        htmlFor={name}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`
+          border-transparent dashed-border cursor-pointer center flex-col
+          border w-full rounded-lg p-5 transition
+          ${isDragging ? "bg-gray-100" : ""}
+          ${moreStyle}
+        `}
+      >
+        <FileIcon />
 
-        {/* Button */}
-        <label
-          htmlFor={name}
-          className={`cursor-pointer bg-secondary rounded-xl text-white text-nowrap py-1.5 px-6 hover:bg-secondary/90 ${moreStyle}`}
-        >
-          Upload
-        </label>
-      </div>
+        <span>
+          <span className="text-secondary">اضغط للتحميل</span> او اسحب و ضع
+        </span>
 
-      {/* Preview image */}
+        <span className="text-xs text-gray-500">{fileName || placeholder}</span>
+
+        <span className="text-xs text-gray-400">PNG, JPG, WEBP</span>
+      </label>
+
+      {/* Preview */}
       {field.value && typeof field.value !== "string" && (
         <img
           src={URL.createObjectURL(field.value)}
           alt="Preview"
-          className="w-24 h-24 object-cover rounded-lg mt-2 border"
+          className="w-40 h-40 object-cover rounded-lg mt-2 border"
+        />
+      )}
+      {/* Preview */}
+      {image && !(field.value && typeof field.value !== "string") && (
+        <img
+          src={field.value}
+          alt="Preview"
+          className="w-40 h-40 object-cover rounded-lg mt-2 border"
         />
       )}
 
-      {/* Formik error */}
+      {/* Error */}
       {meta.touched && meta.error && (
         <p className="text-red-500 text-xs">{meta.error}</p>
       )}

@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
-  deleteStudent,
-  getStudents,
+  deleteProgram,
+  getProgramsForAdmin,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
@@ -12,7 +12,10 @@ import FilterIcon from "@/assets/svgs/FilterIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link } from "react-router-dom";
-import type { User } from "@/features/Dashboard/types/dashboardTypes";
+import type {
+  ProgramsForAdmin,
+  User,
+} from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 
 const customStyles = {
@@ -42,19 +45,15 @@ const customStyles = {
 const columns = [
   {
     name: "Num",
-    selector: (_: User, index: number) => index + 1,
+    selector: (_: ProgramsForAdmin, index: number) => index + 1,
     sortable: false,
     width: "60px",
     style: { justifyContent: "center" },
   },
   {
     name: "Photo",
-    selector: (row: User) => (
-      <img
-        src={row.user_image}
-        alt={row.full_name}
-        className="w-12 h-12 rounded-full"
-      />
+    selector: (row: ProgramsForAdmin) => (
+      <img src={row.name} alt={row.name} className="w-12 h-12 rounded-full" />
     ),
     sortable: false,
     minWidth: "80px",
@@ -62,29 +61,20 @@ const columns = [
   },
   {
     name: "Name",
-    selector: (row: User) => (
-      <Link className="underline text-sm" to={`/student-details/${row.id}`}>
-        {row?.full_name}
+    selector: (row: ProgramsForAdmin) => (
+      <Link
+        className="underline text-sm"
+        to={`/admin-program-details/${row.id}`}
+      >
+        {row?.name}
       </Link>
     ),
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
-    name: "Institute",
-    selector: (row: User) => row?.institute?.name ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Phone",
-    selector: (row: User) => row?.phone ?? 0,
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
     name: "Created At",
-    selector: (row: User) => row.createdAt ?? "-",
+    selector: (row: ProgramsForAdmin) => row?.createdAt ?? "-",
     sortable: true,
     style: { justifyContent: "center" },
   },
@@ -92,8 +82,8 @@ const columns = [
   {
     name: "Is Active",
     style: { justifyContent: "center" },
-    cell: (row: User) => {
-      const isActive = row?.is_active;
+    cell: (row: ProgramsForAdmin) => {
+      const isActive = row?.isActive;
       return (
         <button
           className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
@@ -118,7 +108,7 @@ const columns = [
     name: "Edit",
     style: { justifyContent: "center" },
     cell: (row: User) => (
-      <Link to={`/edit-student/${row.id}`} className="cursor-pointer">
+      <Link to={`/edit-program/${row.id}`} className="cursor-pointer">
         <EditIcon />
       </Link>
     ),
@@ -132,10 +122,10 @@ const columns = [
     style: { justifyContent: "center" },
     cell: (row: User) => (
       <DeleteButton
-        deleteApi={() => deleteStudent(row.id)}
-        successMessage="تم حذف الطالب بنجاح"
+        deleteApi={() => deleteProgram(row.id)}
+        successMessage="تم حذف البرنامج بنجاح"
         errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getStudents"
+        refetchFunction="getProgramsForAdmin"
       />
     ),
     ignoreRowClick: true,
@@ -145,18 +135,18 @@ const columns = [
   },
 ];
 
-const StudentsPage = () => {
+const AdminProgramsList = () => {
   const { data: studentsData, isLoading } = useQuery({
-    queryKey: ["getStudents"],
-    queryFn: () => getStudents(),
+    queryKey: ["getProgramsForAdmin"],
+    queryFn: () => getProgramsForAdmin(),
   });
 
   const [filterText, setFilterText] = useState("");
 
   const filteredItems = useMemo(() => {
-    if (!studentsData?.data?.users) return [];
-    return studentsData?.data?.users.filter((item) =>
-      item?.full_name?.toLowerCase().includes(filterText?.toLowerCase())
+    if (!studentsData?.data) return [];
+    return studentsData?.data?.filter((item) =>
+      item?.name?.toLowerCase().includes(filterText?.toLowerCase())
     );
   }, [filterText, studentsData]);
 
@@ -189,13 +179,13 @@ const StudentsPage = () => {
   return (
     <>
       <DashboardPageTitle
-        text="Students"
+        text="Programs"
         button
         buttonText={
-          <Link to={"/add-new-student"} className="center">
+          <Link to={"/add-new-program"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
             <span className="inline-block me-4 text-white">
-              Add New Student
+              Add New Program
             </span>
           </Link>
         }
@@ -216,4 +206,4 @@ const StudentsPage = () => {
     </>
   );
 };
-export default StudentsPage;
+export default AdminProgramsList;

@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
-  deleteStudent,
-  getStudents,
+  deleteLearningPath,
+  getLearningPathsForDashboard,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
@@ -12,8 +12,8 @@ import FilterIcon from "@/assets/svgs/FilterIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link } from "react-router-dom";
-import type { User } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
+import type { LearningPathType } from "@/features/Dashboard/types/dashboardTypes";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -42,58 +42,42 @@ const customStyles = {
 const columns = [
   {
     name: "Num",
-    selector: (_: User, index: number) => index + 1,
-    sortable: false,
+    selector: (_: unknown, index: number) => index + 1,
     width: "60px",
     style: { justifyContent: "center" },
   },
   {
-    name: "Photo",
-    selector: (row: User) => (
-      <img
-        src={row.user_image}
-        alt={row.full_name}
-        className="w-12 h-12 rounded-full"
-      />
+    name: "Image",
+    selector: (row: LearningPathType) => (
+      <img src={row.image} alt={row.name} className="w-12 h-12 rounded-full" />
     ),
-    sortable: false,
     minWidth: "80px",
     style: { justifyContent: "center" },
   },
   {
     name: "Name",
-    selector: (row: User) => (
-      <Link className="underline text-sm" to={`/student-details/${row.id}`}>
-        {row?.full_name}
+    selector: (row: LearningPathType) => (
+      <Link
+        className="underline text-sm"
+        to={`/dashboard/learning-path/${row.id}`}
+      >
+        {row.title}
       </Link>
     ),
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
-    name: "Institute",
-    selector: (row: User) => row?.institute?.name ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Phone",
-    selector: (row: User) => row?.phone ?? 0,
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
     name: "Created At",
-    selector: (row: User) => row.createdAt ?? "-",
+    selector: (row: LearningPathType) => row.createdAt,
     sortable: true,
     style: { justifyContent: "center" },
   },
-
   {
-    name: "Is Active",
+    name: "Status",
     style: { justifyContent: "center" },
-    cell: (row: User) => {
-      const isActive = row?.is_active;
+    cell: (row: LearningPathType) => {
+      const isActive = row.isActive;
       return (
         <button
           className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
@@ -104,61 +88,61 @@ const columns = [
         >
           {isActive ? "Active" : "Inactive"}
           <span
-            className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
-              isActive ? " bg-green-500" : " bg-red-500"
+            className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 ${
+              isActive ? "bg-green-500" : "bg-red-500"
             }`}
-          ></span>
+          />
         </button>
       );
     },
     sortable: true,
   },
-
   {
     name: "Edit",
     style: { justifyContent: "center" },
-    cell: (row: User) => (
-      <Link to={`/edit-student/${row.id}`} className="cursor-pointer">
+    cell: (row: LearningPathType) => (
+      <Link
+        to={`/dashboard/edit-learning-path/${row.id}`}
+        className="cursor-pointer"
+      >
         <EditIcon />
       </Link>
     ),
     ignoreRowClick: true,
-    allowOverflow: true,
     button: true,
     minWidth: "50px",
   },
   {
     name: "Delete",
     style: { justifyContent: "center" },
-    cell: (row: User) => (
+    cell: (row: LearningPathType) => (
       <DeleteButton
-        deleteApi={() => deleteStudent(row.id)}
-        successMessage="تم حذف الطالب بنجاح"
+        deleteApi={() => deleteLearningPath(row.id)}
+        successMessage="تم حذف المسار التعليمي بنجاح"
         errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getStudents"
+        refetchFunction="getLearningPathsForDashboard"
       />
     ),
     ignoreRowClick: true,
-    allowOverflow: true,
     button: true,
     minWidth: "60px",
   },
 ];
 
-const StudentsPage = () => {
-  const { data: studentsData, isLoading } = useQuery({
-    queryKey: ["getStudents"],
-    queryFn: () => getStudents(),
+const LearningPathsDashboardPage = () => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["getLearningPathsForDashboard"],
+    queryFn: () => getLearningPathsForDashboard(),
   });
 
   const [filterText, setFilterText] = useState("");
 
   const filteredItems = useMemo(() => {
-    if (!studentsData?.data?.users) return [];
-    return studentsData?.data?.users.filter((item) =>
-      item?.full_name?.toLowerCase().includes(filterText?.toLowerCase())
+    if (!data?.data) return [];
+    return data.data.filter((item: LearningPathType) =>
+      item.title?.toLowerCase().includes(filterText.toLowerCase())
     );
-  }, [filterText, studentsData]);
+  }, [filterText, data]);
 
   const subHeaderComponent = useMemo(() => {
     return (
@@ -171,14 +155,11 @@ const StudentsPage = () => {
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
           />
-          <button
-            type="button"
-            className="absolute start-2 top-1/2 -translate-y-1/2"
-          >
+          <span className="absolute start-2 top-1/2 -translate-y-1/2">
             <SearchIcon className="w-7 h-7" />
-          </button>
+          </span>
         </div>
-        <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm focus:outline-none">
+        <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm">
           <FilterIcon />
           <span>Filter</span>
         </div>
@@ -189,17 +170,16 @@ const StudentsPage = () => {
   return (
     <>
       <DashboardPageTitle
-        text="Students"
+        text="Learning Paths"
         button
         buttonText={
-          <Link to={"/add-new-student"} className="center">
+          <Link to="/dashboard/add-learning-path" className="center">
             <PlusIcon className="mt-1.5 h-8" />
-            <span className="inline-block me-4 text-white">
-              Add New Student
-            </span>
+            <span className="me-4 text-white">Add New Learning Path</span>
           </Link>
         }
       />
+
       <div className="w-full overflow-x-auto">
         <DataTable
           columns={columns}
@@ -216,4 +196,5 @@ const StudentsPage = () => {
     </>
   );
 };
-export default StudentsPage;
+
+export default LearningPathsDashboardPage;

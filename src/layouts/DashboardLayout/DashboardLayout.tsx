@@ -5,7 +5,10 @@ import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
 import DashboardIcon from "@/assets/svgs/DashboardIcon.svg?react";
 import GovernmentIcon from "@/assets/svgs/GovernmentIcon.svg?react";
 import StudentIcon from "@/assets/svgs/studentSidebarIcon.svg?react";
+import CoursesDashboardIcon from "@/assets/svgs/CoursesDashboardIcon.svg?react";
 import Arrow from "@/assets/svgs/RightArrow.svg?react";
+import ProgramsIcon from "@/assets/svgs/ProgramsIcon.svg?react";
+import LearningPathsIcon from "@/assets/svgs/LearningPaths.svg?react";
 import PersonIcon from "@/assets/imgs/ForDev/Person.jpg";
 import SearchBar from "@/features/Dashboard/components/SearchBar";
 const InstitutesPage = () => {
@@ -46,7 +49,7 @@ const InstitutesPage = () => {
           </Link>
           <Link
             className="p-2 flex items-center gap-2 text-[#ACACAC] hover:text-secondary hover:font-bold rounded-xl text-sm hover:bg-[#ECF8FF] dark:hover:bg-gray-700"
-            to="#"
+            to="/institutes"
           >
             <GovernmentIcon />
             <span>Institutes</span>
@@ -57,6 +60,27 @@ const InstitutesPage = () => {
           >
             <StudentIcon />
             <span>Students</span>
+          </Link>
+          <Link
+            className="p-2 flex items-center gap-2 text-[#ACACAC] hover:text-secondary hover:font-bold rounded-xl text-sm hover:bg-[#ECF8FF] dark:hover:bg-gray-700"
+            to="/programs"
+          >
+            <ProgramsIcon />
+            <span>Programs</span>
+          </Link>
+          <Link
+            className="p-2 flex items-center gap-2 text-[#ACACAC] hover:text-secondary hover:font-bold rounded-xl text-sm hover:bg-[#ECF8FF] dark:hover:bg-gray-700"
+            to="/dashboard-courses"
+          >
+            <CoursesDashboardIcon />
+            <span>Courses</span>
+          </Link>
+          <Link
+            className="p-2 flex items-center gap-2 text-[#ACACAC] hover:text-secondary hover:font-bold rounded-xl text-sm hover:bg-[#ECF8FF] dark:hover:bg-gray-700"
+            to="/dashboard/learning-paths"
+          >
+            <LearningPathsIcon />
+            <span>Learning Paths</span>
           </Link>
         </nav>
       </aside>
