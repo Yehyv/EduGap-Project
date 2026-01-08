@@ -13,6 +13,7 @@ import { Language } from 'src/languages/entities/language.entity';
 import { ProgramTranslation } from './entities/program-translation.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
+import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 interface ProgramRaw {
   program_id: number;
   program_logo: string;
@@ -21,6 +22,8 @@ interface ProgramRaw {
   translation_description: string;
   language_id: number;
   isActive: number;
+  course_id: number;
+  course_name: string;
 }
 @Injectable()
 export class ProgramsService {
@@ -39,6 +42,9 @@ export class ProgramsService {
 
     @InjectRepository(InstitutePrograms)
     private readonly ipRepository: Repository<InstitutePrograms>,
+
+    @InjectRepository(InstituteProgramCourse)
+    private readonly ipc: Repository<InstituteProgramCourse>,
   ) {}
 
   // ✅ إنشاء برنامج بدون معهد (العزل لاحق بالـ assign)
@@ -108,7 +114,7 @@ export class ProgramsService {
       languageId: row.language_id,
     }));
   }
-  async findOne(id: number, languageId?: number){
+  async findOne(id: number, languageId?: number) {
     const query = this.programRepository
       .createQueryBuilder('program')
       .leftJoin(
@@ -284,6 +290,13 @@ export class ProgramsService {
 
   // ✅ Assign Program to Institutes
   async assignProgramToInstitute(instituteId: number, programId: number) {
+    const [institute, program] = await Promise.all([
+      this.instituteRepository.findOne({ where: { id: instituteId } }),
+      this.programRepository.findOne({ where: { id: programId } }),
+    ]);
+    if (!institute)
+      throw new NotFoundException(`Institute ${instituteId} not found`);
+    if (!program) throw new NotFoundException(`Program ${programId} not found`);
     const exist = await this.ipRepository.findOne({
       where: { institute: { id: instituteId }, program: { id: programId } },
     });
@@ -383,6 +396,46 @@ export class ProgramsService {
     return rows.map((r) => ({
       id: r.program_id,
       name: r.translation_name,
+    }));
+  }
+  async programsAndCoursesForInstitute(
+    instituteId: number,
+    languageId?: number,
+  ) {
+    const query = this.ipc
+      .createQueryBuilder('ipc')
+      .leftJoin('ipc.institute', 'institute')
+      .where('institute.id = :instituteId', { instituteId })
+      .leftJoin('ipc.program', 'program')
+      .leftJoin(
+        'program.translations',
+        'ptrs',
+        languageId ? 'ptrs.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('ptrs.language', 'planguage')
+      .leftJoin('ipc.course', 'course')
+      .leftJoin(
+        'course.translations',
+        'ctrs',
+        languageId ? 'ctrs.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('ctrs.language', 'clanguage')
+      .select([
+        'program.id AS program_id',
+        'ptrs.name AS translation_name',
+        'course.id AS course_id',
+        'ctrs.name AS course_name',
+      ]);
+    const rows = await query.getRawMany<ProgramRaw>();
+    return rows.map((pr) => ({
+      id: pr.program_id,
+      name: pr.translation_name,
+      courses: {
+        id: pr.course_id,
+        name: pr.course_name,
+      },
     }));
   }
 }

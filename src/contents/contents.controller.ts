@@ -79,6 +79,15 @@ export class ContentsController {
       userId
     });
   }
+  @Get('super-admin/dropdown/course-contents')
+  courseContentsDropDown(
+    @Query('courseId') courseId: number,
+    @Headers('languageId') languageId: number,
+  ) {
+    const langId = languageId? Number(languageId) : undefined;
+    const courId = Number(courseId)
+    return this.contentsService.contentsForCourse(courId, langId)
+  }
   @Patch('super-admin/content-status/:id')
   async changeContentStatus(@Param('id', ParseIntPipe) id: number) {
     return this.contentsService.toggleActive(id);

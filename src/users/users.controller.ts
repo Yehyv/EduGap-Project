@@ -105,7 +105,7 @@ export class UsersController {
       throw error; // إعادة throw عشان الـ Exception Filter يشتغل
     }
   }
-  @Get(':id/super-admin/user')
+  @Get('super-admin/user/:id')
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @Headers('languageId') languageId?: string,

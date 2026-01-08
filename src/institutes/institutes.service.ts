@@ -429,4 +429,8 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
       id: institute.id,
       is_active: institute.is_active};
   }
+  async institutePrograms(programId: number, languageId: number) {
+    
+  }
+
 }

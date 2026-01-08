@@ -2216,7 +2216,7 @@ export class ContentsService {
         contentStatus ? 'active' : 'inactive'
       }.`,
       id: contentId,
-      isActive: contentStatus
+      isActive: contentStatus,
     };
   }
   async contentDropDown(languageId?: number) {
@@ -2236,6 +2236,24 @@ export class ContentsService {
     const rows = await query.getRawMany<contentRow>();
     return rows.map((r) => ({
       id: r.content_id,
+      name: r.translation_name,
+    }));
+  }
+  async contentsForCourse(courseId: number, languageId?: number) {
+    const query = this.courseContentRepo
+      .createQueryBuilder('cc')
+      .leftJoin('cc.course', 'course')
+      .where('course.id = :courseId', { courseId })
+      .leftJoin('cc.content', 'content')
+      .leftJoin(
+        'content.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+      )
+      .leftJoin('translation.language', 'language')
+      .select('translation.name AS translation_name');
+    const rows = await query.getRawMany<contentRow>();
+    return rows.map((r) => ({
       name: r.translation_name,
     }));
   }

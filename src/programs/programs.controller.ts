@@ -13,6 +13,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { ProgramsService } from './programs.service';
 import { CreateProgramDto } from './dto/create-program.dto';
@@ -63,6 +64,16 @@ export class ProgramsController {
   ) {
     const langId = languageId ? Number(languageId) : undefined;
     return this.programsService.ProgramDropDown(langId);
+  }
+  
+  @Get('super-admin/dropdown/inst-CP')
+  instProgCourses(
+    @Query('instituteId') instituteId: number,
+    @Headers('languageId') languageId: number,
+  ) {
+    const langId = languageId? Number(languageId) : undefined;
+    const instId = Number(instituteId);
+    return this.programsService.programsAndCoursesForInstitute(instId, langId)
   }
 
   /** برامج عامة متاحة للاختيار (من غير عزل معهد) */
