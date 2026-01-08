@@ -106,6 +106,9 @@
     color: #111827;
     margin-bottom: 0.35rem;
   }
+  button {
+    cursor: pointer;
+  }
 
   /* Responsive adjustments */
   @media (min-width: 768px) {

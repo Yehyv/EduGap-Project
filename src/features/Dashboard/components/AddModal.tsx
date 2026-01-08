@@ -1,5 +1,4 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
 
 type MyModalProps = {
   trigger?: React.ReactNode;
@@ -12,15 +11,13 @@ type MyModalProps = {
   headerTextColor?: string;
 };
 
-export default function MyModal({
+export default function AddModal({
   trigger,
-  headerTitle,
   headerComponent,
   children,
   open,
   onOpenChange,
-  headerBgColor = "bg-secondary",
-  headerTextColor = "text-white",
+  headerBgColor,
 }: MyModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -36,20 +33,7 @@ export default function MyModal({
           "
         >
           <div className={`relative ${headerBgColor} px-4 py-2 pt-3`}>
-            {headerComponent ? (
-              headerComponent
-            ) : (
-              <>
-                <Dialog.Title
-                  className={`font-semibold text-lg ${headerTextColor} text-center`}
-                >
-                  {headerTitle}
-                </Dialog.Title>
-                <Dialog.Close className="absolute start-4 top-5 cursor-pointer hover:scale-110 transition">
-                  <CloseIcon className="w-4 h-4" />
-                </Dialog.Close>
-              </>
-            )}
+            {headerComponent}
           </div>
 
           <div className="p-5">{children}</div>

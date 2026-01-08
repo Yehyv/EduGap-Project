@@ -1,7 +1,13 @@
 import api from "@/shared/services/axios";
 import type {
+  CitiesResponse,
+  CountriesResponse,
+  CountriesTypes,
   CourseDetailsResponseForDashboard,
   CoursesForDashboardResponse,
+  ExpertDetailsResponse,
+  ExpertTypeForDashboard,
+  ExppertsForDashboardResponse,
   instituteResponse,
   InstitutesCoursesResponse,
   InstitutesResponse,
@@ -27,6 +33,37 @@ export async function getInstitutesCoursesForDashboard(): Promise<InstitutesCour
   );
   return res.data;
 }
+export async function getCountriesDropdown(): Promise<CountriesResponse> {
+  const res = await api.get<CountriesResponse>(
+    `/countries/super-admin/dropdown/list`
+  );
+  return res.data;
+}
+export async function getCitiesDropdown(
+  countryId: number
+): Promise<CitiesResponse> {
+  const res = await api.get<CitiesResponse>(
+    `/cities/super-admin/dropdown/list/${countryId}`
+  );
+  return res.data;
+}
+export async function getRegionsDropdown(
+  cityId: number
+): Promise<CitiesResponse> {
+  const res = await api.get<CitiesResponse>(
+    `/regions/super-admin/dropdown/list/${cityId}`
+  );
+  return res.data;
+}
+export const createInstitute = async (formData) => {
+  const { data } = await api.post("/institutes", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return data;
+};
 export async function deleteInstitute(instituteId: number): Promise<void> {
   const res = await api.delete<void>(`/institutes/${instituteId}`);
   return res.data;
@@ -49,10 +86,12 @@ export async function createStudent(data): Promise<void> {
   const res = await api.post<void>(`/users`, data);
   return res.data;
 }
+
 export async function editStudent(data): Promise<void> {
   const res = await api.patch<void>(`/users/${data.studentId}`, data);
   return res.data;
 }
+
 export async function deleteStudent(studentId: number): Promise<void> {
   const res = await api.delete<void>(`/users/${studentId}`);
   return res.data;
@@ -298,3 +337,89 @@ export const editLearningPath = async (values: any) => {
     },
   });
 };
+
+// Expert Crud
+
+export async function getExpertsForDashboard(): Promise<ExppertsForDashboardResponse> {
+  const res = await api.get<ExppertsForDashboardResponse>(
+    `/educators/super-admin/educators-list`
+  );
+  return res.data;
+}
+export async function getExpertDetailsForDashboard(
+  expertId: string
+): Promise<ExpertDetailsResponse> {
+  const res = await api.get<ExpertDetailsResponse>(
+    `/educators/super-admin/educator/${expertId}`
+  );
+  return res.data;
+}
+
+export async function deleteExpert(expertId: number): Promise<void> {
+  const res = await api.delete<void>(`/educators/super-admin/${expertId}`);
+  return res.data;
+}
+
+export const addExpert = async (values: any) => {
+  const formData = new FormData();
+
+  // logo
+  formData.append("image", values.image);
+  formData.append("userId", values.userId);
+  formData.append(`title`, values.title);
+  formData.append(`bio`, values.bio);
+
+  return api.post("/educators", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+export const editExpert = async (values: any) => {
+  const formData = new FormData();
+
+  // logo
+  formData.append("image", values.image);
+  formData.append("userId", values.userId);
+  formData.append(`title`, values.title);
+  formData.append(`bio`, values.bio);
+
+  return api.patch(`/educators/super-admin/${values.userId}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+export async function getAllCoursesForDropdown(): Promise<CitiesResponse> {
+  const res = await api.get<CitiesResponse>(
+    `/courses/super-admin/dropdown/list`
+  );
+  return res.data;
+}
+export async function getAllProgramsForDropdown(): Promise<CitiesResponse> {
+  const res = await api.get<CitiesResponse>(
+    `/programs/super-admin/dropdown/list`
+  );
+  return res.data;
+}
+
+export async function assignCourseToInstituteProgram(
+  courseId: number,
+  programId: number,
+  instituteId: number
+): Promise<void> {
+  const res = await api.patch<void>(
+    `/courses/${courseId}/programs/${programId}/institutes/${instituteId}`
+  );
+  return res.data;
+}
+export async function assignProgramToInstitute(
+  programId: number,
+  instituteId: number
+): Promise<void> {
+  const res = await api.patch<void>(
+    `/programs/${programId}/institutes/${instituteId}`
+  );
+  return res.data;
+}

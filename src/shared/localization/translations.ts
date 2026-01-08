@@ -801,6 +801,15 @@ const translations = {
 
     saveLearningPath: "Save Learning Path",
     learning_path: "Learning Path",
+    addNewExpert: "Add New Expert",
+    expert_title: "Expert Title",
+    expert_bio: "Expert Bio",
+    expertImage: "Expert Profile Image",
+    editExpertDetails: "Edit Expert Details",
+    saveExpert: "Save Expert",
+    edit_expert_data: "Edit Expert Data",
+    expert_data: "Expert Data",
+    expert_name: "Expert Name",
   },
 
   ar: {
@@ -1653,6 +1662,15 @@ const translations = {
     learningPathDetailsEnglish: "تفاصيل المسار التعليمي بالإنجليزية",
     saveLearningPath: "حفظ المسار التعليمي",
     learning_path: "مسارات التعلم",
+    addNewExpert: "اضافة خبير جديد",
+    expert_title: "الوظيفة",
+    expert_bio: "الوصف",
+    expertImage: "صورة الخبير",
+    editExpertDetails: "تعديل بيانات الخبير",
+    saveExpert: "حفظ بيانات الخبير",
+    edit_expert_data: "تعديل بيانات الخبير",
+    expert_data: "بيانات الخبير",
+    expert_name: "اسم الخبير",
   },
 } as const;
 

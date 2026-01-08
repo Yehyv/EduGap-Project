@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import PorgramsInInstitute from "@/features/Dashboard/components/PorgramsInInstitute";
 
 const InstituteDetails = () => {
   const { instituteId } = useParams();
@@ -199,9 +200,7 @@ const InstituteDetails = () => {
         <div className="bg-white p-5 rounded-lg">Students</div>
       )}
 
-      {activeTab === "details" && (
-        <div className="bg-white p-5 rounded-lg">details</div>
-      )}
+      {activeTab === "details" && <PorgramsInInstitute />}
     </>
   );
 };

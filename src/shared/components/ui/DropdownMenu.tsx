@@ -1,7 +1,12 @@
 import { useField, useFormikContext } from "formik";
 import Select from "react-select";
 
-export default function DropdownMenu({ label, name, options }) {
+export default function DropdownMenu({
+  label,
+  name,
+  options,
+  disabled = false,
+}) {
   const { setFieldValue, setFieldTouched } = useFormikContext();
   const [field, meta] = useField(name);
 
@@ -13,6 +18,7 @@ export default function DropdownMenu({ label, name, options }) {
       {label && <label className="font-medium">{label}</label>}
 
       <Select
+        isDisabled={disabled}
         value={currentValue}
         options={options}
         className="react-select-container "

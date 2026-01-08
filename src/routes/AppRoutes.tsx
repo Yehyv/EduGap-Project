@@ -61,6 +61,10 @@ import LearningPathsDashboard from "@/pages/dashboard/LearningPathsDashboard";
 import AddNewLearningPath from "@/pages/dashboard/AddNewLearningPath";
 import EditLearningPath from "@/pages/dashboard/EditLearningPath";
 import LearningPathDashboard from "@/pages/dashboard/LearningPathDashboard";
+import ExpertsListDashboard from "@/pages/dashboard/ExpertsListDashboard";
+import AddNewExpert from "@/pages/dashboard/AddNewExpert";
+import EditExpertDetails from "@/pages/dashboard/EditExpertDetails";
+import ExpertDetailsDashboard from "@/pages/dashboard/ExpertDetailsDashboard";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -138,6 +142,16 @@ export default function AppRoutes() {
         <Route
           path="/dashboard/learning-path/:learningPathId"
           element={<LearningPathDashboard />}
+        />
+        <Route path="/dashboard/experts" element={<ExpertsListDashboard />} />
+        <Route path="/dashboard/add-expert" element={<AddNewExpert />} />
+        <Route
+          path="/dashboard/edit-expert/:expertId"
+          element={<EditExpertDetails />}
+        />
+        <Route
+          path="/dashboard/expert/:expertId"
+          element={<ExpertDetailsDashboard />}
         />
       </Route>
 

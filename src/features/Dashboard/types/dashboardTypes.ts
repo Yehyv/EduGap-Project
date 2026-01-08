@@ -125,6 +125,17 @@ export type InstitutesCoursesResponse = {
   data: InstituteCourses[];
 };
 
+export type CountriesTypes = {
+  id: number;
+  name: string;
+};
+export type CountriesResponse = {
+  data: CountriesTypes[];
+};
+export type CitiesResponse = {
+  data: CountriesTypes[];
+};
+
 export type LearningPathType = {
   id: number;
   image: string;
@@ -133,10 +144,32 @@ export type LearningPathType = {
   description: string;
   learning_outcoms: string;
 };
+export type ExpertTypeForDashboard = {
+  id: number;
+  title: string;
+  bio: string;
+  image: string;
+  video_intro: string;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string;
+  user: {
+    id: number;
+    full_name: string;
+    email: string;
+  };
+};
+export type ExpertDetailsResponse = {
+  data: ExpertTypeForDashboard;
+};
 
 export type LearningPathsForDashboard = {
   data: LearningPathType[];
 };
 export type LearningPathsForDashboardResponse = {
   data: LearningPathType;
+};
+export type ExppertsForDashboardResponse = {
+  data: { items: ExpertTypeForDashboard[] };
 };
