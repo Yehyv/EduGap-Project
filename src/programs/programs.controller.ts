@@ -60,10 +60,12 @@ export class ProgramsController {
   }
   @Get('super-admin/dropdown/list')
   programDropDown(
+    @Query('instituteId') instituteId: number,
     @Headers('languageId') languageId: number | undefined,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
-    return this.programsService.ProgramDropDown(langId);
+    const instId = Number(instituteId);
+    return this.programsService.ProgramDropDown(instId,langId);
   }
   
   @Get('super-admin/dropdown/inst-CP')

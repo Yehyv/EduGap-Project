@@ -21,7 +21,7 @@ export class InstituteProgramCourse {
   @ManyToOne(() => Institute, { onDelete: 'CASCADE' })
   institute: Institute;
 
-  @ManyToOne(() => Program, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Program, (program) => program.instituteProgramCourses, { onDelete: 'CASCADE' })
   program: Program;
 
   @ManyToOne(() => Course, (course) => course.instituteProgramCourses,{ onDelete: 'CASCADE' })

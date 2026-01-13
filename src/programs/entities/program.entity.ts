@@ -10,6 +10,7 @@ import {
 import { ProgramTranslation } from './program-translation.entity';
 import { ProgramCourse } from './program-course.entity';
 import { User } from 'src/users/entities/user.entity';
+import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 @Entity()
 export class Program {
   @PrimaryGeneratedColumn()
@@ -40,4 +41,8 @@ export class Program {
 
   @OneToMany(() => User, (user) => user.program)
   users: User[];
+
+  @OneToMany(() => InstituteProgramCourse, (ipc) => ipc.program)
+instituteProgramCourses: InstituteProgramCourse[];
+
 }

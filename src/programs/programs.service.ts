@@ -45,6 +45,9 @@ export class ProgramsService {
 
     @InjectRepository(InstituteProgramCourse)
     private readonly ipc: Repository<InstituteProgramCourse>,
+
+    @InjectRepository(InstitutePrograms)
+    private readonly ip: Repository<InstitutePrograms>,
   ) {}
 
   // ✅ إنشاء برنامج بدون معهد (العزل لاحق بالـ assign)
@@ -378,35 +381,52 @@ export class ProgramsService {
       }.`,
     };
   }
-  async ProgramDropDown(languageId?: number) {
-    const query = this.programRepository
+  async ProgramDropDown(instituteId: number, languageId?: number) {
+    const rows = await this.programRepository
       .createQueryBuilder('program')
+
       .leftJoin(
         'program.translations',
         'translation',
         languageId ? 'translation.languageId = :languageId' : undefined,
         { languageId },
       )
-      .leftJoin('translation.language', 'language')
+
+      .where((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('1')
+          .from('institute_programs', 'ip')
+          .where('ip.program_id = program.id')
+          .andWhere('ip.institute_id = :instituteId')
+          .getQuery();
+
+        return `NOT EXISTS ${subQuery}`;
+      })
+
+      .setParameter('instituteId', instituteId)
+
       .select([
         'program.id AS program_id',
         'translation.name AS translation_name',
-      ]);
-    const rows = await query.getRawMany<ProgramRaw>();
+      ])
+      .getRawMany<ProgramRaw>();
+
     return rows.map((r) => ({
       id: r.program_id,
       name: r.translation_name,
     }));
   }
+
   async programsAndCoursesForInstitute(
     instituteId: number,
     languageId?: number,
   ) {
-    const query = this.ipc
-      .createQueryBuilder('ipc')
-      .leftJoin('ipc.institute', 'institute')
+    const query = this.ip
+      .createQueryBuilder('ip')
+      .leftJoin('ip.institute', 'institute')
       .where('institute.id = :instituteId', { instituteId })
-      .leftJoin('ipc.program', 'program')
+      .leftJoin('ip.program', 'program')
       .leftJoin(
         'program.translations',
         'ptrs',
@@ -414,6 +434,12 @@ export class ProgramsService {
         { languageId },
       )
       .leftJoin('ptrs.language', 'planguage')
+      .leftJoin(
+        'program.instituteProgramCourses',
+        'ipc',
+        'ipc.instituteId = :instituteId',
+        { instituteId },
+      )
       .leftJoin('ipc.course', 'course')
       .leftJoin(
         'course.translations',
@@ -438,10 +464,12 @@ export class ProgramsService {
           courses: [],
         };
       }
-      programs[row.program_id].courses.push({
-        id: row.course_id,
-        name: row.course_name,
-      });
+      if (row.course_id) {
+        programs[row.program_id].courses.push({
+          id: row.course_id,
+          name: row.course_name,
+        });
+      }
     }
     return Object.values(programs);
   }
