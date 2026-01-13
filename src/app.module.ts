@@ -41,6 +41,7 @@ import { join } from 'path';
 import { CountriesModule } from './countries/countries.module';
 import { CitiesModule } from './cities/cities.module';
 import { RegionsModule } from './regions/regions.module';
+import { SystemRolesModule } from './system-roles/system-roles.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -88,6 +89,7 @@ import { RegionsModule } from './regions/regions.module';
     CountriesModule,
     CitiesModule,
     RegionsModule,
+    SystemRolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

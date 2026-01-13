@@ -429,13 +429,20 @@ export class ProgramsService {
         'ctrs.name AS course_name',
       ]);
     const rows = await query.getRawMany<ProgramRaw>();
-    return rows.map((pr) => ({
-      id: pr.program_id,
-      name: pr.translation_name,
-      courses: {
-        id: pr.course_id,
-        name: pr.course_name,
-      },
-    }));
+    const programs = {};
+    for (const row of rows) {
+      if (!programs[row.program_id]) {
+        programs[row.program_id] = {
+          id: row.program_id,
+          name: row.translation_name,
+          courses: [],
+        };
+      }
+      programs[row.program_id].courses.push({
+        id: row.course_id,
+        name: row.course_name,
+      });
+    }
+    return Object.values(programs);
   }
 }

@@ -1171,7 +1171,7 @@ export class CoursesService {
       name: r.translation_name,
     }));
   }
-  async courseProgramDropDown(programId: number, languageId?: number){
+  async courseProgramDropDown(programId: number, languageId?: number) {
     const query = this.programCourseRepository
       .createQueryBuilder('PC')
       .leftJoin('PC.program', 'program')

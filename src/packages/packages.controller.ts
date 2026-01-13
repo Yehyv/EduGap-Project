@@ -42,7 +42,7 @@ export class PackagesController {
   }
 
   @Get('super-admin/packages-list')
-  findAll(@Headers('languageId') languageId?: string,) {
+  findAll(@Headers('languageId') languageId?: string) {
     const langId = languageId ? Number(languageId) : undefined;
     return this.packagesService.findAll(langId);
   }

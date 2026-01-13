@@ -2230,7 +2230,7 @@ export class ContentsService {
       )
       .leftJoin('translation.language', 'language')
       .select([
-        'content.id AS course_id',
+        'content.id AS content_id',
         'translation.name AS translation_name',
       ]);
     const rows = await query.getRawMany<contentRow>();

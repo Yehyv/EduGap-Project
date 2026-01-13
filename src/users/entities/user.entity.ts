@@ -25,6 +25,7 @@ import { Educator } from 'src/educators/entities/educator.entity';
 import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
 import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
 import { PasswordAction } from './password-action.entity';
+import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -136,4 +137,9 @@ export class User {
     cascade: true,
   })
   passwordActions: PasswordAction[];
+
+  @ManyToOne(() => SystemRole, (Urole) => Urole.users, {
+    onDelete: 'CASCADE',
+  })
+  UserRole: SystemRole;
 }

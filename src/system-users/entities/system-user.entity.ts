@@ -7,10 +7,9 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
-  OneToMany,
 } from 'typeorm';
 import { Institute } from 'src/institutes/entities/institute.entity';
-import { SystemRole } from './system-role.entity';
+import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 @Entity('system_users')
 export class SystemUser {
   @PrimaryGeneratedColumn()
@@ -31,8 +30,14 @@ export class SystemUser {
   @Column({ type: 'varchar', length: 20 })
   phone: string;
 
-  @Column({ type: 'text', nullable: true })
-  user_image: string;
+  @Column({
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+    default:
+      'https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg',
+  })
+  user_image: string | null;
 
   @Column({ type: 'varchar', length: 30, unique: true })
   username: string;
@@ -52,16 +57,11 @@ export class SystemUser {
   @DeleteDateColumn()
   deleted_at: Date;
 
-  @Column({
-    name: 'is_active',
-    type: 'enum',
-    enum: [0, 1],
-    default: 1,
-  })
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   is_active: number;
 
   @ManyToOne(() => SystemRole, (role) => role.users, { onDelete: 'CASCADE' })
-  role: SystemRole;
+  SysUserrole: SystemRole;
 
 
   @ManyToOne(() => Institute, (institute) => institute.systemUsers, {
