@@ -51,3 +51,30 @@ export const formatDate = (dateStr: string): string => {
     return "";
   }
 };
+
+export const parseWhatToLearn = (value: string): string[] => {
+  if (!value) return [];
+
+  return value
+    .split(/\n|•/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+export const formatCommaSeparatedToLines = (value = "") => {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join("\n");
+};
+
+export const LEVELS = [
+  { label: "Beginner", value: "Beginner" },
+  { label: "Mid", value: "Mid" },
+  { label: "Advanced", value: "Advanced" },
+];
+export const LANGUAGES = [
+  { label: "Arabic", value: "Arabic" },
+  { label: "English", value: "English" },
+];

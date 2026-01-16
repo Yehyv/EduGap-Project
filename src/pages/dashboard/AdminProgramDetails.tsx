@@ -1,16 +1,28 @@
 import { Link, useParams } from "react-router-dom";
 import EditIcon from "@/assets/svgs/PencilIcon.svg?react";
-import { programDetailsForAdmin } from "@/features/Dashboard/services/dashboardApis";
+import PlusIcon from "@/assets/svgs/PlusSign.svg?react";
+import {
+  getCoursesInProgram,
+  programDetailsForAdmin,
+} from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import ActiveOrInactiveButton from "@/features/Dashboard/components/ActiveOrInactiveButton";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
+import AssignCourseToProgram from "@/features/Dashboard/components/AssignCourseToProgram";
+import { useState } from "react";
 const AdminProgramDetails = () => {
   const { programId } = useParams();
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   /* ================= QUERY ================= */
   const { data, isLoading, error } = useQuery({
     queryKey: ["programDetails", programId],
     queryFn: () => programDetailsForAdmin(programId ?? ""),
+    enabled: !!programId,
+  });
+  const { data: coursesInProgramData } = useQuery({
+    queryKey: ["coursesInProgram", programId],
+    queryFn: () => getCoursesInProgram(programId ?? ""),
     enabled: !!programId,
   });
   const programData = data?.data;
@@ -111,6 +123,39 @@ const AdminProgramDetails = () => {
           </div>
         </div>
       </div>
+
+      <div className="bg-white rounded-lg p-5 mt-3">
+        <div className="flex justify-between border-b border-[#ACACAC] pb-3">
+          <h5 className="text-secondary font-bold">
+            المقررات الدراسية المرتبطة بالبرنامج
+          </h5>
+          <button
+            onClick={() => setReviewModalOpen(true)}
+            className="bg-gradient-to-r from-[#FCB737] to-[#BB831A] center py-1.5 px-3 rounded-xl shadow-md hover:to-[#FCB737] transition text-white text-sm"
+          >
+            <PlusIcon className="h-5" />
+            <span>Add Course To Program</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 mt-4">
+          {coursesInProgramData?.data.map((c, index) => (
+            <div className="flex items-center gap-1">
+              <span>{index + 1} - </span>
+              <h6 className="text-[#444444] text-sm font-bold"> {c.name}</h6>
+            </div>
+          ))}
+          {coursesInProgramData?.data.length == 0 && (
+            <p className="text-center text-gray-400">No data available</p>
+          )}
+        </div>
+      </div>
+
+      <AssignCourseToProgram
+        reviewModalOpen={reviewModalOpen}
+        setReviewModalOpen={setReviewModalOpen}
+        programId={programId}
+      />
     </>
   );
 };

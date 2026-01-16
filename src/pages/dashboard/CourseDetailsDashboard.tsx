@@ -1,17 +1,20 @@
 import { Link, useParams } from "react-router-dom";
 import EditIcon from "@/assets/svgs/PencilIcon.svg?react";
+import PlusBlueIcon from "@/assets/svgs/PlusBlueIcon.svg?react";
 import { courseDetailsForDashboard } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useState } from "react";
+import AssignContentToCourse from "@/features/Dashboard/components/AssignContentToCourse";
 
 const CourseDetailsDashboard = () => {
   const { courseId } = useParams();
   const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState("data");
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   /* ================= QUERY ================= */
   const { data, isLoading, isError, error } = useQuery({
@@ -144,7 +147,24 @@ const CourseDetailsDashboard = () => {
       )}
 
       {activeTab === "sessions" && (
-        <div className="bg-white p-5 rounded-lg">{t("sessionsContent")}</div>
+        <>
+          <div className="flex justify-between mb-4">
+            <button
+              onClick={() => setReviewModalOpen(true)}
+              className="center text-secondary font-bold"
+            >
+              <span>اضافة دورة تدريبية جديدة</span>
+              <PlusBlueIcon className="h-7" />
+            </button>
+            <p>الدورات التدريبية الخاصة بالمقرر (3)</p>
+          </div>
+          <div className="bg-white p-5 rounded-lg"></div>
+          <AssignContentToCourse
+            courseId={courseId}
+            reviewModalOpen={reviewModalOpen}
+            setReviewModalOpen={setReviewModalOpen}
+          />
+        </>
       )}
     </>
   );

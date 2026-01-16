@@ -1,3 +1,5 @@
+import type { LessonType } from "@/shared/types/sharedTypes";
+
 export interface Language {
   id: number;
   name: string;
@@ -19,6 +21,21 @@ export interface Translation {
   contactPersopnName: string;
   contactPersonPostion: string;
 }
+export type Content = {
+  id: number;
+  name: string;
+  description: string;
+  image: string;
+  level: string;
+  rate: number;
+  whatToLearn: string;
+  categoryId: number;
+  categoryName: string;
+};
+
+export type ContentsResponse = {
+  data: Content[];
+};
 
 export interface Institute {
   id: number;
@@ -47,8 +64,14 @@ export interface Institute {
     };
   };
 }
+export type ContentDetailsResponse = {
+  data: Content;
+};
 export type instituteResponse = {
   data: Institute;
+};
+export type InstitutesResponse = {
+  data: Institute[];
 };
 export interface ProgramDetailsForAdmin {
   id: number;
@@ -129,11 +152,51 @@ export type CountriesTypes = {
   id: number;
   name: string;
 };
+export type ProgramsInInstitute = {
+  id: number;
+  name: string;
+  courses: {
+    id: number;
+    name: string;
+  };
+};
 export type CountriesResponse = {
   data: CountriesTypes[];
 };
 export type CitiesResponse = {
   data: CountriesTypes[];
+};
+export type Languages = {
+  id: number;
+  name: string;
+  isDefault: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  isActive: number;
+};
+export type LanguagesResponse = {
+  data: Languages[];
+};
+export type ProgramsInInstituteResponse = {
+  data: ProgramsInInstitute[];
+};
+export type TopicsWithLessons = {
+  id: number;
+  name: string;
+  duration: number;
+  lessonsCount: number;
+  lessons: LessonType[];
+};
+export type Topic = {
+  name: string;
+  description: string;
+};
+export type TopicResponse = {
+  data: Topic;
+};
+export type TopicsResponse = {
+  data: TopicsWithLessons[];
 };
 
 export type LearningPathType = {
@@ -172,4 +235,13 @@ export type LearningPathsForDashboardResponse = {
 };
 export type ExppertsForDashboardResponse = {
   data: { items: ExpertTypeForDashboard[] };
+};
+export type Categories = {
+  id: number;
+  name: string;
+  description: string;
+  is_active: number;
+};
+export type CategoriesResponse = {
+  data: Categories[];
 };

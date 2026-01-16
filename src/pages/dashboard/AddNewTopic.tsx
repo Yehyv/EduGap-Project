@@ -1,32 +1,41 @@
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
-import { createStudent } from "@/features/Dashboard/services/dashboardApis";
-
+import { createTopic } from "@/features/Dashboard/services/dashboardApis";
 import { useMutation } from "@tanstack/react-query";
 import Swal from "sweetalert2";
-import AddOrEditStudent from "@/features/Dashboard/components/AddOrEditStudent";
+import AddOrEditTopic from "@/features/Dashboard/components/AddOrEditTopic";
+import { useParams } from "react-router-dom";
 
-const AddNewStudent = () => {
+const AddNewTopic = () => {
+  const { contentId } = useParams();
   const initialValues = {
-    full_name: "",
-    email: "",
-    national_id: "",
-    phone_key: "",
-    phone: "",
-    instituteId: "",
+    contentId: +contentId,
+    translations: [
+      {
+        name: "",
+        description: "",
+        languageId: 1, // Arabic
+      },
+      {
+        name: "",
+        description: "",
+        languageId: 2, // English
+      },
+    ],
   };
+
   /* ================= MUTATION ================= */
   const { mutate, isPending } = useMutation({
-    mutationFn: createStudent,
+    mutationFn: createTopic,
 
     onSuccess: () => {
       Swal.fire({
         icon: "success",
         title: "Success",
-        text: "Student added successfully",
+        text: "Topic created successfully",
       });
     },
 
-    onError: (error) => {
+    onError: (error: any) => {
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -39,8 +48,8 @@ const AddNewStudent = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Add New User" />
-      <AddOrEditStudent
+      <DashboardPageTitle text="Add New Topic" />
+      <AddOrEditTopic
         initialValues={initialValues}
         isPending={isPending}
         mutate={mutate}
@@ -49,4 +58,4 @@ const AddNewStudent = () => {
   );
 };
 
-export default AddNewStudent;
+export default AddNewTopic;

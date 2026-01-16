@@ -2,14 +2,13 @@ import SearchIcon from "@/assets/svgs/SearchIcon.svg?react";
 import AddModal from "./AddModal";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getAllCoursesForDropdown,
-  assignCourseToInstituteProgram,
+  assignCourseToProgram,
+  getAllCourses,
 } from "../services/dashboardApis";
 import { useState } from "react";
 import Swal from "sweetalert2";
-import { useParams } from "react-router-dom";
 
 interface AddCourseToProgramProps {
   reviewModalOpen: boolean;
@@ -17,42 +16,38 @@ interface AddCourseToProgramProps {
   programId: number;
 }
 
-const AddCourseToProgram = ({
+const AssignCourseToProgram = ({
   reviewModalOpen,
   setReviewModalOpen,
   programId,
 }: AddCourseToProgramProps) => {
   const [currentChoice, setCurrentChoice] = useState<number | null>(null);
   const { lang } = useLanguage();
-  const { instituteId } = useParams();
   // Fetch all courses
   const { data: allCourses } = useQuery({
     queryKey: ["getAllCoursesToAssign"],
-    queryFn: getAllCoursesForDropdown,
+    queryFn: getAllCourses,
   });
+  const queryClient = useQueryClient();
 
   // Mutation
-  const { mutate, isLoading } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: ({
       courseId,
       programId,
     }: {
       courseId: number;
       programId: number;
-    }) =>
-      assignCourseToInstituteProgram(
-        courseId,
-        programId,
-        instituteId ? +instituteId : 0
-      ),
+    }) => assignCourseToProgram(courseId, programId),
     onSuccess: () => {
       Swal.fire({
         icon: "success",
         title: "Course Assigned!",
         text: "The course has been successfully added to the program.",
       });
-      setCurrentChoice(null); // reset selected course
-      setReviewModalOpen(false); // close modal
+      setCurrentChoice(null);
+      setReviewModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["coursesInProgram"] });
     },
     onError: (err: any) => {
       setReviewModalOpen(false);
@@ -75,7 +70,6 @@ const AddCourseToProgram = ({
       return;
     }
 
-    // Call mutation with both courseId and programId
     mutate({ courseId: currentChoice, programId });
   };
 
@@ -123,10 +117,10 @@ const AddCourseToProgram = ({
       <div className="flex justify-center gap-5 mt-5">
         <button
           onClick={handleAssignCourseToProgram}
-          disabled={isLoading}
+          disabled={isPending}
           className="rounded-2xl bg-secondary text-white px-8 cursor-pointer disabled:opacity-50"
         >
-          {isLoading ? "Assigning..." : "Confirm Add"}
+          {isPending ? "Assigning..." : "Confirm Add"}
         </button>
         <button
           onClick={() => setReviewModalOpen(false)}
@@ -139,4 +133,4 @@ const AddCourseToProgram = ({
   );
 };
 
-export default AddCourseToProgram;
+export default AssignCourseToProgram;

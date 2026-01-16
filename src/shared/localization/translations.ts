@@ -776,7 +776,7 @@ const translations = {
     courseInactive: "Inactive",
     editCourse: "Edit Course Details",
     tabCourseData: "Course Data",
-    tabCourseSessions: "Course Sessions",
+    tabCourseSessions: "Contents In Course",
     courseDataTitle: "Course Data",
     learningDataTitle: "Learning Path Data",
     courseDataAr: "Course Data (Arabic)",

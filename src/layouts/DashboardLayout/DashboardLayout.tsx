@@ -11,6 +11,7 @@ import Arrow from "@/assets/svgs/RightArrow.svg?react";
 import ProgramsIcon from "@/assets/svgs/ProgramsIcon.svg?react";
 import LearningPathsIcon from "@/assets/svgs/LearningPaths.svg?react";
 import EducatorsIcon from "@/assets/svgs/educatorsIcon.svg?react";
+import ConentsIcon from "@/assets/svgs/contentIcon.svg?react";
 import PersonIcon from "@/assets/imgs/ForDev/Person.jpg";
 
 import SearchBar from "@/features/Dashboard/components/SearchBar";
@@ -63,7 +64,7 @@ const InstitutesPage = () => {
             <span>Dashboard</span>
           </NavLink>
 
-          <NavLink to="/institutes" className={navLinkClass}>
+          <NavLink to="/dashboard/institutes" className={navLinkClass}>
             <GovernmentIcon />
             <span>Institutes</span>
           </NavLink>
@@ -91,6 +92,11 @@ const InstitutesPage = () => {
           <NavLink to="/dashboard/experts" className={navLinkClass}>
             <EducatorsIcon />
             <span>Experts</span>
+          </NavLink>
+
+          <NavLink to="/dashboard/contents" className={navLinkClass}>
+            <ConentsIcon />
+            <span>Training Courses</span>
           </NavLink>
         </nav>
       </aside>

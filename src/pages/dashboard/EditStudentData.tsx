@@ -51,7 +51,7 @@ const EditStudentData = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Edit Student Data" />
+      <DashboardPageTitle text="Edit User Data" />
       {isLoading && <CircleLoader />}
       {!isLoading && (
         <AddOrEditStudent

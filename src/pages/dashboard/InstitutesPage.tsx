@@ -63,7 +63,10 @@ const columns = [
   {
     name: "Name",
     selector: (row: Institute) => (
-      <Link className="underline text-sm" to={`/institute/${row.id}`}>
+      <Link
+        className="underline text-sm"
+        to={`/dashboard/institutes/${row.id}`}
+      >
         {row?.translation?.name}
       </Link>
     ),
@@ -128,7 +131,10 @@ const columns = [
     name: "Edit",
     style: { justifyContent: "center" },
     cell: (row: Institute) => (
-      <Link to={`/edit-institute/${row.id}`} className="cursor-pointer">
+      <Link
+        to={`/dashboard/institutes/edit/${row?.id}`}
+        className="cursor-pointer"
+      >
         <EditIcon />
       </Link>
     ),
@@ -206,7 +212,7 @@ const InstitutesPage = () => {
         text="Institutes"
         button
         buttonText={
-          <Link to={"/add-new-institute"} className="center">
+          <Link to={"/dashboard/institutes/add"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
             <span className="inline-block me-4 text-white">
               Add New Institute

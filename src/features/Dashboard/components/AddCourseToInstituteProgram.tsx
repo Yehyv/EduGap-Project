@@ -2,10 +2,10 @@ import SearchIcon from "@/assets/svgs/SearchIcon.svg?react";
 import AddModal from "./AddModal";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
-  assignProgramToInstitute,
-  getAllProgramsForDropdown,
+  getAllCoursesForDropdown,
+  assignCourseToInstituteProgram,
 } from "../services/dashboardApis";
 import { useState } from "react";
 import Swal from "sweetalert2";
@@ -14,43 +14,45 @@ import { useParams } from "react-router-dom";
 interface AddCourseToProgramProps {
   reviewModalOpen: boolean;
   setReviewModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  programId: number;
 }
 
-const AddProgramToInstitute = ({
+const AddCourseToInstituteProgram = ({
   reviewModalOpen,
   setReviewModalOpen,
+  programId,
 }: AddCourseToProgramProps) => {
   const [currentChoice, setCurrentChoice] = useState<number | null>(null);
   const { lang } = useLanguage();
   const { instituteId } = useParams();
-
   // Fetch all courses
   const { data: allCourses } = useQuery({
-    queryKey: ["getAllProgramsToAssign"],
-    queryFn: getAllProgramsForDropdown,
+    queryKey: ["getAllCoursesToAssign", programId],
+    queryFn: () => getAllCoursesForDropdown(programId),
   });
-  const queryClient = useQueryClient();
 
   // Mutation
   const { mutate, isLoading } = useMutation({
     mutationFn: ({
+      courseId,
       programId,
-      instituteId,
     }: {
-      programId: number | null;
-      instituteId: string | undefined;
-    }) => assignProgramToInstitute(programId, +instituteId),
+      courseId: number;
+      programId: number;
+    }) =>
+      assignCourseToInstituteProgram(
+        courseId,
+        programId,
+        instituteId ? +instituteId : 0
+      ),
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Program Assigned!",
-        text: "The program has been successfully added to the institute.",
+        title: "Course Assigned!",
+        text: "The course has been successfully added to the program.",
       });
-      setCurrentChoice(null);
-      setReviewModalOpen(false);
-      queryClient.invalidateQueries({
-        queryKey: ["programsAndCoursesInInstit", instituteId],
-      });
+      setCurrentChoice(null); // reset selected course
+      setReviewModalOpen(false); // close modal
     },
     onError: (err: any) => {
       setReviewModalOpen(false);
@@ -63,7 +65,7 @@ const AddProgramToInstitute = ({
     },
   });
 
-  const handleAssignProgramToInstitute = (programId: number | null) => {
+  const handleAssignCourseToProgram = () => {
     if (!currentChoice) {
       Swal.fire({
         icon: "warning",
@@ -73,7 +75,8 @@ const AddProgramToInstitute = ({
       return;
     }
 
-    mutate({ programId, instituteId });
+    // Call mutation with both courseId and programId
+    mutate({ courseId: currentChoice, programId });
   };
 
   return (
@@ -95,7 +98,7 @@ const AddProgramToInstitute = ({
             </button>
           </div>
           <Dialog.Title className={`text-center text-sm m-0 text-secondary`}>
-            Add Program To Institute
+            Add Course To Program
           </Dialog.Title>
         </div>
       }
@@ -119,7 +122,7 @@ const AddProgramToInstitute = ({
 
       <div className="flex justify-center gap-5 mt-5">
         <button
-          onClick={() => handleAssignProgramToInstitute(currentChoice)}
+          onClick={handleAssignCourseToProgram}
           disabled={isLoading}
           className="rounded-2xl bg-secondary text-white px-8 cursor-pointer disabled:opacity-50"
         >
@@ -136,4 +139,4 @@ const AddProgramToInstitute = ({
   );
 };
 
-export default AddProgramToInstitute;
+export default AddCourseToInstituteProgram;

@@ -57,7 +57,7 @@ const InstituteDetails = () => {
           </button>
 
           <Link
-            to="/edit-institute-details"
+            to={`/dashboard/institutes/edit/${instituteData?.id}`}
             className="bg-gradient-to-r from-[#F6F6F6] to-[#F6F6F6] border border-secondary py-0.5 px-4 rounded-xl shadow-md flex items-center"
           >
             <EditIcon className="h-8 mx-2" />

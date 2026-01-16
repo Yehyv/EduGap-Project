@@ -65,6 +65,14 @@ import ExpertsListDashboard from "@/pages/dashboard/ExpertsListDashboard";
 import AddNewExpert from "@/pages/dashboard/AddNewExpert";
 import EditExpertDetails from "@/pages/dashboard/EditExpertDetails";
 import ExpertDetailsDashboard from "@/pages/dashboard/ExpertDetailsDashboard";
+import EditInstituteDetails from "@/pages/dashboard/EditInstituteDetails";
+import ContentsList from "@/pages/dashboard/ContentsList";
+import AddNewContent from "@/pages/dashboard/AddNewContent";
+import ContentDetails from "@/pages/dashboard/ContentDetails";
+import AddNewTopic from "@/pages/dashboard/AddNewTopic";
+import EditTopic from "@/pages/dashboard/EditTopic";
+import AddNewLesson from "@/pages/dashboard/AddNewLesson";
+import EditContent from "@/pages/dashboard/EditContent";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -93,8 +101,8 @@ export default function AppRoutes() {
 
       {/* Dashboard */}
       <Route path="/" element={<DashboardLayout />}>
-        <Route path="/institutes" element={<InstitutesPage />} />
-        <Route path="/add-new-institute" element={<AddNewInstitute />} />
+        <Route path="/dashboard/institutes" element={<InstitutesPage />} />
+        <Route path="/dashboard/institutes/add" element={<AddNewInstitute />} />
         <Route
           path="/institute-courses"
           element={<InstituteCoursesDashboard />}
@@ -106,7 +114,14 @@ export default function AppRoutes() {
           path="/student-details/:studentId"
           element={<StudentDetails />}
         />
-        <Route path="/institute/:instituteId" element={<InstituteDetails />} />
+        <Route
+          path="/dashboard/institutes/:instituteId"
+          element={<InstituteDetails />}
+        />
+        <Route
+          path="/dashboard/institutes/edit/:instituteId"
+          element={<EditInstituteDetails />}
+        />
         <Route path="/programs" element={<AdminProgramsList />} />
         <Route
           path="/admin-program-details/:programId"
@@ -152,6 +167,28 @@ export default function AppRoutes() {
         <Route
           path="/dashboard/expert/:expertId"
           element={<ExpertDetailsDashboard />}
+        />
+        <Route path="/dashboard/contents" element={<ContentsList />} />
+        <Route
+          path="/dashboard/contents/:contentId"
+          element={<ContentDetails />}
+        />
+        <Route
+          path="/dashboard/contents/edit/:contentId"
+          element={<EditContent />}
+        />
+        <Route path="/dashboard/contents/add" element={<AddNewContent />} />
+        <Route
+          path="/dashboard/contents/:contentId/add-new-topic"
+          element={<AddNewTopic />}
+        />
+        <Route
+          path="/dashboard/contents/:contentId/edit-topic/:topicId"
+          element={<EditTopic />}
+        />
+        <Route
+          path="/dashboard/contents/:contentId/topic/:topicId/add-new-lesson"
+          element={<AddNewLesson />}
         />
       </Route>
 

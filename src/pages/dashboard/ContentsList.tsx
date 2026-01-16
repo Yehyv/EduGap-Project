@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
-  deleteStudent,
-  getStudents,
+  deleteInstitute,
+  getConentsList,
+  getInstitutes,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
@@ -12,8 +13,11 @@ import FilterIcon from "@/assets/svgs/FilterIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link } from "react-router-dom";
-import type { User } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
+import type {
+  Content,
+  Institute,
+} from "@/features/Dashboard/types/dashboardTypes";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -42,19 +46,15 @@ const customStyles = {
 const columns = [
   {
     name: "Num",
-    selector: (_: User, index: number) => index + 1,
+    selector: (_, index: number) => index + 1,
     sortable: false,
     width: "60px",
     style: { justifyContent: "center" },
   },
   {
-    name: "Photo",
-    selector: (row: User) => (
-      <img
-        src={row.user_image}
-        alt={row.full_name}
-        className="w-12 h-12 rounded-full"
-      />
+    name: "Logo",
+    selector: (row: Content) => (
+      <img src={row.logo} alt={row.name} className="w-12 h-12 rounded-full" />
     ),
     sortable: false,
     minWidth: "80px",
@@ -62,63 +62,42 @@ const columns = [
   },
   {
     name: "Name",
-    selector: (row: User) => (
-      <Link className="underline text-sm" to={`/student-details/${row.id}`}>
-        {row?.full_name}
+    selector: (row: Content) => (
+      <Link className="underline text-sm" to={`/dashboard/contents/${row.id}`}>
+        {row?.name}
       </Link>
     ),
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
-    name: "Institute",
-    selector: (row: User) => row?.institute?.name ?? "-",
+    name: "Category",
+    selector: (row: Content) => row?.categoryName,
     sortable: true,
     style: { justifyContent: "center" },
   },
+
   {
-    name: "Phone",
-    selector: (row: User) => row?.phone ?? 0,
+    name: "Level",
+    selector: (row: Content) => row?.level,
     sortable: true,
     style: { justifyContent: "center" },
   },
+
   {
     name: "Created At",
-    selector: (row: User) => row.createdAt ?? "-",
+    selector: (row: Content) => row?.createdAt ?? "-",
     sortable: true,
     style: { justifyContent: "center" },
   },
-
-  {
-    name: "Is Active",
-    style: { justifyContent: "center" },
-    cell: (row: User) => {
-      const isActive = row?.is_active;
-      return (
-        <button
-          className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
-            isActive
-              ? "border-green-500 text-green-500"
-              : "border-red-500 text-red-500"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-          <span
-            className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
-              isActive ? " bg-green-500" : " bg-red-500"
-            }`}
-          ></span>
-        </button>
-      );
-    },
-    sortable: true,
-  },
-
   {
     name: "Edit",
     style: { justifyContent: "center" },
-    cell: (row: User) => (
-      <Link to={`/edit-student/${row.id}`} className="cursor-pointer">
+    cell: (row: Content) => (
+      <Link
+        to={`/dashboard/contents/edit/${row?.id}`}
+        className="cursor-pointer"
+      >
         <EditIcon />
       </Link>
     ),
@@ -130,12 +109,12 @@ const columns = [
   {
     name: "Delete",
     style: { justifyContent: "center" },
-    cell: (row: User) => (
+    cell: (row: Content) => (
       <DeleteButton
-        deleteApi={() => deleteStudent(row.id)}
-        successMessage="تم حذف الطالب بنجاح"
+        // deleteApi={() => deleteInstitute(row.id)}
+        successMessage="تم حذف المعهد بنجاح"
         errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getStudents"
+        refetchFunction="getInstitutesForDashboard"
       />
     ),
     ignoreRowClick: true,
@@ -145,20 +124,20 @@ const columns = [
   },
 ];
 
-const StudentsPage = () => {
-  const { data: studentsData, isLoading } = useQuery({
-    queryKey: ["getStudents"],
-    queryFn: () => getStudents(),
+const ContentsList = () => {
+  const { data: contentsData, isLoading } = useQuery({
+    queryKey: ["getContentsForDashboard"],
+    queryFn: () => getConentsList(),
   });
 
   const [filterText, setFilterText] = useState("");
 
   const filteredItems = useMemo(() => {
-    if (!studentsData?.data?.users) return [];
-    return studentsData?.data?.users.filter((item) =>
-      item?.full_name?.toLowerCase().includes(filterText?.toLowerCase()),
+    if (!contentsData?.data) return [];
+    return contentsData.data.filter((item: Content) =>
+      item.name.toLowerCase().includes(filterText.toLowerCase())
     );
-  }, [filterText, studentsData]);
+  }, [filterText, contentsData]);
 
   const subHeaderComponent = useMemo(() => {
     return (
@@ -189,12 +168,14 @@ const StudentsPage = () => {
   return (
     <>
       <DashboardPageTitle
-        text="Users"
+        text="Training Courses"
         button
         buttonText={
-          <Link to={"/add-new-student"} className="center">
+          <Link to={"/dashboard/contents/add"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
-            <span className="inline-block me-4 text-white">Add New User</span>
+            <span className="inline-block me-4 text-white">
+              Add New Training Courses
+            </span>
           </Link>
         }
       />
@@ -208,10 +189,11 @@ const StudentsPage = () => {
           subHeader
           subHeaderComponent={subHeaderComponent}
           pagination
+          pa
           progressComponent={<CircleLoader />}
         />
       </div>
     </>
   );
 };
-export default StudentsPage;
+export default ContentsList;

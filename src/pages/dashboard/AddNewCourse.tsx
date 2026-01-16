@@ -5,20 +5,11 @@ import ButtonLoader from "@/shared/components/ButtonLoader";
 import FileUploadField from "@/shared/components/forms/FileUploadField";
 import TextareaField from "@/shared/components/forms/TextareaField";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import { parseWhatToLearn } from "@/shared/utils/globals";
 import { useMutation } from "@tanstack/react-query";
 import { Formik, Form } from "formik";
 import Swal from "sweetalert2";
 import * as Yup from "yup";
-
-/* ================= HELPERS ================= */
-const parseWhatToLearn = (value: string): string[] => {
-  if (!value) return [];
-
-  return value
-    .split(/\n|•/g)
-    .map((item) => item.trim())
-    .filter(Boolean);
-};
 
 const AddNewCourse = () => {
   const { t } = useLanguage();
