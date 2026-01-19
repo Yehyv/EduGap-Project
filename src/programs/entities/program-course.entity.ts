@@ -25,8 +25,8 @@ export class ProgramCourse {
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deleted_at: Date;
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  deleted_at?: Date | null;
 
   @Column({ name: 'is_active', type: 'enum', enum: [0, 1], default: 1 })
   is_active: number;

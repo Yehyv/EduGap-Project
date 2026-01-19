@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -101,35 +102,48 @@ export class CoursesService {
 
   /** 2) ربط كورس ببرنامج عام (ProgramCourse = كتالوج البرنامج) */
   async assignCourseToProgram(programId: number, courseId: number) {
-    const [program, course] = await Promise.all([
-      this.programRepository.findOne({ where: { id: programId } }),
-      this.courseRepository.findOne({ where: { id: courseId } }),
-    ]);
-    if (!program) throw new NotFoundException(`Program ${programId} not found`);
-    if (!course) throw new NotFoundException(`Course ${courseId} not found`);
+  const [program, course] = await Promise.all([
+    this.programRepository.findOne({ where: { id: programId } }),
+    this.courseRepository.findOne({ where: { id: courseId } }),
+  ]);
 
-    const exist = await this.programCourseRepository.findOne({
-      where: { program: { id: programId }, course: { id: courseId } },
-      withDeleted: true,
-    });
+  if (!program) throw new NotFoundException(`Program ${programId} not found`);
+  if (!course) throw new NotFoundException(`Course ${courseId} not found`);
 
-    if (exist && (exist as any).deleted_at) {
-      // لو كان متشال soft قبل كده رجّعه
-      await this.programCourseRepository.recover(exist as any);
-      exist.is_active = 1;
-      await this.programCourseRepository.save(exist);
-    } else if (!exist) {
-      await this.programCourseRepository.save(
-        this.programCourseRepository.create({
-          program: { id: programId },
-          course: { id: courseId },
-          is_active: 1,
-        }),
-      );
-    } // لو موجود ومفعل خلاص
+  const exist = await this.programCourseRepository.findOne({
+    where: {
+      program: { id: programId },
+      course: { id: courseId },
+    },
+    withDeleted: true,
+  });
 
-    return { message: `Course ${courseId} assigned to Program ${programId}.` };
+  // ✔️ موجود ومفعل
+  if (exist && !exist.deleted_at) {
+    throw new ConflictException('Course already assigned to program');
   }
+
+  // ✔️ موجود لكن soft-deleted → restore
+  if (exist && exist.deleted_at) {
+    await this.programCourseRepository.restore(exist.id);
+    exist.is_active = 1;
+    await this.programCourseRepository.save(exist);
+
+    return { message: 'Course re-assigned to program successfully.' };
+  }
+
+  // ✔️ مش موجود → create
+  await this.programCourseRepository.save(
+    this.programCourseRepository.create({
+      program: { id: programId },
+      course: { id: courseId },
+      is_active: 1,
+    }),
+  );
+
+  return { message: `Course ${courseId} assigned to Program ${programId}.` };
+  }
+
   // فك ربط كورس من برنامج عام (PC) - Soft Delete
   async removeCourseFromProgram(programId: number, courseId: number) {
     const link = await this.programCourseRepository.findOne({
@@ -219,26 +233,29 @@ export class CoursesService {
     programId: number,
     courseId: number,
   ) {
-    // تأكد الأول إن البرنامج مربوط بالمعهد (IP)
+    // 1️⃣ تأكد إن البرنامج مربوط بالمعهد
     const ip = await this.ipRepository.findOne({
       where: { institute: { id: instituteId }, program: { id: programId } },
     });
-    if (!ip)
+
+    if (!ip) {
       throw new ForbiddenException(
         `Program ${programId} is not assigned to Institute ${instituteId}`,
       );
+    }
 
-    // (اختياري لكن مُستحسن) تأكد إن الكورس موجود في كتالوج البرنامج (PC)
+    // 2️⃣ تأكد إن الكورس ضمن البرنامج
     const pc = await this.programCourseRepository.findOne({
       where: { program: { id: programId }, course: { id: courseId } },
     });
+
     if (!pc) {
       throw new BadRequestException(
         `Course ${courseId} is not part of Program ${programId} catalog`,
       );
     }
 
-    // اربط/فعّل في IPC
+    // 3️⃣ افحص الربط (مع soft delete)
     const existing = await this.ipcRepository.findOne({
       where: {
         institute: { id: instituteId },
@@ -248,20 +265,31 @@ export class CoursesService {
       withDeleted: true,
     });
 
-    if (existing && (existing as any).deleted_at) {
-      await this.ipcRepository.recover(existing as any);
+    // ✔️ موجود ومفعل
+    if (existing && !existing.deleted_at) {
+      throw new ConflictException('Course already assigned');
+    }
+
+    // ✔️ موجود لكن soft-deleted → restore
+    if (existing && existing.deleted_at) {
+      await this.ipcRepository.restore(existing.id);
       existing.is_active = 1;
       await this.ipcRepository.save(existing);
-    } else if (!existing) {
-      await this.ipcRepository.save(
-        this.ipcRepository.create({
-          institute: { id: instituteId },
-          program: { id: programId },
-          course: { id: courseId },
-          is_active: 1,
-        }),
-      );
+
+      return {
+        message: `Course ${courseId} re-assigned successfully.`,
+      };
     }
+
+    // ✔️ مش موجود → create
+    await this.ipcRepository.save(
+      this.ipcRepository.create({
+        institute: { id: instituteId },
+        program: { id: programId },
+        course: { id: courseId },
+        is_active: 1,
+      }),
+    );
 
     return {
       message: `Course ${courseId} assigned to Program ${programId} for Institute ${instituteId}.`,
@@ -1171,12 +1199,33 @@ export class CoursesService {
       name: r.translation_name,
     }));
   }
-  async courseProgramDropDown(programId: number, languageId?: number) {
+  async courseProgramDropDown(
+    programId: number,
+    instituteId: number,
+    languageId?: number,
+  ) {
     const query = this.programCourseRepository
       .createQueryBuilder('PC')
       .leftJoin('PC.program', 'program')
       .where('program.id = :programId', { programId })
+
       .leftJoin('PC.course', 'course')
+
+      // 🔴 JOIN على IPC
+      .leftJoin(
+        'institute_program_course',
+        'IPC',
+        `
+        IPC.courseId = course.id
+        AND IPC.programId = program.id
+        AND IPC.instituteId = :instituteId
+      `,
+        { instituteId },
+      )
+
+      // 🔴 نشيل اللي موجودة في IPC
+      .andWhere('IPC.id IS NULL')
+
       .leftJoin(
         'course.translations',
         'translation',
@@ -1184,11 +1233,14 @@ export class CoursesService {
         { languageId },
       )
       .leftJoin('translation.language', 'language')
+
       .select([
         'course.id AS course_id',
         'translation.name AS translation_name',
       ]);
+
     const rows = await query.getRawMany<courseRow>();
+
     return rows.map((r) => ({
       id: r.course_id,
       name: r.translation_name,

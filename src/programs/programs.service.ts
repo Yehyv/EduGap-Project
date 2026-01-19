@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
@@ -297,21 +298,40 @@ export class ProgramsService {
       this.instituteRepository.findOne({ where: { id: instituteId } }),
       this.programRepository.findOne({ where: { id: programId } }),
     ]);
+
     if (!institute)
       throw new NotFoundException(`Institute ${instituteId} not found`);
+
     if (!program) throw new NotFoundException(`Program ${programId} not found`);
-    const exist = await this.ipRepository.findOne({
-      where: { institute: { id: instituteId }, program: { id: programId } },
+
+    const link = await this.ipRepository.findOne({
+      where: {
+        institute: { id: instituteId },
+        program: { id: programId },
+      },
+      withDeleted: true, // مهم
     });
-    if (!exist) {
-      await this.ipRepository.save(
-        this.ipRepository.create({
-          institute: { id: instituteId },
-          program: { id: programId },
-          is_active: 1,
-        }),
-      );
+
+    // موجود ومفعل
+    if (link && !link.deleted_at) {
+      throw new ConflictException('Program already in institute');
     }
+
+    // موجود بس soft-deleted → restore
+    if (link && link.deleted_at) {
+      await this.ipRepository.restore(link.id);
+      return { message: 'Program re-assigned to institute successfully.' };
+    }
+
+    // مش موجود خالص → create
+    await this.ipRepository.save(
+      this.ipRepository.create({
+        institute: { id: instituteId },
+        program: { id: programId },
+        is_active: 1,
+      }),
+    );
+
     return { message: 'Program assigned to institute successfully.' };
   }
 

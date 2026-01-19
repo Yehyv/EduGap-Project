@@ -66,12 +66,15 @@ export class CoursesController {
   @Get('super-admin/dropdown/list/program')
   courseProgramDropDown(
     @Headers('languageId') languageId: number | undefined,
+    @Query('instituteId') instituteId: string,
     @Query('programId') programId: string,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
     const pid = programId ? Number(programId) : undefined;
+    const iid = instituteId ? Number(instituteId) : undefined;
+    if(!iid) throw new BadRequestException('instituteId is required');
     if (!pid) throw new BadRequestException('programId is required');
-    return this.coursesService.courseProgramDropDown(pid, langId);
+    return this.coursesService.courseProgramDropDown(pid, iid, langId);
   }
 
   /** جميع كورسات المعهد الحالي (من IPC) */
