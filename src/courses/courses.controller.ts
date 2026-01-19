@@ -58,10 +58,13 @@ export class CoursesController {
   }
   @Get('super-admin/dropdown/list')
   courseDropDown(
+    @Query('programId') programId: string,
     @Headers('languageId') languageId: number | undefined,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
-    return this.coursesService.courseDropDown(langId);
+    const pid = programId ? Number(programId) : undefined;
+    if (!pid) throw new BadRequestException('programId is required');
+    return this.coursesService.courseDropDown(pid, langId);
   }
   @Get('super-admin/dropdown/list/program')
   courseProgramDropDown(

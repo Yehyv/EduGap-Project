@@ -102,46 +102,46 @@ export class CoursesService {
 
   /** 2) ربط كورس ببرنامج عام (ProgramCourse = كتالوج البرنامج) */
   async assignCourseToProgram(programId: number, courseId: number) {
-  const [program, course] = await Promise.all([
-    this.programRepository.findOne({ where: { id: programId } }),
-    this.courseRepository.findOne({ where: { id: courseId } }),
-  ]);
+    const [program, course] = await Promise.all([
+      this.programRepository.findOne({ where: { id: programId } }),
+      this.courseRepository.findOne({ where: { id: courseId } }),
+    ]);
 
-  if (!program) throw new NotFoundException(`Program ${programId} not found`);
-  if (!course) throw new NotFoundException(`Course ${courseId} not found`);
+    if (!program) throw new NotFoundException(`Program ${programId} not found`);
+    if (!course) throw new NotFoundException(`Course ${courseId} not found`);
 
-  const exist = await this.programCourseRepository.findOne({
-    where: {
-      program: { id: programId },
-      course: { id: courseId },
-    },
-    withDeleted: true,
-  });
+    const exist = await this.programCourseRepository.findOne({
+      where: {
+        program: { id: programId },
+        course: { id: courseId },
+      },
+      withDeleted: true,
+    });
 
-  // ✔️ موجود ومفعل
-  if (exist && !exist.deleted_at) {
-    throw new ConflictException('Course already assigned to program');
-  }
+    // ✔️ موجود ومفعل
+    if (exist && !exist.deleted_at) {
+      throw new ConflictException('Course already assigned to program');
+    }
 
-  // ✔️ موجود لكن soft-deleted → restore
-  if (exist && exist.deleted_at) {
-    await this.programCourseRepository.restore(exist.id);
-    exist.is_active = 1;
-    await this.programCourseRepository.save(exist);
+    // ✔️ موجود لكن soft-deleted → restore
+    if (exist && exist.deleted_at) {
+      await this.programCourseRepository.restore(exist.id);
+      exist.is_active = 1;
+      await this.programCourseRepository.save(exist);
 
-    return { message: 'Course re-assigned to program successfully.' };
-  }
+      return { message: 'Course re-assigned to program successfully.' };
+    }
 
-  // ✔️ مش موجود → create
-  await this.programCourseRepository.save(
-    this.programCourseRepository.create({
-      program: { id: programId },
-      course: { id: courseId },
-      is_active: 1,
-    }),
-  );
+    // ✔️ مش موجود → create
+    await this.programCourseRepository.save(
+      this.programCourseRepository.create({
+        program: { id: programId },
+        course: { id: courseId },
+        is_active: 1,
+      }),
+    );
 
-  return { message: `Course ${courseId} assigned to Program ${programId}.` };
+    return { message: `Course ${courseId} assigned to Program ${programId}.` };
   }
 
   // فك ربط كورس من برنامج عام (PC) - Soft Delete
@@ -1179,9 +1179,19 @@ export class CoursesService {
       isActive: courseStatuse,
     };
   }
-  async courseDropDown(languageId?: number) {
+  async courseDropDown(programId: number, languageId?: number) {
     const query = this.courseRepository
       .createQueryBuilder('course')
+
+      .leftJoin(
+        'program_course',
+        'PC',
+        'PC.course_id = course.id AND PC.program_id = :programId',
+        { programId },
+      )
+
+      .where('PC.id IS NULL')
+
       .leftJoin(
         'course.translations',
         'translation',
@@ -1189,16 +1199,20 @@ export class CoursesService {
         { languageId },
       )
       .leftJoin('translation.language', 'language')
+
       .select([
         'course.id AS course_id',
         'translation.name AS translation_name',
       ]);
+
     const rows = await query.getRawMany<courseRow>();
+
     return rows.map((r) => ({
       id: r.course_id,
       name: r.translation_name,
     }));
   }
+
   async courseProgramDropDown(
     programId: number,
     instituteId: number,
