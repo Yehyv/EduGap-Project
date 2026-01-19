@@ -42,6 +42,7 @@ import { CountriesModule } from './countries/countries.module';
 import { CitiesModule } from './cities/cities.module';
 import { RegionsModule } from './regions/regions.module';
 import { SystemRolesModule } from './system-roles/system-roles.module';
+import { SystemAuthModule } from './system-auth/system-auth.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -90,6 +91,7 @@ import { SystemRolesModule } from './system-roles/system-roles.module';
     CitiesModule,
     RegionsModule,
     SystemRolesModule,
+    SystemAuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

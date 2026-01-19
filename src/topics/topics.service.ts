@@ -64,7 +64,7 @@ export class TopicsService {
     await this.createOrReplaceTranslations(saved, dto.translations);
 
     // رجّع الموضوع مع ترجماته
-    return this.findOne(saved.id);
+    return {message: 'Topic created successfully'};
   }
 
   /** عرض كل التوبيكس (اختياري: فلترة باللغة وبالكونتنت) */

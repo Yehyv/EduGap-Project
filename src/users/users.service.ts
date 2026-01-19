@@ -76,6 +76,7 @@ export class UsersService {
       is_verified: 0,
       is_active: 1,
       user_image: profileImage,
+      UserRole: { id: createUserDto.roleId },
     });
 
     return this.userRepositry.save(user);
@@ -83,7 +84,7 @@ export class UsersService {
 
   async findAll() {
     const users = await this.userRepositry.find({
-      relations: ['institute', 'institute.translations'],
+      relations: ['institute', 'institute.translations', 'UserRole'],
     });
     return { message: 'List of users', users };
   }
@@ -113,6 +114,7 @@ export class UsersService {
         languageId ? 'it.languageId = :languageId' : undefined,
         { languageId },
       )
+      .leftJoin('user.UserRole', 'role')
       .where('user.id = :id', { id })
       .select([
         'user.id',
@@ -125,6 +127,9 @@ export class UsersService {
         'institute.id',
         'institute.logo',
         'it.name',
+        'role.title',
+        'role.id',
+        'role.category',
       ]);
     const row = await query.getRawOne<userRow>();
     if (!row) {
@@ -251,6 +256,7 @@ export class UsersService {
         'institute',
         'institute.translations',
         'institute.translations.language',
+        'UserRole', 
       ],
     });
   }

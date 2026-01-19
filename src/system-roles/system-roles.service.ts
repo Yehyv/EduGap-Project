@@ -97,4 +97,16 @@ export class SystemRolesService {
       message: `Role ${id} is now ${role.is_active ? 'active' : 'inactive'}.`,
     };
   }
+  async getSystemRolesForDropdown() {
+    const roles = await this.sysRoleRepository.find({
+      where: { is_active: 1 },
+      select: ['id', 'role_title'],
+      order: { role_title: 'ASC' },
+    });
+
+    return roles.map((r) => ({
+      id: r.id,
+      title: r.role_title,
+    }));
+  }
 }

@@ -20,17 +20,17 @@ export class SystemUsersController {
     return this.systemUsersService.create(createSystemUserDto);
   }
 
-  @Get()
+  @Get('super-admin/users/list')
   findAll() {
     return this.systemUsersService.findAll();
   }
 
-  @Get(':id')
+  @Get('super-admin/user/:id')
   findOne(@Param('id') id: string) {
     return this.systemUsersService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Patch('super-admin/user/:id')
   update(
     @Param('id') id: string,
     @Body() updateSystemUserDto: UpdateSystemUserDto,
@@ -38,7 +38,7 @@ export class SystemUsersController {
     return this.systemUsersService.update(+id, updateSystemUserDto);
   }
 
-  @Delete(':id')
+  @Delete('super-admin/user/:id')
   remove(@Param('id') id: string) {
     return this.systemUsersService.remove(+id);
   }

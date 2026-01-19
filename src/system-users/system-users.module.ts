@@ -4,10 +4,12 @@ import { SystemUsersController } from './system-users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SystemUser } from './entities/system-user.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
+import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SystemUser, Institute])],
+  imports: [TypeOrmModule.forFeature([SystemUser, Institute, SystemRole])],
   controllers: [SystemUsersController],
   providers: [SystemUsersService],
+  exports: [SystemUsersService],
 })
 export class SystemUsersModule {}

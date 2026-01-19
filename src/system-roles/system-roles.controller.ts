@@ -33,6 +33,11 @@ export class SystemRolesController {
   getRoleCategories() {
     return Object.keys(RoleCategory).filter((key) => isNaN(Number(key)));
   }
+  
+  @Get('super-admin/role-titles')
+  getSystemRolesForDropdown() {
+    return this.systemRolesService.getSystemRolesForDropdown();
+  }
 
   @Get('super-admin/role/:id')
   findOne(@Param('id') id: string) {

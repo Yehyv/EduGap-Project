@@ -43,6 +43,5 @@ export class Program {
   users: User[];
 
   @OneToMany(() => InstituteProgramCourse, (ipc) => ipc.program)
-instituteProgramCourses: InstituteProgramCourse[];
-
+  instituteProgramCourses: InstituteProgramCourse[];
 }

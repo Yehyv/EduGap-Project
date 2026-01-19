@@ -27,6 +27,8 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Request } from 'express';
 import { imageStorage } from 'src/common/helpers/upload.helper';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -41,7 +43,8 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly usersOtpService: UsersOtpService,
   ) {}
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(1)
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);

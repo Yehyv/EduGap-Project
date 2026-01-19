@@ -65,7 +65,8 @@ export class SystemUser {
 
 
   @ManyToOne(() => Institute, (institute) => institute.systemUsers, {
-    onDelete: 'CASCADE',
+    nullable: true,
+    onDelete: 'SET NULL',
   })
-  institute: Institute;
+  institute: Institute | null;
 }

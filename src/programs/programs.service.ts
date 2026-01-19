@@ -315,17 +315,6 @@ export class ProgramsService {
     return { message: 'Program assigned to institute successfully.' };
   }
 
-  // ✅ Unassign program from specific institutes
-  // async removeFromInstitutes(programId: number, instituteIds: number[]) {
-  //   await this.ipRepository
-  //     .createQueryBuilder()
-  //     .delete()
-  //     .where('program_id = :pid', { pid: programId })
-  //     .andWhere('institute_id IN (:...iids)', { iids: instituteIds })
-  //     .execute();
-
-  //   return { message: `Program ${programId} unassigned successfully.` };
-  // }
   async removeFromInstitute(programId: number, instituteId: number) {
     const link = await this.ipRepository.findOne({
       where: { program: { id: programId }, institute: { id: instituteId } },
@@ -349,6 +338,7 @@ export class ProgramsService {
       message: `Program ${programId} soft-unassigned from institute ${instituteId}.`,
     };
   }
+
   async restoreProgramForInstitute(programId: number, instituteId: number) {
     const link = await this.ipRepository.findOne({
       where: { program: { id: programId }, institute: { id: instituteId } },
@@ -370,6 +360,7 @@ export class ProgramsService {
       message: `Program ${programId} restored for institute ${instituteId}.`,
     };
   }
+
   async toggleActive(id: number) {
     const program = await this.programRepository.findOne({ where: { id } });
     if (!program) throw new NotFoundException(`Program ${id} not found`);
@@ -381,6 +372,7 @@ export class ProgramsService {
       }.`,
     };
   }
+
   async ProgramDropDown(instituteId: number, languageId?: number) {
     const rows = await this.programRepository
       .createQueryBuilder('program')

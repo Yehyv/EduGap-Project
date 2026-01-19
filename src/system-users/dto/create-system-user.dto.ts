@@ -7,6 +7,7 @@ import {
   IsNumber,
   Length,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 export class CreateSystemUserDto {
   @IsString()
@@ -49,4 +50,12 @@ export class CreateSystemUserDto {
   @IsOptional()
   @IsEnum([0, 1])
   is_active?: number;
+
+  @IsOptional()
+  @IsNumber()
+  instituteId?: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  roleId: number;
 }

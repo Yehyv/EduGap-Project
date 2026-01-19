@@ -1,38 +1,70 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateSystemUserDto } from './dto/create-system-user.dto';
 import { UpdateSystemUserDto } from './dto/update-system-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SystemUser } from './entities/system-user.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 @Injectable()
 export class SystemUsersService {
   constructor(
     @InjectRepository(SystemUser)
     private readonly sysUserRepository: Repository<SystemUser>,
+    @InjectRepository(SystemRole)
+    private readonly systemRoleRepo: Repository<SystemRole>,
   ) {}
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
   }
-  async create(createSystemUserDto: CreateSystemUserDto) {
-    const { phone, national_id, ...rest } = createSystemUserDto;
+  async create(dto: CreateSystemUserDto) {
+    const role = await this.systemRoleRepo.findOne({
+      where: { id: dto.roleId },
+    });
+
+    if (!role) throw new BadRequestException('Invalid roleId');
+
+    const isManager = role.role_title?.toLowerCase() === 'manager';
+
+    // لو Manager لازم instituteId
+    if (isManager && !dto.instituteId) {
+      throw new BadRequestException('instituteId is required for Manager role');
+    }
+
+    // لو مش Manager الأفضل نخليها null (اختياري)
+    if (!isManager) {
+      dto.instituteId = undefined;
+    }
+
+    const { phone, national_id, instituteId, ...rest } = dto;
+
     const username = national_id;
-    const hashedPassowrd = await this.hashPassword(phone);
+    const hashedPassword = await this.hashPassword(phone);
     const baseUrl = process.env.APP_URL || '';
     const profileImage = `${baseUrl}/uploads/defaults/default-user.png`;
+
     const user = this.sysUserRepository.create({
       ...rest,
       username,
       national_id,
       phone,
-      password: hashedPassowrd,
+      password: hashedPassword,
       user_image: profileImage,
+      SysUserrole: { id: dto.roleId },
+      institute: instituteId ? { id: instituteId } : undefined,
     });
+
     return this.sysUserRepository.save(user);
   }
 
   async findAll() {
-    const users = await this.sysUserRepository.find();
+    const users = await this.sysUserRepository.find({
+      relations: ['SysUserrole', 'institute', 'institute.translations'],
+    });
     return { message: 'list of system users', users };
   }
 
@@ -44,11 +76,38 @@ export class SystemUsersService {
     return user;
   }
 
-  update(id: number, updateSystemUserDto: UpdateSystemUserDto) {
-    return `This action updates a #${id} systemUser`;
+  async update(id: number, updateSystemUserDto: UpdateSystemUserDto) {
+    const user = await this.sysUserRepository.preload({
+      id,
+      ...updateSystemUserDto,
+    });
+    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+    return this.sysUserRepository.save(user);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} systemUser`;
+  async remove(id: number) {
+    const user = await this.sysUserRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+    await this.sysUserRepository.softDelete(id);
+    return { message: `User with ID ${id} has been removed` };
+  }
+  async getAdminMenimal(userId: number) {
+    const user = await this.sysUserRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException(`User with ID ${userId} not found`);
+    const { id, full_name, user_image, email } = user;
+    return { id, full_name, user_image, email };
+  }
+  async findSystemUserByUsername(username: string) {
+    return this.sysUserRepository.findOne({
+      where: { username },
+      relations: [
+        'institute',
+        'institute.translations',
+        'institute.translations.language',
+        'SysUserrole',
+      ],
+    });
   }
 }

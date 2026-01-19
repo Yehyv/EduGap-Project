@@ -30,7 +30,7 @@ export class SystemRole {
   @DeleteDateColumn()
   deleted_at: Date;
 
-  @Column({ type: 'tinyint', width: 1, default: 1})
+  @Column({ type: 'tinyint', width: 1, default: 1 })
   is_active: number;
 
   @OneToMany(() => User, (user) => user.UserRole)

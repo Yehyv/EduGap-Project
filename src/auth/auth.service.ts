@@ -57,8 +57,13 @@ export class AuthService {
     const payload = {
       sub: user.id,
       instituteId: user.institute?.id || 0,
+      roleId: user.UserRole?.id,
     };
-    const tokens = await this.getTokens(payload.sub, payload.instituteId);
+    const tokens = await this.getTokens(
+      payload.sub,
+      payload.instituteId,
+      payload.roleId,
+    );
     await this.updateRefreshToken(user.id, tokens.refreshToken);
     return tokens;
   }
@@ -70,7 +75,7 @@ export class AuthService {
   async refreshTokens(userId: number, rt: string): Promise<Tokens> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['institute', 'institute.translations'],
+      relations: ['institute', 'institute.translations', 'UserRole'],
     });
 
     if (!user || !user.refreshToken)
@@ -79,7 +84,11 @@ export class AuthService {
     const isMatch = await bcrypt.compare(rt, user.refreshToken);
     if (!isMatch) throw new ForbiddenException('Access Denied');
 
-    const tokens = await this.getTokens(user.id, user.institute?.id);
+    const tokens = await this.getTokens(
+      user.id,
+      user.institute?.id,
+      user.UserRole?.id,
+    );
 
     await this.userService.update(user.id, {
       refreshToken: await bcrypt.hash(tokens.refreshToken, 10),
@@ -87,10 +96,15 @@ export class AuthService {
     return tokens;
   }
 
-  async getTokens(userId: number, instituteId: number): Promise<Tokens> {
+  async getTokens(
+    userId: number,
+    instituteId: number,
+    roleId: number,
+  ): Promise<Tokens> {
     const payload = {
       sub: userId,
       instituteId,
+      roleId,
     };
 
     const [accessToken, refreshToken] = await Promise.all([

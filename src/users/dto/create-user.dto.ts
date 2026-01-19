@@ -66,4 +66,8 @@ export class CreateUserDto {
   @IsOptional()
   @IsNumber()
   programId?: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  roleId: number;
 }
