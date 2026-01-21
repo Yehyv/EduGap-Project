@@ -26,8 +26,8 @@ const AddProgramToInstitute = ({
 
   // Fetch all courses
   const { data: allCourses } = useQuery({
-    queryKey: ["getAllProgramsToAssign"],
-    queryFn: getAllProgramsForDropdown,
+    queryKey: ["getAllProgramsToAssign", instituteId],
+    queryFn: () => getAllProgramsForDropdown(instituteId ?? ""),
   });
   const queryClient = useQueryClient();
 
@@ -116,6 +116,10 @@ const AddProgramToInstitute = ({
           </button>
         ))}
       </div>
+
+      {(!allCourses?.data || allCourses.data.length === 0) && (
+        <p className="text-center text-gray-400">No Data Available</p>
+      )}
 
       <div className="flex justify-center gap-5 mt-5">
         <button

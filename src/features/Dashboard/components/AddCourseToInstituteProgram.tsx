@@ -2,7 +2,7 @@ import SearchIcon from "@/assets/svgs/SearchIcon.svg?react";
 import AddModal from "./AddModal";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAllCoursesForDropdown,
   assignCourseToInstituteProgram,
@@ -10,6 +10,7 @@ import {
 import { useState } from "react";
 import Swal from "sweetalert2";
 import { useParams } from "react-router-dom";
+import CircleLoader from "@/shared/components/ui/CircleLoader";
 
 interface AddCourseToProgramProps {
   reviewModalOpen: boolean;
@@ -26,10 +27,13 @@ const AddCourseToInstituteProgram = ({
   const { lang } = useLanguage();
   const { instituteId } = useParams();
   // Fetch all courses
-  const { data: allCourses } = useQuery({
-    queryKey: ["getAllCoursesToAssign", programId],
-    queryFn: () => getAllCoursesForDropdown(programId),
+  const { data: allCourses, isLoading: allCoursesLoading } = useQuery({
+    queryKey: ["getAllCoursesToAssign", instituteId, programId],
+    queryFn: () => getAllCoursesForDropdown(instituteId, programId),
   });
+  console.log(instituteId);
+
+  const queryClient = useQueryClient();
 
   // Mutation
   const { mutate, isLoading } = useMutation({
@@ -43,7 +47,7 @@ const AddCourseToInstituteProgram = ({
       assignCourseToInstituteProgram(
         courseId,
         programId,
-        instituteId ? +instituteId : 0
+        instituteId ? +instituteId : 0,
       ),
     onSuccess: () => {
       Swal.fire({
@@ -53,6 +57,9 @@ const AddCourseToInstituteProgram = ({
       });
       setCurrentChoice(null); // reset selected course
       setReviewModalOpen(false); // close modal
+      queryClient.invalidateQueries({
+        queryKey: ["programsAndCoursesInInstit", instituteId],
+      });
     },
     onError: (err: any) => {
       setReviewModalOpen(false);
@@ -119,6 +126,14 @@ const AddCourseToInstituteProgram = ({
           </button>
         ))}
       </div>
+
+      {allCoursesLoading ? (
+        <CircleLoader />
+      ) : (
+        (!allCourses?.data || (allCourses.data.length === 0 && !isLoading)) && (
+          <p className="text-center text-gray-400">No Data Available</p>
+        )
+      )}
 
       <div className="flex justify-center gap-5 mt-5">
         <button

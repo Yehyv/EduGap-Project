@@ -44,6 +44,66 @@ export async function getCountriesDropdown(): Promise<CountriesResponse> {
   );
   return res.data;
 }
+export async function createCountry(data): Promise<void> {
+  const res = await api.post<void>(`/countries`, data);
+  return res.data;
+}
+export async function editCountry(data): Promise<void> {
+  const res = await api.patch<void>(`/countries/${data.countryId}`, data);
+  return res.data;
+}
+export async function editCity(data): Promise<void> {
+  const res = await api.patch<void>(`/cities/${data.cityId}`, data);
+  return res.data;
+}
+export async function editRegion(data): Promise<void> {
+  const res = await api.patch<void>(`/regions/${data.regionId}`, data);
+  return res.data;
+}
+export async function createCity(data): Promise<void> {
+  const res = await api.post<void>(`/cities`, data);
+  return res.data;
+}
+export async function createRegion(data): Promise<void> {
+  const res = await api.post<void>(`/regions`, data);
+  return res.data;
+}
+export async function getAllCountries(): Promise<CountriesResponse> {
+  const res = await api.get<CountriesResponse>(`/countries`);
+  return res.data;
+}
+export async function getAllCities(): Promise<CountriesResponse> {
+  const res = await api.get<CountriesResponse>(`/cities`);
+  return res.data;
+}
+export async function getAllRegions(): Promise<CountriesResponse> {
+  const res = await api.get<CountriesResponse>(`/regions`);
+  return res.data;
+}
+export async function deleteCountry(countryId: number): Promise<void> {
+  const res = await api.delete<void>(`/countries/${countryId}`);
+  return res.data;
+}
+export async function findCountry(countryId: number | string): Promise<void> {
+  const res = await api.get<void>(`/countries/${countryId}`);
+  return res.data;
+}
+export async function findCity(cityId: number | string): Promise<void> {
+  const res = await api.get<void>(`/cities/${cityId}`);
+  return res.data;
+}
+export async function findRegion(regionId: number | string): Promise<void> {
+  const res = await api.get<void>(`/regions/${regionId}`);
+  return res.data;
+}
+export async function deleteCity(cityId: number): Promise<void> {
+  const res = await api.delete<void>(`/cities/${cityId}`);
+  return res.data;
+}
+export async function deleteRegion(regionId: number): Promise<void> {
+  const res = await api.delete<void>(`/regions/${regionId}`);
+  return res.data;
+}
 export async function getCitiesDropdown(
   countryId: number,
 ): Promise<CitiesResponse> {
@@ -439,10 +499,11 @@ export const editExpert = async (values: any) => {
 };
 
 export async function getAllCoursesForDropdown(
+  instituteId: number,
   programId: number,
 ): Promise<CitiesResponse> {
   const res = await api.get<CitiesResponse>(
-    `/courses/super-admin/dropdown/list/program?programId=${programId}`,
+    `/courses/super-admin/dropdown/list/program?programId=${programId}&instituteId=${instituteId}`,
   );
   return res.data;
 }
@@ -458,9 +519,11 @@ export async function getAllContentsForDropdown(): Promise<CitiesResponse> {
   );
   return res.data;
 }
-export async function getAllProgramsForDropdown(): Promise<CitiesResponse> {
+export async function getAllProgramsForDropdown(
+  instituteId: number | string,
+): Promise<CitiesResponse> {
   const res = await api.get<CitiesResponse>(
-    `/programs/super-admin/dropdown/list`,
+    `/programs/super-admin/dropdown/list/?instituteId=${instituteId}`,
   );
   return res.data;
 }

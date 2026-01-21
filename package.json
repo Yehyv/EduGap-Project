@@ -30,6 +30,7 @@
     "react-select": "^5.10.2",
     "react-slick": "^0.31.0",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.6.0",
     "slick-carousel": "^1.8.1",
     "sweetalert2": "^11.23.0",
     "yup": "^1.7.0"

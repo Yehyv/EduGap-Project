@@ -73,6 +73,14 @@ import AddNewTopic from "@/pages/dashboard/AddNewTopic";
 import EditTopic from "@/pages/dashboard/EditTopic";
 import AddNewLesson from "@/pages/dashboard/AddNewLesson";
 import EditContent from "@/pages/dashboard/EditContent";
+import DashboardHome from "@/pages/dashboard/DashboardHome";
+import Locations from "@/pages/dashboard/Locations";
+import AddNewCountry from "@/pages/dashboard/AddNewCountry";
+import AddNewCity from "@/pages/dashboard/AddNewCity";
+import AddNewRegion from "@/pages/dashboard/AddNewRegion";
+import EditCountry from "@/pages/dashboard/EditCountry";
+import EditCity from "@/pages/dashboard/EditCity";
+import EditRegion from "@/pages/dashboard/EditRegion";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -101,13 +109,14 @@ export default function AppRoutes() {
 
       {/* Dashboard */}
       <Route path="/" element={<DashboardLayout />}>
+        <Route path="/dashboard/home" element={<DashboardHome />} />
         <Route path="/dashboard/institutes" element={<InstitutesPage />} />
         <Route path="/dashboard/institutes/add" element={<AddNewInstitute />} />
         <Route
           path="/institute-courses"
           element={<InstituteCoursesDashboard />}
         />
-        <Route path="/students" element={<StudentsPage />} />
+        <Route path="/users" element={<StudentsPage />} />
         <Route path="/add-new-student" element={<AddNewStudent />} />
         <Route path="/edit-student/:studentId" element={<EditStudentData />} />
         <Route
@@ -189,6 +198,31 @@ export default function AppRoutes() {
         <Route
           path="/dashboard/contents/:contentId/topic/:topicId/add-new-lesson"
           element={<AddNewLesson />}
+        />
+        <Route path="/dashboard/location" element={<Locations />} />
+        <Route
+          path="/dashboard/location/add-new-country"
+          element={<AddNewCountry />}
+        />
+        <Route
+          path="/dashboard/location/countries/:countryId"
+          element={<EditCountry />}
+        />
+        <Route
+          path="/dashboard/location/cities/:cityId"
+          element={<EditCity />}
+        />
+        <Route
+          path="/dashboard/location/regions/:regionId"
+          element={<EditRegion />}
+        />
+        <Route
+          path="/dashboard/location/add-new-city"
+          element={<AddNewCity />}
+        />
+        <Route
+          path="/dashboard/location/add-new-region"
+          element={<AddNewRegion />}
         />
       </Route>
 

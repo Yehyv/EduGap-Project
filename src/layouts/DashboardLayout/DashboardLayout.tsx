@@ -12,6 +12,7 @@ import ProgramsIcon from "@/assets/svgs/ProgramsIcon.svg?react";
 import LearningPathsIcon from "@/assets/svgs/LearningPaths.svg?react";
 import EducatorsIcon from "@/assets/svgs/educatorsIcon.svg?react";
 import ConentsIcon from "@/assets/svgs/contentIcon.svg?react";
+import LocationIcon from "@/assets/svgs/LocationIcon.svg?react";
 import PersonIcon from "@/assets/imgs/ForDev/Person.jpg";
 
 import SearchBar from "@/features/Dashboard/components/SearchBar";
@@ -59,7 +60,7 @@ const InstitutesPage = () => {
 
         {/* Navigation */}
         <nav className="p-4 flex flex-col gap-1 overflow-y-auto">
-          <NavLink to="/dashboard" end className={navLinkClass}>
+          <NavLink to="/dashboard/home" end className={navLinkClass}>
             <DashboardIcon />
             <span>Dashboard</span>
           </NavLink>
@@ -69,9 +70,9 @@ const InstitutesPage = () => {
             <span>Institutes</span>
           </NavLink>
 
-          <NavLink to="/students" className={navLinkClass}>
+          <NavLink to="/users" className={navLinkClass}>
             <StudentIcon />
-            <span>Students</span>
+            <span>Users</span>
           </NavLink>
 
           <NavLink to="/programs" className={navLinkClass}>
@@ -97,6 +98,10 @@ const InstitutesPage = () => {
           <NavLink to="/dashboard/contents" className={navLinkClass}>
             <ConentsIcon />
             <span>Training Courses</span>
+          </NavLink>
+          <NavLink to="/dashboard/location" className={navLinkClass}>
+            <LocationIcon />
+            <span>Location</span>
           </NavLink>
         </nav>
       </aside>
