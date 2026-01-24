@@ -81,6 +81,16 @@ import AddNewRegion from "@/pages/dashboard/AddNewRegion";
 import EditCountry from "@/pages/dashboard/EditCountry";
 import EditCity from "@/pages/dashboard/EditCity";
 import EditRegion from "@/pages/dashboard/EditRegion";
+import RolesList from "@/pages/dashboard/RolesList";
+import AddNewRole from "@/pages/dashboard/AddNewRole";
+import EditRole from "@/pages/dashboard/EditRole";
+import DashboardPublicOnlyRoute from "./DashboardPublicOnlyRoute";
+import DashboardLogin from "@/pages/dashboard/DashboardLogin";
+import AuthDashboardLoginLayout from "@/layouts/AuthDashboardLayout/AuthDashboardLayout";
+import DashboardProtectedRoute from "./DashboardProtectedRoute";
+import SystemUsersList from "@/pages/dashboard/SystemUsersList";
+import AddNewSystemUser from "@/pages/dashboard/AddNewSystemUser";
+import EditSystemUser from "@/features/Dashboard/components/EditSystemUser";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -107,125 +117,160 @@ export default function AppRoutes() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       </Route>
 
-      {/* Dashboard */}
-      <Route path="/" element={<DashboardLayout />}>
-        <Route path="/dashboard/home" element={<DashboardHome />} />
-        <Route path="/dashboard/institutes" element={<InstitutesPage />} />
-        <Route path="/dashboard/institutes/add" element={<AddNewInstitute />} />
-        <Route
-          path="/institute-courses"
-          element={<InstituteCoursesDashboard />}
-        />
-        <Route path="/users" element={<StudentsPage />} />
-        <Route path="/add-new-student" element={<AddNewStudent />} />
-        <Route path="/edit-student/:studentId" element={<EditStudentData />} />
-        <Route
-          path="/student-details/:studentId"
-          element={<StudentDetails />}
-        />
-        <Route
-          path="/dashboard/institutes/:instituteId"
-          element={<InstituteDetails />}
-        />
-        <Route
-          path="/dashboard/institutes/edit/:instituteId"
-          element={<EditInstituteDetails />}
-        />
-        <Route path="/programs" element={<AdminProgramsList />} />
-        <Route
-          path="/admin-program-details/:programId"
-          element={<AdminProgramDetails />}
-        />
-        <Route path="/add-new-program" element={<AddNewProgram />} />
-        <Route
-          path="/edit-program/:programId"
-          element={<EditProgramDetails />}
-        />
-        <Route path="/dashboard-courses" element={<CoursesDashboardPage />} />
-        <Route path="/dashboard-add-new-course" element={<AddNewCourse />} />
-        <Route
-          path="/dashboard-edit-course/:courseId"
-          element={<EditCourseDetails />}
-        />
-        <Route
-          path="/dashboard/course/:courseId"
-          element={<CourseDetailsDashboard />}
-        />
-        <Route
-          path="/dashboard/learning-paths"
-          element={<LearningPathsDashboard />}
-        />
-        <Route
-          path="/dashboard/add-learning-path"
-          element={<AddNewLearningPath />}
-        />
-        <Route
-          path="/dashboard/edit-learning-path/:learningPathId"
-          element={<EditLearningPath />}
-        />
-        <Route
-          path="/dashboard/learning-path/:learningPathId"
-          element={<LearningPathDashboard />}
-        />
-        <Route path="/dashboard/experts" element={<ExpertsListDashboard />} />
-        <Route path="/dashboard/add-expert" element={<AddNewExpert />} />
-        <Route
-          path="/dashboard/edit-expert/:expertId"
-          element={<EditExpertDetails />}
-        />
-        <Route
-          path="/dashboard/expert/:expertId"
-          element={<ExpertDetailsDashboard />}
-        />
-        <Route path="/dashboard/contents" element={<ContentsList />} />
-        <Route
-          path="/dashboard/contents/:contentId"
-          element={<ContentDetails />}
-        />
-        <Route
-          path="/dashboard/contents/edit/:contentId"
-          element={<EditContent />}
-        />
-        <Route path="/dashboard/contents/add" element={<AddNewContent />} />
-        <Route
-          path="/dashboard/contents/:contentId/add-new-topic"
-          element={<AddNewTopic />}
-        />
-        <Route
-          path="/dashboard/contents/:contentId/edit-topic/:topicId"
-          element={<EditTopic />}
-        />
-        <Route
-          path="/dashboard/contents/:contentId/topic/:topicId/add-new-lesson"
-          element={<AddNewLesson />}
-        />
-        <Route path="/dashboard/location" element={<Locations />} />
-        <Route
-          path="/dashboard/location/add-new-country"
-          element={<AddNewCountry />}
-        />
-        <Route
-          path="/dashboard/location/countries/:countryId"
-          element={<EditCountry />}
-        />
-        <Route
-          path="/dashboard/location/cities/:cityId"
-          element={<EditCity />}
-        />
-        <Route
-          path="/dashboard/location/regions/:regionId"
-          element={<EditRegion />}
-        />
-        <Route
-          path="/dashboard/location/add-new-city"
-          element={<AddNewCity />}
-        />
-        <Route
-          path="/dashboard/location/add-new-region"
-          element={<AddNewRegion />}
-        />
+      <Route
+        element={
+          <DashboardPublicOnlyRoute>
+            <AuthDashboardLoginLayout />
+          </DashboardPublicOnlyRoute>
+        }
+      >
+        <Route path="/dashboard/login" element={<DashboardLogin />} />
       </Route>
 
+      {/* Dashboard */}
+      <Route element={<DashboardProtectedRoute />}>
+        <Route path="/" element={<DashboardLayout />}>
+          <Route path="/dashboard/home" element={<DashboardHome />} />
+          <Route path="/dashboard/institutes" element={<InstitutesPage />} />
+          <Route
+            path="/dashboard/institutes/add"
+            element={<AddNewInstitute />}
+          />
+          <Route
+            path="/institute-courses"
+            element={<InstituteCoursesDashboard />}
+          />
+          <Route path="/users" element={<StudentsPage />} />
+          <Route path="/add-new-student" element={<AddNewStudent />} />
+          <Route
+            path="/edit-student/:studentId"
+            element={<EditStudentData />}
+          />
+          <Route
+            path="/student-details/:studentId"
+            element={<StudentDetails />}
+          />
+          <Route
+            path="/dashboard/institutes/:instituteId"
+            element={<InstituteDetails />}
+          />
+          <Route
+            path="/dashboard/institutes/edit/:instituteId"
+            element={<EditInstituteDetails />}
+          />
+          <Route path="/programs" element={<AdminProgramsList />} />
+          <Route
+            path="/admin-program-details/:programId"
+            element={<AdminProgramDetails />}
+          />
+          <Route path="/add-new-program" element={<AddNewProgram />} />
+          <Route
+            path="/edit-program/:programId"
+            element={<EditProgramDetails />}
+          />
+          <Route path="/dashboard-courses" element={<CoursesDashboardPage />} />
+          <Route path="/dashboard-add-new-course" element={<AddNewCourse />} />
+          <Route
+            path="/dashboard-edit-course/:courseId"
+            element={<EditCourseDetails />}
+          />
+          <Route
+            path="/dashboard/course/:courseId"
+            element={<CourseDetailsDashboard />}
+          />
+          <Route
+            path="/dashboard/learning-paths"
+            element={<LearningPathsDashboard />}
+          />
+          <Route
+            path="/dashboard/add-learning-path"
+            element={<AddNewLearningPath />}
+          />
+          <Route
+            path="/dashboard/edit-learning-path/:learningPathId"
+            element={<EditLearningPath />}
+          />
+          <Route
+            path="/dashboard/learning-path/:learningPathId"
+            element={<LearningPathDashboard />}
+          />
+          <Route path="/dashboard/experts" element={<ExpertsListDashboard />} />
+          <Route path="/dashboard/add-expert" element={<AddNewExpert />} />
+          <Route
+            path="/dashboard/edit-expert/:expertId"
+            element={<EditExpertDetails />}
+          />
+          <Route
+            path="/dashboard/expert/:expertId"
+            element={<ExpertDetailsDashboard />}
+          />
+          <Route path="/dashboard/contents" element={<ContentsList />} />
+          <Route
+            path="/dashboard/contents/:contentId"
+            element={<ContentDetails />}
+          />
+          <Route
+            path="/dashboard/contents/edit/:contentId"
+            element={<EditContent />}
+          />
+          <Route path="/dashboard/contents/add" element={<AddNewContent />} />
+          <Route
+            path="/dashboard/contents/:contentId/add-new-topic"
+            element={<AddNewTopic />}
+          />
+          <Route
+            path="/dashboard/contents/:contentId/edit-topic/:topicId"
+            element={<EditTopic />}
+          />
+          <Route
+            path="/dashboard/contents/:contentId/topic/:topicId/add-new-lesson"
+            element={<AddNewLesson />}
+          />
+          <Route path="/dashboard/location" element={<Locations />} />
+          <Route
+            path="/dashboard/location/add-new-country"
+            element={<AddNewCountry />}
+          />
+          <Route
+            path="/dashboard/location/countries/:countryId"
+            element={<EditCountry />}
+          />
+          <Route
+            path="/dashboard/location/cities/:cityId"
+            element={<EditCity />}
+          />
+          <Route
+            path="/dashboard/location/regions/:regionId"
+            element={<EditRegion />}
+          />
+          <Route
+            path="/dashboard/location/add-new-city"
+            element={<AddNewCity />}
+          />
+          <Route
+            path="/dashboard/location/add-new-region"
+            element={<AddNewRegion />}
+          />
+          <Route path="/dashboard/roles" element={<RolesList />} />
+          <Route
+            path="/dashboard/roles/add-new-role"
+            element={<AddNewRole />}
+          />
+          <Route
+            path="/dashboard/roles/edit-role/:roleId"
+            element={<EditRole />}
+          />
+          <Route path="/dashboard/system-users" element={<SystemUsersList />} />
+          <Route
+            path="/dashboard/system-users/add-new-user"
+            element={<AddNewSystemUser />}
+          />
+          <Route
+            path="/dashboard/system-users/edit-user/:systemUserId"
+            element={<EditSystemUser />}
+          />
+        </Route>
+      </Route>
       {/* Public Routes with AuthLayout */}
       <Route
         element={

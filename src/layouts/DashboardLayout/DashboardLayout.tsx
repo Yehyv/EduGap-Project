@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
@@ -6,16 +6,21 @@ import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
 import DashboardIcon from "@/assets/svgs/DashboardIcon.svg?react";
 import GovernmentIcon from "@/assets/svgs/GovernmentIcon.svg?react";
 import StudentIcon from "@/assets/svgs/studentSidebarIcon.svg?react";
+import SystemUsersIcon from "@/assets/svgs/SystemUsersIcon.svg?react";
 import CoursesDashboardIcon from "@/assets/svgs/CoursesDashboardIcon.svg?react";
 import Arrow from "@/assets/svgs/RightArrow.svg?react";
 import ProgramsIcon from "@/assets/svgs/ProgramsIcon.svg?react";
 import LearningPathsIcon from "@/assets/svgs/LearningPaths.svg?react";
 import EducatorsIcon from "@/assets/svgs/educatorsIcon.svg?react";
 import ConentsIcon from "@/assets/svgs/contentIcon.svg?react";
+import LogoutIcon from "@/assets/svgs/LogoutIcon.svg?react";
 import LocationIcon from "@/assets/svgs/LocationIcon.svg?react";
+import SettingSidebarIcon from "@/assets/svgs/SettingSidebarIcon.svg?react";
 import PersonIcon from "@/assets/imgs/ForDev/Person.jpg";
 
 import SearchBar from "@/features/Dashboard/components/SearchBar";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { logoutDashboardUser } from "@/features/Dashboard/services/dashboardApis";
 
 const navLinkClass = ({ isActive }) =>
   `
@@ -30,36 +35,49 @@ const navLinkClass = ({ isActive }) =>
 
 const InstitutesPage = () => {
   const [open, setOpen] = useState(false);
+  const { dashboardLogout } = useAuth();
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    logoutDashboardUser()
+      .then(() => {
+        dashboardLogout();
+        navigate("/dashboard/login");
+      })
+      .catch(console.error);
+  };
 
   return (
     <div className="min-h-screen gap-2 bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
       <aside
         className={`
+          flex flex-col justify-between
           fixed top-0 start-0 h-screen w-64 bg-white z-40 dark:bg-gray-800
           transform transition-transform duration-200
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0 md:fixed
         `}
       >
-        <button
-          onClick={() => setOpen(false)}
-          className="bg-gray-200 cursor-pointer w-7 h-7 center rounded-full absolute end-2 top-2 md:!hidden"
-        >
-          <CloseIcon className="w-3 h-3" />
-        </button>
+        <div>
+          <button
+            onClick={() => setOpen(false)}
+            className="bg-gray-200 cursor-pointer w-7 h-7 center rounded-full absolute end-2 top-2 md:!hidden"
+          >
+            <CloseIcon className="w-3 h-3" />
+          </button>
 
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-center">
-          <NavLink to="/userHome">
-            <LogoSm className="cursor-pointer" />
-          </NavLink>
+          {/* Logo */}
+          <div className="h-16 flex items-center justify-center">
+            <NavLink to="/userHome">
+              <LogoSm className="cursor-pointer" />
+            </NavLink>
+          </div>
         </div>
 
-        <h5 className="text-[#ACACAC] px-4 mx-2 mt-4">Menu</h5>
-
         {/* Navigation */}
-        <nav className="p-4 flex flex-col gap-1 overflow-y-auto">
+        <nav className="py-2 px-3 flex flex-col gap-1 overflow-y-auto">
+          <h5 className="text-[#ACACAC] mb-2 mx-2">Menu</h5>
+
           <NavLink to="/dashboard/home" end className={navLinkClass}>
             <DashboardIcon />
             <span>Dashboard</span>
@@ -73,6 +91,11 @@ const InstitutesPage = () => {
           <NavLink to="/users" className={navLinkClass}>
             <StudentIcon />
             <span>Users</span>
+          </NavLink>
+
+          <NavLink to="/dashboard/system-users" className={navLinkClass}>
+            <SystemUsersIcon />
+            <span>System Users</span>
           </NavLink>
 
           <NavLink to="/programs" className={navLinkClass}>
@@ -103,7 +126,18 @@ const InstitutesPage = () => {
             <LocationIcon />
             <span>Location</span>
           </NavLink>
+          <NavLink to="/dashboard/roles" className={navLinkClass}>
+            <SettingSidebarIcon />
+            <span>Roles</span>
+          </NavLink>
         </nav>
+        <button
+          onClick={handleLogout}
+          className="pb-10 mx-4 pt-2 flex items-center gap-2 text-[#ACACAC] border-t border-[#ACACAC]"
+        >
+          <LogoutIcon className="rotate-180" />
+          <span>Logout</span>
+        </button>
       </aside>
 
       {/* Main Area */}

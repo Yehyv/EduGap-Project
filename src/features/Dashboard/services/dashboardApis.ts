@@ -1,4 +1,4 @@
-import api from "@/shared/services/axios";
+import { dashboardApi } from "./../../../shared/services/dashboardApi";
 import type {
   CategoriesResponse,
   CitiesResponse,
@@ -18,6 +18,12 @@ import type {
   ProgramDetailsResponseForAdmin,
   ProgramsInInstituteResponse,
   ProgramsResponseForAdmin,
+  RoleCategoriesResponse,
+  RolesDetailsResponse,
+  RolesListResponse,
+  SystemUserResponse,
+  SystemUsers,
+  SystemUsersResponse,
   TopicResponse,
   TopicsResponse,
   UserResponse,
@@ -26,88 +32,91 @@ import type {
 import type { ExpertsResponse } from "@/shared/types/sharedTypes";
 
 export async function getInstitutes(): Promise<InstitutesResponse> {
-  const res = await api.get<InstitutesResponse>(
+  const res = await dashboardApi.get<InstitutesResponse>(
     `/institutes/super-admin/institutes-list`,
   );
   return res.data;
 }
 
 export async function getInstitutesCoursesForDashboard(): Promise<InstitutesCoursesResponse> {
-  const res = await api.get<InstitutesCoursesResponse>(
+  const res = await dashboardApi.get<InstitutesCoursesResponse>(
     `/courses/super-admin/courses-list`,
   );
   return res.data;
 }
 export async function getCountriesDropdown(): Promise<CountriesResponse> {
-  const res = await api.get<CountriesResponse>(
+  const res = await dashboardApi.get<CountriesResponse>(
     `/countries/super-admin/dropdown/list`,
   );
   return res.data;
 }
 export async function createCountry(data): Promise<void> {
-  const res = await api.post<void>(`/countries`, data);
+  const res = await dashboardApi.post<void>(`/countries`, data);
   return res.data;
 }
 export async function editCountry(data): Promise<void> {
-  const res = await api.patch<void>(`/countries/${data.countryId}`, data);
+  const res = await dashboardApi.patch<void>(
+    `/countries/${data.countryId}`,
+    data,
+  );
   return res.data;
 }
 export async function editCity(data): Promise<void> {
-  const res = await api.patch<void>(`/cities/${data.cityId}`, data);
+  const res = await dashboardApi.patch<void>(`/cities/${data.cityId}`, data);
   return res.data;
 }
 export async function editRegion(data): Promise<void> {
-  const res = await api.patch<void>(`/regions/${data.regionId}`, data);
+  const res = await dashboardApi.patch<void>(`/regions/${data.regionId}`, data);
   return res.data;
 }
 export async function createCity(data): Promise<void> {
-  const res = await api.post<void>(`/cities`, data);
+  const res = await dashboardApi.post<void>(`/cities`, data);
   return res.data;
 }
 export async function createRegion(data): Promise<void> {
-  const res = await api.post<void>(`/regions`, data);
+  const res = await dashboardApi.post<void>(`/regions`, data);
   return res.data;
 }
 export async function getAllCountries(): Promise<CountriesResponse> {
-  const res = await api.get<CountriesResponse>(`/countries`);
+  const res = await dashboardApi.get<CountriesResponse>(`/countries`);
   return res.data;
 }
 export async function getAllCities(): Promise<CountriesResponse> {
-  const res = await api.get<CountriesResponse>(`/cities`);
+  const res = await dashboardApi.get<CountriesResponse>(`/cities`);
   return res.data;
 }
 export async function getAllRegions(): Promise<CountriesResponse> {
-  const res = await api.get<CountriesResponse>(`/regions`);
+  const res = await dashboardApi.get<CountriesResponse>(`/regions`);
   return res.data;
 }
 export async function deleteCountry(countryId: number): Promise<void> {
-  const res = await api.delete<void>(`/countries/${countryId}`);
+  const res = await dashboardApi.delete<void>(`/countries/${countryId}`);
   return res.data;
 }
 export async function findCountry(countryId: number | string): Promise<void> {
-  const res = await api.get<void>(`/countries/${countryId}`);
+  const res = await dashboardApi.get<void>(`/countries/${countryId}`);
   return res.data;
 }
 export async function findCity(cityId: number | string): Promise<void> {
-  const res = await api.get<void>(`/cities/${cityId}`);
+  const res = await dashboardApi.get<void>(`/cities/${cityId}`);
   return res.data;
 }
 export async function findRegion(regionId: number | string): Promise<void> {
-  const res = await api.get<void>(`/regions/${regionId}`);
+  const res = await dashboardApi.get<void>(`/regions/${regionId}`);
   return res.data;
 }
 export async function deleteCity(cityId: number): Promise<void> {
-  const res = await api.delete<void>(`/cities/${cityId}`);
+  const res = await dashboardApi.delete<void>(`/cities/${cityId}`);
   return res.data;
 }
 export async function deleteRegion(regionId: number): Promise<void> {
-  const res = await api.delete<void>(`/regions/${regionId}`);
+  const res = await dashboardApi.delete<void>(`/regions/${regionId}`);
   return res.data;
 }
 export async function getCitiesDropdown(
   countryId: number,
 ): Promise<CitiesResponse> {
-  const res = await api.get<CitiesResponse>(
+  const res = await dashboardApi.get<CitiesResponse>(
     `/cities/super-admin/dropdown/list/${countryId}`,
   );
   return res.data;
@@ -115,7 +124,7 @@ export async function getCitiesDropdown(
 export async function getRegionsDropdown(
   cityId: number,
 ): Promise<CitiesResponse> {
-  const res = await api.get<CitiesResponse>(
+  const res = await dashboardApi.get<CitiesResponse>(
     `/regions/super-admin/dropdown/list/${cityId}`,
   );
   return res.data;
@@ -123,13 +132,13 @@ export async function getRegionsDropdown(
 export async function getProgramsAndCoursesInInstitute(
   instituteId: number,
 ): Promise<ProgramsInInstituteResponse> {
-  const res = await api.get<ProgramsInInstituteResponse>(
+  const res = await dashboardApi.get<ProgramsInInstituteResponse>(
     `/programs/super-admin/dropdown/inst-CP?instituteId=${instituteId}`,
   );
   return res.data;
 }
 export const createInstitute = async (formData) => {
-  const { data } = await api.post("/institutes", formData, {
+  const { data } = await dashboardApi.post("/institutes", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -147,7 +156,7 @@ export const editInstitute = async ({
   instituteId,
   formData,
 }: EditInstitutePayload) => {
-  const { data } = await api.patch(
+  const { data } = await dashboardApi.patch(
     `/institutes/super-admin/institute/${instituteId}`,
     formData,
     {
@@ -161,43 +170,45 @@ export const editInstitute = async ({
 };
 
 export async function deleteInstitute(instituteId: number): Promise<void> {
-  const res = await api.delete<void>(
+  const res = await dashboardApi.delete<void>(
     `/institutes/super-admin/institute/${instituteId}`,
   );
   return res.data;
 }
 
 export async function getStudents(): Promise<UsersResponse> {
-  const res = await api.get<UsersResponse>(`/users/super-admin/users-list`);
+  const res = await dashboardApi.get<UsersResponse>(
+    `/users/super-admin/users-list`,
+  );
   return res.data;
 }
 export async function getStudentDetails(
   studentId: string,
 ): Promise<UserResponse> {
-  const res = await api.get<UserResponse>(
+  const res = await dashboardApi.get<UserResponse>(
     `/users/${studentId}/super-admin/user`,
   );
   return res.data;
 }
 
 export async function createStudent(data): Promise<void> {
-  const res = await api.post<void>(`/users`, data);
+  const res = await dashboardApi.post<void>(`/users`, data);
   return res.data;
 }
 
 export async function editStudent(data): Promise<void> {
-  const res = await api.patch<void>(`/users/${data.studentId}`, data);
+  const res = await dashboardApi.patch<void>(`/users/${data.studentId}`, data);
   return res.data;
 }
 
 export async function deleteStudent(studentId: number): Promise<void> {
-  const res = await api.delete<void>(`/users/${studentId}`);
+  const res = await dashboardApi.delete<void>(`/users/${studentId}`);
   return res.data;
 }
 export async function instituteDetails(
   instituteId: string,
 ): Promise<instituteResponse> {
-  const res = await api.get<instituteResponse>(
+  const res = await dashboardApi.get<instituteResponse>(
     `/institutes/super-admin/institute/${instituteId}`,
   );
   return res.data;
@@ -205,7 +216,7 @@ export async function instituteDetails(
 
 // Programs
 export async function getProgramsForAdmin(): Promise<ProgramsResponseForAdmin> {
-  const res = await api.get<ProgramsResponseForAdmin>(
+  const res = await dashboardApi.get<ProgramsResponseForAdmin>(
     `/programs/super-admin/programs-list`,
   );
   return res.data;
@@ -213,7 +224,7 @@ export async function getProgramsForAdmin(): Promise<ProgramsResponseForAdmin> {
 export async function programDetailsForAdmin(
   instituteId: string,
 ): Promise<ProgramDetailsResponseForAdmin> {
-  const res = await api.get<ProgramDetailsResponseForAdmin>(
+  const res = await dashboardApi.get<ProgramDetailsResponseForAdmin>(
     `/programs/super-admin/program/${instituteId}`,
   );
   return res.data;
@@ -221,14 +232,16 @@ export async function programDetailsForAdmin(
 export async function getCoursesInProgram(
   programId: string,
 ): Promise<CitiesResponse> {
-  const res = await api.get<CitiesResponse>(
+  const res = await dashboardApi.get<CitiesResponse>(
     `/courses/super-admin/dropdown/list/program?programId=${programId}`,
   );
   return res.data;
 }
 
 export async function deleteProgram(instituteId: number): Promise<void> {
-  const res = await api.delete<void>(`/programs/super-admin/${instituteId}`);
+  const res = await dashboardApi.delete<void>(
+    `/programs/super-admin/${instituteId}`,
+  );
   return res.data;
 }
 
@@ -245,7 +258,7 @@ export const addProgram = async (values: any) => {
     formData.append(`translations[${index}][description]`, item.description);
   });
 
-  return api.post("/programs", formData, {
+  return dashboardApi.post("/programs", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -264,15 +277,19 @@ export const editProgram = async (values: any) => {
     formData.append(`translations[${index}][description]`, item.description);
   });
 
-  return api.patch(`/programs/super-admin/${values.programId}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
+  return dashboardApi.patch(
+    `/programs/super-admin/${values.programId}`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     },
-  });
+  );
 };
 // DropDown List
 export async function getInstitutesForDropdownList(): Promise<InstitutesCoursesResponse> {
-  const res = await api.get<InstitutesCoursesResponse>(
+  const res = await dashboardApi.get<InstitutesCoursesResponse>(
     `/institutes/super-admin/dropdown/list`,
   );
   return res.data;
@@ -280,7 +297,7 @@ export async function getInstitutesForDropdownList(): Promise<InstitutesCoursesR
 
 // Courses
 export async function getCoursesForDashboard(): Promise<CoursesForDashboardResponse> {
-  const res = await api.get<CoursesForDashboardResponse>(
+  const res = await dashboardApi.get<CoursesForDashboardResponse>(
     `/courses/super-admin/courses-list`,
   );
   return res.data;
@@ -288,7 +305,7 @@ export async function getCoursesForDashboard(): Promise<CoursesForDashboardRespo
 export async function courseDetailsForDashboard(
   courseId: string,
 ): Promise<CourseDetailsResponseForDashboard> {
-  const res = await api.get<CourseDetailsResponseForDashboard>(
+  const res = await dashboardApi.get<CourseDetailsResponseForDashboard>(
     `/courses/super-admin/course/${courseId}`,
   );
   return res.data;
@@ -318,7 +335,7 @@ export const addCourse = async (values: any) => {
     );
   });
 
-  return api.post("/courses", formData, {
+  return dashboardApi.post("/courses", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -349,7 +366,7 @@ export const editCourse = async (values: any) => {
     );
   });
 
-  return api.patch(
+  return dashboardApi.patch(
     `/institutes/super-admin/institute/${values?.courseId}`,
     formData,
     {
@@ -361,13 +378,15 @@ export const editCourse = async (values: any) => {
 };
 // delete course
 export async function deleteCourse(courseId: number): Promise<void> {
-  const res = await api.delete<void>(`/courses/super-admin/${courseId}`);
+  const res = await dashboardApi.delete<void>(
+    `/courses/super-admin/${courseId}`,
+  );
   return res.data;
 }
 
 // Learning Paths
 export async function getLearningPathsForDashboard(): Promise<LearningPathsForDashboard> {
-  const res = await api.get<LearningPathsForDashboard>(
+  const res = await dashboardApi.get<LearningPathsForDashboard>(
     `/packages/super-admin/packages-list`,
   );
   return res.data;
@@ -375,7 +394,7 @@ export async function getLearningPathsForDashboard(): Promise<LearningPathsForDa
 export async function learningPathForDashboard(
   learningPathId: string,
 ): Promise<LearningPathsForDashboardResponse> {
-  const res = await api.get<LearningPathsForDashboardResponse>(
+  const res = await dashboardApi.get<LearningPathsForDashboardResponse>(
     `/packages/super-admin/package/${learningPathId}`,
   );
   return res.data;
@@ -384,7 +403,9 @@ export async function learningPathForDashboard(
 export async function deleteLearningPath(
   learningPathId: number,
 ): Promise<void> {
-  const res = await api.delete<void>(`/packages/super-admin/${learningPathId}`);
+  const res = await dashboardApi.delete<void>(
+    `/packages/super-admin/${learningPathId}`,
+  );
   return res.data;
 }
 
@@ -410,7 +431,7 @@ export const addLearningPath = async (values: any) => {
     );
   });
 
-  return api.post("/packages", formData, {
+  return dashboardApi.post("/packages", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -438,17 +459,21 @@ export const editLearningPath = async (values: any) => {
     );
   });
 
-  return api.patch(`/packages/super-admin/${values.learningPathId}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
+  return dashboardApi.patch(
+    `/packages/super-admin/${values.learningPathId}`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     },
-  });
+  );
 };
 
 // Expert Crud
 
 export async function getExpertsForDashboard(): Promise<ExppertsForDashboardResponse> {
-  const res = await api.get<ExppertsForDashboardResponse>(
+  const res = await dashboardApi.get<ExppertsForDashboardResponse>(
     `/educators/super-admin/educators-list`,
   );
   return res.data;
@@ -456,14 +481,16 @@ export async function getExpertsForDashboard(): Promise<ExppertsForDashboardResp
 export async function getExpertDetailsForDashboard(
   expertId: string,
 ): Promise<ExpertDetailsResponse> {
-  const res = await api.get<ExpertDetailsResponse>(
+  const res = await dashboardApi.get<ExpertDetailsResponse>(
     `/educators/super-admin/educator/${expertId}`,
   );
   return res.data;
 }
 
 export async function deleteExpert(expertId: number): Promise<void> {
-  const res = await api.delete<void>(`/educators/super-admin/${expertId}`);
+  const res = await dashboardApi.delete<void>(
+    `/educators/super-admin/${expertId}`,
+  );
   return res.data;
 }
 
@@ -476,7 +503,7 @@ export const addExpert = async (values: any) => {
   formData.append(`title`, values.title);
   formData.append(`bio`, values.bio);
 
-  return api.post("/educators", formData, {
+  return dashboardApi.post("/educators", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -491,30 +518,36 @@ export const editExpert = async (values: any) => {
   formData.append(`title`, values.title);
   formData.append(`bio`, values.bio);
 
-  return api.patch(`/educators/super-admin/${values.userId}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
+  return dashboardApi.patch(
+    `/educators/super-admin/${values.userId}`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     },
-  });
+  );
 };
 
 export async function getAllCoursesForDropdown(
   instituteId: number,
   programId: number,
 ): Promise<CitiesResponse> {
-  const res = await api.get<CitiesResponse>(
+  const res = await dashboardApi.get<CitiesResponse>(
     `/courses/super-admin/dropdown/list/program?programId=${programId}&instituteId=${instituteId}`,
   );
   return res.data;
 }
-export async function getAllCourses(): Promise<CitiesResponse> {
-  const res = await api.get<CitiesResponse>(
-    `/courses/super-admin/dropdown/list`,
+export async function getAllCourses(
+  programId: string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get<CitiesResponse>(
+    `/courses/super-admin/dropdown/list?programId=${programId}`,
   );
   return res.data;
 }
 export async function getAllContentsForDropdown(): Promise<CitiesResponse> {
-  const res = await api.get<CitiesResponse>(
+  const res = await dashboardApi.get<CitiesResponse>(
     `/contents/super-admin/dropdown/list`,
   );
   return res.data;
@@ -522,7 +555,7 @@ export async function getAllContentsForDropdown(): Promise<CitiesResponse> {
 export async function getAllProgramsForDropdown(
   instituteId: number | string,
 ): Promise<CitiesResponse> {
-  const res = await api.get<CitiesResponse>(
+  const res = await dashboardApi.get<CitiesResponse>(
     `/programs/super-admin/dropdown/list/?instituteId=${instituteId}`,
   );
   return res.data;
@@ -533,7 +566,7 @@ export async function assignCourseToInstituteProgram(
   programId: number,
   instituteId: number,
 ): Promise<void> {
-  const res = await api.patch<void>(
+  const res = await dashboardApi.patch<void>(
     `/courses/${courseId}/programs/${programId}/institutes/${instituteId}`,
   );
   return res.data;
@@ -542,7 +575,7 @@ export async function assignCourseToProgram(
   courseId: number,
   programId: number,
 ): Promise<void> {
-  const res = await api.patch<void>(
+  const res = await dashboardApi.patch<void>(
     `/courses/${courseId}/programs/${programId}`,
   );
   return res.data;
@@ -551,7 +584,7 @@ export async function assignContentToCourse(
   contentId: number,
   courseId: number,
 ): Promise<void> {
-  const res = await api.patch<void>(
+  const res = await dashboardApi.patch<void>(
     `/contents/${contentId}/course/${courseId}/assign`,
   );
   return res.data;
@@ -560,7 +593,7 @@ export async function assignProgramToInstitute(
   programId: number,
   instituteId: number,
 ): Promise<void> {
-  const res = await api.patch<void>(
+  const res = await dashboardApi.patch<void>(
     `/programs/${programId}/institutes/${instituteId}`,
   );
   return res.data;
@@ -569,7 +602,7 @@ export async function unAssignProgramToInstitute(
   programId: number,
   instituteId: number,
 ): Promise<void> {
-  const res = await api.delete<void>(
+  const res = await dashboardApi.delete<void>(
     `/programs/${programId}/institutes/${instituteId}`,
   );
   return res.data;
@@ -579,20 +612,20 @@ export async function unAssignCourseToProgramToInstitute(
   programId: number | string,
   instituteId: number | string,
 ): Promise<void> {
-  const res = await api.delete<void>(
+  const res = await dashboardApi.delete<void>(
     `/courses/${courseId}/programs/${programId}/institutes/${instituteId}`,
   );
   return res.data;
 }
 
 export async function getConentsList(): Promise<ContentsResponse> {
-  const res = await api.get<ContentsResponse>(
+  const res = await dashboardApi.get<ContentsResponse>(
     `/contents/super-admin/content-list`,
   );
   return res.data;
 }
 export const createContent = async (formData) => {
-  const { data } = await api.post("/contents", formData, {
+  const { data } = await dashboardApi.post("/contents", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -601,7 +634,7 @@ export const createContent = async (formData) => {
   return data;
 };
 export const editContent = async (contentId: number | string, formData) => {
-  const { data } = await api.patch(
+  const { data } = await dashboardApi.patch(
     `/contents/super-admin/${contentId}`,
     formData,
     {
@@ -615,13 +648,13 @@ export const editContent = async (contentId: number | string, formData) => {
 };
 
 export async function getCategories(): Promise<CategoriesResponse> {
-  const res = await api.get<CategoriesResponse>(
+  const res = await dashboardApi.get<CategoriesResponse>(
     `/content-categories/super-admin/category-list`,
   );
   return res.data;
 }
 export async function getLanguages(): Promise<LanguagesResponse> {
-  const res = await api.get<LanguagesResponse>(
+  const res = await dashboardApi.get<LanguagesResponse>(
     `/languages/super-admin/languages-list`,
   );
   return res.data;
@@ -630,7 +663,7 @@ export async function getLanguages(): Promise<LanguagesResponse> {
 export async function instituteContentDetails(
   contentId: string,
 ): Promise<ContentDetailsResponse> {
-  const res = await api.get<ContentDetailsResponse>(
+  const res = await dashboardApi.get<ContentDetailsResponse>(
     `/contents/super-admin/content/${contentId}`,
   );
   return res.data;
@@ -639,35 +672,40 @@ export async function instituteContentDetails(
 export async function getTopicsWithLessonsInContent(
   contentId: number | string,
 ): Promise<TopicsResponse> {
-  const res = await api.get<TopicsResponse>(`/topics/${contentId}/topics`);
+  const res = await dashboardApi.get<TopicsResponse>(
+    `/topics/${contentId}/topics`,
+  );
   return res.data;
 }
 
 export async function createTopic(data): Promise<void> {
-  const res = await api.post<void>(`/topics`, data);
+  const res = await dashboardApi.post<void>(`/topics`, data);
   return res.data;
 }
 export async function editTopic(data): Promise<void> {
-  const res = await api.post<void>(`/topics/super-admin/${data.topicId}`, data);
+  const res = await dashboardApi.post<void>(
+    `/topics/super-admin/${data.topicId}`,
+    data,
+  );
   return res.data;
 }
 export async function getTopicDetails(
   contentId: number | string,
   topicId: number | string,
 ): Promise<TopicResponse> {
-  const res = await api.get<TopicResponse>(
+  const res = await dashboardApi.get<TopicResponse>(
     `/topics/super-admin/topic/${topicId}?contentId=${contentId}`,
   );
   return res.data;
 }
 
 export async function deleteTopicApi(topicId: string | number): Promise<void> {
-  const res = await api.delete<void>(`/topics/super-admin/${topicId}`);
+  const res = await dashboardApi.delete<void>(`/topics/super-admin/${topicId}`);
   return res.data;
 }
 
 export const createLesson = async (formData) => {
-  const { data } = await api.post("/lessons", formData, {
+  const { data } = await dashboardApi.post("/lessons", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -675,3 +713,73 @@ export const createLesson = async (formData) => {
 
   return data;
 };
+
+export async function getAllRoles(
+  page: number,
+  limit: number,
+): Promise<RolesListResponse> {
+  const res = await dashboardApi.get<RolesListResponse>(
+    `/system-roles/super-admin/roles-list?limit=${limit}&page=${page}`,
+  );
+  return res.data;
+}
+export async function getRoleCategories(): Promise<RoleCategoriesResponse> {
+  const res = await dashboardApi.get<RoleCategoriesResponse>(
+    `/system-roles/super-admin/role-categories`,
+  );
+  return res.data;
+}
+export async function findOneRole(
+  roleId: string,
+): Promise<RolesDetailsResponse> {
+  const res = await dashboardApi.get<RolesDetailsResponse>(
+    `/system-roles/super-admin/role/${roleId}`,
+  );
+  return res.data;
+}
+export async function createRole(data): Promise<void> {
+  const res = await dashboardApi.post<void>(`/system-roles`, data);
+  return res.data;
+}
+export async function updateRole(data): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `/system-roles/super-admin/${data.roleId}`,
+    data,
+  );
+  return res.data;
+}
+export async function deleteRole(roleId: number): Promise<void> {
+  const res = await dashboardApi.delete<void>(
+    `/system-roles/super-admin/${roleId}`,
+  );
+  return res.data;
+}
+export function logoutDashboardUser() {
+  return dashboardApi.post("/system-auth/logout");
+}
+
+export async function getAllSystemUsers(): Promise<SystemUsersResponse> {
+  const res = await dashboardApi.get<SystemUsersResponse>(
+    `/system-users/super-admin/users/list`,
+  );
+  return res.data;
+}
+export async function findOneSystemUser(
+  systemUserId: string,
+): Promise<SystemUserResponse> {
+  const res = await dashboardApi.get<SystemUserResponse>(
+    `/system-users/super-admin/user/${systemUserId}`,
+  );
+  return res.data;
+}
+export async function createSystemUser(data): Promise<void> {
+  const res = await dashboardApi.post<void>(`/system-users`, data);
+  return res.data;
+}
+export async function editSystemUser(data): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `/system-users/super-admin/${data.systemUserId}`,
+    data,
+  );
+  return res.data;
+}

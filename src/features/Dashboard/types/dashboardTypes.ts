@@ -1,4 +1,4 @@
-import type { LessonType } from "@/shared/types/sharedTypes";
+import type { LessonType, PaginationType } from "@/shared/types/sharedTypes";
 
 export interface Language {
   id: number;
@@ -235,6 +235,46 @@ export type LearningPathsForDashboardResponse = {
 };
 export type ExppertsForDashboardResponse = {
   data: { items: ExpertTypeForDashboard[] };
+};
+export type RolesList = {
+  id: number;
+  is_active: number;
+  role_title: string;
+  role_category: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+export type SystemUsers = {
+  id: number;
+  full_name: string;
+  email: string;
+  national_id: string;
+  phone_key: string;
+  phone: string;
+  user_image: string;
+  username: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: null | string;
+  is_active: boolean;
+  SysUserrole: RolesList;
+  institute: null;
+};
+export type RolesListResponse = {
+  data: { items: RolesList[]; pagination: PaginationType };
+};
+export type SystemUsersResponse = {
+  data: { users: SystemUsers[] };
+};
+export type SystemUserResponse = {
+  data: SystemUsers;
+};
+export type RolesDetailsResponse = {
+  data: RolesList;
+};
+export type RoleCategoriesResponse = {
+  data: string[];
 };
 export type Categories = {
   id: number;

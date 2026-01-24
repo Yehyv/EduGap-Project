@@ -10,6 +10,9 @@ import type {
 export function loginUser(data: LoginFormValues) {
   return api.post("/auth/signin", data);
 }
+export function loginDashboardUser(data: LoginFormValues) {
+  return api.post("/system-auth/signin", data);
+}
 export function verifyOtp(data: VerifyOtpValues) {
   return api.post("/auth/verify-otp", data);
 }
@@ -27,7 +30,7 @@ export function changePassword(data: ChangePasswordValues, token: string) {
 }
 export function restPasswordForForgetPassword(
   data: ChangePasswordForForgotPasswordValues,
-  token: string
+  token: string,
 ) {
   return api.post("/auth/reset-password", data, {
     headers: {

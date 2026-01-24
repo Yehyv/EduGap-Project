@@ -25,8 +25,8 @@ const AssignCourseToProgram = ({
   const { lang } = useLanguage();
   // Fetch all courses
   const { data: allCourses } = useQuery({
-    queryKey: ["getAllCoursesToAssign"],
-    queryFn: getAllCourses,
+    queryKey: ["getAllCoursesToAssign", programId],
+    queryFn: () => getAllCourses(programId ?? ""),
   });
   const queryClient = useQueryClient();
 

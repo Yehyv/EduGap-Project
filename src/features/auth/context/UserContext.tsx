@@ -41,6 +41,17 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
   };
 
+  // when add me for dashboard user
+  const fetchDashboardUser = async () => {
+    try {
+      const response = await api.get("");
+      setUser(response.data.data);
+      localStorage.setItem("user", JSON.stringify(response.data.data));
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");

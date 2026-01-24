@@ -810,6 +810,8 @@ const translations = {
     edit_expert_data: "Edit Expert Data",
     expert_data: "Expert Data",
     expert_name: "Expert Name",
+    dashboard: "Dashboard",
+    login_dashboard_title: "Login To Your Dashboard",
   },
 
   ar: {
@@ -1671,6 +1673,8 @@ const translations = {
     edit_expert_data: "تعديل بيانات الخبير",
     expert_data: "بيانات الخبير",
     expert_name: "اسم الخبير",
+    dashboard: "لوحة التحكم",
+    login_dashboard_title: "تسجيل الدخول الي لوحة التحكم",
   },
 } as const;
 

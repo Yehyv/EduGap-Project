@@ -139,14 +139,12 @@ const ExpertsListDashboard = () => {
     queryFn: () => getExpertsForDashboard(),
   });
 
-  console.log(data);
-
   const [filterText, setFilterText] = useState("");
 
   const filteredItems = useMemo(() => {
     if (!data?.data?.items) return [];
     return data?.data.items?.filter((item: ExpertTypeForDashboard) =>
-      item.title?.toLowerCase().includes(filterText.toLowerCase())
+      item.title?.toLowerCase().includes(filterText.toLowerCase()),
     );
   }, [filterText, data]);
 

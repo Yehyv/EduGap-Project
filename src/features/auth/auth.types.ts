@@ -18,9 +18,13 @@ export type ChangePasswordForForgotPasswordValues = {
 
 export type AuthContextType = {
   token: string | null;
+  dashboardToken: string | null;
   login: (token: string) => void;
+  dashboardLogin: (token: string) => void;
   saveRefreshToken: (token: string) => void;
+  saveRefreshTokenDashoard: (token: string) => void;
   logout: () => void;
+  dashboardLogout: () => void;
 };
 
 export type ForgotPasswordFormValues = {
