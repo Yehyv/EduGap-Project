@@ -778,8 +778,14 @@ export async function createSystemUser(data): Promise<void> {
 }
 export async function editSystemUser(data): Promise<void> {
   const res = await dashboardApi.patch<void>(
-    `/system-users/super-admin/${data.systemUserId}`,
+    `/system-users/super-admin/user/${data.systemUserId}`,
     data,
+  );
+  return res.data;
+}
+export async function deleteSystemUser(systemUserId: number): Promise<void> {
+  const res = await dashboardApi.delete<void>(
+    `/system-users/super-admin/user/${systemUserId}`,
   );
   return res.data;
 }

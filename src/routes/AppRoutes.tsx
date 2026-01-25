@@ -91,6 +91,7 @@ import DashboardProtectedRoute from "./DashboardProtectedRoute";
 import SystemUsersList from "@/pages/dashboard/SystemUsersList";
 import AddNewSystemUser from "@/pages/dashboard/AddNewSystemUser";
 import EditSystemUser from "@/features/Dashboard/components/EditSystemUser";
+import SystemUserDetails from "@/pages/dashboard/SystemUserDetails";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -261,6 +262,10 @@ export default function AppRoutes() {
             element={<EditRole />}
           />
           <Route path="/dashboard/system-users" element={<SystemUsersList />} />
+          <Route
+            path="/dashboard/system-users/:systemUserId"
+            element={<SystemUserDetails />}
+          />
           <Route
             path="/dashboard/system-users/add-new-user"
             element={<AddNewSystemUser />}

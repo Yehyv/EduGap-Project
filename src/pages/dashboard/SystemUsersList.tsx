@@ -1,6 +1,9 @@
 import { useState, useMemo } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
-import { getAllSystemUsers } from "@/features/Dashboard/services/dashboardApis";
+import {
+  deleteSystemUser,
+  getAllSystemUsers,
+} from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
 import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
@@ -54,7 +57,11 @@ const columns = [
   },
   {
     name: "Full Name",
-    selector: (row: SystemUsers) => row.full_name,
+    selector: (row: SystemUsers) => (
+      <Link className="underline" to={`/dashboard/system-users/${row.id}`}>
+        {row.full_name}
+      </Link>
+    ),
     sortable: true,
     center: true,
   },
@@ -115,10 +122,10 @@ const columns = [
     style: { justifyContent: "center" },
     cell: (row: SystemUsers) => (
       <DeleteButton
-        // deleteApi={() => deleteRole(row.id)}
+        deleteApi={() => deleteSystemUser(row.id)}
         successMessage="تم حذف المستخدم بنجاح"
         errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getRolesList"
+        refetchFunction="getSystemUsersList"
       />
     ),
     ignoreRowClick: true,
