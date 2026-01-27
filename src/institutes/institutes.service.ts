@@ -234,44 +234,50 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
   }
 
   return {
-    id: institute.id,
-    logo: institute.logo,
-    image_profile: institute.image_profile,
-    phone_key: institute.phone_key,
-    phone: institute.phone,
-    email: institute.email,
-    is_active: institute.is_active,
-    createdAt: institute.createdAt,
+  id: institute.id,
+  logo: institute.logo,
+  image_profile: institute.image_profile,
+  phone_key: institute.phone_key,
+  phone: institute.phone,
+  email: institute.email,
+  is_active: institute.is_active,
+  createdAt: institute.createdAt,
 
-    translations: institute.translations.map(t => ({
-      name: t.name,
-      address: t.address,
-      contactPersopnName: t.contactPersopnName,
-      contactPersonPostion: t.contactPersonPostion,
-    })),
+  translations: institute.translations.map(t => ({
+    name: t.name,
+    address: t.address,
+    contactPersopnName: t.contactPersopnName,
+    contactPersonPostion: t.contactPersonPostion,
+  })),
 
-    region: {
-      id: institute.region.id,
-      translations: institute.region.translations.map(t => ({
-        name: t.name,
-      })),
-      city: {
-        id: institute.region.city.id,
-        translations: institute.region.city.translations.map(t => ({
+  region: institute.region
+    ? {
+        id: institute.region.id,
+        translations: institute.region.translations.map(t => ({
           name: t.name,
         })),
-        country: {
-          id: institute.region.city.country.id,
-          translations: institute.region.city.country.translations.map(t => ({
-            name: t.name,
-          })),
-        },
-      },
-    },
-  };
-}
+        city: institute.region.city
+          ? {
+              id: institute.region.city.id,
+              translations: institute.region.city.translations.map(t => ({
+                name: t.name,
+              })),
+              country: institute.region.city.country
+                ? {
+                    id: institute.region.city.country.id,
+                    translations:
+                      institute.region.city.country.translations.map(t => ({
+                        name: t.name,
+                      })),
+                  }
+                : null,
+            }
+          : null,
+      }
+    : null,
+};
 
-
+  }
   async update(id: number, updateInstituteDto: UpdateInstituteDto) {
     const institute = await this.instituteRepository.findOne({
       where: { id },
