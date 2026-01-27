@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { PasswordAction } from './entities/password-action.entity';
+import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 interface userRow {
   user_id: number;
   user_full_name: string;
@@ -43,6 +44,8 @@ export class UsersService {
     private readonly programRepository: Repository<Program>,
     @InjectRepository(PasswordAction)
     private readonly passwordActionRepo: Repository<PasswordAction>,
+    @InjectRepository(SystemRole)
+    private readonly systemRoleRepo: Repository<SystemRole>,
   ) {}
 
   private async logPasswordAction(
@@ -174,8 +177,55 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.userRepositry.preload({ id, ...updateUserDto });
-    if (!user) throw new NotFoundException(`User with id ${id} not found`);
+    const { programId, instituteId, roleId, ...rest } = updateUserDto;
+
+    const user = await this.userRepositry.findOne({
+      where: { id },
+      relations: ['program', 'institute', 'role'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    // ✔️ تحديث الحقول العادية
+    Object.assign(user, rest);
+
+    // ✔️ program
+    if (programId !== undefined) {
+      const program = await this.programRepository.findOne({
+        where: { id: programId },
+      });
+      if (!program) {
+        throw new NotFoundException(`Program with id ${programId} not found`);
+      }
+      user.program = program;
+    }
+
+    // ✔️ institute
+    if (instituteId !== undefined) {
+      const institute = await this.instituteRepositry.findOne({
+        where: { id: instituteId },
+      });
+      if (!institute) {
+        throw new NotFoundException(
+          `Institute with id ${instituteId} not found`,
+        );
+      }
+      user.institute = institute;
+    }
+
+    // ✔️ role
+    if (roleId !== undefined) {
+      const role = await this.systemRoleRepo.findOne({
+        where: { id: roleId },
+      });
+      if (!role) {
+        throw new NotFoundException(`Role with id ${roleId} not found`);
+      }
+      user.UserRole = role;
+    }
+
     return this.userRepositry.save(user);
   }
 
