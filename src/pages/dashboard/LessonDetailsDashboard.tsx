@@ -2,24 +2,24 @@ import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTit
 import { Link, useParams } from "react-router-dom";
 import PencilIcon from "@/assets/svgs/PencilIcon.svg?react";
 import { useQuery } from "@tanstack/react-query";
-import { findOneSystemUser } from "@/features/Dashboard/services/dashboardApis";
+import { getLessonDetailsForDashboard } from "@/features/Dashboard/services/dashboardApis";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 
-const SystemUserDetails = () => {
-  const { systemUserId } = useParams();
+const LessonDetailsDashboard = () => {
+  const { lessonId, topicId, contentId } = useParams();
   const { t } = useLanguage();
 
   /* ================= QUERY ================= */
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["systemUserDetails", systemUserId],
-    queryFn: () => findOneSystemUser(systemUserId ?? ""),
-    enabled: !!systemUserId,
+    queryKey: ["lessonDetailsForDashboard", lessonId],
+    queryFn: () => getLessonDetailsForDashboard(lessonId ?? "", topicId ?? ""),
+    enabled: !!lessonId,
   });
 
-  const systemUser = data?.data;
-  const isActive = Boolean(systemUser?.is_active);
+  const lesson = data?.data;
+  const isActive = Boolean(lesson?.is_active);
 
   if (isLoading) {
     return <CircleLoader />;
@@ -35,17 +35,17 @@ const SystemUserDetails = () => {
   return (
     <>
       <DashboardPageTitle
-        text={`${systemUser?.full_name ?? "System user details"}`}
+        text={"Lesson Details"}
         button
         moreStyle="!from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5"
         buttonText={
           <Link
-            to={`/dashboard/system-users/edit-user/${systemUserId}`}
+            to={`/dashboard/contents/${contentId}/topic/${topicId}/edit-lesson/${lessonId}`}
             className="center"
           >
             <PencilIcon className="h-8 mx-2" />
             <span className="inline-block me-4 text-secondary">
-              Edit System User Data
+              Edit Lesson Data
             </span>
           </Link>
         }
@@ -54,8 +54,8 @@ const SystemUserDetails = () => {
       {/* ================= STUDENT DATA ================= */}
       <div className="bg-white rounded-lg p-5 mt-3">
         <div className="flex justify-between border-b pb-2 mb-4 border-[#ACACAC]">
-          <h5 className="text-secondary font-bold">User Data</h5>
-          {/* 
+          <h5 className="text-secondary font-bold">{t("expert_data")}</h5>
+
           <button
             className={`px-6 py-1 rounded-full border font-medium text-sm relative ${
               isActive
@@ -69,56 +69,37 @@ const SystemUserDetails = () => {
                 isActive ? "bg-green-500" : "bg-red-500"
               }`}
             />
-          </button> */}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h6 className="text-[#444444] text-sm">Full Name</h6>
-            <p>{systemUser?.full_name || "-"}</p>
-          </div>
-          <div className="row-span-3">
-            <h6 className="text-[#444444] text-sm mb-3">{t("expertImage")}</h6>
-            {systemUser?.user_image && (
-              <img
-                className="max-h-50 rounded-2xl"
-                src={systemUser.user_image}
-                alt="systemUser"
-              />
-            )}
+            <h6 className="text-[#444444] text-sm">Lesson Name</h6>
+            <p>{lesson?.translations[0].name || "-"}</p>
           </div>
 
           <div>
-            <h6 className="text-[#444444] text-sm">Email</h6>
-            <p>{systemUser?.email || "-"}</p>
-          </div>
-          <div>
-            <h6 className="text-[#444444] text-sm">Username</h6>
-            <p>{systemUser?.username || "-"}</p>
-          </div>
-          <div>
-            <h6 className="text-[#444444] text-sm">Role</h6>
-            <p>{systemUser?.SysUserrole.role_title || "-"}</p>
+            <h6 className="text-[#444444] text-sm">Description</h6>
+            <p>{lesson?.translations[0].description || "-"}</p>
           </div>
 
           <div>
-            <h6 className="text-[#444444] text-sm">National ID</h6>
-            <p>{systemUser?.national_id || "-"}</p>
+            <h6 className="text-[#444444] text-sm">Link</h6>
+            <p>{lesson?.video_link || "-"}</p>
+          </div>
+          <div>
+            <h6 className="text-[#444444] text-sm">Lesson Type</h6>
+            <p>{lesson?.lesson_type == 1 ? "Lesson" : "Quiz"}</p>
           </div>
 
-          <div>
-            <h6 className="text-[#444444] text-sm">Phone</h6>
-            <span>+{systemUser?.phone_key ?? ""}</span>{" "}
-            <span>{systemUser?.phone ?? ""}</span>
-          </div>
           <div>
             <h6 className="text-[#444444] text-sm">{t("created_at")}</h6>
-            <p>{systemUser?.created_at || "-"}</p>
+            <p>{lesson?.created_at || "-"}</p>
           </div>
 
           <div>
-            <h6 className="text-[#444444] text-sm">Updated At</h6>
-            <p>{systemUser?.updated_at || "-"}</p>
+            <h6 className="text-[#444444] text-sm">{t("created_by")}</h6>
+            <p>{lesson?.created_by || "-"}</p>
           </div>
         </div>
       </div>
@@ -126,4 +107,4 @@ const SystemUserDetails = () => {
   );
 };
 
-export default SystemUserDetails;
+export default LessonDetailsDashboard;

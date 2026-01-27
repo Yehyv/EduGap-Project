@@ -3,7 +3,6 @@ import {
   createContent,
   getAllContentsForDropdown,
   getCategories,
-  getExpertsForDashboard,
 } from "@/features/Dashboard/services/dashboardApis";
 import { TextField } from "@/shared/components";
 import ButtonLoader from "@/shared/components/ButtonLoader";
@@ -54,15 +53,6 @@ const AddNewContent = () => {
     label: c.name,
     value: c.id,
   }));
-  // must change this endpoint to new one just get name & id
-  const { data: educatorsData } = useQuery({
-    queryKey: ["getEducatorsData"],
-    queryFn: getExpertsForDashboard,
-  });
-  const handleEducatorsData = educatorsData?.data.items.map((e) => ({
-    label: e.user.full_name,
-    value: e.user.id,
-  }));
   const handleCategories = data?.data.map((d) => ({
     label: d.name,
     value: d.id,
@@ -99,7 +89,7 @@ const AddNewContent = () => {
 
     formData.append(
       "hasPrerequiest",
-      String(values.prerequisites?.length > 0 ? 1 : 0)
+      String(values.prerequisites?.length > 0 ? 1 : 0),
     );
     formData.append("level", values.level);
     formData.append("adVideo", values.adVideo);
@@ -117,18 +107,18 @@ const AddNewContent = () => {
     values.translations.forEach((item, index) => {
       formData.append(
         `translations[${index}][languageId]`,
-        String(item.languageId)
+        String(item.languageId),
       );
       formData.append(`translations[${index}][name]`, item.name);
       formData.append(`translations[${index}][description]`, item.description);
       formData.append(`translations[${index}][levelName]`, item.levelName);
       formData.append(
         `translations[${index}][previousBackground]`,
-        item.previousBackground
+        item.previousBackground,
       );
       formData.append(
         `translations[${index}][languageType]`,
-        item.languageType
+        item.languageType,
       );
       const whatToLearnArray = parseWhatToLearn(item.whatToLearn);
       whatToLearnArray.forEach((value, i) => {
@@ -150,8 +140,6 @@ const AddNewContent = () => {
 
     categoryId: Yup.number().required("Category is required"),
 
-    educator: Yup.number().required("Educator is required"),
-
     prerequisites: Yup.array().of(Yup.number()),
     translations: Yup.array().of(
       Yup.object({
@@ -162,7 +150,7 @@ const AddNewContent = () => {
         levelName: Yup.string().required("Level name is required"),
         languageType: Yup.string().required("Language type is required"),
         whatToLearn: Yup.string().required("What you will learn is required"),
-      })
+      }),
     ),
   });
 
@@ -241,11 +229,7 @@ const AddNewContent = () => {
                   name="translations[0].levelName"
                   moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
                 />
-                <DropdownMenu
-                  label={"Educator"}
-                  name="educator"
-                  options={handleEducatorsData}
-                />
+
                 <MultiSelectDropdown
                   label={"Recommended Prerequisites"}
                   name="prerequisites"

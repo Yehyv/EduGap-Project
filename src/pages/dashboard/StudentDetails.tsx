@@ -2,15 +2,17 @@ import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTit
 import { Link, useParams } from "react-router-dom";
 import PencilIcon from "@/assets/svgs/PencilIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusSign.svg?react";
-import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
-import TrashIcon from "@/assets/svgs/TrashIconDashboard.svg?react";
 import { useQuery } from "@tanstack/react-query";
 import { getStudentDetails } from "@/features/Dashboard/services/dashboardApis";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
+import AddProgramToStudent from "@/features/Dashboard/components/AddProgramToStudent";
+import { useState } from "react";
 
 const StudentDetails = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+
   const { studentId } = useParams();
   const { t } = useLanguage();
 
@@ -22,7 +24,7 @@ const StudentDetails = () => {
   });
 
   const student = data?.data;
-  const isActive = Boolean(student?.is_active);
+  const isActive = Boolean(student?.isActive);
 
   if (isLoading) {
     return <CircleLoader />;
@@ -38,7 +40,7 @@ const StudentDetails = () => {
   return (
     <>
       <DashboardPageTitle
-        text={t("students")}
+        text={`${student?.full_name ?? ""}`}
         button
         moreStyle="!from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5"
         buttonText={
@@ -82,6 +84,10 @@ const StudentDetails = () => {
             <h6 className="text-[#444444] text-sm">{t("institute")}</h6>
             <p>{student?.institute?.name || "-"}</p>
           </div>
+          <div>
+            <h6 className="text-[#444444] text-sm">Student Program</h6>
+            <p>{student?.program || "-"}</p>
+          </div>
 
           <div>
             <h6 className="text-[#444444] text-sm">{t("email")}</h6>
@@ -106,8 +112,6 @@ const StudentDetails = () => {
             )}
           </div>
 
-          <div />
-
           <div>
             <h6 className="text-[#444444] text-sm">{t("created_at")}</h6>
             <p>{student?.createdAt || "-"}</p>
@@ -120,41 +124,21 @@ const StudentDetails = () => {
         </div>
       </div>
 
-      {/* ================= STUDENT PROGRAM ================= */}
-      <div className="bg-white rounded-lg px-3 py-1 mt-3">
-        <div className="flex justify-between border-b border-[#ACACAC] py-2">
-          <h5 className="text-secondary font-bold">{t("student_program")}</h5>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="center my-4 ms-auto bg-gradient-to-r cursor-pointer center py-1.5 from-[#FCB737] to-[#BB831A] text-white px-2 rounded-xl shadow-md hover:to-[#FCB737] transition"
+      >
+        <PlusIcon className="h-6 mx-0" />
+        <span className="inline-block me-2 text-white text-sm">
+          Assign Student to program
+        </span>
+      </button>
 
-          <button
-            type="button"
-            className="bg-gradient-to-r cursor-pointer center py-1.5 from-[#FCB737] to-[#BB831A] text-white px-2 rounded-xl shadow-md hover:to-[#FCB737] transition"
-          >
-            <Link to="#" className="center">
-              <PlusIcon className="h-6 mx-0" />
-              <span className="inline-block me-2 text-white text-sm">
-                {t("add_student_program")}
-              </span>
-            </Link>
-          </button>
-        </div>
-
-        {/* Change this Static Data */}
-        <div className="flex justify-between py-4">
-          <div>
-            <span className="me-1">1-</span>
-            <span>-</span>
-          </div>
-
-          <div>
-            <button>
-              <EditIcon className="inline-block mx-2" />
-            </button>
-            <button>
-              <TrashIcon className="inline-block" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <AddProgramToStudent
+        reviewModalOpen={modalOpen}
+        setReviewModalOpen={setModalOpen}
+      />
     </>
   );
 };

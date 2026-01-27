@@ -40,7 +40,7 @@ const CitiesHandler = ({ setCitiesOptions, setRegionsOptions }) => {
         data?.data?.map((c) => ({
           label: c.name,
           value: c.id,
-        })) || []
+        })) || [],
       );
     } else {
       setCitiesOptions([]);
@@ -68,7 +68,7 @@ const RegionsHandler = ({ setRegionsOptions }) => {
         data?.data?.map((r) => ({
           label: r.name,
           value: r.id,
-        })) || []
+        })) || [],
       );
     } else {
       setRegionsOptions([]);
@@ -138,7 +138,7 @@ const EditInstituteDetails = () => {
       "location",
       `${values.city}, ${
         countriesOptions?.find((c) => c.value === values.country)?.label
-      }`
+      }`,
     );
 
     values.translations.forEach((item, index) => {
@@ -148,11 +148,11 @@ const EditInstituteDetails = () => {
 
       formData.append(
         `translations[${index}][contactPersopnName]`,
-        values.contact_person_name
+        values.contact_person_name,
       );
       formData.append(
         `translations[${index}][contactPersonPostion]`,
-        values.contact_person_position
+        values.contact_person_position,
       );
     });
 
@@ -174,7 +174,7 @@ const EditInstituteDetails = () => {
       Yup.object({
         name: Yup.string().required(),
         address: Yup.string().required(),
-      })
+      }),
     ),
   });
   const instituteData = data?.data;
@@ -182,7 +182,7 @@ const EditInstituteDetails = () => {
   return (
     <>
       <DashboardPageTitle
-        text={`Edit Institute ${instituteData?.translation.name ?? ""}`}
+        text={`Edit Institute ${instituteData?.translation?.name ?? ""}`}
       />
       <Formik
         initialValues={{
@@ -191,21 +191,21 @@ const EditInstituteDetails = () => {
           email: instituteData?.email,
           phoneKey: instituteData?.phone_key,
           phone: instituteData?.phone,
-          country: instituteData?.region.city.country.name,
-          city: instituteData?.region.city.name,
-          region: instituteData?.region.name,
-          contact_person_name: instituteData?.translation.contactPersopnName,
+          country: instituteData?.region?.city?.country?.id,
+          city: instituteData?.region?.city?.id,
+          region: instituteData?.region?.id,
+          contact_person_name: instituteData?.translation?.contactPersopnName,
           contact_person_position:
-            instituteData?.translation.contactPersonPostion,
+            instituteData?.translation?.contactPersonPostion,
           translations: [
             {
-              name: instituteData?.translation.name,
-              address: instituteData?.translation.address,
+              name: instituteData?.translation?.name,
+              address: instituteData?.translation?.address,
               languageId: 1,
             },
             {
-              name: instituteData?.translation.name,
-              address: instituteData?.translation.address,
+              name: instituteData?.translation?.name,
+              address: instituteData?.translation?.address,
               languageId: 2,
             },
           ],
@@ -223,7 +223,7 @@ const EditInstituteDetails = () => {
               onSuccess: () => {
                 resetForm();
               },
-            }
+            },
           );
         }}
       >

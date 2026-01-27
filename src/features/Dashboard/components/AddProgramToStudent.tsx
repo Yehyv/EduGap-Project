@@ -4,51 +4,53 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  assignCourseToProgram,
-  getAllCourses,
+  assignStudentToProgram,
+  getAllPrograms,
 } from "../services/dashboardApis";
 import { useState } from "react";
 import Swal from "sweetalert2";
+import { useParams } from "react-router-dom";
 
 interface AddCourseToProgramProps {
   reviewModalOpen: boolean;
   setReviewModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  programId: number;
 }
 
-const AssignCourseToProgram = ({
+const AddProgramToStudent = ({
   reviewModalOpen,
   setReviewModalOpen,
-  programId,
 }: AddCourseToProgramProps) => {
   const [currentChoice, setCurrentChoice] = useState<number | null>(null);
   const { lang } = useLanguage();
+  const { studentId } = useParams();
+
   // Fetch all courses
   const { data: allCourses } = useQuery({
-    queryKey: ["getAllCoursesToAssign", programId],
-    queryFn: () => getAllCourses(programId ?? ""),
+    queryKey: ["getAllPrograms"],
+    queryFn: getAllPrograms,
   });
   const queryClient = useQueryClient();
 
   // Mutation
-  const { mutate, isPending } = useMutation({
+  const { mutate, isLoading } = useMutation({
     mutationFn: ({
-      courseId,
+      studentId,
       programId,
     }: {
-      courseId: number;
-      programId: number;
-    }) => assignCourseToProgram(courseId, programId),
+      studentId: string | undefined;
+      programId: number | null;
+    }) => assignStudentToProgram(studentId ?? "", programId ?? ""),
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Course Assigned!",
-        text: "The course has been successfully added to the program.",
+        title: "Student Assigned",
+        text: "The student has been successfully assigned to the program.",
       });
       setCurrentChoice(null);
       setReviewModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["coursesInProgram"] });
-      queryClient.invalidateQueries({ queryKey: ["getAllCoursesToAssign"] });
+      queryClient.invalidateQueries({
+        queryKey: ["studentDetails"],
+      });
     },
     onError: (err: any) => {
       setReviewModalOpen(false);
@@ -61,7 +63,7 @@ const AssignCourseToProgram = ({
     },
   });
 
-  const handleAssignCourseToProgram = () => {
+  const handleAssignProgramToInstitute = (programId: number | null) => {
     if (!currentChoice) {
       Swal.fire({
         icon: "warning",
@@ -71,7 +73,7 @@ const AssignCourseToProgram = ({
       return;
     }
 
-    mutate({ courseId: currentChoice, programId });
+    mutate({ studentId, programId });
   };
 
   return (
@@ -93,11 +95,11 @@ const AssignCourseToProgram = ({
             </button>
           </div>
           <Dialog.Title className={`text-center text-sm m-0 text-secondary`}>
-            Add Course To Program
+            Assign Student To Program
           </Dialog.Title>
         </div>
       }
-      headerTitle={"Add Course"}
+      headerTitle={"Assign Student To Program"}
       open={reviewModalOpen}
       onOpenChange={setReviewModalOpen}
     >
@@ -115,13 +117,17 @@ const AssignCourseToProgram = ({
         ))}
       </div>
 
+      {(!allCourses?.data || allCourses.data.length === 0) && (
+        <p className="text-center text-gray-400">No Data Available</p>
+      )}
+
       <div className="flex justify-center gap-5 mt-5">
         <button
-          onClick={handleAssignCourseToProgram}
-          disabled={isPending}
+          onClick={() => handleAssignProgramToInstitute(currentChoice)}
+          disabled={isLoading}
           className="rounded-2xl bg-secondary text-white px-8 cursor-pointer disabled:opacity-50"
         >
-          {isPending ? "Assigning..." : "Confirm Add"}
+          {isLoading ? "Assigning..." : "Confirm Add"}
         </button>
         <button
           onClick={() => setReviewModalOpen(false)}
@@ -134,4 +140,4 @@ const AssignCourseToProgram = ({
   );
 };
 
-export default AssignCourseToProgram;
+export default AddProgramToStudent;

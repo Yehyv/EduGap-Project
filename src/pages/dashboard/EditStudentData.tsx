@@ -21,7 +21,7 @@ const EditStudentData = () => {
   const initialValues = {
     full_name: currentUserData?.full_name,
     email: currentUserData?.email,
-    national_id: currentUserData?.national_id,
+    national_id: currentUserData?.username,
     phone_key: currentUserData?.phone_key,
     phone: currentUserData?.phone,
     instituteId: currentUserData?.institute.id,

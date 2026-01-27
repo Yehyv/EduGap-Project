@@ -1,8 +1,10 @@
 import { Link, useParams } from "react-router-dom";
 import EditIcon from "@/assets/svgs/PencilIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusSign.svg?react";
+import DeleteIcon from "@/assets/svgs/TrashIconDashboard.svg?react";
 import {
-  getCoursesInProgram,
+  deleteCourseFromProgram,
+  getCoursesInProgramV2,
   programDetailsForAdmin,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
@@ -11,6 +13,7 @@ import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import AssignCourseToProgram from "@/features/Dashboard/components/AssignCourseToProgram";
 import { useState } from "react";
+import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 const AdminProgramDetails = () => {
   const { programId } = useParams();
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -22,9 +25,11 @@ const AdminProgramDetails = () => {
   });
   const { data: coursesInProgramData } = useQuery({
     queryKey: ["coursesInProgram", programId],
-    queryFn: () => getCoursesInProgram(programId ?? ""),
+    queryFn: () => getCoursesInProgramV2(programId ?? ""),
     enabled: !!programId,
   });
+  const handleCoursesInProgram = coursesInProgramData?.data.data;
+
   const programData = data?.data;
 
   if (isLoading) return <CircleLoader />;
@@ -139,13 +144,24 @@ const AdminProgramDetails = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-4 mt-4">
-          {coursesInProgramData?.data.map((c, index) => (
-            <div className="flex items-center gap-1">
-              <span>{index + 1} - </span>
-              <h6 className="text-[#444444] text-sm font-bold"> {c.name}</h6>
+          {handleCoursesInProgram?.map((c, index) => (
+            <div className="flex justify-between items-center gap-1">
+              <div>
+                <span>{index + 1} - </span>
+                <span className="text-[#444444] text-sm font-bold">
+                  {" "}
+                  {c.name}
+                </span>
+              </div>
+              <DeleteButton
+                deleteApi={() => deleteCourseFromProgram(c.id, programId)}
+                successMessage="Course removed successfully"
+                errorMessage="Error while delete the course"
+                refetchFunction="coursesInProgram"
+              />
             </div>
           ))}
-          {coursesInProgramData?.data.length == 0 && (
+          {handleCoursesInProgram?.length == 0 && (
             <p className="text-center text-gray-400">No data available</p>
           )}
         </div>

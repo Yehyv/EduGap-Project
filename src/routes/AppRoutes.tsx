@@ -92,6 +92,8 @@ import SystemUsersList from "@/pages/dashboard/SystemUsersList";
 import AddNewSystemUser from "@/pages/dashboard/AddNewSystemUser";
 import EditSystemUser from "@/features/Dashboard/components/EditSystemUser";
 import SystemUserDetails from "@/pages/dashboard/SystemUserDetails";
+import LessonDetailsDashboard from "@/pages/dashboard/LessonDetailsDashboard";
+import EditLessonData from "@/pages/dashboard/EditLessonData";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -226,6 +228,14 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents/:contentId/topic/:topicId/add-new-lesson"
             element={<AddNewLesson />}
+          />
+          <Route
+            path="/dashboard/contents/:contentId/topic/:topicId/edit-lesson/:lessonId"
+            element={<EditLessonData />}
+          />
+          <Route
+            path="/dashboard/contents/:contentId/topics/:topicId/lessons/:lessonId"
+            element={<LessonDetailsDashboard />}
           />
           <Route path="/dashboard/location" element={<Locations />} />
           <Route

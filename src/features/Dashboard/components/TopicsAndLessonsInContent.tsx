@@ -149,6 +149,7 @@ const TopicsAndLessonsInContent = () => {
                       >
                         <EditIcon />
                       </Link>
+
                       <button
                         onClick={(e) => {
                           handleDeleteTopic(topic.id);
@@ -183,9 +184,11 @@ const TopicsAndLessonsInContent = () => {
                         className=" marker:text-lg p-3 rounded-xl bg-[#F7FCFF]"
                       >
                         <div className="flex justify-between">
-                          <span>
+                          <Link
+                            to={`/dashboard/contents/${contentId}/topics/${topic.id}/lessons/${lesson.id}`}
+                          >
                             {index + 1} - {lesson.name}
-                          </span>
+                          </Link>
                           <span className="center gap-2">
                             {formatDuration(lesson?.duration, lang)}{" "}
                             <TimeIcon className="w-3" />

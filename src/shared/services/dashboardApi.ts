@@ -46,8 +46,13 @@ const refreshDashboardToken = async () => {
 /* ===== Dashboard Request ===== */
 dashboardApi.interceptors.request.use((config) => {
   const token = localStorage.getItem("dashboard-token");
+  const lang = localStorage.getItem("lang");
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (lang) {
+    config.headers["languageId"] = lang === "ar" ? "1" : "2";
   }
   return config;
 });

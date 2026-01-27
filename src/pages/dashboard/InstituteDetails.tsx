@@ -7,6 +7,7 @@ import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import PorgramsInInstitute from "@/features/Dashboard/components/PorgramsInInstitute";
+import StudentsInInstitute from "@/features/Dashboard/components/StudentsInInstitute";
 
 const InstituteDetails = () => {
   const { instituteId } = useParams();
@@ -34,11 +35,16 @@ const InstituteDetails = () => {
         : "border-[#9B9393] text-[#9B9393]"
     }`;
 
+  const instituteDataAr = instituteData?.translations[0];
+  const instituteDataEn = instituteData?.translations[1];
+
+  console.log(instituteData);
+
   return (
     <>
       {/* ================= HEADER ================= */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-1">
-        <h2 className="mb-5">{instituteData?.translation?.name}</h2>
+        <h2 className="mb-5">{instituteDataAr?.name ?? ""} </h2>
 
         <div className="flex items-center gap-2">
           <button
@@ -101,7 +107,7 @@ const InstituteDetails = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h6 className="text-sm font-bold">{t("field_name")}</h6>
-                <p>{instituteData?.translation?.name}</p>
+                <p>{instituteDataAr?.name}</p>
               </div>
 
               <div>
@@ -111,7 +117,7 @@ const InstituteDetails = () => {
 
               <div>
                 <h6 className="text-sm font-bold">{t("field_address")}</h6>
-                <p>{instituteData?.translation?.address}</p>
+                <p>{instituteDataAr?.address}</p>
               </div>
 
               <div></div>
@@ -130,14 +136,14 @@ const InstituteDetails = () => {
 
               <div>
                 <h6 className="text-sm font-bold">{t("contactPerson")}</h6>
-                <p>{instituteData?.translation?.contactPersopnName}</p>
+                <p>{instituteDataAr?.contactPersopnName}</p>
               </div>
 
               <div>
                 <h6 className="text-sm font-bold">
                   {t("contactPersonPosition")}
                 </h6>
-                <p>{instituteData?.translation?.contactPersonPostion}</p>
+                <p>{instituteDataAr?.contactPersonPostion}</p>
               </div>
 
               <div>
@@ -183,12 +189,12 @@ const InstituteDetails = () => {
             <div className="grid grid-cols-1 gap-4 mt-4">
               <div>
                 <h6 className="text-sm font-bold">{t("field_name")}</h6>
-                <p>-</p>
+                <p>{instituteDataEn?.name}</p>
               </div>
 
               <div>
                 <h6 className="text-sm font-bold">{t("field_address")}</h6>
-                <p>-</p>
+                <p>{instituteDataEn?.address}</p>
               </div>
             </div>
           </div>
@@ -196,9 +202,7 @@ const InstituteDetails = () => {
       )}
 
       {/* ================= OTHER TABS ================= */}
-      {activeTab === "students" && (
-        <div className="bg-white p-5 rounded-lg">Students</div>
-      )}
+      {activeTab === "students" && <StudentsInInstitute />}
 
       {activeTab === "details" && <PorgramsInInstitute />}
     </>

@@ -226,6 +226,32 @@ export type ExpertTypeForDashboard = {
 export type ExpertDetailsResponse = {
   data: ExpertTypeForDashboard;
 };
+export type LessonDetails = {
+  id: number;
+  duration: number;
+  order_id: number;
+  video_link: string;
+  image: string;
+  lesson_type: number;
+  questions_percentage_score: null | number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: null | string;
+  is_active: boolean;
+  translations: [
+    {
+      id: number;
+      name: string;
+      description: string;
+      created_at: string;
+      updated_at: string;
+      deleted_at: null | string;
+    },
+  ];
+};
+export type LessonDetailsResponse = {
+  data: LessonDetails;
+};
 
 export type LearningPathsForDashboard = {
   data: LearningPathType[];
@@ -235,6 +261,18 @@ export type LearningPathsForDashboardResponse = {
 };
 export type ExppertsForDashboardResponse = {
   data: { items: ExpertTypeForDashboard[] };
+};
+export type Student = {
+  id: number;
+  name: string;
+  image: string;
+  phone: string;
+  email: string;
+  createdAt: string;
+  program: null | string;
+};
+export type InstituteStudentsResponse = {
+  data: { data: Student };
 };
 export type RolesList = {
   id: number;

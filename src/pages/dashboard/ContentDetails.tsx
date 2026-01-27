@@ -132,7 +132,7 @@ const ContentDetails = () => {
               <div>
                 <h6 className="text-sm font-bold">What To Learn</h6>
                 <ul className="list-disc ps-5">
-                  {contentData?.whatToLearn.split(",").map((c) => (
+                  {contentData?.whatToLearn?.split(",").map((c) => (
                     <li>{c}</li>
                   ))}
                 </ul>

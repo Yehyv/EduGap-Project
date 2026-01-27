@@ -12,9 +12,11 @@ import type {
   instituteResponse,
   InstitutesCoursesResponse,
   InstitutesResponse,
+  InstituteStudentsResponse,
   LanguagesResponse,
   LearningPathsForDashboard,
   LearningPathsForDashboardResponse,
+  LessonDetailsResponse,
   ProgramDetailsResponseForAdmin,
   ProgramsInInstituteResponse,
   ProgramsResponseForAdmin,
@@ -186,7 +188,7 @@ export async function getStudentDetails(
   studentId: string,
 ): Promise<UserResponse> {
   const res = await dashboardApi.get<UserResponse>(
-    `/users/${studentId}/super-admin/user`,
+    `/users/super-admin/user/${studentId}`,
   );
   return res.data;
 }
@@ -197,12 +199,17 @@ export async function createStudent(data): Promise<void> {
 }
 
 export async function editStudent(data): Promise<void> {
-  const res = await dashboardApi.patch<void>(`/users/${data.studentId}`, data);
+  const res = await dashboardApi.patch<void>(
+    `/users/super-admin/${data.studentId}`,
+    data,
+  );
   return res.data;
 }
 
 export async function deleteStudent(studentId: number): Promise<void> {
-  const res = await dashboardApi.delete<void>(`/users/${studentId}`);
+  const res = await dashboardApi.delete<void>(
+    `/users/super-admin/${studentId}`,
+  );
   return res.data;
 }
 export async function instituteDetails(
@@ -233,7 +240,15 @@ export async function getCoursesInProgram(
   programId: string,
 ): Promise<CitiesResponse> {
   const res = await dashboardApi.get<CitiesResponse>(
-    `/courses/super-admin/dropdown/list/program?programId=${programId}`,
+    `/courses/super-admin/dropdown/list?programId=${programId}`,
+  );
+  return res.data;
+}
+export async function getCoursesInProgramV2(
+  programId: string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get<CitiesResponse>(
+    `/courses/super-admin/program/${programId}/list`,
   );
   return res.data;
 }
@@ -241,6 +256,15 @@ export async function getCoursesInProgram(
 export async function deleteProgram(instituteId: number): Promise<void> {
   const res = await dashboardApi.delete<void>(
     `/programs/super-admin/${instituteId}`,
+  );
+  return res.data;
+}
+export async function deleteCourseFromProgram(
+  courseId: number | string,
+  programId: number | string,
+): Promise<void> {
+  const res = await dashboardApi.delete<void>(
+    `/courses/${courseId}/programs/${programId}`,
   );
   return res.data;
 }
@@ -478,11 +502,36 @@ export async function getExpertsForDashboard(): Promise<ExppertsForDashboardResp
   );
   return res.data;
 }
+export async function getStudentsInInstitute(
+  instituteId: string,
+): Promise<InstituteStudentsResponse> {
+  const res = await dashboardApi.get<InstituteStudentsResponse>(
+    `/users/super-admin/institute/${instituteId}/students`,
+  );
+  return res.data;
+}
 export async function getExpertDetailsForDashboard(
   expertId: string,
 ): Promise<ExpertDetailsResponse> {
   const res = await dashboardApi.get<ExpertDetailsResponse>(
     `/educators/super-admin/educator/${expertId}`,
+  );
+  return res.data;
+}
+export async function getExpertCoursesDashboard(
+  expertId: string,
+): Promise<ExpertDetailsResponse> {
+  const res = await dashboardApi.get<ExpertDetailsResponse>(
+    `contents/super-admin/educator/${expertId}/list`,
+  );
+  return res.data;
+}
+
+export async function unAssignContentFromExpert(
+  contentId: string | number,
+): Promise<void> {
+  const res = await dashboardApi.delete<void>(
+    `/contents/${contentId}/educator`,
   );
   return res.data;
 }
@@ -560,6 +609,18 @@ export async function getAllProgramsForDropdown(
   );
   return res.data;
 }
+export async function getExpertCourses(): Promise<CitiesResponse> {
+  const res = await dashboardApi.get<CitiesResponse>(
+    `/contents/super-admineducators/contents/dropdown`,
+  );
+  return res.data;
+}
+export async function getAllPrograms(): Promise<CitiesResponse> {
+  const res = await dashboardApi.get<CitiesResponse>(
+    `/programs/super-admin/dropdown/user/list`,
+  );
+  return res.data;
+}
 
 export async function assignCourseToInstituteProgram(
   courseId: number,
@@ -595,6 +656,24 @@ export async function assignProgramToInstitute(
 ): Promise<void> {
   const res = await dashboardApi.patch<void>(
     `/programs/${programId}/institutes/${instituteId}`,
+  );
+  return res.data;
+}
+export async function assignContentToExpert(
+  educatorId: number,
+  contnetId: number,
+): Promise<void> {
+  const res = await dashboardApi.post<void>(
+    `/contents/${contnetId}/educator/${educatorId}/assign`,
+  );
+  return res.data;
+}
+export async function assignStudentToProgram(
+  studentId: number | string,
+  programId: number | string,
+): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `users/${studentId}/assign-program/${programId}`,
   );
   return res.data;
 }
@@ -713,6 +792,21 @@ export const createLesson = async (formData) => {
 
   return data;
 };
+export const editLesson = async (formData) => {
+  const lessonId = formData.get("lessonId");
+
+  const { data } = await dashboardApi.patch(
+    `/lessons/super-admin/${lessonId}`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    },
+  );
+
+  return data;
+};
 
 export async function getAllRoles(
   page: number,
@@ -786,6 +880,15 @@ export async function editSystemUser(data): Promise<void> {
 export async function deleteSystemUser(systemUserId: number): Promise<void> {
   const res = await dashboardApi.delete<void>(
     `/system-users/super-admin/user/${systemUserId}`,
+  );
+  return res.data;
+}
+export async function getLessonDetailsForDashboard(
+  lessonId: string,
+  topicId: string,
+): Promise<LessonDetailsResponse> {
+  const res = await dashboardApi.get<LessonDetailsResponse>(
+    `/lessons/super-admin/lesson/${lessonId}?topicId=${topicId}`,
   );
   return res.data;
 }
