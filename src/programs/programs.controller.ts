@@ -66,6 +66,13 @@ export class ProgramsController {
     const instId = Number(instituteId);
     return this.programsService.ProgramDropDown(instId,langId);
   }
+  @Get('super-admin/dropdown/user/list')
+  programsForUserDropDown(
+    @Headers('languageId') languageId: number | undefined,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.programsService.ProgramsForUserDropDown(langId);
+  }
   
   @Get('super-admin/dropdown/inst-CP')
   instProgCourses(

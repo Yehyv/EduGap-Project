@@ -24,6 +24,7 @@ interface userRow {
   institute_id: number;
   institute_logo: string;
   it_name: string;
+  pt_name: string;
   createdAt: Date;
   program_id: number;
   program_name: string;
@@ -121,6 +122,13 @@ export class UsersService {
         languageId ? 'it.languageId = :languageId' : undefined,
         { languageId },
       )
+      .leftJoin('user.program', 'program')
+      .leftJoin(
+        'program.translations',
+        'pt',
+        languageId ? 'pt.languageId = :languageId' : undefined,
+        { languageId },
+      )
       .leftJoin('user.UserRole', 'role')
       .where('user.id = :id', { id })
       .select([
@@ -134,6 +142,7 @@ export class UsersService {
         'institute.id',
         'institute.logo',
         'it.name',
+        'pt.name',
         'role.role_title',
         'role.id',
         'role.role_category',
@@ -159,7 +168,8 @@ export class UsersService {
         id: row.role_id,
         role_title: row.role_role_title,
         role_category: row.role_role_category,
-      }
+      },
+      program: row.pt_name,
     };
   }
 
@@ -273,21 +283,46 @@ export class UsersService {
     });
   }
 
-  async assignUserToProgram(userId: number, programId: number): Promise<User> {
-    const user = await this.userRepositry.findOne({
-      where: { id: userId },
-      relations: ['program'],
-    });
-    if (!user) throw new NotFoundException(`User with id ${userId} not found`);
+  async assignUserToProgram(
+    userId: number,
+    programId: number,
+  ): Promise<{ message: string; userId: number; programId: number | null }> {
+    const [user, program] = await Promise.all([
+      this.userRepositry.findOne({
+        where: { id: userId },
+        relations: ['program'],
+      }),
+      this.programRepository.findOne({
+        where: { id: programId },
+      }),
+    ]);
 
-    const program = await this.programRepository.findOne({
-      where: { id: programId },
-    });
-    if (!program)
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    if (!program) {
       throw new NotFoundException(`Program with id ${programId} not found`);
+    }
 
+    // ✔️ already assigned (idempotent)
+    if (user.program?.id === programId) {
+      return {
+        message: 'User already assigned to this program',
+        userId,
+        programId,
+      };
+    }
+
+    // ✔️ assign / reassign
     user.program = program;
-    return this.userRepositry.save(user);
+    await this.userRepositry.save(user);
+
+    return {
+      message: 'User assigned to program successfully',
+      userId,
+      programId,
+    };
   }
 
   async getMeMinimal(userId: number, languageId?: number) {

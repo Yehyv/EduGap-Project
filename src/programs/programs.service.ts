@@ -429,6 +429,27 @@ export class ProgramsService {
       name: r.translation_name,
     }));
   }
+  async ProgramsForUserDropDown(languageId?: number) {
+    const rows = await this.programRepository
+      .createQueryBuilder('program')
+
+      .leftJoin(
+        'program.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .select([
+        'program.id AS program_id',
+        'translation.name AS translation_name',
+      ])
+      .getRawMany<ProgramRaw>();
+
+    return rows.map((r) => ({
+      id: r.program_id,
+      name: r.translation_name,
+    }));
+  }
 
   async programsAndCoursesForInstitute(
     instituteId: number,
