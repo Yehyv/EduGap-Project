@@ -90,15 +90,36 @@ export class SystemUsersService {
     const user = await query.getOne();
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
     return user;
-
   }
 
   async update(id: number, updateSystemUserDto: UpdateSystemUserDto) {
-    const user = await this.sysUserRepository.preload({
-      id,
-      ...updateSystemUserDto,
+    const { roleId, ...rest } = updateSystemUserDto;
+
+    const user = await this.sysUserRepository.findOne({
+      where: { id },
+      relations: ['SysUserrole'],
     });
-    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // ✅ تحديث الحقول العادية فقط
+    Object.assign(user, rest);
+
+    // ✅ تحديث الـ role
+    if (roleId !== undefined) {
+      const role = await this.systemRoleRepo.findOne({
+        where: { id: roleId },
+      });
+
+      if (!role) {
+        throw new NotFoundException(`Role with ID ${roleId} not found`);
+      }
+
+      user.SysUserrole = role;
+    }
+
     return this.sysUserRepository.save(user);
   }
 
