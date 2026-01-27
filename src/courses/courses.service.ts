@@ -273,8 +273,10 @@ export class CoursesService {
     // ✔️ موجود لكن soft-deleted → restore
     if (existing && existing.deleted_at) {
       await this.ipcRepository.restore(existing.id);
-      existing.is_active = 1;
-      await this.ipcRepository.save(existing);
+
+      await this.ipcRepository.update(existing.id, {
+        is_active: 1,
+      });
 
       return {
         message: `Course ${courseId} re-assigned successfully.`,
