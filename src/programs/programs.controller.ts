@@ -54,9 +54,8 @@ export class ProgramsController {
     return this.programsService.findAll(langId);
   }
   @Get('super-admin/program/:id')
-  findOne(@Param('id', ParseIntPipe) id: number, @Headers('languageId') languageId?: string) {
-    const langId = languageId ? Number(languageId) : undefined;
-    return this.programsService.findOne(id, langId);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.programsService.findOne(id);
   }
   @Get('super-admin/dropdown/list')
   programDropDown(

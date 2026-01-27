@@ -53,9 +53,8 @@ export class PackagesController {
   }
 
   @Get('super-admin/package/:id')
-  findOne(@Param('id') id: number, @Headers('languageId') languageId?: string) {
-    const langId = languageId ? Number(languageId) : undefined;
-    return this.packagesService.findOne(id, langId);
+  findOne(@Param('id') id: number) {
+    return this.packagesService.findOne(id);
   }
 
   @Patch('super-admin/:id')

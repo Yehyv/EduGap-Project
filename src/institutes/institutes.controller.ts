@@ -59,12 +59,8 @@ export class InstitutesController {
   }
 
   @Get('super-admin/institute/:id')
-  findOne(
-    @Param('id') id: string,
-    @Headers('languageId') languageId: number | undefined,
-  ) {
-    const langId = languageId ? Number(languageId) : undefined;
-    return this.institutesService.findOne(+id, langId);
+  findOne(@Param('id') id: string) {
+    return this.institutesService.findOne(+id);
   }
 
   @Patch('super-admin/institute/:id')

@@ -71,11 +71,9 @@ export class LessonsController {
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @Query('topicId') topicId: string,
-    @Headers('languageId') languageId?: string,
   ) {
-    const langId = languageId ? Number(languageId) : undefined;
     const topIc = topicId ? Number(topicId) : undefined;
-    return this.lessonsService.findOne(id, langId, topIc);
+    return this.lessonsService.findOne(id, topIc);
   }
 
   /**

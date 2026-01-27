@@ -58,11 +58,55 @@ export class ContentsController {
   }
   @Get('super-admin/dropdown/list')
   contentDropDown(
+    @Query('courseId') courseId: number,
     @Headers('languageId') languageId: number | undefined,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
-    return this.contentsService.contentDropDown(langId);
+    const courseIdNum = Number(courseId);
+    return this.contentsService.contentDropDown(courseIdNum, langId);
   }
+  @Get('super-admin/package/:packageId/list')
+contentsForPackage(
+  @Param('packageId', ParseIntPipe) packageId: number,
+  @Headers('languageId') languageId?: number,
+) {
+  return this.contentsService.contentsForPackagesList(
+    packageId,
+    languageId ? Number(languageId) : undefined,
+  );
+}
+@Get('super-admin/educator/:educatorId/list')
+contentsForEducator(
+  @Param('educatorId', ParseIntPipe) educatorId: number,
+  @Headers('languageId') languageId?: number,
+) {
+  return this.contentsService.contentsForEducatorList(
+    educatorId,
+    languageId ? Number(languageId) : undefined,
+  );
+}
+
+
+  @Get('super-admin/course/:courseId/list')
+getContentsByCourse(
+  @Param('courseId', ParseIntPipe) courseId: number,
+  @Headers('languageId') languageId?: number,
+) {
+  return this.contentsService.ContentsForCourseList(
+    courseId,
+    languageId ? Number(languageId) : undefined,
+  );
+}
+@Get('super-admineducators/contents/dropdown')
+contentsUnassignedForEducator(
+  @Headers('languageId') languageId?: number,
+) {
+  return this.contentsService.contentsUnassignedForEducatorDropDown(
+    languageId ? Number(languageId) : undefined,
+  );
+}
+
+
   @Get(':id/prerequisites')
   async getPrerequisites(
     @Req() req: AuthenticatedRequest,
@@ -79,15 +123,15 @@ export class ContentsController {
       userId
     });
   }
-  @Get('super-admin/dropdown/course-contents')
-  courseContentsDropDown(
-    @Query('courseId') courseId: number,
-    @Headers('languageId') languageId: number,
-  ) {
-    const langId = languageId? Number(languageId) : undefined;
-    const courId = Number(courseId)
-    return this.contentsService.contentsForCourse(courId, langId)
-  }
+  // @Get('super-admin/dropdown/course-contents')
+  // courseContentsDropDown(
+  //   @Query('courseId') courseId: number,
+  //   @Headers('languageId') languageId: number,
+  // ) {
+  //   const langId = languageId? Number(languageId) : undefined;
+  //   const courId = Number(courseId)
+  //   return this.contentsService.contentsForCourse(courId, langId)
+  // }
   @Patch('super-admin/content-status/:id')
   async changeContentStatus(@Param('id', ParseIntPipe) id: number) {
     return this.contentsService.toggleActive(id);
@@ -326,10 +370,8 @@ findLatestOne(
   @Get('super-admin/content/:id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
-    @Headers('languageId') languageId?: string,
   ) {
-    const langId = languageId ? Number(languageId) : undefined;
-    return this.contentsService.findOne(id, langId);
+    return this.contentsService.findOne(id);
   }
 
   /** تحديث المحتوى/الترجمات */

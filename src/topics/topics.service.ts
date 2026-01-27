@@ -97,33 +97,47 @@ export class TopicsService {
   }
 
   /** عرض توبيك واحد */
-  async findOne(id: number, languageId?: number, contentId?: number) {
-    const query = this.topicRepo
-      .createQueryBuilder('topic')
-      .leftJoin('topic.translations', 'translation', languageId ? 'translation.languageId = :languageId' : undefined, { languageId})
-      .leftJoin('translation.language', 'language')
-      .leftJoin('topic.content', 'content')
-      .where('content.id = :contentId', {  contentId  })
-      .andWhere('topic.id = :id', { id })
-      .select([
-        'topic.id',
-        'topic.order_id',
-        'topic.is_active',
-        'translation.name AS topic_translation_name',
-        'translation.description AS topic_translation_description',
-        'content.id AS topic_content_id',
-      ]);
-      const row = await query.getRawOne<topicRow>()
-      if (!row) throw new NotFoundException('topic not found');
-      return {
-        id: row.topic_id,
-      order_id: row.topic_order_id,
-      is_active: row.topic_is_active,
+  async findOne(id: number, contentId?: number) {
+  const query = this.topicRepo
+    .createQueryBuilder('topic')
+    .leftJoin('topic.translations', 'translation')
+    .leftJoin('topic.content', 'content')
+    .andWhere('topic.id = :id', { id });
+
+  if (contentId !== undefined) {
+    query.andWhere('content.id = :contentId', { contentId });
+  }
+
+  const rows = await query
+    .select([
+      'topic.id AS topic_id',
+      'topic.order_id AS topic_order_id',
+      'topic.is_active AS topic_is_active',
+      'translation.name AS topic_translation_name',
+      'translation.description AS topic_translation_description',
+      'content.id AS topic_content_id',
+    ])
+    .getRawMany<topicRow>();
+
+  if (!rows.length) {
+    throw new NotFoundException('topic not found');
+  }
+
+  return {
+    id: rows[0].topic_id,
+    order_id: rows[0].topic_order_id,
+    is_active: rows[0].topic_is_active,
+    contentId: rows[0].topic_content_id,
+    translations: rows.map(row => ({
       name: row.topic_translation_name,
       description: row.topic_translation_description,
-      contentId : row.topic_content_id      
-      }
-  }
+    })),
+  };
+}
+
+
+
+
   async getTopics(contentId: number, params: { languageId?: number }) {
     // هنا نجيب التوبيكس بالترجمة + الدروس بترجمتها
     const qb = this.contentRepo

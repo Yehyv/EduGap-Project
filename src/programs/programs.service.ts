@@ -118,38 +118,38 @@ export class ProgramsService {
       languageId: row.language_id,
     }));
   }
-  async findOne(id: number, languageId?: number) {
-    const query = this.programRepository
+  async findOne(id: number) {
+    const rows = await this.programRepository
       .createQueryBuilder('program')
-      .leftJoin(
-        'program.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
+      .leftJoin('program.translations', 'translation')
       .leftJoin('translation.language', 'language')
       .select([
-        'program.id',
-        'program.logo',
+        'program.id AS program_id',
+        'program.logo AS program_logo',
         'program.isActive AS isActive',
-        'translation.name',
-        'translation.description',
-        'language.id',
+        'translation.name AS translation_name',
+        'translation.description AS translation_description',
+        'language.id AS language_id',
       ])
-      .where('program.id = :id', { id });
-    const row = await query.getRawOne<ProgramRaw>();
-    if (!row) {
+      .where('program.id = :id', { id })
+      .getRawMany<ProgramRaw>();
+
+    if (!rows.length) {
       throw new NotFoundException(`Program with ID ${id} not found`);
     }
+
     return {
-      id: row.program_id,
-      logo: row.program_logo,
-      isActive: row.isActive,
-      name: row.translation_name,
-      description: row.translation_description,
-      languageId: row.language_id,
+      id: rows[0].program_id,
+      logo: rows[0].program_logo,
+      isActive: rows[0].isActive,
+      translations: rows.map((row) => ({
+        name: row.translation_name,
+        description: row.translation_description,
+        languageId: row.language_id,
+      })),
     };
   }
+
   // ✅ برامج عامة متاحة لكل المعاهد للاختيار منها
   async findAllForSelection(languageId?: number) {
     const programs = await this.programRepository.find({

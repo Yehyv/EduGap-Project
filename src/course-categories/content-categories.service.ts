@@ -78,7 +78,7 @@ export class ContentCategoriesService {
   }
 
   // ✅ عرض تصنيف واحد حسب اللغة
-  async findOne(id: number, languageId?: number) {
+  async findOne(id: number) {
     const category = await this.categoryRepository.findOne({
       where: { id },
       relations: ['translations', 'translations.language'],
@@ -86,16 +86,14 @@ export class ContentCategoriesService {
 
     if (!category) throw new NotFoundException(`Category ${id} not found`);
 
-    const selectedTranslation =
-      languageId && category.translations.length
-        ? category.translations.find((t) => t.language.id === languageId)
-        : category.translations[0];
-
     return {
       id: category.id,
-      name: selectedTranslation?.name ?? null,
-      description: selectedTranslation?.description ?? null,
       is_active: category.is_active,
+      translations: category.translations.map((t) => ({
+        name: t.name,
+        description: t.description,
+        languageId: t.language.id,
+      })),
     };
   }
 

@@ -208,101 +208,70 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
 }
 
 
-  async findOne(id: number, languageId?: number) {
-    const query = this.instituteRepository
-      .createQueryBuilder('institute')
-      .leftJoin(
-      'institute.translations',
-      'it',
-      languageId ? 'it.language.id = :languageId' : undefined,
-      { languageId },
-    )
-    .leftJoin('it.language', 'itLang')
-      // Region
-    .leftJoin('institute.region', 'region')
-    .leftJoin(
-      'region.translations',
-      'rt',
-      languageId ? 'rt.language.id = :languageId' : undefined,
-      { languageId },
-    )
+  async findOne(id: number) {
+  const institute = await this.instituteRepository
+    .createQueryBuilder('institute')
+    .leftJoinAndSelect('institute.translations', 'it')
+    .leftJoinAndSelect('it.language', 'itLang')
 
-    // City
-    .leftJoin('region.city', 'city')
-    .leftJoin(
-      'city.translations',
-      'ct',
-      languageId ? 'ct.language.id = :languageId' : undefined,
-      { languageId },
-    )
+    .leftJoinAndSelect('institute.region', 'region')
+    .leftJoinAndSelect('region.translations', 'rt')
+    .leftJoinAndSelect('rt.language', 'rtLang')
 
-    // Country
-    .leftJoin('city.country', 'country')
-    .leftJoin(
-      'country.translations',
-      'cot',
-      languageId ? 'cot.language.id = :languageId' : undefined,
-      { languageId },
-    )
-    .select([
-      'institute.id AS institute_id',
-      'institute.logo',
-      'institute.image_profile',
-      'institute.phone_key AS phone_key',
-      'institute.phone AS phone',
-      'institute.email AS email',
-      'institute.is_active AS is_active',
-      'institute.createdAt AS createdAt',
+    .leftJoinAndSelect('region.city', 'city')
+    .leftJoinAndSelect('city.translations', 'ct')
+    .leftJoinAndSelect('ct.language', 'ctLang')
 
-      'it.name',
-      'it.address',
-      'it.contactPersopnName',
-      'it.contactPersonPostion',
+    .leftJoinAndSelect('city.country', 'country')
+    .leftJoinAndSelect('country.translations', 'cot')
+    .leftJoinAndSelect('cot.language', 'cotLang')
 
-      'region.id',
-      'rt.name',
+    .where('institute.id = :id', { id })
+    .getOne();
 
-      'city.id',
-      'ct.name',
+  if (!institute) {
+    throw new NotFoundException(`Institute with ID ${id} not found`);
+  }
 
-      'country.id',
-      'cot.name',
-    ])
-      .where('institute.id = :id', { id });
-      const institute = await query.getRawOne<InstituteRaw>();
-    if (!institute) {
-      throw new NotFoundException(`Institute with ID ${id} not found`);
-    }
-    return {
-      id: institute.institute_id,
-      logo: institute.institute_logo,
-      image_profile: institute.institute_image_profile,
-      phone_key: institute.phone_key,
-      phone: institute.phone,
-      email: institute.email,
-      is_active: institute.is_active,
-      createdAt: institute.createdAt,
-      
-      translation: {
-        name: institute.it_name,
-        address: institute.it_address,
-        contactPersopnName: institute.it_contactPersopnName,
-        contactPersonPostion: institute.it_contactPersonPostion,
-      },
-      region: {
-        id: institute.region_id,
-        name: institute.rt_name,
-        city: {
-          id: institute.city_id,
-          name: institute.ct_name,
-          country: {
-            id: institute.country_id,
-            name: institute.cot_name,
-          },
+  return {
+    id: institute.id,
+    logo: institute.logo,
+    image_profile: institute.image_profile,
+    phone_key: institute.phone_key,
+    phone: institute.phone,
+    email: institute.email,
+    is_active: institute.is_active,
+    createdAt: institute.createdAt,
+
+    translations: institute.translations.map(t => ({
+      name: t.name,
+      address: t.address,
+      contactPersopnName: t.contactPersopnName,
+      contactPersonPostion: t.contactPersonPostion,
+    })),
+
+    region: {
+      id: institute.region.id,
+      translations: institute.region.translations.map(t => ({
+        name: t.name,
+      })),
+      city: {
+        id: institute.region.city.id,
+        translations: institute.region.city.translations.map(t => ({
+          name: t.name,
+        })),
+        country: {
+          id: institute.region.city.country.id,
+          translations: institute.region.city.country.translations.map(t => ({
+            name: t.name,
+          })),
         },
-    }
-  }
-  }
+      },
+    },
+  };
+}
+
+
   async update(id: number, updateInstituteDto: UpdateInstituteDto) {
     const institute = await this.instituteRepository.findOne({
       where: { id },

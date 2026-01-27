@@ -80,6 +80,21 @@ export class CoursesController {
     return this.coursesService.courseProgramDropDown(pid, iid, langId);
   }
 
+  @Get('super-admin/program/:programId/list')
+  async programCoursesDropDown(
+    @Param('programId', ParseIntPipe) programId: number,
+    @Headers('languageId') languageId?: number,
+  ) {
+    return {
+      status: 200,
+      message: 'Request successful',
+      data: await this.coursesService.programCoursesList(
+        programId,
+        languageId ? Number(languageId) : undefined,
+      ),
+    };
+  }
+
   /** جميع كورسات المعهد الحالي (من IPC) */
   @Get()
   findAllCoursesForInstitute(
@@ -157,10 +172,8 @@ coursesNav(
   @Get('super-admin/course/:id')
   getCourseForAdmin(
     @Param('id', ParseIntPipe) id: number,
-    @Headers('languageId') languageId?: string,
   ){
-    const langId = languageId ? Number(languageId) : undefined;
-    return this.coursesService.findOne(id, langId);
+    return this.coursesService.findOne(id);
   }
   @Patch('super-admin/course-status/:id')
   async changeCourseStatus(@Param('id', ParseIntPipe) id: number) {

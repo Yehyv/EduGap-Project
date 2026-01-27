@@ -59,6 +59,18 @@ export class UsersController {
   async changeUserStatus(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.toggleActive(id);
   }
+  @Get('super-admin/institute/:instituteId/students')
+  async getStudentsForInstitute(
+    @Param('instituteId', ParseIntPipe) instituteId: number,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return {
+      status: 200,
+      message: 'Request successful',
+      data: await this.usersService.studentsForInst(instituteId, langId),
+    };
+  }
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getMeMinimal(

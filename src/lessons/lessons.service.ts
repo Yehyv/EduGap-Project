@@ -121,30 +121,27 @@ async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
   }
 
   /** درس واحد (يدعم languageId اختياري لتصفية الترجمة) */
-  async findOne(id: number, languageId?: number, topicId? :number) {
-    const qb = this.lessonRepo
-      .createQueryBuilder('lesson')
-      .leftJoinAndSelect('lesson.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoin('translation.language', 'language')
-      .leftJoin('lesson.topic', 'topic')
-      .leftJoin('topic.translations',
-        'tt',
-        languageId ? 'tt.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoin('tt.language', 'ttlang')
-      .where('lesson.id = :id', {id})
-      .andWhere('topic.id = :topicId', {topicId});
-      
-    const lesson = await qb.getOne();
-    if (!lesson) throw new NotFoundException('Lesson not found');
+  async findOne(id: number, topicId?: number) {
+  const qb = this.lessonRepo
+    .createQueryBuilder('lesson')
+    .leftJoinAndSelect('lesson.translations', 'translation')
+    .leftJoin('translation.language', 'language')
+    .leftJoin('lesson.topic', 'topic')
+    .leftJoin('topic.translations', 'tt')
+    .leftJoin('tt.language', 'ttlang')
+    .where('lesson.id = :id', { id });
 
-    return lesson;
+  if (topicId !== undefined) {
+    qb.andWhere('topic.id = :topicId', { topicId });
   }
+
+  const lesson = await qb.getOne();
+  if (!lesson) throw new NotFoundException('Lesson not found');
+
+  return lesson;
+}
+
+
 
   /** تحديث درس: تغيير topic/order/is_active/.. + استبدال الترجمات لو مبعوتة */
   async update(id: number, dto: UpdateLessonDto, image?: Express.Multer.File) {

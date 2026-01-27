@@ -60,19 +60,21 @@ export class CountriesService {
     });
   }
 
-  async findOne(id: number, languageId?: number) {
+  async findOne(id: number) {
     const country = await this.countryRepository.findOne({
       where: { id },
       relations: ['translations', 'translations.language'],
     });
+
     if (!country) return null;
-    const tr =
-      country.translations.find((t) => t.language.id === languageId) ||
-      country.translations[0];
+
     return {
       id: country.id,
       isActive: country.isActive,
-      name: tr?.name,
+      translations: country.translations.map((t) => ({
+        name: t.name,
+        languageId: t.language.id,
+      })),
     };
   }
 

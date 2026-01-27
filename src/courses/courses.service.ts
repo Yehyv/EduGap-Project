@@ -397,34 +397,33 @@ export class CoursesService {
       whatToLearn: row.translation_whatToLearn ?? [],
     }));
   }
-  async findOne(id: number, languageId?: number) {
-    const query = this.courseRepository
+  async findOne(id: number) {
+    const rows = await this.courseRepository
       .createQueryBuilder('course')
-      .leftJoin(
-        'course.translations',
-        'translation',
-        languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
+      .leftJoin('course.translations', 'translation')
       .leftJoin('translation.language', 'language')
       .where('course.id = :id', { id })
       .select([
         'course.id AS course_id',
         'course.image AS course_image',
-        'course.isActive',
+        'course.isActive AS course_isActive',
         'translation.name AS translation_name',
         'translation.description AS translation_description',
         'translation.whatToLearn AS translation_whatToLearn',
-      ]);
-    const row = await query.getRawOne<courseRow>();
-    if (!row) throw new NotFoundException(`Course ${id} not found`);
+      ])
+      .getRawMany<courseRow>();
+
+    if (!rows.length) throw new NotFoundException(`Course ${id} not found`);
+
     return {
-      id: row.course_id,
-      image: row.course_image,
-      isActive: row.course_isActive,
-      name: row.translation_name,
-      description: row.translation_description,
-      whatToLearn: row.translation_whatToLearn ?? [],
+      id: rows[0].course_id,
+      image: rows[0].course_image,
+      isActive: rows[0].course_isActive,
+      translations: rows.map((row) => ({
+        name: row.translation_name,
+        description: row.translation_description,
+        whatToLearn: row.translation_whatToLearn ?? [],
+      })),
     };
   }
 
@@ -1239,6 +1238,34 @@ export class CoursesService {
 
       // 🔴 نشيل اللي موجودة في IPC
       .andWhere('IPC.id IS NULL')
+
+      .leftJoin(
+        'course.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+
+      .select([
+        'course.id AS course_id',
+        'translation.name AS translation_name',
+      ]);
+
+    const rows = await query.getRawMany<courseRow>();
+
+    return rows.map((r) => ({
+      id: r.course_id,
+      name: r.translation_name,
+    }));
+  }
+  async programCoursesList(programId: number, languageId?: number) {
+    const query = this.programCourseRepository
+      .createQueryBuilder('PC')
+      .leftJoin('PC.program', 'program')
+      .where('program.id = :programId', { programId })
+
+      .leftJoin('PC.course', 'course')
 
       .leftJoin(
         'course.translations',

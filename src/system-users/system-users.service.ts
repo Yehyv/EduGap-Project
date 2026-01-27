@@ -69,11 +69,28 @@ export class SystemUsersService {
   }
 
   async findOne(id: number) {
-    const user = await this.sysUserRepository.findOne({
-      where: { id },
-    });
+    const query = this.sysUserRepository
+      .createQueryBuilder('user')
+      .leftJoin('user.SysUserrole', 'role')
+      .where('user.id = :id', { id })
+      .select([
+        'user.id',
+        'user.full_name',
+        'user.username',
+        'user.email',
+        'user.phone',
+        'user.phone_key',
+        'user.national_id',
+        'user.created_at',
+        'user.user_image',
+        'role.role_title',
+        'role.id',
+        'role.role_category',
+      ]);
+    const user = await query.getOne();
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
     return user;
+
   }
 
   async update(id: number, updateSystemUserDto: UpdateSystemUserDto) {

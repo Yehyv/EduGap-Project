@@ -47,12 +47,10 @@ export class TopicsController {
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @Query('contentId') contentId: string,
-    @Headers('languageId') languageId?: string,
   ) {
-    const langId = languageId ? Number(languageId) : undefined;
     const contId = contentId ? Number(contentId) : undefined;
 
-    return this.topicsService.findOne(id, langId, contId);
+    return this.topicsService.findOne(id, contId);
   }
 
   /**

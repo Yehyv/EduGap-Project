@@ -132,34 +132,38 @@ export class PackagesService {
   
 
   /** FIND ONE */
-  async findOne(id: number, languageId?: number) {
-    const query = this.pkgRepo
-      .createQueryBuilder('pkg')
-      .leftJoin(
-        'pkg.translations', 'translation', languageId ? 'translation.languageId = :languageId' : undefined,
-        { languageId },
-      )
-      .leftJoin('translation.language', 'language')
-      .where('pkg.id = :id', {id})
-      .select([
-        'pkg.id AS pkg_id',
-        'pkg.image AS pkg_image',
-        'pkg.is_active AS pkg_isActive',
-        'translation.title AS translation_title',
-        'translation.description AS translation_description',
-        'translation.learning_outcoms AS translation_outcoms'
-      ]);
-      const row = await query.getRawOne<pkgRow>();
-      if (!row) throw new NotFoundException('package not found');
-      return {
-        id: row.pkg_id,
-        image: row.pkg_image,
-        isActive: row.pkg_isActive,
-        title: row.translation_title,
-        description: row.translation_description,
-        learning_outcoms: row.translation_outcoms,
-      }
+  async findOne(id: number) {
+  const rows = await this.pkgRepo
+    .createQueryBuilder('pkg')
+    .leftJoin('pkg.translations', 'translation')
+    .leftJoin('translation.language', 'language')
+    .where('pkg.id = :id', { id })
+    .select([
+      'pkg.id AS pkg_id',
+      'pkg.image AS pkg_image',
+      'pkg.is_active AS pkg_isActive',
+      'translation.title AS translation_title',
+      'translation.description AS translation_description',
+      'translation.learning_outcoms AS translation_outcoms',
+    ])
+    .getRawMany<pkgRow>();
+
+  if (!rows.length) {
+    throw new NotFoundException('package not found');
   }
+
+  return {
+    id: rows[0].pkg_id,
+    image: rows[0].pkg_image,
+    isActive: rows[0].pkg_isActive,
+    translations: rows.map(row => ({
+      title: row.translation_title,
+      description: row.translation_description,
+      learning_outcoms: row.translation_outcoms,
+    })),
+  };
+}
+
 
   /** UPDATE (fields + upsert translations if provided) */
   async update(id: number, dto: UpdatePackageDto, image?: Express.Multer.File) {

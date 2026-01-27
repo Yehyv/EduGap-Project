@@ -33,9 +33,8 @@ export class CountriesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Headers('languageId') languageId: number) {
-    const langId = languageId ? Number(languageId) : undefined;
-    return this.countriesService.findOne(+id, langId);
+  findOne(@Param('id') id: string) {
+    return this.countriesService.findOne(+id);
   }
 
   @Patch(':id')

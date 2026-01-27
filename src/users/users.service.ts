@@ -18,11 +18,18 @@ interface userRow {
   user_username: string;
   user_email: string;
   user_phone: string;
+  phone_key: string;
   user_user_image: string;
   user_is_active: number;
   institute_id: number;
   institute_logo: string;
   it_name: string;
+  createdAt: Date;
+  program_id: number;
+  program_name: string;
+  role_id: number;
+  role_role_title: string;
+  role_role_category: number;
 }
 @Injectable()
 export class UsersService {
@@ -127,9 +134,9 @@ export class UsersService {
         'institute.id',
         'institute.logo',
         'it.name',
-        'role.title',
+        'role.role_title',
         'role.id',
-        'role.category',
+        'role.role_category',
       ]);
     const row = await query.getRawOne<userRow>();
     if (!row) {
@@ -148,6 +155,11 @@ export class UsersService {
         logo: row.institute_logo,
         name: row.it_name,
       },
+      role: {
+        id: row.role_id,
+        role_title: row.role_role_title,
+        role_category: row.role_role_category,
+      }
     };
   }
 
@@ -256,7 +268,7 @@ export class UsersService {
         'institute',
         'institute.translations',
         'institute.translations.language',
-        'UserRole', 
+        'UserRole',
       ],
     });
   }
@@ -385,5 +397,48 @@ export class UsersService {
       message: `User is_active changed to ${userStatus}`,
       is_active: user.is_active,
     };
+  }
+  async studentsForInst(instituteId: number, languageId?: number) {
+    const students = await this.userRepositry
+      .createQueryBuilder('user')
+      .innerJoin('user.UserRole', 'role')
+      .leftJoin('user.program', 'program')
+      .leftJoin(
+        'program.translations',
+        'pt',
+        languageId ? 'pt.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('user.institute', 'institute')
+      .where('role.role_title = :roleTitle', { roleTitle: 'student' })
+      .andWhere('institute.id = :instituteId', { instituteId })
+      .select([
+        'user.id AS user_id',
+        'user.full_name AS user_full_name',
+        'user.user_image AS user_user_image',
+        'user.phone_key AS phone_key',
+        'user.phone AS user_phone',
+        'user.email AS user_email',
+        'user.createdAt AS createdAt',
+
+        'program.id AS program_id',
+        'pt.name AS program_name',
+      ])
+      .getRawMany<userRow>();
+
+    return students.map((s) => ({
+      id: s.user_id,
+      name: s.user_full_name,
+      image: s.user_user_image,
+      phone: `${s.phone_key}${s.user_phone}`,
+      email: s.user_email,
+      createdAt: s.createdAt,
+      program: s.program_id
+        ? {
+            id: s.program_id,
+            name: s.program_name,
+          }
+        : null,
+    }));
   }
 }
