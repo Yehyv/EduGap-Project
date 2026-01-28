@@ -42,12 +42,12 @@ export class PackageContentsController {
     const l = limit ? Number(limit) : 8;
     return this.packagesService.findPackagesPaginated(langId, p, l);
   }
-  @Patch(':packageId/contents/:contentIds/assign')
+  @Patch(':packageId/contents/:contentId/assign')
   async assignContentsToPackage(
     @Param('packageId', ParseIntPipe) packageId: number,
-    @Param('contentIds') contentIds: number[],
+    @Param('contentId') contentId: number,
   ) {
-    return this.contentsService.assignContentToPackage(packageId, contentIds);
+    return this.contentsService.assignContentToPackage(packageId, contentId);
   }
 
   /**
@@ -55,14 +55,14 @@ export class PackageContentsController {
    * Unassign contents from a package (soft delete).
    * Body: { contentIds: number[] }
    */
-  @Delete(':packageId/contents/:contentIds/un-assign')
+  @Delete(':packageId/contents/:contentId/un-assign')
   async unassignContentsFromPackage(
     @Param('packageId', ParseIntPipe) packageId: number,
-    @Param('contentIds') contentIds: number[],
+    @Param('contentId') contentId: number,
   ) {
     return this.contentsService.unAssignContentFromPackage(
       packageId,
-      contentIds,
+      contentId,
     );
   }
   @Get('packages/:packageId/contents/dropdown')

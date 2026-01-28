@@ -820,102 +820,97 @@ export class ContentsService {
 
   // داخل ContentsService
 
-  async assignContentToPackage(packageId: number, contentIds: number[]) {
-    if (!contentIds?.length) {
-      throw new BadRequestException('contentIds must be provided');
+  async assignContentToPackage(packageId: number, contentId: number) {
+    // 1️⃣ تأكد إن الـ package موجود
+    const pkg = await this.packageRepo.findOne({
+      where: { id: packageId },
+    });
+    if (!pkg) {
+      throw new NotFoundException(`Package ${packageId} not found`);
     }
 
-    const pkg = await this.packageRepo.findOne({ where: { id: packageId } });
-    if (!pkg) throw new NotFoundException('Package not found');
-
-    // تأكد إن كل الـ contents موجودة
-    const contents = await this.contentRepo.findBy({ id: In(contentIds) });
-    if (contents.length !== contentIds.length) {
-      throw new NotFoundException('Some contents not found');
+    // 2️⃣ تأكد إن الـ content موجود
+    const content = await this.contentRepo.findOne({
+      where: { id: contentId },
+    });
+    if (!content) {
+      throw new NotFoundException(`Content ${contentId} not found`);
     }
 
-    // هات الموجود (بما فيها المتشالة Soft) في Query واحدة
-    const existingLinks = await this.packageContentRepo.find({
+    // 3️⃣ افحص الربط (مع soft delete)
+    const existing = await this.packageContentRepo.findOne({
       where: {
         package: { id: packageId },
-        content: In(contentIds.map((id) => ({ id }))),
+        content: { id: contentId },
       },
       withDeleted: true,
     });
 
-    const existingMap = new Map<number, (typeof existingLinks)[number]>();
-    for (const link of existingLinks) {
-      // link.content.id موجود لأننا عملنا relations ضمنيًا في الشرط
-      existingMap.set(link.content?.id ?? link['contentId'], link);
+    // ✔️ موجود ومفعل
+    if (existing && !existing.deleted_at) {
+      throw new ConflictException('Content already assigned to this package');
     }
 
-    const created: number[] = [];
-    const restored: number[] = [];
-    const skipped: number[] = [];
+    // ✔️ موجود لكن soft-deleted → restore
+    if (existing && existing.deleted_at) {
+      await this.packageContentRepo.restore(existing.id);
+      await this.packageContentRepo.update(existing.id, {
+        is_active: 1,
+      });
 
-    for (const cid of contentIds) {
-      const found = existingMap.get(cid);
-      if (found) {
-        // لو link موجود
-        if ((found as any).deleted_at) {
-          // كان متشال Soft → رجّعه وفعلّه
-          await this.packageContentRepo.recover(found as any);
-          found.is_active = 1;
-          await this.packageContentRepo.save(found);
-          restored.push(cid);
-        } else {
-          // موجود بالفعل وActive
-          skipped.push(cid);
-        }
-      } else {
-        // اعمل create جديد
-        const link = this.packageContentRepo.create({
-          package: { id: packageId },
-          content: { id: cid },
-          is_active: 1,
-        });
-        await this.packageContentRepo.save(link);
-        created.push(cid);
-      }
+      return {
+        message: 'Content re-assigned to package successfully',
+        packageId,
+        contentId,
+      };
     }
+
+    // ✔️ مش موجود → create
+    await this.packageContentRepo.save(
+      this.packageContentRepo.create({
+        package: { id: packageId },
+        content: { id: contentId },
+        is_active: 1,
+      }),
+    );
 
     return {
-      message: 'Assign completed',
-      created,
-      restored,
-      skipped,
+      message: 'Content assigned to package successfully',
+      packageId,
+      contentId,
     };
   }
 
-  async unAssignContentFromPackage(packageId: number, contentIds: number[]) {
-    if (!contentIds?.length) {
-      throw new BadRequestException('contentIds must be provided');
-    }
-
-    // هات الروابط الموجودة (لو مش موجودة هنعدّيها بلطف)
-    const links = await this.packageContentRepo.find({
+  async unAssignContentFromPackage(packageId: number, contentId: number) {
+    const link = await this.packageContentRepo.findOne({
       where: {
         package: { id: packageId },
-        content: In(contentIds.map((id) => ({ id }))),
+        content: { id: contentId },
       },
       withDeleted: true,
     });
 
-    if (!links.length) {
-      throw new NotFoundException('No package-content links found');
+    if (!link) {
+      throw new NotFoundException(
+        `No content-package link found for package ${packageId} and content ${contentId}`,
+      );
     }
 
-    // فلتر الروابط اللي لسه مش متشالة Soft
-    const activeLinks = links.filter((l: any) => !l.deleted_at);
-    if (!activeLinks.length) {
-      return { message: 'Already unassigned for all provided contents' };
+    // ✔️ already soft-deleted (idempotent)
+    if (link.deleted_at) {
+      return {
+        message: 'Content already unassigned from package',
+        packageId,
+        contentId,
+      };
     }
 
-    await this.packageContentRepo.softDelete(activeLinks.map((l) => l.id));
+    await this.packageContentRepo.softDelete(link.id);
 
     return {
-      message: 'Unassign completed',
-      softDeletedIds: activeLinks.map((l) => l.id),
+      message: 'Content unassigned from package successfully',
+      packageId,
+      contentId,
     };
   }
 
