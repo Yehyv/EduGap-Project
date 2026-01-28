@@ -7,15 +7,17 @@ import TimeIcon from "@/assets/svgs/TimeIcon.svg?react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import {
+  deleteLesson,
   deleteTopicApi,
   getTopicsWithLessonsInContent,
 } from "../services/dashboardApis";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
-import { formatDuration } from "@/shared/utils/globals";
+import { formatDuration, LESSON_TYPES } from "@/shared/utils/globals";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import Swal from "sweetalert2";
 import ButtonLoader from "@/shared/components/ButtonLoader";
+import DeleteButton from "./DeleteButton";
 
 /* ===== Icons ===== */
 const ArrowDown = () => (
@@ -181,7 +183,7 @@ const TopicsAndLessonsInContent = () => {
                     {topic?.lessons?.map((lesson, index) => (
                       <li
                         key={index}
-                        className=" marker:text-lg p-3 rounded-xl bg-[#F7FCFF]"
+                        className={`marker:text-lg p-3 rounded-xl ${lesson?.lesson_type == LESSON_TYPES.LESSON ? "bg-[#F7FCFF]" : "bg-[#E4FFDD]"} `}
                       >
                         <div className="flex justify-between">
                           <Link
@@ -190,8 +192,13 @@ const TopicsAndLessonsInContent = () => {
                             {index + 1} - {lesson.name}
                           </Link>
                           <span className="center gap-2">
-                            {formatDuration(lesson?.duration, lang)}{" "}
-                            <TimeIcon className="w-3" />
+                            <EditIcon />
+                            <DeleteButton
+                              deleteApi={() => deleteLesson(lesson.id)}
+                              errorMessage="Error while delete lesson"
+                              refetchFunction="topicsAndLessonsInContent"
+                              successMessage="Lesson deleted!"
+                            />
                           </span>
                         </div>
                       </li>

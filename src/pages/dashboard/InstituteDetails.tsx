@@ -38,8 +38,6 @@ const InstituteDetails = () => {
   const instituteDataAr = instituteData?.translations[0];
   const instituteDataEn = instituteData?.translations[1];
 
-  console.log(instituteData);
-
   return (
     <>
       {/* ================= HEADER ================= */}

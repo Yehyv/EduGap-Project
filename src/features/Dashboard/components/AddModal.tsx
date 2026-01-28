@@ -9,6 +9,7 @@ type MyModalProps = {
   onOpenChange?: (open: boolean) => void;
   headerBgColor?: string;
   headerTextColor?: string;
+  maxW?: string;
 };
 
 export default function AddModal({
@@ -18,6 +19,7 @@ export default function AddModal({
   open,
   onOpenChange,
   headerBgColor,
+  maxW = "max-w-md",
 }: MyModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -27,10 +29,10 @@ export default function AddModal({
         <Dialog.Overlay className="fixed inset-0 bg-black/40 z-[999]" />
 
         <Dialog.Content
-          className="
+          className={`
             fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000]
-            bg-white rounded-lg shadow-lg w-[90%] max-w-md overflow-hidden
-          "
+            bg-white rounded-lg shadow-lg w-[90%] ${maxW} overflow-hidden
+          `}
         >
           <div className={`relative ${headerBgColor} px-4 py-2 pt-3`}>
             {headerComponent}

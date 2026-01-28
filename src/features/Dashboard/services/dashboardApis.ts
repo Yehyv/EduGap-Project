@@ -32,6 +32,7 @@ import type {
   UsersResponse,
 } from "../types/dashboardTypes";
 import type { ExpertsResponse } from "@/shared/types/sharedTypes";
+import type { QuizQuestion } from "@/features/Quiz/types/quizTypes";
 
 export async function getInstitutes(): Promise<InstitutesResponse> {
   const res = await dashboardApi.get<InstitutesResponse>(
@@ -611,7 +612,7 @@ export async function getAllProgramsForDropdown(
 }
 export async function getExpertCourses(): Promise<CitiesResponse> {
   const res = await dashboardApi.get<CitiesResponse>(
-    `/contents/super-admineducators/contents/dropdown`,
+    `/contents/super-admin/educators/contents/dropdown`,
   );
   return res.data;
 }
@@ -756,6 +757,12 @@ export async function getTopicsWithLessonsInContent(
   );
   return res.data;
 }
+export async function deleteLesson(lessonId: string | number): Promise<void> {
+  const res = await dashboardApi.delete<void>(
+    `/lessons/super-admin/${lessonId}`,
+  );
+  return res.data;
+}
 
 export async function createTopic(data): Promise<void> {
   const res = await dashboardApi.post<void>(`/topics`, data);
@@ -890,5 +897,16 @@ export async function getLessonDetailsForDashboard(
   const res = await dashboardApi.get<LessonDetailsResponse>(
     `/lessons/super-admin/lesson/${lessonId}?topicId=${topicId}`,
   );
+  return res.data;
+}
+export async function getQuizQuestions(quizId: string): Promise<QuizQuestion> {
+  const res = await dashboardApi.get<QuizQuestion>(
+    `/questions/super-admin/questions/${quizId}`,
+  );
+  return res.data;
+}
+
+export async function createNewQuestion(data): Promise<void> {
+  const res = await dashboardApi.post<void>(`/questions`, data);
   return res.data;
 }

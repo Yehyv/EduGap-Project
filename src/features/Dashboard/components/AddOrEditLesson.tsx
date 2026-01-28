@@ -111,6 +111,7 @@ const AddOrEditLesson = ({ mutate, isPending, initialValues }) => {
               name="image"
               moreStyle="bg-[#F9F8F8]"
               placeholder=""
+              image={initialValues.image}
             />
           </div>
 
