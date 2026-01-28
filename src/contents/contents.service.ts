@@ -345,8 +345,9 @@ export class ContentsService {
       // ✔️ موجود لكن soft-deleted → restore
       if (exist && exist.deleted_at) {
         await this.courseContentRepo.restore(exist.id);
-        exist.is_active = 1;
-        await this.courseContentRepo.save(exist);
+        await this.courseContentRepo.update(exist.id, {
+          is_active: 1,
+        });
         continue;
       }
 
