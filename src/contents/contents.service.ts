@@ -2468,8 +2468,8 @@ export class ContentsService {
         'package_content',
         'PC',
         `
-        PC.contentId = content.id
-        AND PC.packageId = :packageId
+        PC.content_id = content.id
+        AND PC.package_id = :packageId
         AND PC.deleted_at IS NULL
       `,
         { packageId },
