@@ -126,8 +126,9 @@ export class CoursesService {
     // ✔️ موجود لكن soft-deleted → restore
     if (exist && exist.deleted_at) {
       await this.programCourseRepository.restore(exist.id);
-      exist.is_active = 1;
-      await this.programCourseRepository.save(exist);
+      await this.programCourseRepository.update(exist.id, {
+        is_active: 1,
+      });
 
       return { message: 'Course re-assigned to program successfully.' };
     }

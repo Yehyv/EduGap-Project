@@ -42,6 +42,15 @@ export class QuestionsController {
     const langId = languageId ? Number(languageId) : undefined;
     return this.questionsService.getLessonQuiz(lessonId, langId);
   }
+  @Get('super-admin/questions/:lessonId')
+  getQuizQuestions(
+    @Param('lessonId', ParseIntPipe) lessonId: number,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    return this.questionsService.getLessonQuiz(lessonId, langId);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('submit')
   submitQuiz(@Body() dto: SubmitQuizDto, @Req() req: AuthenticatedRequest) {

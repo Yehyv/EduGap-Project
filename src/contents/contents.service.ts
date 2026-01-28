@@ -2459,4 +2459,44 @@ export class ContentsService {
       name: r.translation_name,
     }));
   }
+  async contentsForPackageDropDown(packageId: number, languageId?: number) {
+    const query = this.contentRepo
+      .createQueryBuilder('content')
+
+      // 🔴 join على package_content
+      .leftJoin(
+        'package_content',
+        'PC',
+        `
+        PC.contentId = content.id
+        AND PC.packageId = :packageId
+        AND PC.deleted_at IS NULL
+      `,
+        { packageId },
+      )
+
+      // 🔴 نشيل اللي متضافة فعليًا
+      .where('PC.id IS NULL')
+
+      // 🔴 translations
+      .leftJoin(
+        'content.translations',
+        'translation',
+        languageId ? 'translation.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('translation.language', 'language')
+
+      .select([
+        'content.id AS content_id',
+        'translation.name AS translation_name',
+      ]);
+
+    const rows = await query.getRawMany<contentRow>();
+
+    return rows.map((r) => ({
+      id: r.content_id,
+      name: r.translation_name,
+    }));
+  }
 }

@@ -97,7 +97,7 @@ getContentsByCourse(
     languageId ? Number(languageId) : undefined,
   );
 }
-@Get('super-admineducators/contents/dropdown')
+@Get('super-admin/educators/contents/dropdown')
 contentsUnassignedForEducator(
   @Headers('languageId') languageId?: number,
 ) {

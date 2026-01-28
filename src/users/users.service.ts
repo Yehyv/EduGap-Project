@@ -140,6 +140,7 @@ export class UsersService {
         'user.username',
         'user.email',
         'user.phone',
+        'user.phone_key',
         'user.is_active',
         'user.user_image',
         'institute.id',
@@ -160,6 +161,7 @@ export class UsersService {
       username: row.user_username,
       email: row.user_email,
       phone: row.user_phone,
+      phone_key: row.phone_key,
       isActive: row.user_is_active,
       user_image: row.user_user_image,
       institute: {

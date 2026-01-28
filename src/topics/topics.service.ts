@@ -168,7 +168,7 @@ export class TopicsService {
       const lessons = (t.lessons ?? []).map((l) => {
         const ltr = l.translations?.[0] ?? null;
         const duration = typeof l.duration === 'number' ? l.duration : 0;
-        return { id: l.id, name: ltr?.name || '', duration };
+        return { id: l.id, name: ltr?.name || '', duration, lesson_type: l.lesson_type };
       });
       const topicDuration = lessons.reduce((s, x) => s + (x.duration || 0), 0);
       const lessonsCount = lessons.length;
