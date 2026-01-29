@@ -6,6 +6,7 @@ import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { useState } from "react";
+import ContentsInLearningPath from "@/features/Dashboard/components/ContentsInLearningPath";
 
 const LearningPathDashboard = () => {
   const { learningPathId } = useParams();
@@ -21,6 +22,8 @@ const LearningPathDashboard = () => {
   });
 
   const learningPathData = data?.data;
+  const learningPathDataAr = data?.data?.translations[0];
+  const learningPathDataEn = data?.data?.translations[1];
 
   if (isLoading) return <CircleLoader />;
   if (isError)
@@ -56,7 +59,7 @@ const LearningPathDashboard = () => {
             ></span>
           </button>
           <Link
-            to={`/dashboard/edit-learning-path/${learningPathData?.id}`}
+            to={`/dashboard/learning-paths/edit/${learningPathData?.id}`}
             className="bg-gradient-to-r cursor-pointer !from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5 text-white px-4 rounded-xl shadow-md flex items-center"
           >
             <EditIcon className="h-8 mx-2" />
@@ -85,73 +88,108 @@ const LearningPathDashboard = () => {
 
       {/* ================= TAB CONTENT ================= */}
       {activeTab === "data" && (
-        <div className="bg-white rounded-lg p-5 mt-3">
-          <div className="flex justify-between border-b border-[#ACACAC] pb-3 mb-4">
-            <h5 className="text-secondary font-bold">
-              {t("learningDataTitle")}
-            </h5>
+        <>
+          <div className="bg-white rounded-lg p-5 mt-3">
+            <div className="flex justify-between border-b border-[#ACACAC] pb-3 mb-4">
+              <h5 className="text-secondary font-bold">
+                {t("learningDataTitle")}
+              </h5>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h6 className="text-[#444444] text-sm font-bold">
+                  اسم مسار التعلم{" "}
+                </h6>
+                <p>{learningPathDataEn?.title}</p>
+              </div>
+
+              <div className="row-span-2">
+                <h6 className="text-[#444444] text-sm mb-3 font-bold">
+                  صورة مسار التعلم
+                </h6>
+                {learningPathData?.image && (
+                  <img
+                    className="max-h-30 rounded-2xl"
+                    src={learningPathData?.image}
+                    alt={t("fieldImage")}
+                  />
+                )}
+              </div>
+
+              <div>
+                <h6 className="text-[#444444] text-sm font-bold">
+                  {t("fieldDescription")}
+                </h6>
+                <p>{learningPathDataEn?.description}</p>
+              </div>
+
+              <div className="col-span-2">
+                <h6 className="text-[#444444] text-sm font-bold">
+                  {t("fieldWhatToLearn")}
+                </h6>
+                <ul className="list-disc ps-4">
+                  {learningPathDataEn?.learning_outcoms
+                    ?.split(",")
+                    .map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                </ul>
+              </div>
+
+              <div>
+                <h6 className="text-[#444444] text-sm font-bold">
+                  {t("fieldCreatedAt")}
+                </h6>
+                <p>{learningPathData?.createdAt ?? "-"}</p>
+              </div>
+
+              <div>
+                <h6 className="text-[#444444] text-sm font-bold">
+                  {t("fieldCreatedBy")}
+                </h6>
+                <p>{learningPathData?.createdBy ?? "-"}</p>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h6 className="text-[#444444] text-sm font-bold">
-                اسم مسار التعلم{" "}
-              </h6>
-              <p>{learningPathData?.title}</p>
+          <div className="bg-white rounded-lg p-5 mt-3">
+            <div className="flex justify-between border-b border-[#ACACAC] pb-3 mb-4">
+              <h5 className="text-secondary font-bold">
+                {t("learningDataTitle")} {"(Arabic)"}
+              </h5>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h6 className="text-[#444444] text-sm font-bold">
+                  اسم مسار التعلم{" "}
+                </h6>
+                <p>{learningPathDataAr?.title}</p>
+              </div>
 
-            <div className="row-span-2">
-              <h6 className="text-[#444444] text-sm mb-3 font-bold">
-                صورة مسار التعلم
-              </h6>
-              {learningPathData?.image && (
-                <img
-                  className="max-h-30 rounded-2xl"
-                  src={learningPathData?.image}
-                  alt={t("fieldImage")}
-                />
-              )}
-            </div>
+              <div>
+                <h6 className="text-[#444444] text-sm font-bold">
+                  {t("fieldDescription")}
+                </h6>
+                <p>{learningPathDataAr?.description}</p>
+              </div>
 
-            <div>
-              <h6 className="text-[#444444] text-sm font-bold">
-                {t("fieldDescription")}
-              </h6>
-              <p>{learningPathData?.description}</p>
-            </div>
-
-            <div className="col-span-2">
-              <h6 className="text-[#444444] text-sm font-bold">
-                {t("fieldWhatToLearn")}
-              </h6>
-              <ul className="list-disc ps-4">
-                {learningPathData?.learning_outcoms?.split(",").map((w, i) => (
-                  <li key={i}>{w}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h6 className="text-[#444444] text-sm font-bold">
-                {t("fieldCreatedAt")}
-              </h6>
-              <p>{learningPathData?.createdAt ?? "-"}</p>
-            </div>
-
-            <div>
-              <h6 className="text-[#444444] text-sm font-bold">
-                {t("fieldCreatedBy")}
-              </h6>
-              <p>{learningPathData?.createdBy ?? "-"}</p>
+              <div className="col-span-2">
+                <h6 className="text-[#444444] text-sm font-bold">
+                  {t("fieldWhatToLearn")}
+                </h6>
+                <ul className="list-disc ps-4">
+                  {learningPathDataAr?.learning_outcoms
+                    ?.split(",")
+                    .map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
-      {activeTab === "sessions" && (
-        <div className="bg-white p-5 rounded-lg">
-          الدورات التدريبية الخاصة بمسار التعلم
-        </div>
-      )}
+      {activeTab === "sessions" && <ContentsInLearningPath />}
     </>
   );
 };

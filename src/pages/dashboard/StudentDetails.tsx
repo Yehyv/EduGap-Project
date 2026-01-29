@@ -44,7 +44,7 @@ const StudentDetails = () => {
         button
         moreStyle="!from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5"
         buttonText={
-          <Link to={`/edit-student/${studentId}`} className="center">
+          <Link to={`/dashboard/users/edit/${studentId}`} className="center">
             <PencilIcon className="h-8 mx-2" />
             <span className="inline-block me-4 text-secondary">
               {t("edit_student_data")}

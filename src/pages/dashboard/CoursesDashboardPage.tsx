@@ -59,7 +59,7 @@ const columns = [
   {
     name: "Name",
     selector: (row: CoursesForDashboard) => (
-      <Link className="underline text-sm" to={`/dashboard/course/${row.id}`}>
+      <Link className="underline text-sm" to={`/dashboard/courses/${row.id}`}>
         {row?.name}
       </Link>
     ),
@@ -101,7 +101,10 @@ const columns = [
     name: "Edit",
     style: { justifyContent: "center" },
     cell: (row: CoursesForDashboard) => (
-      <Link to={`/dashboard-edit-course/${row?.id}`} className="cursor-pointer">
+      <Link
+        to={`/dashboard/courses/edit/${row?.id}`}
+        className="cursor-pointer"
+      >
         <EditIcon />
       </Link>
     ),
@@ -139,7 +142,7 @@ const CoursesDashboardPage = () => {
   const filteredItems = useMemo(() => {
     if (!InstitutesData?.data) return [];
     return InstitutesData.data.filter((item: CoursesForDashboard) =>
-      item.name.toLowerCase().includes(filterText.toLowerCase())
+      item.name.toLowerCase().includes(filterText.toLowerCase()),
     );
   }, [filterText, InstitutesData]);
 
@@ -175,7 +178,7 @@ const CoursesDashboardPage = () => {
         text="Courses"
         button
         buttonText={
-          <Link to={"/dashboard-add-new-course"} className="center">
+          <Link to={"/dashboard/courses/add"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
             <span className="inline-block me-4 text-white">Add New Course</span>
           </Link>

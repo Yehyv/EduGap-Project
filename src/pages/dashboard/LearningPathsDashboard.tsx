@@ -59,7 +59,7 @@ const columns = [
     selector: (row: LearningPathType) => (
       <Link
         className="underline text-sm"
-        to={`/dashboard/learning-path/${row.id}`}
+        to={`/dashboard/learning-paths/${row.id}`}
       >
         {row.title}
       </Link>
@@ -102,7 +102,7 @@ const columns = [
     style: { justifyContent: "center" },
     cell: (row: LearningPathType) => (
       <Link
-        to={`/dashboard/edit-learning-path/${row.id}`}
+        to={`/dashboard/learning-paths/edit/${row.id}`}
         className="cursor-pointer"
       >
         <EditIcon />
@@ -140,7 +140,7 @@ const LearningPathsDashboardPage = () => {
   const filteredItems = useMemo(() => {
     if (!data?.data) return [];
     return data.data.filter((item: LearningPathType) =>
-      item.title?.toLowerCase().includes(filterText.toLowerCase())
+      item.title?.toLowerCase().includes(filterText.toLowerCase()),
     );
   }, [filterText, data]);
 
@@ -173,7 +173,7 @@ const LearningPathsDashboardPage = () => {
         text="Learning Paths"
         button
         buttonText={
-          <Link to="/dashboard/add-learning-path" className="center">
+          <Link to="/dashboard/learning-paths/add" className="center">
             <PlusIcon className="mt-1.5 h-8" />
             <span className="me-4 text-white">Add New Learning Path</span>
           </Link>

@@ -2,7 +2,10 @@ import { TextField } from "@/shared/components";
 import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { phoneKeys } from "@/shared/utils/globals";
 import { useQuery } from "@tanstack/react-query";
-import { getInstitutesForDropdownList } from "../services/dashboardApis";
+import {
+  getAllRoles,
+  getInstitutesForDropdownList,
+} from "../services/dashboardApis";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import ButtonLoader from "@/shared/components/ButtonLoader";
@@ -20,6 +23,16 @@ const AddOrEditStudent = ({
     queryFn: getInstitutesForDropdownList,
   });
 
+  const { data } = useQuery({
+    queryKey: ["getRolesList"],
+    queryFn: () => getAllRoles(1, 50),
+  });
+
+  const handleRoles = data?.data.items.map((c) => ({
+    label: c.role_title,
+    value: c.id,
+  }));
+
   const institutesDataDropdownData = institutesData?.data?.map((e) => ({
     label: e?.name,
     value: e?.id,
@@ -35,6 +48,7 @@ const AddOrEditStudent = ({
     phone_key: Yup.string().required("Phone key is required"),
     phone: Yup.string().required("Phone is required"),
     instituteId: Yup.number().required("Institute is required"),
+    roleId: Yup.number().required("Role is required"),
   });
 
   return (
@@ -104,6 +118,12 @@ const AddOrEditStudent = ({
                   />
                 </div>
               </div>
+              <DropdownMenu
+                label={"Role"}
+                name="roleId"
+                options={handleRoles}
+              />
+
               <DropdownMenu
                 label="Institute"
                 name="instituteId"

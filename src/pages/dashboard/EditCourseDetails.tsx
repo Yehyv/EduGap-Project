@@ -35,6 +35,8 @@ const EditCourseDetails = () => {
     enabled: !!courseId,
   });
   const courseDetailsForUpdate = data?.data;
+  const courseDetailsEn = data?.data?.translations?.[0];
+  const courseDetailsAr = data?.data?.translations?.[1];
 
   /* ================= VALIDATION ================= */
   const courseSchema = Yup.object({
@@ -49,7 +51,7 @@ const EditCourseDetails = () => {
           name: Yup.string().required(t("nameRequired")),
           description: Yup.string().required(t("descriptionRequired")),
           whatToLearn: Yup.string().required(t("whatToLearnRequired")),
-        })
+        }),
       ),
   });
 
@@ -64,7 +66,9 @@ const EditCourseDetails = () => {
         text: "Course edited successfully",
         confirmButtonText: "OK",
       });
-      queryClient.invalidateQueries({ queryKey: ["learningPathForDashboard"] });
+      queryClient.invalidateQueries({
+        queryKey: ["courseDetailsForDashboard"],
+      });
     },
 
     onError: (error: any) => {
@@ -81,27 +85,31 @@ const EditCourseDetails = () => {
 
   return (
     <>
-      <DashboardPageTitle text={t("addNewCourse")} />
+      <DashboardPageTitle text={`Edit Course ${courseDetailsEn?.name ?? ""}`} />
 
       <Formik
         enableReinitialize
         initialValues={{
-          image: "",
+          image: courseDetailsForUpdate?.image,
           notes: "",
           courseId: courseId,
           translations: [
             {
-              name: "",
-              description: "",
-              whatToLearn: "",
-              durationTime: "",
+              name: courseDetailsAr?.name,
+              description: courseDetailsAr?.description,
+              whatToLearn: courseDetailsAr?.whatToLearn
+                .split(",")
+                .map((item) => item.trim())
+                .join("\n"),
               languageId: 1, // Arabic
             },
             {
-              name: "",
-              description: "",
-              whatToLearn: "",
-              durationTime: "",
+              name: courseDetailsEn?.name,
+              description: courseDetailsEn?.description,
+              whatToLearn: courseDetailsEn?.whatToLearn
+                .split(",")
+                .map((item) => item.trim())
+                .join("\n"),
               languageId: 2, // English
             },
           ],
@@ -155,6 +163,7 @@ const EditCourseDetails = () => {
                 name="image"
                 placeholder={t("uploadPhoto")}
                 moreStyle="bg-[#F4FBFF]"
+                image={courseDetailsForUpdate?.image}
               />
             </div>
           </div>

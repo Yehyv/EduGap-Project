@@ -68,6 +68,13 @@ export const formatCommaSeparatedToLines = (value = "") => {
     .filter(Boolean)
     .join("\n");
 };
+export function formatLinesToComma(text = "") {
+  return text
+    .split("\n") // split by new lines
+    .map((line) => line.trim())
+    .filter(Boolean) // remove empty lines
+    .join(",");
+}
 
 export const LEVELS = [
   { label: "Beginner", value: "Beginner" },

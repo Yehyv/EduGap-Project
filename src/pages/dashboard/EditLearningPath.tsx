@@ -26,6 +26,8 @@ const EditLearningPath = () => {
     enabled: !!learningPathId,
   });
   const learningPathData = data?.data;
+  const learningPathDataAr = data?.data?.translations?.[0];
+  const learningPathDataEn = data?.data?.translations?.[1];
 
   /* ================= VALIDATION ================= */
   const learningPathSchema = Yup.object({
@@ -38,7 +40,7 @@ const EditLearningPath = () => {
           name: Yup.string().required(t("nameRequired")),
           description: Yup.string().required(t("descriptionRequired")),
           whatToLearn: Yup.string().required(t("whatToLearnRequired")),
-        })
+        }),
       ),
   });
 
@@ -72,7 +74,9 @@ const EditLearningPath = () => {
 
   return (
     <>
-      <DashboardPageTitle text={t("addNewLearningPath")} />
+      <DashboardPageTitle
+        text={`Edit Learning Path ${learningPathDataEn?.title ?? ""}`}
+      />
 
       <Formik
         enableReinitialize
@@ -81,15 +85,21 @@ const EditLearningPath = () => {
           learningPathId: learningPathId,
           translations: [
             {
-              name: learningPathData?.title,
-              description: learningPathData?.description,
-              whatToLearn: learningPathData?.learning_outcoms,
+              name: learningPathDataAr?.title,
+              description: learningPathDataAr?.description,
+              whatToLearn: learningPathDataAr?.learning_outcoms
+                .split(",")
+                .map((item) => item.trim())
+                .join("\n"),
               languageId: 1, // Arabic
             },
             {
-              name: learningPathData?.title,
-              description: learningPathData?.description,
-              whatToLearn: learningPathData?.learning_outcoms,
+              name: learningPathDataEn?.title,
+              description: learningPathDataEn?.description,
+              whatToLearn: learningPathDataEn?.learning_outcoms
+                .split(",")
+                .map((item) => item.trim())
+                .join("\n"),
               languageId: 2, // English
             },
           ],

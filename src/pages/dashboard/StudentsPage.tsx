@@ -63,7 +63,7 @@ const columns = [
   {
     name: "Name",
     selector: (row: User) => (
-      <Link className="underline text-sm" to={`/student-details/${row.id}`}>
+      <Link className="underline text-sm" to={`/dashboard/users/${row.id}`}>
         {row?.full_name}
       </Link>
     ),
@@ -118,7 +118,7 @@ const columns = [
     name: "Edit",
     style: { justifyContent: "center" },
     cell: (row: User) => (
-      <Link to={`/edit-student/${row.id}`} className="cursor-pointer">
+      <Link to={`/dashboard/users/edit/${row.id}`} className="cursor-pointer">
         <EditIcon />
       </Link>
     ),
@@ -192,7 +192,7 @@ const StudentsPage = () => {
         text="Users"
         button
         buttonText={
-          <Link to={"/add-new-student"} className="center">
+          <Link to={"/dashboard/users/add"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
             <span className="inline-block me-4 text-white">Add New User</span>
           </Link>

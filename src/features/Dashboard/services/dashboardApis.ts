@@ -33,6 +33,7 @@ import type {
 } from "../types/dashboardTypes";
 import type { ExpertsResponse } from "@/shared/types/sharedTypes";
 import type { QuizQuestion } from "@/features/Quiz/types/quizTypes";
+import { formatLinesToComma } from "@/shared/utils/globals";
 
 export async function getInstitutes(): Promise<InstitutesResponse> {
   const res = await dashboardApi.get<InstitutesResponse>(
@@ -392,7 +393,7 @@ export const editCourse = async (values: any) => {
   });
 
   return dashboardApi.patch(
-    `/institutes/super-admin/institute/${values?.courseId}`,
+    `courses/super-admin/${values?.courseId}`,
     formData,
     {
       headers: {
@@ -447,7 +448,7 @@ export const addLearningPath = async (values: any) => {
     formData.append(`translations[${index}][description]`, item.description);
     formData.append(
       `translations[${index}][learning_outcoms]`,
-      item.whatToLearn,
+      formatLinesToComma(item.whatToLearn),
     );
 
     formData.append(
@@ -475,7 +476,7 @@ export const editLearningPath = async (values: any) => {
     formData.append(`translations[${index}][description]`, item.description);
     formData.append(
       `translations[${index}][learning_outcoms]`,
-      item.whatToLearn,
+      formatLinesToComma(item.whatToLearn),
     );
 
     formData.append(
@@ -596,12 +597,15 @@ export async function getAllCourses(
   );
   return res.data;
 }
-export async function getAllContentsForDropdown(): Promise<CitiesResponse> {
+export async function getAllContentsForDropdown(
+  courseId: string,
+): Promise<CitiesResponse> {
   const res = await dashboardApi.get<CitiesResponse>(
-    `/contents/super-admin/dropdown/list`,
+    `/contents/super-admin/dropdown/list?courseId=${courseId}`,
   );
   return res.data;
 }
+
 export async function getAllProgramsForDropdown(
   instituteId: number | string,
 ): Promise<CitiesResponse> {
@@ -908,5 +912,58 @@ export async function getQuizQuestions(quizId: string): Promise<QuizQuestion> {
 
 export async function createNewQuestion(data): Promise<void> {
   const res = await dashboardApi.post<void>(`/questions`, data);
+  return res.data;
+}
+
+export async function getContentsForTrainingPath(
+  trainingPathId: string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get<CitiesResponse>(
+    `/contents/super-admin/package/${trainingPathId}/list`,
+  );
+  return res.data;
+}
+export async function getContentsForCourses(
+  courseId: string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get<CitiesResponse>(
+    `/contents/super-admin/course/${courseId}/list`,
+  );
+  return res.data;
+}
+export async function getAllContentsDropdownForTrainingPath(
+  trainingPathId: string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get<CitiesResponse>(
+    `/packages-contents/packages/${trainingPathId}/contents/dropdown`,
+  );
+  return res.data;
+}
+
+export async function assignTraningCourseToLearningPath(
+  learningPathId: string | number,
+  contentId: string | number,
+): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `/packages-contents/${learningPathId}/contents/${contentId}/assign`,
+  );
+  return res.data;
+}
+export async function unassignTraningCourseToLearningPath(
+  learningPathId: string | number,
+  contentId: string | number,
+): Promise<void> {
+  const res = await dashboardApi.delete<void>(
+    `/packages-contents/${learningPathId}/contents/${contentId}/un-assign`,
+  );
+  return res.data;
+}
+export async function unassignTraningCourseToCourse(
+  courseId: string | number,
+  contentId: string | number,
+): Promise<void> {
+  const res = await dashboardApi.delete<void>(
+    `/contents/${contentId}/course/${courseId}/unassign`,
+  );
   return res.data;
 }

@@ -143,14 +143,14 @@ export default function AppRoutes() {
             path="/institute-courses"
             element={<InstituteCoursesDashboard />}
           />
-          <Route path="/users" element={<StudentsPage />} />
-          <Route path="/add-new-student" element={<AddNewStudent />} />
+          <Route path="/dashboard/users" element={<StudentsPage />} />
+          <Route path="/dashboard/users/add" element={<AddNewStudent />} />
           <Route
-            path="/edit-student/:studentId"
+            path="/dashboard/users/edit/:studentId"
             element={<EditStudentData />}
           />
           <Route
-            path="/student-details/:studentId"
+            path="/dashboard/users/:studentId"
             element={<StudentDetails />}
           />
           <Route
@@ -171,14 +171,14 @@ export default function AppRoutes() {
             path="/edit-program/:programId"
             element={<EditProgramDetails />}
           />
-          <Route path="/dashboard-courses" element={<CoursesDashboardPage />} />
-          <Route path="/dashboard-add-new-course" element={<AddNewCourse />} />
+          <Route path="/dashboard/courses" element={<CoursesDashboardPage />} />
+          <Route path="/dashboard/courses/add" element={<AddNewCourse />} />
           <Route
-            path="/dashboard-edit-course/:courseId"
+            path="/dashboard/courses/edit/:courseId"
             element={<EditCourseDetails />}
           />
           <Route
-            path="/dashboard/course/:courseId"
+            path="/dashboard/courses/:courseId"
             element={<CourseDetailsDashboard />}
           />
           <Route
@@ -186,15 +186,15 @@ export default function AppRoutes() {
             element={<LearningPathsDashboard />}
           />
           <Route
-            path="/dashboard/add-learning-path"
+            path="/dashboard/learning-paths/add"
             element={<AddNewLearningPath />}
           />
           <Route
-            path="/dashboard/edit-learning-path/:learningPathId"
+            path="/dashboard/learning-paths/edit/:learningPathId"
             element={<EditLearningPath />}
           />
           <Route
-            path="/dashboard/learning-path/:learningPathId"
+            path="/dashboard/learning-paths/:learningPathId"
             element={<LearningPathDashboard />}
           />
           <Route path="/dashboard/experts" element={<ExpertsListDashboard />} />

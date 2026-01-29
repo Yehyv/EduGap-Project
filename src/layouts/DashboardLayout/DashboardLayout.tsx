@@ -88,7 +88,7 @@ const InstitutesPage = () => {
             <span>Institutes</span>
           </NavLink>
 
-          <NavLink to="/users" className={navLinkClass}>
+          <NavLink to="/dashboard/users" className={navLinkClass}>
             <StudentIcon />
             <span>Users</span>
           </NavLink>
@@ -103,7 +103,7 @@ const InstitutesPage = () => {
             <span>Programs</span>
           </NavLink>
 
-          <NavLink to="/dashboard-courses" className={navLinkClass}>
+          <NavLink to="/dashboard/courses" className={navLinkClass}>
             <CoursesDashboardIcon />
             <span>Courses</span>
           </NavLink>

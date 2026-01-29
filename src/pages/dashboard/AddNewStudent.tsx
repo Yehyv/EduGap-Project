@@ -13,6 +13,7 @@ const AddNewStudent = () => {
     phone_key: "",
     phone: "",
     instituteId: "",
+    roleId: "",
   };
   /* ================= MUTATION ================= */
   const { mutate, isPending } = useMutation({
