@@ -62,10 +62,7 @@ const columns = [
   {
     name: "Name",
     selector: (row: ProgramsForAdmin) => (
-      <Link
-        className="underline text-sm"
-        to={`/admin-program-details/${row.id}`}
-      >
+      <Link className="underline text-sm" to={`/dashboard/programs/${row.id}`}>
         {row?.name}
       </Link>
     ),
@@ -108,7 +105,10 @@ const columns = [
     name: "Edit",
     style: { justifyContent: "center" },
     cell: (row: User) => (
-      <Link to={`/edit-program/${row.id}`} className="cursor-pointer">
+      <Link
+        to={`/dashboard/programs/edit/${row.id}`}
+        className="cursor-pointer"
+      >
         <EditIcon />
       </Link>
     ),
@@ -146,7 +146,7 @@ const AdminProgramsList = () => {
   const filteredItems = useMemo(() => {
     if (!studentsData?.data) return [];
     return studentsData?.data?.filter((item) =>
-      item?.name?.toLowerCase().includes(filterText?.toLowerCase())
+      item?.name?.toLowerCase().includes(filterText?.toLowerCase()),
     );
   }, [filterText, studentsData]);
 
@@ -182,7 +182,7 @@ const AdminProgramsList = () => {
         text="Programs"
         button
         buttonText={
-          <Link to={"/add-new-program"} className="center">
+          <Link to={"/dashboard/programs/add"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
             <span className="inline-block me-4 text-white">
               Add New Program

@@ -23,6 +23,9 @@ const EditProgramDetails = () => {
     enabled: !!programId,
   });
   const programData = data?.data;
+  const programDataAr = data?.data?.translations[0];
+  const programDataEn = data?.data?.translations[1];
+
   /* ================= VALIDATION ================= */
   const programSchema = Yup.object({
     logo: Yup.mixed().required(t("logoRequired")),
@@ -34,7 +37,7 @@ const EditProgramDetails = () => {
           languageId: Yup.number().required(),
           name: Yup.string().required(t("nameRequired")),
           description: Yup.string().required("Description Required"),
-        })
+        }),
       ),
   });
 
@@ -70,13 +73,13 @@ const EditProgramDetails = () => {
     translations: [
       {
         languageId: 1,
-        name: programData?.name,
-        description: programData?.description,
+        name: programDataEn?.name,
+        description: programDataEn?.description,
       }, // Arabic
       {
         languageId: 2,
-        name: programData?.name,
-        description: programData?.description,
+        name: programDataAr?.name,
+        description: programDataAr?.description,
       }, // English
     ],
   };

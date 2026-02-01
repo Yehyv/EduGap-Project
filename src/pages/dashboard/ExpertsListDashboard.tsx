@@ -61,7 +61,7 @@ const columns = [
   {
     name: "Name",
     selector: (row: ExpertTypeForDashboard) => (
-      <Link className="underline text-sm" to={`/dashboard/expert/${row.id}`}>
+      <Link className="underline text-sm" to={`/dashboard/experts/${row.id}`}>
         {row.user.full_name}
       </Link>
     ),
@@ -108,7 +108,7 @@ const columns = [
     name: "Edit",
     style: { justifyContent: "center" },
     cell: (row: ExpertTypeForDashboard) => (
-      <Link to={`/dashboard/edit-expert/${row.id}`} className="cursor-pointer">
+      <Link to={`/dashboard/experts/edit/${row.id}`} className="cursor-pointer">
         <EditIcon />
       </Link>
     ),
@@ -177,7 +177,7 @@ const ExpertsListDashboard = () => {
         text="Experts"
         button
         buttonText={
-          <Link to="/dashboard/add-expert" className="center">
+          <Link to="/dashboard/experts/add" className="center">
             <PlusIcon className="mt-1.5 h-8" />
             <span className="me-4 text-white">Add New Expert</span>
           </Link>

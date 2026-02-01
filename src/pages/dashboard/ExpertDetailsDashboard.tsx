@@ -99,7 +99,7 @@ const ExpertDetailsDashboard = () => {
         button
         moreStyle="!from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5"
         buttonText={
-          <Link to={`/dashboard/edit-expert/${expertId}`} className="center">
+          <Link to={`/dashboard/experts/edit/${expertId}`} className="center">
             <PencilIcon className="h-8 mx-2" />
             <span className="inline-block me-4 text-secondary">
               {t("edit_expert_data")}

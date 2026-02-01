@@ -161,14 +161,14 @@ export default function AppRoutes() {
             path="/dashboard/institutes/edit/:instituteId"
             element={<EditInstituteDetails />}
           />
-          <Route path="/programs" element={<AdminProgramsList />} />
+          <Route path="/dashboard/programs" element={<AdminProgramsList />} />
           <Route
-            path="/admin-program-details/:programId"
+            path="/dashboard/programs/:programId"
             element={<AdminProgramDetails />}
           />
-          <Route path="/add-new-program" element={<AddNewProgram />} />
+          <Route path="/dashboard/programs/add" element={<AddNewProgram />} />
           <Route
-            path="/edit-program/:programId"
+            path="/dashboard/programs/edit/:programId"
             element={<EditProgramDetails />}
           />
           <Route path="/dashboard/courses" element={<CoursesDashboardPage />} />
@@ -198,13 +198,13 @@ export default function AppRoutes() {
             element={<LearningPathDashboard />}
           />
           <Route path="/dashboard/experts" element={<ExpertsListDashboard />} />
-          <Route path="/dashboard/add-expert" element={<AddNewExpert />} />
+          <Route path="/dashboard/experts/add" element={<AddNewExpert />} />
           <Route
-            path="/dashboard/edit-expert/:expertId"
+            path="/dashboard/experts/edit/:expertId"
             element={<EditExpertDetails />}
           />
           <Route
-            path="/dashboard/expert/:expertId"
+            path="/dashboard/experts/:expertId"
             element={<ExpertDetailsDashboard />}
           />
           <Route path="/dashboard/contents" element={<ContentsList />} />

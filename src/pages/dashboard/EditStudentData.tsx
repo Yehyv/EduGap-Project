@@ -24,7 +24,7 @@ const EditStudentData = () => {
     national_id: currentUserData?.username,
     phone_key: currentUserData?.phone_key,
     phone: currentUserData?.phone,
-    instituteId: currentUserData?.institute.id,
+    instituteId: currentUserData?.institute?.id,
     studentId: studentId,
     roleId: currentUserData?.role?.id,
   };

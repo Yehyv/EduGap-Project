@@ -98,7 +98,7 @@ const InstitutesPage = () => {
             <span>System Users</span>
           </NavLink>
 
-          <NavLink to="/programs" className={navLinkClass}>
+          <NavLink to="/dashboard/programs" className={navLinkClass}>
             <ProgramsIcon />
             <span>Programs</span>
           </NavLink>

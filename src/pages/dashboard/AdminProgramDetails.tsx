@@ -1,7 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import EditIcon from "@/assets/svgs/PencilIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusSign.svg?react";
-import DeleteIcon from "@/assets/svgs/TrashIconDashboard.svg?react";
 import {
   deleteCourseFromProgram,
   getCoursesInProgramV2,
@@ -31,6 +30,8 @@ const AdminProgramDetails = () => {
   const handleCoursesInProgram = coursesInProgramData?.data.data;
 
   const programData = data?.data;
+  const programDataAr = data?.data?.translations[0];
+  const programDataEn = data?.data?.translations[1];
 
   if (isLoading) return <CircleLoader />;
   if (error)
@@ -52,13 +53,16 @@ const AdminProgramDetails = () => {
               alt="Program Image"
             />
           )}
-          <h2 className="mb-5">{programData?.name} - Program</h2>
+          <h2 className="mb-5">{programDataAr?.name} - Program</h2>
         </div>
         <button
           type={"button"}
           className={`bg-gradient-to-r cursor-pointer !from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5 text-white px-4 rounded-xl shadow-md transition `}
         >
-          <Link to={"/edit-program-details"} className="center">
+          <Link
+            to={`/dashboard/programs/edit/${programData?.id}`}
+            className="center"
+          >
             <EditIcon className="h-8 mx-2" />
 
             <span className="inline-block me-4 text-secondary">
@@ -75,7 +79,7 @@ const AdminProgramDetails = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 md:auto-rows-min gap-4 py-2">
           <div>
             <h6 className="text-[#444444] text-sm font-bold">اسم البرنامج</h6>
-            <p>{programData?.name}</p>
+            <p>{programDataAr?.name}</p>
           </div>
 
           <div className="md:row-span-2 self-start">
@@ -93,7 +97,7 @@ const AdminProgramDetails = () => {
 
           <div>
             <h6 className="text-[#444444] text-sm font-bold">الوصف</h6>
-            <p>{programData?.description}</p>
+            <p>{programDataAr?.description}</p>
           </div>
 
           <div>
@@ -120,11 +124,11 @@ const AdminProgramDetails = () => {
         <div className="grid grid-cols-1 gap-4 mt-4">
           <div>
             <h6 className="text-[#444444] text-sm font-bold">اسم البرنامج </h6>
-            <p>-</p>
+            <p>{programDataEn?.name}</p>
           </div>
           <div>
             <h6 className="text-[#444444] text-sm font-bold">الوصف </h6>
-            <p>-</p>
+            <p>{programDataEn?.description}</p>
           </div>
         </div>
       </div>

@@ -150,13 +150,13 @@ const EditCourseDetails = () => {
                 placeholder={t("descriptionArabic")}
                 moreStyle="!border-[#ACACAC] bg-[#F9F8F8] pb-12"
               />
-
+              {/* 
               <TextField
                 label={t("notes")}
                 name="notes"
                 placeholder={t("notes")}
                 moreStyle="!border-[#ACACAC] bg-[#F9F8F8] pb-12"
-              />
+              /> */}
 
               <FileUploadField
                 label={t("courseImage")}
