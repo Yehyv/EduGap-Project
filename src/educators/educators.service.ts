@@ -39,7 +39,7 @@ export class EducatorsService {
     });
     if (existing)
       throw new ConflictException('This user already has an educator profile');
-    const baseUrl = process.env.BASE_URL || '';
+    const baseUrl = process.env.APP_URL || '';
     const imageUrl = image
       ? `${baseUrl}/uploads/educator-images/${image.filename}`
       : '';
@@ -199,7 +199,7 @@ export class EducatorsService {
       throw new BadRequestException('is_active must be 0 or 1');
     }
     if (image) {
-      const baseUrl = process.env.BASE_URL || '';
+      const baseUrl = process.env.APP_URL || '';
       const imageUrl = image
         ? `${baseUrl}/uploads/educator-images/${image.filename}`
         : '';

@@ -183,7 +183,7 @@ export class UsersService {
 
     const user = await this.userRepositry.findOne({
       where: { id },
-      relations: ['program', 'institute', 'role'],
+      relations: ['program', 'institute', 'UserRole'],
     });
 
     if (!user) {

@@ -66,7 +66,7 @@ export class LessonsService {
 async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
   const topic = await this.topicRepo.findOne({ where: { id: dto.topicId } });
   if (!topic) throw new NotFoundException('Topic not found');
-  const baseUrl = process.env.BASE_URL || '';
+  const baseUrl = process.env.APP_URL || '';
   const imageUrl = image
       ? `${baseUrl}/uploads/lesson-images/${image.filename}`
       : '';
@@ -163,7 +163,7 @@ async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
       }
     }
     if(image) {
-      const baseUrl = process.env.BASE_URL || '';
+      const baseUrl = process.env.APP_URL || '';
       const imageUrl = image
       ? `${baseUrl}/uploads/lesson-images/${image.filename}`
       : '';
