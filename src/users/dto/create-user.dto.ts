@@ -60,6 +60,14 @@ export class CreateUserDto {
   is_active?: number;
 
   @IsOptional()
+  @IsEnum([0, 1])
+  added_type?: number;
+
+  @IsOptional()
+  @IsNumber()
+  studentId?: number;
+
+  @IsOptional()
   @IsNumber()
   instituteId?: number;
 

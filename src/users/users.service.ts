@@ -13,6 +13,7 @@ import { Institute } from 'src/institutes/entities/institute.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { PasswordAction } from './entities/password-action.entity';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
+import { ActivationLog } from './entities/activation-log.entity';
 interface userRow {
   user_id: number;
   user_full_name: string;
@@ -46,6 +47,8 @@ export class UsersService {
     private readonly passwordActionRepo: Repository<PasswordAction>,
     @InjectRepository(SystemRole)
     private readonly systemRoleRepo: Repository<SystemRole>,
+    @InjectRepository(ActivationLog)
+    private readonly activationLogRepo: Repository<ActivationLog>,
   ) {}
 
   private async logPasswordAction(
@@ -72,7 +75,8 @@ export class UsersService {
 
   // Create User with default password = phone, username = national_id
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const { instituteId, phone, national_id, ...rest } = createUserDto;
+    const { instituteId, programId, phone, national_id, ...rest } =
+      createUserDto;
     const username = national_id;
     const hashedPassword = await this.hashPassword(phone);
     const baseUrl = process.env.APP_URL || '';
@@ -84,6 +88,8 @@ export class UsersService {
       phone,
       password: hashedPassword,
       institute: instituteId ? { id: instituteId } : undefined,
+      program: programId ? { id: programId } : undefined,
+      added_type: createUserDto.added_type || 0,
       is_verified: 0,
       is_active: 1,
       user_image: profileImage,
@@ -92,12 +98,88 @@ export class UsersService {
 
     return this.userRepositry.save(user);
   }
-
-  async findAll() {
-    const users = await this.userRepositry.find({
-      relations: ['institute', 'institute.translations', 'UserRole'],
+  async createStudent(createUserDto: CreateUserDto): Promise<User> {
+    const { instituteId, programId, phone, national_id, ...rest } =
+      createUserDto;
+    const username = national_id;
+    const hashedPassword = await this.hashPassword(phone);
+    const baseUrl = process.env.APP_URL || '';
+    const profileImage = `${baseUrl}/uploads/defaults/default-user.png`;
+    const user_role = await this.systemRoleRepo.findOne({
+      where: { role_title: 'student' },
     });
-    return { message: 'List of users', users };
+    if (!user_role) {
+      throw new NotFoundException(`Role with title student not found`);
+    }
+
+    const user = this.userRepositry.create({
+      ...rest,
+      username,
+      national_id,
+      phone,
+      password: hashedPassword,
+      institute: instituteId ? { id: instituteId } : undefined,
+      program: programId ? { id: programId } : undefined,
+      added_type: createUserDto.added_type || 0,
+      is_verified: 0,
+      is_active: 1,
+      user_image: profileImage,
+      UserRole: { id: user_role.id },
+    });
+
+    return this.userRepositry.save(user);
+  }
+
+  async findAll(roleCategory?: number, languageId?: number) {
+    const usersQuery = this.userRepositry
+      .createQueryBuilder('user')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin(
+        'institute.translations',
+        'it',
+        languageId ? 'it.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('user.UserRole', 'role')
+      .select([
+        'user.id AS user_id',
+        'user.full_name AS user_full_name',
+        'user.phone_key AS phone_key',
+        'user.phone AS user_phone',
+        'user.createdAt AS createdAt',
+        'user.is_active AS user_is_active',
+
+        'it.name AS it_name',
+
+        'role.role_title AS role_role_title',
+        'role.role_category AS role_role_category',
+      ]);
+
+    // 🔹 filter by role category (optional)
+    if (roleCategory !== undefined) {
+      usersQuery.andWhere('role.role_category = :roleCategory', {
+        roleCategory,
+      });
+    }
+
+    const users = await usersQuery.getRawMany<userRow>();
+
+    return {
+      message: 'List of users',
+      users: users.map((u) => ({
+        id: u.user_id,
+        name: u.user_full_name,
+        phone: `${u.phone_key}${u.user_phone}`,
+        phone_key: u.phone_key,
+        institute: u.it_name,
+        createdAt: u.createdAt,
+        is_active: u.user_is_active,
+        role: {
+          role_title: u.role_role_title,
+          role_category: u.role_role_category,
+        },
+      })),
+    };
   }
 
   async findByEmail(email: string) {
@@ -338,15 +420,19 @@ export class UsersService {
   async assignUserToProgram(
     userId: number,
     programId: number,
+    instituteId: number,
   ): Promise<{ message: string; userId: number; programId: number | null }> {
     const [user, program] = await Promise.all([
       this.userRepositry.findOne({
         where: { id: userId },
         relations: ['program'],
       }),
-      this.programRepository.findOne({
-        where: { id: programId },
-      }),
+      this.programRepository
+        .createQueryBuilder('program')
+        .where('program.id = :programId', { programId })
+        .innerJoin('program.institutePrograms', 'ip')
+        .andWhere('ip.instituteId = :instituteId', { instituteId })
+        .getOne(),
     ]);
 
     if (!user) {
@@ -475,18 +561,55 @@ export class UsersService {
       user_image: user.user_image,
     };
   }
-  async toggleActive(userId: number) {
+  async activateUser(userId: number, sysUserId: number, reason: string) {
+    if (!reason?.trim()) {
+      throw new BadRequestException('Activation reason is required');
+    }
     const user = await this.userRepositry.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException(` user with id ${userId} not found`);
-    const userStatus = (user.is_active = user.is_active === 1 ? 0 : 1);
+    if (user.is_active === 1) {
+      throw new BadRequestException('User is already active');
+    }
+    user.is_active = 1;
     await this.userRepositry.save(user);
-    return {
-      message: `User is_active changed to ${userStatus}`,
-      is_active: user.is_active,
-    };
+
+    // Log the activation
+    const activationLog = this.activationLogRepo.create({
+      reason,
+      action: true,
+      user: { id: userId },
+      systemUser: { id: sysUserId },
+    });
+    await this.activationLogRepo.save(activationLog);
   }
-  async studentsForInst(instituteId: number, languageId?: number) {
-    const students = await this.userRepositry
+  async deactivateUser(userId: number, sysUserId: number, reason: string) {
+    if (!reason?.trim()) {
+      throw new BadRequestException('Deactivation reason is required');
+    }
+    const user = await this.userRepositry.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException(` user with id ${userId} not found`);
+    if (user.is_active === 0) {
+      throw new BadRequestException('User is already deactivated');
+    }
+    user.is_active = 0;
+    await this.userRepositry.save(user);
+
+    // Log the deactivation
+    const activationLog = this.activationLogRepo.create({
+      reason,
+      action: false,
+      user: { id: userId },
+      systemUser: { id: sysUserId },
+    });
+    await this.activationLogRepo.save(activationLog);
+  }
+  async studentsForInst(
+    instituteId: number,
+    languageId?: number,
+    programId?: number,
+    isActive?: number,
+  ) {
+    const students = this.userRepositry
       .createQueryBuilder('user')
       .innerJoin('user.UserRole', 'role')
       .leftJoin('user.program', 'program')
@@ -496,7 +619,7 @@ export class UsersService {
         languageId ? 'pt.languageId = :languageId' : undefined,
         { languageId },
       )
-      .leftJoin('user.institute', 'institute')
+      .innerJoin('user.institute', 'institute')
       .where('role.role_title = :roleTitle', { roleTitle: 'student' })
       .andWhere('institute.id = :instituteId', { instituteId })
       .select([
@@ -510,10 +633,17 @@ export class UsersService {
 
         'program.id AS program_id',
         'pt.name AS program_name',
-      ])
-      .getRawMany<userRow>();
+      ]);
+    if (programId !== undefined) {
+      students.andWhere('program.id = :programId', { programId });
+    }
+    if (isActive !== undefined) {
+      students.andWhere('user.is_active = :isActive', { isActive });
+    }
 
-    return students.map((s) => ({
+    const studentsList = await students.getRawMany<userRow>();
+
+    return studentsList.map((s) => ({
       id: s.user_id,
       name: s.user_full_name,
       image: s.user_user_image,

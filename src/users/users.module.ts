@@ -12,6 +12,7 @@ import { Program } from 'src/programs/entities/program.entity';
 import { PasswordAction } from './entities/password-action.entity';
 import { UsersOtpModule } from 'src/users-otp/users-otp.module';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
+import { ActivationLog } from './entities/activation-log.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SystemRole } from 'src/system-roles/entities/system-role.entity';
       Program,
       PasswordAction,
       SystemRole,
+      ActivationLog
     ]),
     UsersOtpModule,
   ],

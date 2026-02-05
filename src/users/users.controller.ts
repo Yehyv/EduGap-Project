@@ -15,6 +15,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UnauthorizedException,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -26,6 +27,7 @@ import { Request } from 'express';
 import { imageStorage } from 'src/common/helpers/upload.helper';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { UserActivationDto } from './dto/user-activation.dto';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -46,26 +48,67 @@ export class UsersController {
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(1)
+  @Post('student')
+  createStudent(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.createStudent(createUserDto);
+  }
 
   @Get('super-admin/users-list')
-  findAll() {
-    console.log('IBRAHIIIIIIIIIIIIIIM');
-    return this.usersService.findAll();
+  findAll(
+    @Headers('languageId') languageId?: string,
+    @Query('roleCategory') roleCategory?: string,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    const role_cat = roleCategory ? Number(roleCategory) : undefined;
+    return this.usersService.findAll(role_cat, langId);
   }
-  @Patch('super-admin/user-status/:id')
-  async changeUserStatus(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.toggleActive(id);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(1)
+  @Post(':id/activate')
+  async activateUser(
+    @Param('id', ParseIntPipe) userId: number,
+    @Body() body: UserActivationDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const systemUserId = req.user.sub; // جاي من JWT / Guard
+
+    return this.usersService.activateUser(userId, systemUserId, body.reason);
+  }
+
+  // 🔴 Deactivate User
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(1)
+  @Post(':id/deactivate')
+  async deactivateUser(
+    @Param('id', ParseIntPipe) userId: number,
+    @Body() body: UserActivationDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const systemUserId = req.user.sub;
+
+    return this.usersService.deactivateUser(userId, systemUserId, body.reason);
   }
   @Get('super-admin/institute/:instituteId/students')
   async getStudentsForInstitute(
     @Param('instituteId', ParseIntPipe) instituteId: number,
     @Headers('languageId') languageId?: string,
+    @Query('programId', ParseIntPipe) programId?: number,
+    @Query('isActive', ParseIntPipe) isActive?: number,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
+    const progId = programId !== undefined ? Number(programId) : undefined;
+    const is_active = isActive !== undefined ? Number(isActive) : undefined;
     return {
       status: 200,
       message: 'Request successful',
-      data: await this.usersService.studentsForInst(instituteId, langId),
+      data: await this.usersService.studentsForInst(
+        instituteId,
+        langId,
+        progId,
+        is_active,
+      ),
     };
   }
   @UseGuards(JwtAuthGuard)
@@ -170,8 +213,10 @@ export class UsersController {
   assignUserToProgram(
     @Param('id', ParseIntPipe) userId: number,
     @Param('programId', ParseIntPipe) programId: number,
+    @Query('instituteId', ParseIntPipe) instituteId: number,
   ) {
-    return this.usersService.assignUserToProgram(userId, programId);
+    const instId = Number(instituteId);
+    return this.usersService.assignUserToProgram(userId, programId, instId);
   }
   @UseGuards(JwtAuthGuard)
   @Post('profile/change-phone/request')

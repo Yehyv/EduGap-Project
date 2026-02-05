@@ -429,16 +429,18 @@ export class ProgramsService {
       name: r.translation_name,
     }));
   }
-  async ProgramsForUserDropDown(languageId?: number) {
+  async ProgramsForUserDropDown(instituteId: number, languageId?: number) {
     const rows = await this.programRepository
       .createQueryBuilder('program')
 
-      .leftJoin(
+      .innerJoin(
         'program.translations',
         'translation',
         languageId ? 'translation.languageId = :languageId' : undefined,
         { languageId },
       )
+      .innerJoin('program.institutePrograms', 'ip')
+      .where('ip.institute_id = :instituteId', { instituteId })
       .select([
         'program.id AS program_id',
         'translation.name AS translation_name',

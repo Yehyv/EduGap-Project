@@ -7,9 +7,11 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
+import { ActivationLog } from 'src/users/entities/activation-log.entity';
 @Entity('system_users')
 export class SystemUser {
   @PrimaryGeneratedColumn()
@@ -69,4 +71,7 @@ export class SystemUser {
     onDelete: 'SET NULL',
   })
   institute: Institute | null;
+
+  @OneToMany(() => ActivationLog, (activationLog) => activationLog.systemUser)
+  activationLogs: ActivationLog[];
 }

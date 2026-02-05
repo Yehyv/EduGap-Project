@@ -26,6 +26,7 @@ import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
 import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
 import { PasswordAction } from './password-action.entity';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
+import { ActivationLog } from './activation-log.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -72,6 +73,12 @@ export class User {
 
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   is_active: number;
+
+  @Column({ name: 'added_type', type: 'tinyint', width: 1, default: 0 }) // 0 for by one , 1 for bulk
+  added_type: number;
+
+  @Column({ name: 'student_id', type: 'int', nullable: true })
+  studentId: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -142,4 +149,7 @@ export class User {
     onDelete: 'CASCADE',
   })
   UserRole: SystemRole;
+
+  @OneToMany(() => ActivationLog, (activationLog) => activationLog.user)
+  activationLogs: ActivationLog[];
 }
