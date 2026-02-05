@@ -14,6 +14,7 @@ import { Program } from 'src/programs/entities/program.entity';
 import { PasswordAction } from './entities/password-action.entity';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 import { ActivationLog } from './entities/activation-log.entity';
+import { CreateStudentDto } from './dto/create-student.dto';
 interface userRow {
   user_id: number;
   user_full_name: string;
@@ -98,7 +99,7 @@ export class UsersService {
 
     return this.userRepositry.save(user);
   }
-  async createStudent(createUserDto: CreateUserDto): Promise<User> {
+  async createStudent(createUserDto: CreateStudentDto): Promise<User> {
     const { instituteId, programId, phone, national_id, ...rest } =
       createUserDto;
     const username = national_id;
@@ -431,7 +432,7 @@ export class UsersService {
         .createQueryBuilder('program')
         .where('program.id = :programId', { programId })
         .innerJoin('program.institutePrograms', 'ip')
-        .andWhere('ip.instituteId = :instituteId', { instituteId })
+        .andWhere('ip.institute_id = :instituteId', { instituteId })
         .getOne(),
     ]);
 

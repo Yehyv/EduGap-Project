@@ -28,6 +28,7 @@ import { imageStorage } from 'src/common/helpers/upload.helper';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserActivationDto } from './dto/user-activation.dto';
+import { CreateStudentDto } from './dto/create-student.dto';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -51,8 +52,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(1)
   @Post('student')
-  createStudent(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.createStudent(createUserDto);
+  createStudent(@Body() CreateStudDto: CreateStudentDto) {
+    return this.usersService.createStudent(CreateStudDto);
   }
 
   @Get('super-admin/users-list')
@@ -216,7 +217,9 @@ export class UsersController {
     @Query('instituteId', ParseIntPipe) instituteId: number,
   ) {
     const instId = Number(instituteId);
-    return this.usersService.assignUserToProgram(userId, programId, instId);
+    const progId = Number(programId);
+    const userIdNum = Number(userId);
+    return this.usersService.assignUserToProgram(userIdNum, progId, instId);
   }
   @UseGuards(JwtAuthGuard)
   @Post('profile/change-phone/request')
