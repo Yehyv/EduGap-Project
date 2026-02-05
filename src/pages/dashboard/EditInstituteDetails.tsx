@@ -13,7 +13,7 @@ import CircleLoader from "@/shared/components/ui/CircleLoader";
 import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { phoneKeys } from "@/shared/utils/globals";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Formik, Form, useFormikContext } from "formik";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -31,22 +31,28 @@ const CitiesHandler = ({ setCitiesOptions, setRegionsOptions }) => {
   });
 
   useEffect(() => {
-    if (values.country) {
-      setFieldValue("city", "");
-      setFieldValue("region", "");
-      setRegionsOptions([]);
-
+    if (values.country && data?.data) {
+      // Only update when we have data
       setCitiesOptions(
-        data?.data?.map((c) => ({
+        data.data.map((c) => ({
           label: c.name,
           value: c.id,
-        })) || [],
+        })),
       );
-    } else {
+    } else if (!values.country) {
+      // Clear everything when no country selected
       setCitiesOptions([]);
       setRegionsOptions([]);
+      setFieldValue("city", "");
+      setFieldValue("region", "");
     }
-  }, [values.country, data]);
+  }, [
+    values.country,
+    data,
+    setCitiesOptions,
+    setRegionsOptions,
+    setFieldValue,
+  ]);
 
   return null;
 };
@@ -62,18 +68,20 @@ const RegionsHandler = ({ setRegionsOptions }) => {
   });
 
   useEffect(() => {
-    if (values.city) {
-      setFieldValue("region", "");
+    if (values.city && data?.data) {
+      // Only update when we have data
       setRegionsOptions(
-        data?.data?.map((r) => ({
+        data.data.map((r) => ({
           label: r.name,
           value: r.id,
-        })) || [],
+        })),
       );
-    } else {
+    } else if (!values.city) {
+      // Clear region when no city selected
       setRegionsOptions([]);
+      setFieldValue("region", "");
     }
-  }, [values.city, data]);
+  }, [values.city, data, setRegionsOptions, setFieldValue]);
 
   return null;
 };
@@ -83,6 +91,7 @@ const EditInstituteDetails = () => {
   const [citiesOptions, setCitiesOptions] = useState([]);
   const [regionsOptions, setRegionsOptions] = useState([]);
   const { instituteId } = useParams();
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["getInstituteDataToUpdate", instituteId],
     queryFn: () => instituteDetails(instituteId),
@@ -110,6 +119,7 @@ const EditInstituteDetails = () => {
         text: "Institute edited successfully",
         confirmButtonColor: "#0d6efd",
       });
+      queryClient.invalidateQueries({ queryKey: ["getInstituteDataToUpdate"] });
     },
 
     onError: (error) => {
@@ -169,7 +179,6 @@ const EditInstituteDetails = () => {
     country: Yup.string().required(),
     city: Yup.string().required(),
     region: Yup.string().required(),
-    contact_person_name: Yup.string().required(),
     translations: Yup.array().of(
       Yup.object({
         name: Yup.string().required(),
@@ -177,8 +186,13 @@ const EditInstituteDetails = () => {
       }),
     ),
   });
+
   const instituteData = data?.data;
+  const instituteDataAr = instituteData?.translations[0];
+  const instituteDataEn = instituteData?.translations[1];
+
   if (isLoading) return <CircleLoader />;
+
   return (
     <>
       <DashboardPageTitle
@@ -194,18 +208,17 @@ const EditInstituteDetails = () => {
           country: instituteData?.region?.city?.country?.id,
           city: instituteData?.region?.city?.id,
           region: instituteData?.region?.id,
-          contact_person_name: instituteData?.translation?.contactPersopnName,
-          contact_person_position:
-            instituteData?.translation?.contactPersonPostion,
+          contact_person_name: instituteDataEn?.contactPersopnName,
+          contact_person_position: instituteDataEn?.contactPersonPostion,
           translations: [
             {
-              name: instituteData?.translation?.name,
-              address: instituteData?.translation?.address,
+              name: instituteDataAr?.name,
+              address: instituteDataAr?.address,
               languageId: 1,
             },
             {
-              name: instituteData?.translation?.name,
-              address: instituteData?.translation?.address,
+              name: instituteDataEn?.name,
+              address: instituteDataEn?.address,
               languageId: 2,
             },
           ],

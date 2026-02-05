@@ -1,14 +1,14 @@
 import AddModal from "./AddModal";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Formik, Form, ErrorMessage } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import { useParams } from "react-router-dom";
 import { TextField } from "@/shared/components";
 import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { phoneKeys } from "@/shared/utils/globals";
-import { createStudent, getAllRoles } from "../services/dashboardApis";
+import { createStudent } from "../services/dashboardApis";
 
 /* ================== Validation ================== */
 const studentSchema = Yup.object({
@@ -25,7 +25,6 @@ const studentSchema = Yup.object({
     .required("National ID is required"),
 
   phone: Yup.string().required("Phone number is required"),
-  roleId: Yup.string().required("Role Id is required"),
 });
 
 interface Props {
@@ -39,15 +38,7 @@ const AddNewStudentToInstitute = ({
 }: Props) => {
   const { instituteId } = useParams();
   const queryClient = useQueryClient();
-  const { data } = useQuery({
-    queryKey: ["getRolesList"],
-    queryFn: () => getAllRoles(1, 50),
-  });
 
-  const handleRoles = data?.data.items.map((c) => ({
-    label: c.role_title,
-    value: c.id,
-  }));
   const { mutate, isPending } = useMutation({
     mutationFn: createStudent,
     onSuccess: () => {
@@ -58,6 +49,8 @@ const AddNewStudentToInstitute = ({
       });
     },
     onError: (err: any) => {
+      setReviewModalOpen(false);
+
       Swal.fire(
         "Error",
         err?.response?.data?.message || "Something went wrong",
@@ -74,7 +67,6 @@ const AddNewStudentToInstitute = ({
     phone: "",
     user_image: "",
     instituteId: instituteId,
-    roleId: "",
   };
 
   return (
@@ -129,7 +121,6 @@ const AddNewStudentToInstitute = ({
                 />
               </div>
             </div>
-            <DropdownMenu label={"Role"} name="roleId" options={handleRoles} />
 
             <div>
               <TextField

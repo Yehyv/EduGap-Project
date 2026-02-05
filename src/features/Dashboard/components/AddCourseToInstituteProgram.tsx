@@ -31,7 +31,6 @@ const AddCourseToInstituteProgram = ({
     queryKey: ["getAllCoursesToAssign", instituteId, programId],
     queryFn: () => getAllCoursesForDropdown(instituteId, programId),
   });
-  console.log(instituteId);
 
   const queryClient = useQueryClient();
 
@@ -58,7 +57,10 @@ const AddCourseToInstituteProgram = ({
       setCurrentChoice(null); // reset selected course
       setReviewModalOpen(false); // close modal
       queryClient.invalidateQueries({
-        queryKey: ["programsAndCoursesInInstit", instituteId],
+        queryKey: ["programsAndCoursesInInstit"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["getAllCoursesToAssign"],
       });
     },
     onError: (err: any) => {

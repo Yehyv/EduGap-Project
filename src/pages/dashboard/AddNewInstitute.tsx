@@ -37,7 +37,7 @@ const CitiesHandler = ({ setCitiesOptions, setRegionsOptions }) => {
         data?.data?.map((c) => ({
           label: c.name,
           value: c.id,
-        })) || []
+        })) || [],
       );
     } else {
       setCitiesOptions([]);
@@ -65,7 +65,7 @@ const RegionsHandler = ({ setRegionsOptions }) => {
         data?.data?.map((r) => ({
           label: r.name,
           value: r.id,
-        })) || []
+        })) || [],
       );
     } else {
       setRegionsOptions([]);
@@ -130,7 +130,7 @@ const AddNewInstitute = () => {
       "location",
       `${values.city}, ${
         countriesOptions?.find((c) => c.value === values.country)?.label
-      }`
+      }`,
     );
 
     values.translations.forEach((item, index) => {
@@ -140,11 +140,11 @@ const AddNewInstitute = () => {
 
       formData.append(
         `translations[${index}][contactPersopnName]`,
-        values.contact_person_name
+        values.contact_person_name,
       );
       formData.append(
         `translations[${index}][contactPersonPostion]`,
-        values.contact_person_position
+        values.contact_person_position,
       );
     });
 
@@ -161,12 +161,11 @@ const AddNewInstitute = () => {
     country: Yup.string().required(),
     city: Yup.string().required(),
     region: Yup.string().required(),
-    contact_person_name: Yup.string().required(),
     translations: Yup.array().of(
       Yup.object({
         name: Yup.string().required(),
         address: Yup.string().required(),
-      })
+      }),
     ),
   });
 

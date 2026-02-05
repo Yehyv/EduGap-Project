@@ -15,6 +15,7 @@ import { Link, useParams } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { Student } from "@/features/Dashboard/types/dashboardTypes";
 import AddNewStudentToInstitute from "./AddNewStudentToInstitute";
+import AddBulkOfStudents from "./AddBulkOfStudents";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -119,6 +120,7 @@ const columns = [
 const StudentsInInstitute = () => {
   const { instituteId } = useParams();
   const [isOpenModal, setOpenModal] = useState(false);
+  const [addBulkStudentsModal, setAddBulkStudentsModal] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["getStudentsInInstitute"],
     queryFn: () => getStudentsInInstitute(instituteId ?? ""),
@@ -135,30 +137,45 @@ const StudentsInInstitute = () => {
 
   const subHeaderComponent = useMemo(() => {
     return (
-      <div className="flex gap-2 max-md:justify-center max-md:w-full">
-        <div className="relative w-full sm:w-auto">
-          <input
-            type="text"
-            placeholder="Search by name"
-            className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
-          <span className="absolute start-2 top-1/2 -translate-y-1/2">
-            <SearchIcon className="w-7 h-7" />
-          </span>
+      <div className="flex flex-col lg:flex-row gap-3 justify-between items-start md:items-center w-full">
+        {/* Left side - Search and Filter */}
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
+          <div className="relative w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="Search by name"
+              className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+            />
+            <span className="absolute start-2 top-1/2 -translate-y-1/2">
+              <SearchIcon className="w-7 h-7" />
+            </span>
+          </div>
+          <button className="border text-[#ACACAC] gap-1 flex items-center justify-center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm whitespace-nowrap">
+            <FilterIcon />
+            <span>Filter</span>
+          </button>
         </div>
-        <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm">
-          <FilterIcon />
-          <span>Filter</span>
+
+        {/* Right side - Action Buttons */}
+        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+          <button
+            onClick={() => setOpenModal(true)}
+            className="flex items-center justify-center from-secondary to-secondary-dark text-white bg-gradient-to-r rounded-2xl h-9 px-4 whitespace-nowrap"
+          >
+            <PlusIcon className="h-5 w-5" />
+            <span className="ml-2">Add New Student</span>
+          </button>
+
+          <button
+            onClick={() => setAddBulkStudentsModal(true)}
+            className="bg-gradient-to-r justify-center from-[#FCB737] to-[#BB831A] py-0.5 text-white text-sm flex items-center gap-2 rounded-2xl h-9 px-4 whitespace-nowrap"
+          >
+            <PlusIcon className="h-5 w-5" />
+            <span className="ml-2">Add List Of Students</span>
+          </button>
         </div>
-        <button
-          onClick={() => setOpenModal(true)}
-          className="center from-secondary to-secondary-dark text-white bg-gradient-to-r rounded-2xl"
-        >
-          <PlusIcon className="mt-1.5 h-8" />
-          <span className="inline-block me-4 text-white">Add New Student</span>
-        </button>
       </div>
     );
   }, [filterText]);
@@ -183,6 +200,10 @@ const StudentsInInstitute = () => {
       <AddNewStudentToInstitute
         reviewModalOpen={isOpenModal}
         setReviewModalOpen={setOpenModal}
+      />
+      <AddBulkOfStudents
+        setReviewModalOpen={setAddBulkStudentsModal}
+        reviewModalOpen={addBulkStudentsModal}
       />
     </>
   );

@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 import PlusIcon from "@/assets/svgs/PlusSign.svg?react";
 import PlusIconGray from "@/assets/svgs/PlusIconGray.svg?react";
 import TrashIcon from "@/assets/svgs/TrashIconDashboard.svg?react";
+import CloseIcon from "@/assets/svgs/CloseRedIcon.svg?react";
 
 import AddCourseToInstituteProgram from "./AddCourseToInstituteProgram";
 import AddProgramToInstitute from "./AddProgramToInstitute";
@@ -73,7 +74,10 @@ const PorgramsInInstitute = () => {
       unAssignProgramToInstitute(programId, +instituteId!),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["programsAndCoursesInInstit", instituteId],
+        queryKey: ["programsAndCoursesInInstit"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["getAllProgramsToAssign"],
       });
     },
   });
@@ -88,7 +92,13 @@ const PorgramsInInstitute = () => {
     }) => unAssignCourseToProgramToInstitute(courseId, programId, instituteId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["programsAndCoursesInInstit", instituteId],
+        queryKey: ["programsAndCoursesInInstit"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["getAllProgramsToAssign"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["getAllCoursesToAssign"],
       });
     },
   });
@@ -169,7 +179,8 @@ const PorgramsInInstitute = () => {
                       handleRemoveProgram(program.id);
                     }}
                   >
-                    <TrashIcon />
+                    <CloseIcon className="inline-block me-1" />
+                    <span className="text-red-500">Unassign</span>
                   </button>
                 </div>
               </button>
@@ -191,7 +202,8 @@ const PorgramsInInstitute = () => {
                           handleRemoveCourse(course.id, program.id)
                         }
                       >
-                        <TrashIcon />
+                        <CloseIcon className="inline-block me-1" />
+                        <span className="text-red-500">Unassign</span>
                       </button>
                     </div>
                   ))}

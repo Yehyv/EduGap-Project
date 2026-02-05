@@ -13,7 +13,7 @@ const InstituteDetails = () => {
   const { instituteId } = useParams();
   const { t } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState("data");
+  const [activeTab, setActiveTab] = useState("informations");
 
   /* ================= QUERY ================= */
   const { data, isLoading, isError, error } = useQuery({
@@ -29,10 +29,10 @@ const InstituteDetails = () => {
     return <ErrorMessage message={error?.message ?? t("institute_error")} />;
 
   const tabClass = (tab: string) =>
-    `rounded-lg border w-full py-1 cursor-pointer ${
+    `rounded-lg  w-full py-1 cursor-pointer ${
       activeTab === tab
-        ? "border-secondary text-secondary font-bold"
-        : "border-[#9B9393] text-[#9B9393]"
+        ? " bg-secondary/5 text-secondary font-bold"
+        : "border border-[#9B9393] text-[#9B9393]"
     }`;
 
   const instituteDataAr = instituteData?.translations[0];
@@ -42,7 +42,14 @@ const InstituteDetails = () => {
     <>
       {/* ================= HEADER ================= */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-1">
-        <h2 className="mb-5">{instituteDataAr?.name ?? ""} </h2>
+        <div className="flex items-center gap-2">
+          <img
+            src={instituteData?.logo}
+            className="w-10"
+            alt="Institue Logo"
+          ></img>
+          <h2 className="mb-0">{instituteDataAr?.name ?? ""} </h2>
+        </div>
 
         <div className="flex items-center gap-2">
           <button
@@ -80,22 +87,28 @@ const InstituteDetails = () => {
         </button>
 
         <button
-          className={tabClass("data")}
-          onClick={() => setActiveTab("data")}
+          className={tabClass("informations")}
+          onClick={() => setActiveTab("informations")}
         >
-          {t("tabs_data")}
+          Informations
         </button>
 
         <button
-          className={tabClass("details")}
-          onClick={() => setActiveTab("details")}
+          className={tabClass("programs")}
+          onClick={() => setActiveTab("programs")}
         >
-          {t("tabs_details")}
+          Programs
+        </button>
+        <button
+          className={tabClass("stuff")}
+          onClick={() => setActiveTab("stuff")}
+        >
+          Institute Stuff
         </button>
       </div>
 
       {/* ================= DATA TAB ================= */}
-      {activeTab === "data" && (
+      {activeTab === "informations" && (
         <>
           <div className="bg-white p-5 rounded-lg">
             <h5 className="text-secondary font-bold mb-3">
@@ -202,7 +215,8 @@ const InstituteDetails = () => {
       {/* ================= OTHER TABS ================= */}
       {activeTab === "students" && <StudentsInInstitute />}
 
-      {activeTab === "details" && <PorgramsInInstitute />}
+      {activeTab === "programs" && <PorgramsInInstitute />}
+      {activeTab === "stuff" && <div>Stuff</div>}
     </>
   );
 };

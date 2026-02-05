@@ -71,6 +71,12 @@ const columns = [
     style: { justifyContent: "center" },
   },
   {
+    name: "User Role",
+    selector: (row: User) => row?.institute?.UserRole ?? "-",
+    sortable: true,
+    style: { justifyContent: "center" },
+  },
+  {
     name: "Institute",
     selector: (row: User) => row?.institute?.name ?? "-",
     sortable: true,
