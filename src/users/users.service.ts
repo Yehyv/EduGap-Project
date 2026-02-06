@@ -15,6 +15,8 @@ import { PasswordAction } from './entities/password-action.entity';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 import { ActivationLog } from './entities/activation-log.entity';
 import { CreateStudentDto } from './dto/create-student.dto';
+import * as ExcelJS from 'exceljs';
+import { Response } from 'express';
 interface userRow {
   user_id: number;
   user_full_name: string;
@@ -181,6 +183,56 @@ export class UsersService {
         },
       })),
     };
+  }
+  async exportUsersToExcel(
+    res: Response,
+    roleCategory?: number,
+    languageId?: number,
+  ) {
+    // 🔹 نفس الداتا اللي عندك
+    const data = await this.findAll(roleCategory, languageId);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Users');
+
+    // 🔹 Header
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Name', key: 'name', width: 25 },
+      { header: 'Phone', key: 'phone', width: 20 },
+      { header: 'Institute', key: 'institute', width: 25 },
+      { header: 'Role Title', key: 'role_title', width: 20 },
+      { header: 'Role Category', key: 'role_category', width: 15 },
+      { header: 'Active', key: 'is_active', width: 10 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+    ];
+
+    // 🔹 Rows
+    data.users.forEach((u) => {
+      worksheet.addRow({
+        id: u.id,
+        name: u.name,
+        phone: u.phone,
+        institute: u.institute,
+        role_title: u.role.role_title,
+        role_category: u.role.role_category,
+        is_active: u.is_active ? 'Yes' : 'No',
+        createdAt: u.createdAt,
+      });
+    });
+
+    // 🔹 شكل الهيدر
+    worksheet.getRow(1).font = { bold: true };
+
+    // 🔹 Response headers
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename=users.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
   }
 
   async findByEmail(email: string) {

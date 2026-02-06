@@ -33,12 +33,7 @@ export class UsersBatchUploadController {
 
   @Get('template')
   downloadTemplate(@Res({ passthrough: false }) res: express.Response) {
-    const filePath = join(
-      process.cwd(),
-      'uploads',
-      'templates',
-      'students-template.xlsx',
-    );
+    const filePath = join(process.cwd(), 'templates', 'students-template.xlsx');
 
     return res.download(filePath, 'students-template.xlsx');
   }

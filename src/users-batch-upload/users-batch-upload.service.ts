@@ -8,6 +8,10 @@ import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 import * as bcrypt from 'bcrypt';
 import { Workbook, Row } from 'exceljs';
 import { Readable } from 'stream';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { ExcelStudentRowDto } from './dto/excel-student-row.dto';
+import * as ExcelJS from 'exceljs';
 /* =========================
    Types
 ========================= */
@@ -82,7 +86,7 @@ export class UsersBatchUploadService {
     await this.updateTotalRows(batch, rows.length);
 
     // file-level validation
-    const { validUsers, errors: validationErrors } = this.validateRows(
+    const { validUsers, errors: validationErrors } = await this.validateRows(
       rows,
       batch.id,
     );
@@ -146,14 +150,12 @@ export class UsersBatchUploadService {
   private async parseExcel(
     file: Express.Multer.File,
   ): Promise<ParsedExcelRow[]> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const workbook: Workbook = new Workbook();
     const rows: ParsedExcelRow[] = [];
 
     const stream = Readable.from(file.buffer);
     await workbook.xlsx.read(stream);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const sheet = workbook.worksheets[0];
     if (!sheet) {
       return rows;
@@ -193,10 +195,10 @@ export class UsersBatchUploadService {
      Validation
   ========================= */
 
-  private validateRows(
+  private async validateRows(
     rows: ParsedExcelRow[],
     batchId: number,
-  ): { validUsers: ValidUserInput[]; errors: BatchErrorInput[] } {
+  ): Promise<{ validUsers: ValidUserInput[]; errors: BatchErrorInput[] }> {
     const phoneSet = new Set<string>();
     const nationalSet = new Set<string>();
     const emailSet = new Set<string>();
@@ -205,13 +207,20 @@ export class UsersBatchUploadService {
     const errors: BatchErrorInput[] = [];
 
     for (const row of rows) {
-      if (!row.full_name || !row.phone || !row.national_id) {
-        errors.push(
-          this.buildError(batchId, row.rowNumber, 'MISSING_REQUIRED_FIELD'),
-        );
+      /* =========================
+       1️⃣ DTO Validation (Format)
+    ========================= */
+      const dto = plainToInstance(ExcelStudentRowDto, row);
+      const dtoErrors = await validate(dto);
+
+      if (dtoErrors.length > 0) {
+        errors.push(this.buildError(batchId, row.rowNumber, 'INVALID_FORMAT'));
         continue;
       }
 
+      /* =========================
+       2️⃣ File-level Duplicates
+    ========================= */
       if (phoneSet.has(row.phone)) {
         errors.push(this.buildError(batchId, row.rowNumber, 'DUPLICATE_PHONE'));
         continue;
@@ -223,22 +232,24 @@ export class UsersBatchUploadService {
         );
         continue;
       }
+
       if (row.email) {
         const normalizedEmail = row.email.toLowerCase();
-
         if (emailSet.has(normalizedEmail)) {
           errors.push(
             this.buildError(batchId, row.rowNumber, 'DUPLICATE_EMAIL'),
           );
           continue;
         }
-
         emailSet.add(normalizedEmail);
       }
 
       phoneSet.add(row.phone);
       nationalSet.add(row.national_id);
 
+      /* =========================
+       3️⃣ Accept Row
+    ========================= */
       validUsers.push({
         ...row,
         batchUpload: { id: batchId },

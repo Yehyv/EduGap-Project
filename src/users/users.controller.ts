@@ -16,6 +16,7 @@ import {
   UseInterceptors,
   UnauthorizedException,
   Query,
+  Res,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -29,6 +30,7 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserActivationDto } from './dto/user-activation.dto';
 import { CreateStudentDto } from './dto/create-student.dto';
+import express from 'express';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -91,6 +93,15 @@ export class UsersController {
 
     return this.usersService.deactivateUser(userId, systemUserId, body.reason);
   }
+  @Get('super-admin/students/export')
+  async exportUsers(
+    @Res() res: express.Response,
+    @Query('roleCategory') roleCategory?: number,
+    @Query('languageId') languageId?: number,
+  ) {
+    return this.usersService.exportUsersToExcel(res, roleCategory, languageId);
+  }
+
   @Get('super-admin/institute/:instituteId/students')
   async getStudentsForInstitute(
     @Param('instituteId', ParseIntPipe) instituteId: number,
