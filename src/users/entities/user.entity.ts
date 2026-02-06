@@ -27,6 +27,7 @@ import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
 import { PasswordAction } from './password-action.entity';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 import { ActivationLog } from './activation-log.entity';
+import { UsersBatchUpload } from 'src/users-batch-upload/entities/users-batch-upload.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -152,4 +153,7 @@ export class User {
 
   @OneToMany(() => ActivationLog, (activationLog) => activationLog.user)
   activationLogs: ActivationLog[];
+
+  @ManyToOne(() => UsersBatchUpload, { nullable: true })
+  batchUpload?: UsersBatchUpload;
 }

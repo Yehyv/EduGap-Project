@@ -13,6 +13,7 @@ import { PasswordAction } from './entities/password-action.entity';
 import { UsersOtpModule } from 'src/users-otp/users-otp.module';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 import { ActivationLog } from './entities/activation-log.entity';
+import { UsersBatchUpload } from 'src/users-batch-upload/entities/users-batch-upload.entity';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { ActivationLog } from './entities/activation-log.entity';
       Program,
       PasswordAction,
       SystemRole,
-      ActivationLog
+      ActivationLog,
+      UsersBatchUpload,
     ]),
     UsersOtpModule,
   ],

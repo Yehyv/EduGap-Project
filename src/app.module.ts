@@ -43,6 +43,7 @@ import { CitiesModule } from './cities/cities.module';
 import { RegionsModule } from './regions/regions.module';
 import { SystemRolesModule } from './system-roles/system-roles.module';
 import { SystemAuthModule } from './system-auth/system-auth.module';
+import { UsersBatchUploadModule } from './users-batch-upload/users-batch-upload.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -92,6 +93,7 @@ import { SystemAuthModule } from './system-auth/system-auth.module';
     RegionsModule,
     SystemRolesModule,
     SystemAuthModule,
+    UsersBatchUploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
