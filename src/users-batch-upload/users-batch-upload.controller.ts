@@ -46,7 +46,7 @@ export class UsersBatchUploadController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadBatch(
     @UploadedFile() file: Express.Multer.File,
-    @Param('instituteId', ParseIntPipe) instituteId: number,
+    @Body('instituteId', ParseIntPipe) instituteId: number,
     @Req() req: AuthenticatedRequest,
   ) {
     /**
