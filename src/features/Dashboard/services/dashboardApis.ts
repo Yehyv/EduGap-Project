@@ -180,9 +180,16 @@ export async function deleteInstitute(instituteId: number): Promise<void> {
   return res.data;
 }
 
-export async function getStudents(): Promise<UsersResponse> {
+export async function getStudents(
+  roleCategory: string,
+): Promise<UsersResponse> {
   const res = await dashboardApi.get<UsersResponse>(
     `/users/super-admin/users-list`,
+    {
+      params: {
+        roleCategory,
+      },
+    },
   );
   return res.data;
 }
@@ -197,6 +204,10 @@ export async function getStudentDetails(
 
 export async function createStudent(data): Promise<void> {
   const res = await dashboardApi.post<void>(`/users`, data);
+  return res.data;
+}
+export async function createStudentToInstitute(data): Promise<void> {
+  const res = await dashboardApi.post<void>(`/users/student`, data);
   return res.data;
 }
 
@@ -504,12 +515,21 @@ export async function getExpertsForDashboard(): Promise<ExppertsForDashboardResp
   );
   return res.data;
 }
+// dashboardApis.ts
 export async function getStudentsInInstitute(
   instituteId: string,
+  programId?: string,
+  isActive?: string,
 ): Promise<InstituteStudentsResponse> {
-  const res = await dashboardApi.get<InstituteStudentsResponse>(
-    `/users/super-admin/institute/${instituteId}/students`,
-  );
+  const params = new URLSearchParams();
+
+  if (programId) params.append("programId", programId);
+  if (isActive) params.append("isActive", isActive);
+
+  const queryString = params.toString();
+  const url = `/users/super-admin/institute/${instituteId}/students${queryString ? `?${queryString}` : ""}`;
+
+  const res = await dashboardApi.get<InstituteStudentsResponse>(url);
   return res.data;
 }
 export async function getExpertDetailsForDashboard(
@@ -620,9 +640,11 @@ export async function getExpertCourses(): Promise<CitiesResponse> {
   );
   return res.data;
 }
-export async function getAllPrograms(): Promise<CitiesResponse> {
+export async function getAllPrograms(
+  instituteId: number | string,
+): Promise<CitiesResponse> {
   const res = await dashboardApi.get<CitiesResponse>(
-    `/programs/super-admin/dropdown/user/list`,
+    `/programs/super-admin/dropdown/user/list?instituteId=${instituteId}`,
   );
   return res.data;
 }
@@ -676,9 +698,10 @@ export async function assignContentToExpert(
 export async function assignStudentToProgram(
   studentId: number | string,
   programId: number | string,
+  instituteId: number | string,
 ): Promise<void> {
   const res = await dashboardApi.patch<void>(
-    `users/${studentId}/assign-program/${programId}`,
+    `users/${studentId}/assign-program/${programId}?instituteId=${instituteId}`,
   );
   return res.data;
 }
@@ -967,3 +990,25 @@ export async function unassignTraningCourseToCourse(
   );
   return res.data;
 }
+
+export const activateStudent = async (
+  studentId: string,
+  data: { reason: string },
+) => {
+  const response = await dashboardApi.post(
+    `/users/${studentId}/activate`,
+    data,
+  );
+  return response.data;
+};
+
+export const deactivateStudent = async (
+  studentId: string,
+  data: { reason: string },
+) => {
+  const response = await dashboardApi.post(
+    `/users/${studentId}/deactivate`,
+    data,
+  );
+  return response.data;
+};

@@ -8,7 +8,10 @@ import { useParams } from "react-router-dom";
 import { TextField } from "@/shared/components";
 import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { phoneKeys } from "@/shared/utils/globals";
-import { createStudent } from "../services/dashboardApis";
+import {
+  createStudent,
+  createStudentToInstitute,
+} from "../services/dashboardApis";
 
 /* ================== Validation ================== */
 const studentSchema = Yup.object({
@@ -40,7 +43,7 @@ const AddNewStudentToInstitute = ({
   const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: createStudent,
+    mutationFn: createStudentToInstitute,
     onSuccess: () => {
       Swal.fire("Success", "Student created successfully", "success");
       setReviewModalOpen(false);
@@ -51,9 +54,13 @@ const AddNewStudentToInstitute = ({
     onError: (err: any) => {
       setReviewModalOpen(false);
 
+      const message = err?.response?.data?.message;
+
       Swal.fire(
         "Error",
-        err?.response?.data?.message || "Something went wrong",
+        Array.isArray(message)
+          ? message.join(", ")
+          : message || "Something went wrong",
         "error",
       );
     },

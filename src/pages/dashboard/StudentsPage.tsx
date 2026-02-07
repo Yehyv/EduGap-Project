@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
   deleteStudent,
+  getAllRoles,
   getStudents,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +12,7 @@ import SearchIcon from "@/assets/svgs/SearchIconDashboard.svg?react";
 import FilterIcon from "@/assets/svgs/FilterIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { User } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 
@@ -64,7 +65,7 @@ const columns = [
     name: "Name",
     selector: (row: User) => (
       <Link className="underline text-sm" to={`/dashboard/users/${row.id}`}>
-        {row?.full_name}
+        {row?.name}
       </Link>
     ),
     sortable: true,
@@ -72,13 +73,13 @@ const columns = [
   },
   {
     name: "User Role",
-    selector: (row: User) => row?.institute?.UserRole ?? "-",
+    selector: (row: User) => row?.role?.role_title ?? "-",
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
     name: "Institute",
-    selector: (row: User) => row?.institute?.name ?? "-",
+    selector: (row: User) => row?.institute ?? "-",
     sortable: true,
     style: { justifyContent: "center" },
   },
@@ -152,19 +153,68 @@ const columns = [
 ];
 
 const StudentsPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filterText, setFilterText] = useState("");
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
+
+  const roleCategory = searchParams.get("roleCategory") || "";
+
+  const [tempRoleCategory, setTempRoleCategory] = useState(roleCategory);
+
+  useEffect(() => {
+    setTempRoleCategory(roleCategory);
+  }, [roleCategory]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowFilterDropdown(false);
+        setTempRoleCategory(roleCategory);
+      }
+    };
+
+    if (showFilterDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showFilterDropdown, roleCategory]);
+
   const { data: studentsData, isLoading } = useQuery({
-    queryKey: ["getStudents"],
-    queryFn: () => getStudents(),
+    queryKey: ["getStudents", roleCategory],
+    queryFn: () => getStudents(roleCategory),
+    keepPreviousData: true,
   });
 
-  const [filterText, setFilterText] = useState("");
+  const { data: rolesData } = useQuery({
+    queryKey: ["getRolesList", 1, 100],
+    queryFn: () => getAllRoles(1, 100),
+    keepPreviousData: true,
+  });
 
   const filteredItems = useMemo(() => {
     if (!studentsData?.data?.users) return [];
     return studentsData?.data?.users.filter((item) =>
-      item?.full_name?.toLowerCase().includes(filterText?.toLowerCase()),
+      item?.name?.toLowerCase().includes(filterText?.toLowerCase()),
     );
   }, [filterText, studentsData]);
+
+  const handleApplyFilters = () => {
+    const params = new URLSearchParams();
+    if (tempRoleCategory) params.set("roleCategory", tempRoleCategory);
+    setSearchParams(params);
+    setShowFilterDropdown(false);
+  };
+
+  const handleClearFilters = () => {
+    setTempRoleCategory("");
+  };
 
   const subHeaderComponent = useMemo(() => {
     return (
@@ -184,13 +234,69 @@ const StudentsPage = () => {
             <SearchIcon className="w-7 h-7" />
           </button>
         </div>
-        <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm focus:outline-none">
-          <FilterIcon />
-          <span>Filter</span>
+
+        {/* Filter Dropdown */}
+        <div className="relative z-10" ref={filterDropdownRef}>
+          <button
+            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+            className="border text-[#ACACAC] gap-1 flex items-center justify-center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm focus:outline-none"
+          >
+            <FilterIcon />
+            <span>Filter</span>
+          </button>
+
+          {showFilterDropdown && (
+            <>
+              {/* Backdrop for mobile */}
+              <div className="fixed inset-0 bg-black/20 md:hidden z-40" />
+
+              {/* Dropdown */}
+              <div className="fixed md:absolute left-1/2 md:-left-40 top-1/2 md:top-full -translate-x-1/2 md:translate-x-0 -translate-y-1/2 md:translate-y-0 mt-0 md:mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 w-[90vw] max-w-sm md:w-64">
+                <div className="space-y-3">
+                  {/* Role Category Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Role Category
+                    </label>
+                    <select
+                      value={tempRoleCategory}
+                      onChange={(e) => setTempRoleCategory(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
+                    >
+                      <option value="">All Roles</option>
+                      {rolesData?.data?.items?.map((role: any) => (
+                        <option key={role.id} value={role.id}>
+                          {role.role_title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Filter Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleClearFilters}
+                      className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleApplyFilters}
+                      className="flex-1 px-3 py-1.5 text-sm bg-secondary text-white rounded-lg hover:bg-secondary-dark"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
-  }, [filterText]);
+  }, [filterText, showFilterDropdown, tempRoleCategory, rolesData]);
 
   return (
     <>
@@ -204,7 +310,7 @@ const StudentsPage = () => {
           </Link>
         }
       />
-      <div className="w-full overflow-x-auto">
+      <div className="w-full">
         <DataTable
           columns={columns}
           data={filteredItems}

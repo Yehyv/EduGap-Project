@@ -2,19 +2,28 @@ import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTit
 import { Link, useParams } from "react-router-dom";
 import PencilIcon from "@/assets/svgs/PencilIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusSign.svg?react";
-import { useQuery } from "@tanstack/react-query";
-import { getStudentDetails } from "@/features/Dashboard/services/dashboardApis";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getStudentDetails,
+  activateStudent,
+  deactivateStudent,
+} from "@/features/Dashboard/services/dashboardApis";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import AddProgramToStudent from "@/features/Dashboard/components/AddProgramToStudent";
+import StudentStatusModal from "@/features/Dashboard/components/StudentStatusModal";
 import { useState } from "react";
+import Swal from "sweetalert2";
 
 const StudentDetails = () => {
   const [modalOpen, setModalOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
 
   const { studentId } = useParams();
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
 
   /* ================= QUERY ================= */
   const { data, isLoading, isError, error } = useQuery({
@@ -23,8 +32,84 @@ const StudentDetails = () => {
     enabled: !!studentId,
   });
 
+  /* ================= MUTATIONS ================= */
+  const activateMutation = useMutation({
+    mutationFn: (reason: string) =>
+      activateStudent(studentId ?? "", { reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["studentDetails", studentId],
+      });
+      setStatusModalOpen(false);
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: "Student activated successfully",
+        confirmButtonColor: "#10b981",
+      });
+    },
+    onError: (error: any) => {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to activate student",
+        confirmButtonColor: "#ef4444",
+      });
+    },
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: (reason: string) =>
+      deactivateStudent(studentId ?? "", { reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["studentDetails", studentId],
+      });
+      setStatusModalOpen(false);
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: "Student deactivated successfully",
+        confirmButtonColor: "#10b981",
+      });
+    },
+    onError: (error: any) => {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to deactivate student",
+        confirmButtonColor: "#ef4444",
+      });
+    },
+  });
+
   const student = data?.data;
   const isActive = Boolean(student?.isActive);
+
+  /* ================= HANDLERS ================= */
+  const handleToggleStatus = () => {
+    if (isActive) {
+      setIsActivating(false);
+      setStatusModalOpen(true);
+    } else {
+      setIsActivating(true);
+      setStatusModalOpen(true);
+    }
+  };
+
+  const handleStatusChange = (reason: string) => {
+    if (isActivating) {
+      activateMutation.mutate(reason);
+    } else {
+      deactivateMutation.mutate(reason);
+    }
+  };
 
   if (isLoading) {
     return <CircleLoader />;
@@ -59,18 +144,31 @@ const StudentDetails = () => {
           <h5 className="text-secondary font-bold">{t("student_data")}</h5>
 
           <button
-            className={`px-6 py-1 rounded-full border font-medium text-sm relative ${
+            onClick={handleToggleStatus}
+            disabled={
+              activateMutation.isPending || deactivateMutation.isPending
+            }
+            className={`px-6 py-1 rounded-full border font-medium text-sm relative transition-all hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed ${
               isActive
                 ? "border-green-500 text-green-500"
                 : "border-red-500 text-red-500"
             }`}
           >
-            {isActive ? t("active") : t("inactive")}
-            <span
-              className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
-                isActive ? "bg-green-500" : "bg-red-500"
-              }`}
-            />
+            {activateMutation.isPending || deactivateMutation.isPending ? (
+              <span className="flex items-center gap-2">
+                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Loading...
+              </span>
+            ) : (
+              <>
+                {isActive ? "Active" : "Inactive"}
+                <span
+                  className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
+                    isActive ? "bg-green-500" : "bg-red-500"
+                  }`}
+                />
+              </>
+            )}
           </button>
         </div>
 
@@ -136,8 +234,17 @@ const StudentDetails = () => {
       </button>
 
       <AddProgramToStudent
+        instituteId={student?.institute?.id}
         reviewModalOpen={modalOpen}
         setReviewModalOpen={setModalOpen}
+      />
+
+      <StudentStatusModal
+        isOpen={statusModalOpen}
+        onClose={() => setStatusModalOpen(false)}
+        onSubmit={handleStatusChange}
+        isLoading={activateMutation.isPending || deactivateMutation.isPending}
+        isActivating={isActivating}
       />
     </>
   );

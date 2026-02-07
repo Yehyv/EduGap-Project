@@ -12,11 +12,13 @@ import Swal from "sweetalert2";
 import { useParams } from "react-router-dom";
 
 interface AddCourseToProgramProps {
+  instituteId: number;
   reviewModalOpen: boolean;
   setReviewModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const AddProgramToStudent = ({
+  instituteId,
   reviewModalOpen,
   setReviewModalOpen,
 }: AddCourseToProgramProps) => {
@@ -24,10 +26,10 @@ const AddProgramToStudent = ({
   const { lang } = useLanguage();
   const { studentId } = useParams();
 
-  // Fetch all courses
+  // Fetch all programs
   const { data: allCourses } = useQuery({
     queryKey: ["getAllPrograms"],
-    queryFn: getAllPrograms,
+    queryFn: () => getAllPrograms(instituteId),
   });
   const queryClient = useQueryClient();
 
@@ -39,7 +41,12 @@ const AddProgramToStudent = ({
     }: {
       studentId: string | undefined;
       programId: number | null;
-    }) => assignStudentToProgram(studentId ?? "", programId ?? ""),
+    }) =>
+      assignStudentToProgram(
+        studentId ?? "",
+        programId ?? "",
+        instituteId ?? "",
+      ),
     onSuccess: () => {
       Swal.fire({
         icon: "success",

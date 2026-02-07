@@ -6,8 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import { useParams } from "react-router-dom";
 import { useState, useRef } from "react";
-import axios from "axios";
 import { UploadIcon, XIcon, FileIcon } from "lucide-react";
+import { dashboardApi } from "@/shared/services/dashboardApi";
 
 /* ================== Validation ================== */
 const bulkStudentSchema = Yup.object({
@@ -84,35 +84,49 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
     }
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: any, { resetForm }: any) => {
     setIsUploading(true);
 
     try {
       const formData = new FormData();
-      formData.append("excel_file", values.excel_file);
-      formData.append("instituteId", instituteId || "");
+      formData.append("file", values.excel_file);
 
-      // Replace with your actual API endpoint
-      await axios.post("/api/students/bulk-upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+      const response = await dashboardApi.post(
+        `/users-batch-upload/upload?instituteId=${instituteId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: response.data?.message || "Students uploaded successfully",
+        confirmButtonColor: "#0d6efd",
       });
 
-      Swal.fire("Success", "Students uploaded successfully", "success");
       setReviewModalOpen(false);
       setUploadedFile(null);
+      resetForm();
+
       queryClient.invalidateQueries({
         queryKey: ["getStudentsInInstitute"],
       });
     } catch (err: any) {
+      console.error("Upload error:", err);
       setReviewModalOpen(false);
-      setUploadedFile(null);
-      Swal.fire(
-        "Error",
-        err?.response?.data?.message || "Something went wrong",
-        "error",
-      );
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text:
+          err?.response?.data?.message ||
+          "Something went wrong while uploading",
+        confirmButtonColor: "#dc3545",
+      });
     } finally {
       setIsUploading(false);
     }
