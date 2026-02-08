@@ -151,6 +151,7 @@ export class UsersService {
         'user.phone AS user_phone',
         'user.createdAt AS createdAt',
         'user.is_active AS user_is_active',
+        'user.user_image AS user_user_image',
 
         'it.name AS it_name',
 
@@ -177,6 +178,7 @@ export class UsersService {
         institute: u.it_name,
         createdAt: u.createdAt,
         is_active: u.user_is_active,
+        user_image: u.user_user_image,
         role: {
           role_title: u.role_role_title,
           role_category: u.role_role_category,

@@ -229,6 +229,7 @@ export class ContentsService {
       image: content.image,
       level: content.level,
       rate: content.rate,
+      is_active: content.is_active,
 
       translations: content.translations.map((t) => ({
         name: t.name,

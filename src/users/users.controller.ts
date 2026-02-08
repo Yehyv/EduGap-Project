@@ -99,15 +99,18 @@ export class UsersController {
     @Query('roleCategory') roleCategory?: number,
     @Query('languageId') languageId?: number,
   ) {
-    return this.usersService.exportUsersToExcel(res, roleCategory, languageId);
+    const role_cat =
+      roleCategory !== undefined ? Number(roleCategory) : undefined;
+    const langId = languageId !== undefined ? Number(languageId) : undefined;
+    return this.usersService.exportUsersToExcel(res, role_cat, langId);
   }
 
   @Get('super-admin/institute/:instituteId/students')
   async getStudentsForInstitute(
     @Param('instituteId', ParseIntPipe) instituteId: number,
     @Headers('languageId') languageId?: string,
-    @Query('programId', ParseIntPipe) programId?: number,
-    @Query('isActive', ParseIntPipe) isActive?: number,
+    @Query('programId') programId?: number,
+    @Query('isActive') isActive?: number,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
     const progId = programId !== undefined ? Number(programId) : undefined;

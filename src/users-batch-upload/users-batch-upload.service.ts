@@ -122,6 +122,17 @@ export class UsersBatchUploadService {
     // 9️⃣ response
     return this.buildResponse(batch, [...validationErrors, ...dbErrors]);
   }
+  private normalizeCellValue(value: unknown): string {
+    if (value === null || value === undefined) return '';
+
+    // لو Excel بعته number
+    if (typeof value === 'number') {
+      return Math.trunc(value).toString();
+    }
+
+    // أي حاجة تانية
+    return String(value).trim();
+  }
 
   /* =========================
      Batch helpers
@@ -164,27 +175,19 @@ export class UsersBatchUploadService {
     sheet.eachRow((row: Row, rowNumber: number) => {
       if (rowNumber === 1) return;
 
-      const fullName = row.getCell(1).value as string | null | undefined;
-      const email = row.getCell(2).value as string | null | undefined;
-      const phone = row.getCell(3).value as string | number | null | undefined;
-      const nationalId = row.getCell(4).value as
-        | string
-        | number
-        | null
-        | undefined;
-      const studentId = row.getCell(5).value as
-        | string
-        | number
-        | null
-        | undefined;
+      const fullName = this.extractCellText(row.getCell(1).value);
+      const email = this.extractCellText(row.getCell(2).value);
+      const phone = this.extractCellText(row.getCell(3).value);
+      const nationalId = this.extractCellText(row.getCell(4).value);
+      const studentId = this.extractCellText(row.getCell(5).value);
 
       rows.push({
         rowNumber,
-        full_name: String(fullName ?? '').trim(),
-        email: email ? String(email).trim() : undefined,
-        phone: String(phone ?? '').trim(),
-        national_id: String(nationalId ?? '').trim(),
-        student_id: studentId ? String(studentId).trim() : undefined,
+        full_name: fullName ?? '',
+        email,
+        phone: phone ?? '',
+        national_id: nationalId ?? '',
+        student_id: studentId,
       });
     });
 
@@ -194,6 +197,40 @@ export class UsersBatchUploadService {
   /* =========================
      Validation
   ========================= */
+  private extractCellText(value: unknown): string | undefined {
+    if (value === null || value === undefined) return undefined;
+
+    // لو string
+    if (typeof value === 'string') {
+      const v = value.trim();
+      return v === '' ? undefined : v;
+    }
+
+    // لو رقم
+    if (typeof value === 'number') {
+      return Math.trunc(value).toString();
+    }
+
+    // لو RichText
+    if (typeof value === 'object') {
+      // ExcelJS richText
+      if ('richText' in value && Array.isArray((value as any).richText)) {
+        const text = (value as any).richText
+          .map((r: any) => r.text)
+          .join('')
+          .trim();
+        return text || undefined;
+      }
+
+      // ExcelJS hyperlink
+      if ('text' in value) {
+        const text = String((value as any).text).trim();
+        return text || undefined;
+      }
+    }
+
+    return undefined;
+  }
 
   private async validateRows(
     rows: ParsedExcelRow[],
@@ -207,20 +244,29 @@ export class UsersBatchUploadService {
     const errors: BatchErrorInput[] = [];
 
     for (const row of rows) {
-      /* =========================
-       1️⃣ DTO Validation (Format)
-    ========================= */
-      const dto = plainToInstance(ExcelStudentRowDto, row);
+      // 🔥 CRITICAL: Enable transformers!
+      const dto = plainToInstance(ExcelStudentRowDto, row, {
+        enableImplicitConversion: true,
+        excludeExtraneousValues: false,
+      });
+
       const dtoErrors = await validate(dto);
 
       if (dtoErrors.length > 0) {
-        errors.push(this.buildError(batchId, row.rowNumber, 'INVALID_FORMAT'));
+        const firstError = dtoErrors[0];
+        const errorMessage =
+          Object.values(firstError.constraints || {})[0] || 'INVALID_FORMAT';
+
+        errors.push({
+          batchUpload: { id: batchId },
+          rowNumber: row.rowNumber,
+          errorType: 'INVALID_FORMAT',
+          errorMessage: errorMessage,
+        });
         continue;
       }
 
-      /* =========================
-       2️⃣ File-level Duplicates
-    ========================= */
+      /* File-level Duplicates */
       if (phoneSet.has(row.phone)) {
         errors.push(this.buildError(batchId, row.rowNumber, 'DUPLICATE_PHONE'));
         continue;
@@ -247,9 +293,7 @@ export class UsersBatchUploadService {
       phoneSet.add(row.phone);
       nationalSet.add(row.national_id);
 
-      /* =========================
-       3️⃣ Accept Row
-    ========================= */
+      /* Accept Row */
       validUsers.push({
         ...row,
         batchUpload: { id: batchId },
