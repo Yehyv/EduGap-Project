@@ -1012,3 +1012,18 @@ export const deactivateStudent = async (
   );
   return response.data;
 };
+
+export async function systemUserActiveToggle(
+  systemUserId: number,
+): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `/users/super-admin/user-status/${systemUserId}`,
+  );
+  return res.data;
+}
+export async function roleActiveToggle(roleId: number): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `/system-roles/super-admin/role-status/${roleId}`,
+  );
+  return res.data;
+}

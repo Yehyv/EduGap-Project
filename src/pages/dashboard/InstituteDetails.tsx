@@ -8,6 +8,7 @@ import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import PorgramsInInstitute from "@/features/Dashboard/components/PorgramsInInstitute";
 import StudentsInInstitute from "@/features/Dashboard/components/StudentsInInstitute";
+import InstituteStuffList from "@/features/Dashboard/components/InstituteStuffList";
 
 const InstituteDetails = () => {
   const { instituteId } = useParams();
@@ -216,7 +217,7 @@ const InstituteDetails = () => {
       {activeTab === "students" && <StudentsInInstitute />}
 
       {activeTab === "programs" && <PorgramsInInstitute />}
-      {activeTab === "stuff" && <div>Stuff</div>}
+      {activeTab === "stuff" && <InstituteStuffList />}
     </>
   );
 };

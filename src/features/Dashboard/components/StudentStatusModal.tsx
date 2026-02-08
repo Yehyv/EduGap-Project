@@ -1,4 +1,3 @@
-// features/Dashboard/components/StudentStatusModal.tsx
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import MyModal from "@/shared/components/ui/MyModal";
@@ -9,7 +8,7 @@ interface StudentStatusModalProps {
   onClose: () => void;
   onSubmit: (reason: string) => void;
   isLoading?: boolean;
-  isActivating: boolean; // true for activate, false for deactivate
+  isActivating: boolean;
 }
 
 const StudentStatusModal = ({

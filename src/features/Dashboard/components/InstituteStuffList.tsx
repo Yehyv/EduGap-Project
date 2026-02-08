@@ -150,7 +150,7 @@ const columns = [
   },
 ];
 
-const StudentsPage = () => {
+const InstituteStuffList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filterText, setFilterText] = useState("");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -184,11 +184,13 @@ const StudentsPage = () => {
     };
   }, [showFilterDropdown, roleCategory]);
 
-  const { data: studentsData, isLoading } = useQuery({
-    queryKey: ["getStudents", roleCategory],
-    queryFn: () => getStudents(roleCategory),
-    keepPreviousData: true,
-  });
+  // const { data: studentsData, isLoading } = useQuery({
+  //   queryKey: ["insituteStuffData", roleCategory],
+  //   queryFn: () => getStudents(roleCategory),
+  //   keepPreviousData: true,
+  // });
+
+  const instituteStuffData = [];
 
   const { data: rolesData } = useQuery({
     queryKey: ["getRolesList", 1, 100],
@@ -197,11 +199,11 @@ const StudentsPage = () => {
   });
 
   const filteredItems = useMemo(() => {
-    if (!studentsData?.data?.users) return [];
-    return studentsData?.data?.users.filter((item) =>
+    if (!instituteStuffData?.data?.users) return [];
+    return instituteStuffData?.data?.users.filter((item) =>
       item?.name?.toLowerCase().includes(filterText?.toLowerCase()),
     );
-  }, [filterText, studentsData]);
+  }, [filterText, instituteStuffData]);
 
   const handleApplyFilters = () => {
     const params = new URLSearchParams();
@@ -298,23 +300,14 @@ const StudentsPage = () => {
 
   return (
     <>
-      <DashboardPageTitle
-        text="Users"
-        button
-        buttonText={
-          <Link to={"/dashboard/users/add"} className="center">
-            <PlusIcon className="mt-1.5 h-8" />
-            <span className="inline-block me-4 text-white">Add New User</span>
-          </Link>
-        }
-      />
+      <DashboardPageTitle text="Institute Stuff" button />
       <div className="w-full">
         <DataTable
           columns={columns}
           data={filteredItems}
           highlightOnHover
           customStyles={customStyles}
-          progressPending={isLoading}
+          // progressPending={isLoading}
           subHeader
           subHeaderComponent={subHeaderComponent}
           pagination
@@ -324,4 +317,4 @@ const StudentsPage = () => {
     </>
   );
 };
-export default StudentsPage;
+export default InstituteStuffList;

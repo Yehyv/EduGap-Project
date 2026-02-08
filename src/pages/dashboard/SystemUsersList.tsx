@@ -3,6 +3,7 @@ import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTit
 import {
   deleteSystemUser,
   getAllSystemUsers,
+  systemUserActiveToggle,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
@@ -14,6 +15,7 @@ import { Link } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { SystemUsers } from "@/features/Dashboard/types/dashboardTypes";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
+import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 
 /* ------------------ styles ------------------ */
 const customStyles = {
@@ -104,6 +106,33 @@ const columns = [
   {
     name: "Updated At",
     selector: (row: SystemUsers) => row.updated_at,
+    sortable: true,
+    center: true,
+  },
+  {
+    name: "Is Active",
+    selector: (row: SystemUsers) => (
+      <ActiveStatusButton
+        isActive={row?.is_active}
+        itemId={row?.id}
+        itemName={row?.full_name}
+        activateApi={systemUserActiveToggle}
+        deactivateApi={systemUserActiveToggle}
+        refetchKey={["getSystemUsersList"]}
+        showModal={false}
+        onSuccess={(isActivating) => {
+          console.log(
+            `Course ${isActivating ? "activated" : "deactivated"} successfully`,
+          );
+        }}
+        onError={(error, isActivating) => {
+          console.error(
+            `Failed to ${isActivating ? "activate" : "deactivate"}:`,
+            error,
+          );
+        }}
+      />
+    ),
     sortable: true,
     center: true,
   },

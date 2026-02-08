@@ -3,6 +3,7 @@ import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTit
 import {
   deleteRole,
   getAllRoles,
+  roleActiveToggle,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
@@ -14,6 +15,7 @@ import { Link } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { RolesList as RoleType } from "@/features/Dashboard/types/dashboardTypes";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
+import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 
 /* ------------------ styles ------------------ */
 const customStyles = {
@@ -58,6 +60,28 @@ const columns = [
   {
     name: "Updated At",
     selector: (row: RoleType) => row.updated_at,
+    sortable: true,
+    center: true,
+  },
+  {
+    name: "Is Active",
+    selector: (row: RoleType) => (
+      <ActiveStatusButton
+        isActive={row?.is_active}
+        itemId={row?.id}
+        itemName={row?.role_title}
+        activateApi={roleActiveToggle}
+        deactivateApi={roleActiveToggle}
+        refetchKey={["getRolesList"]}
+        showModal={false}
+        onError={(error, isActivating) => {
+          console.error(
+            `Failed to ${isActivating ? "activate" : "deactivate"}:`,
+            error,
+          );
+        }}
+      />
+    ),
     sortable: true,
     center: true,
   },

@@ -1,18 +1,49 @@
 import { Link, useParams } from "react-router-dom";
+import { useState } from "react";
 import EditIcon from "@/assets/svgs/PencilIcon.svg?react";
-import { courseDetailsForDashboard } from "@/features/Dashboard/services/dashboardApis";
+import {
+  courseDetailsForDashboard,
+  // activateCourse,
+  // deactivateCourse,
+  // getProgramsForCourse,
+} from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useState } from "react";
 import ContentsInCourse from "@/features/Dashboard/components/ContentsInCourse";
+// import ActiveStatusButton from "@/shared/components/ui/ActiveStatusButton";
+import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { FolderOpen } from "lucide-react";
+
+type TabType = "data" | "sessions" | "programs";
+
+interface Translation {
+  name: string;
+  description: string;
+  whatToLearn: string;
+}
+
+interface CourseData {
+  id: string;
+  image: string;
+  isActive: boolean;
+  createdAt?: string;
+  createdBy?: string;
+  translations: Translation[];
+}
+
+interface ProgramInCourse {
+  id: string;
+  name: string;
+  logo?: string;
+  description?: string;
+}
 
 const CourseDetailsDashboard = () => {
   const { courseId } = useParams();
   const { t } = useLanguage();
-
-  const [activeTab, setActiveTab] = useState("data");
+  const [activeTab, setActiveTab] = useState<TabType>("data");
 
   /* ================= QUERY ================= */
   const { data, isLoading, isError, error } = useQuery({
@@ -21,174 +52,325 @@ const CourseDetailsDashboard = () => {
     enabled: !!courseId,
   });
 
-  const courseData = data?.data;
-  const courseDataEn = data?.data?.translations?.[0];
-  const courseDataAr = data?.data?.translations?.[1];
+  const courseData: CourseData | undefined = data?.data;
+  const courseDataEn = courseData?.translations?.[0];
+  const courseDataAr = courseData?.translations?.[1];
 
+  /* ================= LOADING & ERROR STATES ================= */
   if (isLoading) return <CircleLoader />;
-  if (isError)
-    return <ErrorMessage message={error?.message ?? t("courseTitle")} />;
 
-  const tabClass = (tab) =>
-    `rounded-lg border w-full py-1 cursor-pointer ${
+  if (isError) {
+    return <ErrorMessage message={error?.message ?? "Error fetching course"} />;
+  }
+
+  if (!courseData) {
+    return <ErrorMessage message="Course not found" />;
+  }
+
+  /* ================= TAB STYLING ================= */
+  const tabClass = (tab: TabType) =>
+    `rounded-lg border flex-1 py-2.5 px-4 cursor-pointer transition-all font-medium ${
       activeTab === tab
-        ? "border-secondary text-secondary font-bold"
-        : "border-[#9B9393] text-[#9B9393]"
+        ? "border-secondary text-secondary bg-secondary/5 shadow-sm"
+        : "border-gray-300 text-gray-600 hover:border-secondary/50 hover:text-secondary/70"
     }`;
 
   return (
-    <>
+    <div className="space-y-5">
       {/* ================= HEADER ================= */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-1 ">
-        <h2 className="mb-5">
-          {t("courseTitle")} {courseDataEn?.name}
-        </h2>
-        <div className="flex items-center gap-2">
-          <button
-            className={`px-6 py-1 rounded-full border font-medium text-sm relative ${
-              courseData?.isActive
-                ? "border-green-500 text-green-500"
-                : "border-red-500 text-red-500"
-            }`}
-          >
-            {courseData?.isActive ? t("courseActive") : t("courseInactive")}
-            <span
-              className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
-                courseData?.isActive ? "bg-green-500" : "bg-red-500"
-              }`}
-            ></span>
-          </button>
+      <DashboardPageTitle
+        text={`${t("courseTitle")} ${courseDataEn?.name || ""}`}
+        button
+        moreStyle="!from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5"
+        buttonText={
           <Link
-            to={`/dashboard/courses/edit/${courseData?.id}`}
-            className="bg-gradient-to-r cursor-pointer !from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5 text-white px-4 rounded-xl shadow-md flex items-center"
+            to={`/dashboard/courses/edit/${courseData.id}`}
+            className="flex items-center gap-2"
           >
-            <EditIcon className="h-8 mx-2" />
-            <span className="inline-block me-4 text-secondary">
-              {t("editCourse")}
-            </span>
+            <EditIcon className="h-8" />
+            <span className="text-secondary">{t("editCourse")}</span>
           </Link>
-        </div>
-      </div>
+        }
+      />
+
+      {/* ================= STATUS BUTTON ================= */}
+      {/* <div className="flex justify-end">
+        <ActiveStatusButton
+          isActive={courseData.isActive}
+          itemId={courseId ?? ""}
+          itemName="Course"
+          activateApi={activateCourse}
+          deactivateApi={deactivateCourse}
+          refetchKey={["courseDetailsForDashboard", courseId]}
+          showModal={true}
+        />
+      </div> */}
 
       {/* ================= TABS ================= */}
-      <div className="flex gap-10 text-[#9B9393] my-5">
+      <div className="flex gap-4">
         <button
           className={tabClass("data")}
           onClick={() => setActiveTab("data")}
         >
           {t("tabCourseData")}
         </button>
+
         <button
           className={tabClass("sessions")}
           onClick={() => setActiveTab("sessions")}
         >
           {t("tabCourseSessions")}
         </button>
+
+        <button
+          className={tabClass("programs")}
+          onClick={() => setActiveTab("programs")}
+        >
+          Programs
+        </button>
       </div>
 
       {/* ================= TAB CONTENT ================= */}
       {activeTab === "data" && (
-        <>
-          <div className="bg-white rounded-lg p-5 mt-3">
-            <div className="flex justify-between border-b border-[#ACACAC] pb-3 mb-4">
-              <h5 className="text-secondary font-bold">
-                {t("courseDataTitle")}
-              </h5>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h6 className="text-[#444444] text-sm font-bold">
-                  {t("fieldName")}
-                </h6>
-                <p>{courseDataEn?.name}</p>
-              </div>
-
-              <div className="row-span-2">
-                <h6 className="text-[#444444] text-sm mb-3 font-bold">
-                  {t("fieldImage")}
-                </h6>
-                {courseData?.image && (
-                  <img
-                    className="max-h-30 rounded-2xl"
-                    src={courseData?.image}
-                    alt={t("fieldImage")}
-                  />
-                )}
-              </div>
-
-              <div>
-                <h6 className="text-[#444444] text-sm font-bold">
-                  {t("fieldDescription")}
-                </h6>
-                <p>{courseDataEn?.description}</p>
-              </div>
-
-              <div className="col-span-2">
-                <h6 className="text-[#444444] text-sm font-bold">
-                  {t("fieldWhatToLearn")}
-                </h6>
-                <ul className="list-disc ps-4">
-                  {courseDataEn?.whatToLearn?.length > 0 &&
-                    courseDataEn?.whatToLearn
-                      ?.split(",")
-                      ?.map((w, i) => <li key={i}>{w}</li>)}
-                </ul>
-              </div>
-
-              <div>
-                <h6 className="text-[#444444] text-sm font-bold">
-                  {t("fieldCreatedAt")}
-                </h6>
-                <p>{courseData?.createdAt ?? "-"}</p>
-              </div>
-
-              <div>
-                <h6 className="text-[#444444] text-sm font-bold">
-                  {t("fieldCreatedBy")}
-                </h6>
-                <p>{courseData?.createdBy ?? "-"}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg p-5 mt-3">
-            <div className="flex justify-between border-b border-[#ACACAC] pb-3 mb-4">
-              <h5 className="text-secondary font-bold">
-                {t("courseDataTitle")} {"(Arabic)"}
-              </h5>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h6 className="text-[#444444] text-sm font-bold">
-                  {t("fieldName")}
-                </h6>
-                <p>{courseDataAr?.name}</p>
-              </div>
-
-              <div>
-                <h6 className="text-[#444444] text-sm font-bold">
-                  {t("fieldDescription")}
-                </h6>
-                <p>{courseDataAr?.description}</p>
-              </div>
-
-              <div className="col-span-2">
-                <h6 className="text-[#444444] text-sm font-bold">
-                  {t("fieldWhatToLearn")}
-                </h6>
-                <ul className="list-disc ps-4">
-                  {courseDataEn?.whatToLearn?.length > 0 &&
-                    courseDataAr?.whatToLearn
-                      ?.split(",")
-                      ?.map((w, i) => <li key={i}>{w}</li>)}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </>
+        <DataTab
+          courseData={courseData}
+          courseDataEn={courseDataEn}
+          courseDataAr={courseDataAr}
+          t={t}
+        />
       )}
 
       {activeTab === "sessions" && <ContentsInCourse />}
-    </>
+
+      {activeTab === "programs" && <ProgramsTab courseId={courseId} t={t} />}
+    </div>
+  );
+};
+
+/* ================= DATA TAB COMPONENT ================= */
+interface DataTabProps {
+  courseData: CourseData;
+  courseDataEn?: Translation;
+  courseDataAr?: Translation;
+  t: (key: string) => string;
+}
+
+const DataTab = ({
+  courseData,
+  courseDataEn,
+  courseDataAr,
+  t,
+}: DataTabProps) => {
+  return (
+    <div className="space-y-6">
+      {/* English Data Section */}
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <h5 className="text-lg font-semibold text-secondary border-b border-gray-200 pb-3 mb-4">
+          {t("courseDataTitle")}
+        </h5>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <DataField label={t("fieldName")} value={courseDataEn?.name} />
+
+          <div className="md:row-span-2 self-start">
+            <h6 className="text-sm font-bold text-gray-700 mb-3">
+              {t("fieldImage")}
+            </h6>
+            {courseData.image && (
+              <img
+                className="max-h-64 rounded-xl shadow-md object-cover"
+                src={courseData.image}
+                alt={t("fieldImage")}
+              />
+            )}
+          </div>
+
+          <DataField
+            label={t("fieldDescription")}
+            value={courseDataEn?.description}
+          />
+
+          <div className="col-span-2">
+            <h6 className="text-sm font-bold text-gray-700 mb-2">
+              {t("fieldWhatToLearn")}
+            </h6>
+            <ul className="list-disc ps-5 space-y-1">
+              {courseDataEn?.whatToLearn?.split(",").map((item, index) => (
+                <li key={index} className="text-gray-600">
+                  {item.trim()}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <DataField label={t("fieldCreatedAt")} value={courseData.createdAt} />
+
+          <DataField label={t("fieldCreatedBy")} value={courseData.createdBy} />
+        </div>
+      </div>
+
+      {/* Arabic Data Section */}
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <h5 className="text-lg font-semibold text-secondary border-b border-gray-200 pb-3 mb-4">
+          {t("courseDataTitle")} (Arabic)
+        </h5>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <DataField label={t("fieldName")} value={courseDataAr?.name} />
+
+          <DataField
+            label={t("fieldDescription")}
+            value={courseDataAr?.description}
+          />
+
+          <div className="col-span-2">
+            <h6 className="text-sm font-bold text-gray-700 mb-2">
+              {t("fieldWhatToLearn")}
+            </h6>
+            <ul className="list-disc ps-5 space-y-1">
+              {courseDataAr?.whatToLearn?.split(",").map((item, index) => (
+                <li key={index} className="text-gray-600">
+                  {item.trim()}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ================= PROGRAMS TAB COMPONENT ================= */
+interface ProgramsTabProps {
+  courseId?: string;
+  t: (key: string) => string;
+}
+
+const ProgramsTab = ({ courseId, t }: ProgramsTabProps) => {
+  // TODO: Replace with actual API call when backend is ready
+  // const { data, isLoading, error } = useQuery({
+  //   queryKey: ["programsForCourse", courseId],
+  //   queryFn: () => getProgramsForCourse(courseId ?? ""),
+  //   enabled: !!courseId,
+  // });
+
+  // if (isLoading) return <CircleLoader />;
+  // if (error) return <ErrorMessage message="Error loading programs" />;
+
+  // Mock data - replace with actual data from API
+  const mockPrograms: ProgramInCourse[] = [
+    {
+      id: "1",
+      name: "Full Stack Development Program",
+      description: "Complete web development training",
+    },
+    {
+      id: "2",
+      name: "Data Science Bootcamp",
+      description: "Comprehensive data science course",
+    },
+    {
+      id: "3",
+      name: "Digital Marketing Masterclass",
+      description: "Advanced marketing strategies",
+    },
+  ];
+
+  const programs = mockPrograms; // Replace with: data?.data || []
+
+  return (
+    <div className="bg-white rounded-lg p-6 shadow-sm">
+      <div className="flex gap-2 items-center mb-6">
+        <FolderOpen className="w-6 h-6 text-secondary" />
+        <h5 className="text-lg font-semibold text-secondary">
+          Programs Using This Course
+        </h5>
+      </div>
+
+      {programs.length > 0 ? (
+        <>
+          <p className="text-gray-600 mb-6">
+            This course is included in the following programs:
+          </p>
+
+          <div className="space-y-3">
+            {programs.map((program, index) => (
+              <Link
+                key={program.id}
+                to={`/dashboard/programs/${program.id}`}
+                className="flex items-start gap-3 p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/20 transition-colors">
+                  <span className="text-secondary font-semibold">
+                    {index + 1}
+                  </span>
+                </div>
+
+                <div className="flex-1">
+                  <h6 className="text-gray-800 font-medium group-hover:text-secondary transition-colors">
+                    {program.name}
+                  </h6>
+                  {program.description && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {program.description}
+                    </p>
+                  )}
+                </div>
+
+                <svg
+                  className="w-5 h-5 text-gray-400 group-hover:text-secondary transition-colors mt-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="text-center py-12">
+          <FolderOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-400 mb-2">
+            This course is not part of any program yet
+          </p>
+          <p className="text-sm text-gray-500">
+            Add this course to a program to get started
+          </p>
+        </div>
+      )}
+
+      {/* TODO: Add the following features when integrating with real API:
+          - Program logos
+          - Number of students enrolled via this program
+          - Program status (active/inactive)
+          - Pagination if many programs
+          - Search/filter functionality
+          - Program statistics (completion rate, etc.)
+      */}
+    </div>
+  );
+};
+
+/* ================= REUSABLE DATA FIELD COMPONENT ================= */
+interface DataFieldProps {
+  label: string;
+  value?: string;
+}
+
+const DataField = ({ label, value }: DataFieldProps) => {
+  return (
+    <div>
+      <h6 className="text-sm font-bold text-gray-700 mb-1">{label}</h6>
+      <p className="text-gray-600">{value || "-"}</p>
+    </div>
   );
 };
 
