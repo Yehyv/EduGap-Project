@@ -75,6 +75,18 @@ export class ProgramsController {
     const instId = Number(instituteId);
     return this.programsService.ProgramsForUserDropDown(instId, langId);
   }
+  @Get('super-admin/program/:programId/institutes')
+async institutesForProgram(
+  @Param('programId', ParseIntPipe) programId: number,
+  @Headers('languageId') languageId?: number,
+) {
+  const langId = languageId ? Number(languageId) : undefined;
+  return this.programsService.institutesStatsForProgram(
+    programId,
+    langId,
+  );
+}
+
   
   @Get('super-admin/dropdown/inst-CP')
   instProgCourses(

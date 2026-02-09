@@ -126,6 +126,27 @@ export class UsersController {
       ),
     };
   }
+  @Get('super-admin/institute/:instituteId/stuff')
+  async getStuffForInstitute(
+    @Param('instituteId', ParseIntPipe) instituteId: number,
+    @Headers('languageId') languageId?: string,
+    @Query('programId') programId?: number,
+    @Query('isActive') isActive?: number,
+  ) {
+    const langId = languageId ? Number(languageId) : undefined;
+    const progId = programId !== undefined ? Number(programId) : undefined;
+    const is_active = isActive !== undefined ? Number(isActive) : undefined;
+    return {
+      status: 200,
+      message: 'Request successful',
+      data: await this.usersService.stuffForInstitute(
+        instituteId,
+        langId,
+        progId,
+        is_active,
+      ),
+    };
+  }
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getMeMinimal(

@@ -36,6 +36,7 @@ interface userRow {
   role_id: number;
   role_role_title: string;
   role_role_category: number;
+
 }
 @Injectable()
 export class UsersService {
@@ -709,6 +710,69 @@ export class UsersService {
         ? {
             id: s.program_id,
             name: s.program_name,
+          }
+        : null,
+    }));
+  }
+  async stuffForInstitute(
+    instituteId: number,
+    languageId?: number,
+    programId?: number,
+    isActive?: number,
+  ) {
+    const users = this.userRepositry
+      .createQueryBuilder('user')
+      .innerJoin('user.UserRole', 'role')
+      .leftJoin('user.program', 'program')
+      .leftJoin(
+        'program.translations',
+        'pt',
+        languageId ? 'pt.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .innerJoin('user.institute', 'institute')
+
+      // 👇 الفرق الوحيد الحقيقي
+      .where('role.role_title <> :roleTitle', { roleTitle: 'student' })
+
+      .andWhere('institute.id = :instituteId', { instituteId })
+
+      .select([
+        'user.id AS user_id',
+        'user.full_name AS user_full_name',
+        'user.user_image AS user_user_image',
+        'user.phone_key AS phone_key',
+        'user.phone AS user_phone',
+        'user.email AS user_email',
+        'user.createdAt AS createdAt',
+
+        'program.id AS program_id',
+        'pt.name AS program_name',
+        'role.role_title AS role_role_title',
+      ]);
+
+    if (programId !== undefined) {
+      users.andWhere('program.id = :programId', { programId });
+    }
+
+    if (isActive !== undefined) {
+      users.andWhere('user.is_active = :isActive', { isActive });
+    }
+
+    const usersList = await users.getRawMany<userRow>();
+
+    return usersList.map((u) => ({
+      id: u.user_id,
+      name: u.user_full_name,
+      image: u.user_user_image,
+      phone: `${u.phone_key}${u.user_phone}`,
+      email: u.user_email,
+      createdAt: u.createdAt,
+      role: u.role_role_title,
+      program: u.program_id
+        ? {
+            id: u.program_id,
+            name: u.program_name,
           }
         : null,
     }));

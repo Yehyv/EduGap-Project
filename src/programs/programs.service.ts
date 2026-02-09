@@ -25,6 +25,11 @@ interface ProgramRaw {
   isActive: number;
   course_id: number;
   course_name: string;
+  courses_count: number;
+  institute_id: number;
+  institute_logo: string;
+  institute_name: string;
+  students_count: number;
 }
 @Injectable()
 export class ProgramsService {
@@ -98,16 +103,28 @@ export class ProgramsService {
         { languageId },
       )
       .leftJoin('translation.language', 'language')
+
+      // ✅ select الأساسي
       .select([
-        'program.id',
-        'program.logo',
+        'program.id AS program_id',
+        'program.logo AS program_logo',
         'program.isActive AS isActive',
         'program.createdAt AS program_createdAt',
-        'translation.name',
-        'translation.description',
-        'language.id',
-      ]);
+        'translation.name AS translation_name',
+        'translation.description AS translation_description',
+        'language.id AS language_id',
+      ])
+
+      // ✅ subquery بعده
+      .addSelect(
+        `(SELECT COUNT(pc.id)
+        FROM program_course pc
+        WHERE pc.program_id = program.id)`,
+        'courses_count',
+      );
+
     const rows = await query.getRawMany<ProgramRaw>();
+
     return rows.map((row) => ({
       id: row.program_id,
       logo: row.program_logo,
@@ -116,8 +133,12 @@ export class ProgramsService {
       name: row.translation_name,
       description: row.translation_description,
       languageId: row.language_id,
+
+      // ✅ الاسم الصح
+      courses_count: Number(row.courses_count),
     }));
   }
+
   async findOne(id: number) {
     const rows = await this.programRepository
       .createQueryBuilder('program')
@@ -507,5 +528,58 @@ export class ProgramsService {
       }
     }
     return Object.values(programs);
+  }
+  async institutesStatsForProgram(programId: number, languageId?: number) {
+    const query = this.instituteRepository
+      .createQueryBuilder('i')
+
+      // المعاهد المرتبطة بالبرنامج
+      .innerJoin(
+        'institute_program_course',
+        'ipc',
+        'ipc.instituteId = i.id AND ipc.programId = :programId',
+        { programId },
+      )
+
+      // ترجمة اسم المعهد
+      .leftJoin(
+        'i.translations',
+        'it',
+        languageId ? 'it.languageId = :languageId' : undefined,
+        { languageId },
+      )
+
+      // الطلاب
+      .leftJoin(
+        'user',
+        'u',
+        'u.institute_id = i.id AND u.program_id = :programId',
+        { programId },
+      )
+
+      .select([
+        'i.id AS institute_id',
+        'i.logo AS institute_logo',
+        'it.name AS institute_name',
+      ])
+
+      // عدد الكورسات
+      .addSelect('COUNT(DISTINCT ipc.courseId)', 'courses_count')
+
+      // عدد الطلاب
+      .addSelect('COUNT(DISTINCT u.id)', 'students_count')
+
+      .groupBy('i.id')
+      .addGroupBy('it.name');
+
+    const rows = await query.getRawMany<ProgramRaw>();
+
+    return rows.map((row) => ({
+      instituteId: row.institute_id,
+      logo: row.institute_logo,
+      name: row.institute_name,
+      coursesCount: Number(row.courses_count),
+      studentsCount: Number(row.students_count),
+    }));
   }
 }
