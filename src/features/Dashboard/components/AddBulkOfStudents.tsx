@@ -90,6 +90,7 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
     try {
       const formData = new FormData();
       formData.append("file", values.excel_file);
+      formData.append("instituteId", String(instituteId));
 
       const response = await dashboardApi.post(
         `/users-batch-upload/upload?instituteId=${instituteId}`,
@@ -104,8 +105,7 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
       Swal.fire({
         icon: "success",
         title: "Success",
-        text: response.data?.message || "Students uploaded successfully",
-        confirmButtonColor: "#0d6efd",
+        text: "Students uploaded successfully",
       });
 
       setReviewModalOpen(false);

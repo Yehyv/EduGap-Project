@@ -1027,3 +1027,7 @@ export async function roleActiveToggle(roleId: number): Promise<void> {
   );
   return res.data;
 }
+export const fetchBatchResult = async (instituteId: number) => {
+  const { data } = await dashboardApi.get(`/users-batch-upload/${instituteId}`);
+  return data.data;
+};

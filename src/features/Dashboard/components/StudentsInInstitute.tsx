@@ -136,8 +136,8 @@ const StudentsInInstitute = () => {
     queryFn: () => getAllPrograms(instituteId ?? ""),
   });
   // Get filter values from URL or use defaults
-  const programId = searchParams.get("programId") || "2";
-  const isActive = searchParams.get("isActive") || "1";
+  const programId = searchParams.get("programId");
+  const isActive = searchParams.get("isActive");
 
   // Temporary filter states (for editing before applying)
   const [tempProgramId, setTempProgramId] = useState(programId);

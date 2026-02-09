@@ -94,6 +94,7 @@ import EditSystemUser from "@/features/Dashboard/components/EditSystemUser";
 import SystemUserDetails from "@/pages/dashboard/SystemUserDetails";
 import LessonDetailsDashboard from "@/pages/dashboard/LessonDetailsDashboard";
 import EditLessonData from "@/pages/dashboard/EditLessonData";
+import BatchResults from "@/pages/dashboard/BatchResults";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -156,6 +157,10 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/institutes/:instituteId"
             element={<InstituteDetails />}
+          />
+          <Route
+            path="/dashboard/institutes/batch-results/:instituteId"
+            element={<BatchResults />}
           />
           <Route
             path="/dashboard/institutes/edit/:instituteId"
