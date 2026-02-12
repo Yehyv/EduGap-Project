@@ -8,6 +8,8 @@ import {
   OneToMany,
   ManyToMany,
   JoinTable,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { CourseTranslation } from './course-translation.entity';
 import { Program } from 'src/programs/entities/program.entity';
@@ -16,6 +18,7 @@ import { ProgramCourse } from 'src/programs/entities/program-course.entity';
 import { CourseContent } from './course-content.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Entity()
 export class Course {
@@ -59,4 +62,11 @@ export class Course {
 
   @OneToMany(() => SavedCourse, (savedCourse) => savedCourse.course)
   savedCourseByUser: SavedCourse[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

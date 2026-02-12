@@ -12,6 +12,7 @@ import { UpdateEducatorDto } from './dto/update-educator.dto';
 import { User } from 'src/users/entities/user.entity';
 import { Content } from 'src/contents/entities/content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Injectable()
 export class EducatorsService {
@@ -24,14 +25,23 @@ export class EducatorsService {
     private readonly contentRepo: Repository<Content>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepo: Repository<Enrollment>,
+    @InjectRepository(SystemUser)
+    private readonly sysUserRepo: Repository<SystemUser>,
   ) {}
 
   /** Create */
-  async create(dto: CreateEducatorDto, image?: Express.Multer.File) {
+  async create(
+    dto: CreateEducatorDto,
+    userId: number,
+    image?: Express.Multer.File,
+  ) {
     // 1) هات اليوزر
     const user = await this.userRepo.findOne({ where: { id: dto.userId } });
     if (!user) throw new NotFoundException(`User ${dto.userId} not found`);
 
+    const sysUser = await this.sysUserRepo.findOne({ where: { id: userId } });
+    if (!sysUser)
+      throw new NotFoundException(`System User ${userId} not found`);
     // 2) تأكد ماعندوش educator قبل كده
     const existing = await this.educatorRepo.findOne({
       where: { user: { id: dto.userId } },
@@ -50,6 +60,7 @@ export class EducatorsService {
       image: imageUrl,
       video_intro: dto.video_intro ?? undefined,
       user, // الربط هنا
+      createdBy: sysUser,
     });
 
     const saved = await this.educatorRepo.save(educator);
@@ -80,7 +91,7 @@ export class EducatorsService {
 
     const [items, total] = await this.educatorRepo.findAndCount({
       where,
-      relations: ['user'], // 👈 مهم: عشان نطلع full_name
+      relations: ['user', 'createdBy'], // 👈 مهم: عشان نطلع full_name
       order: { id: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -101,6 +112,10 @@ export class EducatorsService {
         id: e.user?.id ?? null,
         full_name: e.user?.full_name ?? '', // 👈 الاسم
         email: e.user?.email ?? '',
+      },
+      createdBy: {
+        id: e.createdBy?.id ?? null,
+        full_name: e.createdBy?.full_name ?? '',
       },
     }));
 
@@ -142,7 +157,7 @@ export class EducatorsService {
   async findOne(id: number) {
     const educator = await this.educatorRepo.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'createdBy'], // 👈 مهم: عشان نطلع full_name
     });
     if (!educator) throw new NotFoundException(`Educator ${id} not found`);
 
@@ -160,6 +175,10 @@ export class EducatorsService {
         id: educator.user?.id ?? null,
         full_name: educator.user?.full_name ?? '',
         email: educator.user?.email ?? '',
+      },
+      createdBy: {
+        id: educator.createdBy?.id ?? null,
+        full_name: educator.createdBy?.full_name ?? '',
       },
     };
   }

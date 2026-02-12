@@ -10,6 +10,7 @@ import { Institute } from 'src/institutes/entities/institute.entity';
 import { ProgramCourse } from './entities/program-course.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { InstitutePrograms } from 'src/institutes/entities/institute-programs.en
       ProgramCourse,
       InstituteProgramCourse,
       InstitutePrograms,
+      SystemUser,
     ]),
   ],
   controllers: [ProgramsController],

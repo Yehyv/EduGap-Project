@@ -6,9 +6,12 @@ import {
   DeleteDateColumn,
   OneToMany,
   Column,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { ContentCategoryTranslation } from './content-category-translation.entity';
 import { Content } from 'src/contents/entities/content.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Entity()
 export class ContentCategory {
   @PrimaryGeneratedColumn()
@@ -33,4 +36,11 @@ export class ContentCategory {
     cascade: true,
   })
   contents: Content[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

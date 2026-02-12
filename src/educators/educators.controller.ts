@@ -21,6 +21,8 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { imageStorage } from 'src/common/helpers/upload.helper';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -38,9 +40,10 @@ export class EducatorsController {
   @UseInterceptors(FileInterceptor('image', imageStorage('educator-images')))
   create(
     @Body() dto: CreateEducatorDto,
+    @Req() req: AuthenticatedRequest,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.educatorsService.create(dto, image);
+    return this.educatorsService.create(dto, req.user.sub, image);
   }
 
   /**
@@ -51,6 +54,8 @@ export class EducatorsController {
    *  - limit?: number (default 20)
    *  - onlyActive?: number (0/1)
    */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/educators-list')
   findAll(
     @Query('search') search?: string,
@@ -81,12 +86,16 @@ export class EducatorsController {
   }
 
   /** GET /educators/:id — محاضر واحد */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/educator/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.educatorsService.findOne(id);
   }
 
   /** PATCH /educators/:id — تحديث محاضر */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Patch('super-admin/:id')
   @UseInterceptors(FileInterceptor('image', imageStorage('educator-images')))
   update(
@@ -98,6 +107,8 @@ export class EducatorsController {
   }
 
   /** DELETE /educators/:id — حذف (Soft delete) */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Delete('super-admin/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.educatorsService.remove(id);

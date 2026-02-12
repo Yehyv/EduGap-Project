@@ -10,6 +10,7 @@ import {
   JoinTable,
   OneToMany,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { instituteTranslation } from './institute-translation.entity';
 import { User } from 'src/users/entities/user.entity';
@@ -60,4 +61,11 @@ export class Institute {
 
   @ManyToOne(() => Region, (region) => region.institutes)
   region: Region;
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

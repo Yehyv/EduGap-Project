@@ -7,6 +7,7 @@ import { Institute } from './entities/institute.entity';
 import { In, Repository } from 'typeorm';
 import { instituteTranslation } from './entities/institute-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 interface InstituteFiles {
   logo?: Express.Multer.File[];
   image_profile?: Express.Multer.File[];
@@ -34,6 +35,8 @@ interface InstituteRaw {
 
   country_id: number;
   cot_name: string;
+  created_by_name: string;
+  created_by_id: number;
 }
 interface InstituteDropDownRaw {
   id: number;
@@ -48,10 +51,18 @@ export class InstitutesService {
     private instituteTranslationRepository: Repository<instituteTranslation>,
     @InjectRepository(Language)
     private languageRepository: Repository<Language>,
+    @InjectRepository(SystemUser)
+    private systemUserRepository: Repository<SystemUser>,
   ) {}
 
 
-async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
+async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles, userId: number) {
+  const user = await this.systemUserRepository.findOne({
+    where: { id: userId },
+  });
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
   const trs = createInstituteDto.translations ?? [];
   if (!trs.length) {
     throw new BadRequestException('At least one translation is required');
@@ -83,6 +94,7 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
     phone: createInstituteDto.phone,
     region: { id: createInstituteDto.regionId },
     is_active: 1,
+    createdBy: user,
   });
   const savedInstitute = await this.instituteRepository.save(institute);
 
@@ -145,6 +157,7 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
       languageId ? 'cot.language.id = :languageId' : undefined,
       { languageId },
     )
+    .leftJoin('institute.createdBy', 'createdBy')
 
     .select([
       'institute.id',
@@ -155,6 +168,8 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
       'institute.email AS email',
       'institute.is_active AS is_active',
       'institute.createdAt AS createdAt',
+      'createdBy.id AS created_by_id',
+      'createdBy.full_name AS created_by_name',
 
 
 
@@ -204,6 +219,10 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
             },
           },
         },
+        createdBy: {
+          id: r.created_by_id,
+          full_name: r.created_by_name,
+        }
       }));
 }
 
@@ -225,6 +244,7 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
     .leftJoinAndSelect('city.country', 'country')
     .leftJoinAndSelect('country.translations', 'cot')
     .leftJoinAndSelect('cot.language', 'cotLang')
+    .leftJoinAndSelect('institute.createdBy', 'createdBy')
 
     .where('institute.id = :id', { id })
     .getOne();
@@ -249,6 +269,12 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
     contactPersopnName: t.contactPersopnName,
     contactPersonPostion: t.contactPersonPostion,
   })),
+  createdBy: institute.createdBy
+    ? {
+        id: institute.createdBy.id,
+        full_name: institute.createdBy.full_name,
+      }
+    : null,
 
   region: institute.region
     ? {
@@ -276,6 +302,7 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles) {
       }
     : null,
 };
+
 
   }
   async update(id: number, updateInstituteDto: UpdateInstituteDto) {

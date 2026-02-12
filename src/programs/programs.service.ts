@@ -15,6 +15,7 @@ import { ProgramTranslation } from './entities/program-translation.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 interface ProgramRaw {
   program_id: number;
   program_logo: string;
@@ -30,6 +31,8 @@ interface ProgramRaw {
   institute_logo: string;
   institute_name: string;
   students_count: number;
+  created_by_id: number;
+  created_by_name: string;
 }
 @Injectable()
 export class ProgramsService {
@@ -54,15 +57,28 @@ export class ProgramsService {
 
     @InjectRepository(InstitutePrograms)
     private readonly ip: Repository<InstitutePrograms>,
+    @InjectRepository(SystemUser)
+    private readonly sysUserRepository: Repository<SystemUser>,
   ) {}
 
   // ✅ إنشاء برنامج بدون معهد (العزل لاحق بالـ assign)
-  async create(createProgramDto: CreateProgramDto, logo?: Express.Multer.File) {
+  async create(
+    createProgramDto: CreateProgramDto,
+    userId: number,
+    logo?: Express.Multer.File,
+  ) {
+    const user = await this.sysUserRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(`System user with ID ${userId} not found`);
+    }
     const baseUrl = process.env.APP_URL || '';
     const logoPath = logo
       ? `${baseUrl}/uploads/program-images/${logo.filename}`
       : '';
     const program = this.programRepository.create({
+      createdBy: user,
       logo: logoPath,
       isActive: 1,
     });
@@ -103,6 +119,7 @@ export class ProgramsService {
         { languageId },
       )
       .leftJoin('translation.language', 'language')
+      .leftJoin('program.createdBy', 'createdBy')
 
       // ✅ select الأساسي
       .select([
@@ -113,6 +130,8 @@ export class ProgramsService {
         'translation.name AS translation_name',
         'translation.description AS translation_description',
         'language.id AS language_id',
+        'createdBy.id AS created_by_id',
+        'createdBy.full_name AS created_by_name',
       ])
 
       // ✅ subquery بعده
@@ -136,6 +155,10 @@ export class ProgramsService {
 
       // ✅ الاسم الصح
       courses_count: Number(row.courses_count),
+      createdBy: {
+        id: row.created_by_id,
+        full_name: row.created_by_name,
+      },
     }));
   }
 
@@ -144,6 +167,7 @@ export class ProgramsService {
       .createQueryBuilder('program')
       .leftJoin('program.translations', 'translation')
       .leftJoin('translation.language', 'language')
+      .leftJoin('program.createdBy', 'createdBy')
       .select([
         'program.id AS program_id',
         'program.logo AS program_logo',
@@ -151,6 +175,8 @@ export class ProgramsService {
         'translation.name AS translation_name',
         'translation.description AS translation_description',
         'language.id AS language_id',
+        'createdBy.id AS created_by_id',
+        'createdBy.full_name AS created_by_name',
       ])
       .where('program.id = :id', { id })
       .getRawMany<ProgramRaw>();
@@ -168,6 +194,10 @@ export class ProgramsService {
         description: row.translation_description,
         languageId: row.language_id,
       })),
+      createdBy: {
+        id: rows[0].created_by_id,
+        full_name: rows[0].created_by_name,
+      },
     };
   }
 

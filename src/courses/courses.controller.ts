@@ -24,6 +24,8 @@ import { Request } from 'express';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { imageStorage } from 'src/common/helpers/upload.helper';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -40,6 +42,8 @@ export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   /** إنشاء كورس عام (بدون ربط بمعهد/برنامج) */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Post()
   @UseInterceptors(
     FileInterceptor(
@@ -47,15 +51,18 @@ export class CoursesController {
     imageStorage('course-images'),
     )
   )
-  create(@Body() dto: CreateCourseDto, @UploadedFile() image?: Express.Multer.File) {
-    return this.coursesService.create(dto, image);
+  create(@Body() dto: CreateCourseDto, @Req() req: AuthenticatedRequest, @UploadedFile() image?: Express.Multer.File) {
+    return this.coursesService.create(dto, req.user!.sub, image);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/courses-list')
   getCoursesListForAdmin( @Headers('languageId') languageId?: string,) {
     const langId = languageId ? Number(languageId) : undefined;
     return this.coursesService.findAll(langId);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/dropdown/list')
   courseDropDown(
     @Query('programId') programId: string,
@@ -66,6 +73,8 @@ export class CoursesController {
     if (!pid) throw new BadRequestException('programId is required');
     return this.coursesService.courseDropDown(pid, langId);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/dropdown/list/program')
   courseProgramDropDown(
     @Headers('languageId') languageId: number | undefined,
@@ -79,7 +88,8 @@ export class CoursesController {
     if (!pid) throw new BadRequestException('programId is required');
     return this.coursesService.courseProgramDropDown(pid, iid, langId);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/program/:programId/list')
   async programCoursesDropDown(
     @Param('programId', ParseIntPipe) programId: number,
@@ -94,7 +104,6 @@ export class CoursesController {
       ),
     };
   }
-
   /** جميع كورسات المعهد الحالي (من IPC) */
   @Get()
   findAllCoursesForInstitute(
@@ -169,12 +178,16 @@ coursesNav(
       l,
     );
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/course/:id')
   getCourseForAdmin(
     @Param('id', ParseIntPipe) id: number,
   ){
     return this.coursesService.findOne(id);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Patch('super-admin/course-status/:id')
   async changeCourseStatus(@Param('id', ParseIntPipe) id: number) {
     return this.coursesService.toggleActive(id);
@@ -199,7 +212,8 @@ coursesNav(
     const langId = languageId ? Number(languageId) : undefined;
     return this.coursesService.findByProgram(programId, langId);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** تحديث كورس (للأدمن) */
   @Patch('super-admin/:id')
   @UseInterceptors(
@@ -215,13 +229,15 @@ coursesNav(
   ) {
     return this.coursesService.update(id, dto, image);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** حذف كورس (Soft delete) */
   @Delete('super-admin/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.coursesService.remove(id);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** ربط كورس ببرنامج عام (PC) */
   @Patch(':courseId/programs/:programId')
   assignCourseToProgram(
@@ -230,7 +246,8 @@ coursesNav(
   ) {
     return this.coursesService.assignCourseToProgram(programId, courseId);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** ربط كورس ببرنامج مربوط بمعهد (IPC) */
   @Patch(':courseId/programs/:programId/institutes/:instituteId')
   assignCourseToInstituteProgram(
@@ -244,7 +261,8 @@ coursesNav(
       courseId,
     );
   }
-
+@UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** فك ربط كورس من برنامج عام (PC) */
 @Delete(':courseId/programs/:programId')
 removeCourseFromProgram(
@@ -253,7 +271,8 @@ removeCourseFromProgram(
 ) {
   return this.coursesService.removeCourseFromProgram(programId, courseId);
 }
-
+@UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
 /** فك ربط كورس من برنامج تابع لمعهد (IPC) */
 @Delete(':courseId/programs/:programId/institutes/:instituteId')
 removeCourseFromInstituteProgram(

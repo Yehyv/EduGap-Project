@@ -1,4 +1,5 @@
 import { Content } from 'src/contents/entities/content.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Entity,
@@ -11,6 +12,7 @@ import {
   JoinColumn,
   ManyToMany,
   OneToMany,
+  ManyToOne,
 } from 'typeorm';
 @Entity()
 export class Educator {
@@ -47,4 +49,11 @@ export class Educator {
 
   @OneToMany(() => Content, (content) => content.educator)
   contents: Content[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

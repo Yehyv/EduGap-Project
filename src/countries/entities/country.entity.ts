@@ -6,9 +6,12 @@ import {
   PrimaryGeneratedColumn,
   OneToMany,
   Column,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { CountryTranslation } from './country-translation.entity';
 import { City } from 'src/cities/entities/city.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Entity()
 export class Country {
   @PrimaryGeneratedColumn()
@@ -29,4 +32,11 @@ export class Country {
     cascade: true,
   })
   cities: City[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

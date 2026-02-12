@@ -10,11 +10,19 @@ export class SystemRolesService {
     @InjectRepository(SystemRole)
     private readonly sysRoleRepository: Repository<SystemRole>,
   ) {}
-  async create(createSystemRoleDto: CreateSystemRoleDto) {
+  async create(createSystemRoleDto: CreateSystemRoleDto, userId: number) {
+    const user = await this.sysRoleRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException(`User with id ${userId} not found`);
+    const normalizedTitle = createSystemRoleDto.role_title
+      .toUpperCase()
+      .replace(/\s+/g, '_');
     const role = this.sysRoleRepository.create({
-      role_title: createSystemRoleDto.role_title,
+      role_title: normalizedTitle,
       role_category: createSystemRoleDto.role_category,
       is_active: 1,
+      createdBy: user,
     });
     console.log(
       typeof createSystemRoleDto.role_category,
@@ -30,6 +38,7 @@ export class SystemRolesService {
       order: { id: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
+      relations: ['createdBy'],
     });
     if (!items) throw new NotFoundException(`NOT FOUND`);
     const mapped = items.map((role) => ({
@@ -40,6 +49,9 @@ export class SystemRolesService {
       created_at: role.created_at,
       updated_at: role.updated_at,
       deleted_at: role.deleted_at,
+      createdBy: role.createdBy
+        ? { id: role.createdBy.id, name: role.createdBy.full_name }
+        : null,
     }));
     return {
       items: mapped,
@@ -55,7 +67,10 @@ export class SystemRolesService {
   }
 
   async findOne(id: number) {
-    const role = await this.sysRoleRepository.findOne({ where: { id } });
+    const role = await this.sysRoleRepository.findOne({
+      where: { id },
+      relations: ['createdBy'],
+    });
     if (!role) throw new NotFoundException(`Role with id ${id} not found`);
     return {
       id: role.id,
@@ -65,6 +80,9 @@ export class SystemRolesService {
       created_at: role.created_at,
       updated_at: role.updated_at,
       deleted_at: role.deleted_at,
+      createdBy: role.createdBy
+        ? { id: role.createdBy.id, name: role.createdBy.full_name }
+        : null,
     };
   }
 

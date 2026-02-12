@@ -6,6 +6,7 @@ import { Country } from './entities/country.entity';
 import { Repository } from 'typeorm';
 import { CountryTranslation } from './entities/country-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 interface CountryDropDownRaw {
   id: number;
   name: string;
@@ -18,10 +19,19 @@ export class CountriesService {
     private countryTranslationRepository: Repository<CountryTranslation>,
     @InjectRepository(Language)
     private languageRepository: Repository<Language>,
+    @InjectRepository(SystemUser)
+    private systemUserRepository: Repository<SystemUser>,
   ) {}
-  async create(createCountryDto: CreateCountryDto) {
+  async create(createCountryDto: CreateCountryDto, userId: number) {
+    const user = await this.systemUserRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new Error(`User with id ${userId} not found`);
+    }
     const country = this.countryRepository.create({
       isActive: 1,
+      createdBy: user,
     });
     const savedCountry = await this.countryRepository.save(country);
     const translations = await Promise.all(
@@ -45,7 +55,7 @@ export class CountriesService {
 
   async findAll(languageId?: number) {
     const countries = await this.countryRepository.find({
-      relations: ['translations', 'translations.language'],
+      relations: ['translations', 'translations.language', 'createdBy'],
     });
     if (!countries.length) return [];
     return countries.map((c) => {
@@ -54,6 +64,10 @@ export class CountriesService {
         c.translations[0];
       return {
         id: c.id,
+        createdBy: {
+          id: c.createdBy?.id,
+          name: c.createdBy?.full_name,
+        },
         isActive: c.isActive,
         name: tr?.name,
       };
@@ -63,7 +77,7 @@ export class CountriesService {
   async findOne(id: number) {
     const country = await this.countryRepository.findOne({
       where: { id },
-      relations: ['translations', 'translations.language'],
+      relations: ['translations', 'translations.language', 'createdBy'],
     });
 
     if (!country) return null;
@@ -71,6 +85,10 @@ export class CountriesService {
     return {
       id: country.id,
       isActive: country.isActive,
+      createdBy: {
+        id: country.createdBy?.id,
+        name: country.createdBy?.full_name,
+      },
       translations: country.translations.map((t) => ({
         name: t.name,
         languageId: t.language.id,

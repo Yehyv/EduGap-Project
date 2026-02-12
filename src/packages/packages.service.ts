@@ -14,6 +14,7 @@ import { Content } from 'src/contents/entities/content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 interface pkgRow {
   pkg_id: number;
   pkg_image: string;
@@ -21,6 +22,8 @@ interface pkgRow {
   translation_description: string;
   translation_outcoms: string;
   pkg_isActive: number;
+  created_by_id: number;
+  created_by_name: string;
 }
 function pickTranslation<T extends { language?: { id?: number } }>(
   list: T[] | undefined,
@@ -41,7 +44,7 @@ export class PackagesService {
     @InjectRepository(Enrollment) private readonly enrollmentRepo: Repository<Enrollment>,
     @InjectRepository(LessonProgress) private readonly progressRepo: Repository<LessonProgress>,
     @InjectRepository(SavedPackage) private readonly savedPackage: Repository<SavedPackage>,
-
+    @InjectRepository(SystemUser) private readonly systemUserRepo: Repository<SystemUser>,
   ) {}
 
   /** helper: upsert translations (replace per language) */
@@ -73,13 +76,18 @@ export class PackagesService {
   }
 
   /** CREATE */
-  async create(dto: CreatePackageDto, image?: Express.Multer.File ) {
+  async create(dto: CreatePackageDto, userId: number, image?: Express.Multer.File ) {
     const baseUrl = process.env.APP_URL || '';
     const imagePath = image
       ? `${baseUrl}/uploads/package-images/${image.filename}`
       : '';
+    const user = await this.systemUserRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`System user with ID ${userId} not found`);
+    }
     const pkg = this.pkgRepo.create({
       image: imagePath,
+      createdBy: user,
     });
     const saved = await this.pkgRepo.save(pkg);
     await this.upsertTranslations(saved, dto.translations);
@@ -95,13 +103,16 @@ export class PackagesService {
         { languageId },
       )
       .leftJoin('translation.language', 'language')
+      .leftJoin('pkg.createdBy', 'createdBy')
       .select([
         'pkg.id AS pkg_id',
         'pkg.image AS pkg_image',
         'pkg.is_active AS pkg_isActive',
         'translation.title AS translation_title',
         'translation.description AS translation_description',
-        'translation.learning_outcoms AS translation_outcoms'
+        'translation.learning_outcoms AS translation_outcoms',
+        'createdBy.id AS created_by_id',
+        'createdBy.full_name AS created_by_name',
       ]);
       const rows = await query.getRawMany<pkgRow>();
       return rows.map((row) => ({
@@ -111,6 +122,10 @@ export class PackagesService {
         title: row.translation_title,
         description: row.translation_description,
         learning_outcoms: row.translation_outcoms,
+        createdBy: row.created_by_id ? {
+          id: row.created_by_id,
+          name: row.created_by_name,
+        } : null,
       }));
   }
   async packagesNav(languageId?: number) {
@@ -137,6 +152,7 @@ export class PackagesService {
     .createQueryBuilder('pkg')
     .leftJoin('pkg.translations', 'translation')
     .leftJoin('translation.language', 'language')
+    .leftJoin('pkg.createdBy', 'createdBy')
     .where('pkg.id = :id', { id })
     .select([
       'pkg.id AS pkg_id',
@@ -145,6 +161,8 @@ export class PackagesService {
       'translation.title AS translation_title',
       'translation.description AS translation_description',
       'translation.learning_outcoms AS translation_outcoms',
+      'createdBy.id AS created_by_id',
+      'createdBy.full_name AS created_by_name',
     ])
     .getRawMany<pkgRow>();
 
@@ -156,6 +174,10 @@ export class PackagesService {
     id: rows[0].pkg_id,
     image: rows[0].pkg_image,
     isActive: rows[0].pkg_isActive,
+    createdBy: rows[0].created_by_id ? {
+      id: rows[0].created_by_id,
+      name: rows[0].created_by_name,
+    } : null,
     translations: rows.map(row => ({
       title: row.translation_title,
       description: row.translation_description,

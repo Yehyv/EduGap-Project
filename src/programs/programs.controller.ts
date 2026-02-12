@@ -18,11 +18,12 @@ import {
 import { ProgramsService } from './programs.service';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Request } from 'express';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { imageStorage } from 'src/common/helpers/upload.helper';
-
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 interface AuthenticatedRequest extends Request {
   user?: {
     sub: number;
@@ -37,6 +38,8 @@ export class ProgramsController {
   constructor(private readonly programsService: ProgramsService) {}
 
   /** إنشاء برنامج (بدون ربط بمعهد) */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Post()
   // @UseGuards(JwtAuthGuard)
   @UseInterceptors(
@@ -45,18 +48,24 @@ export class ProgramsController {
       imageStorage('program-images'),
     ),
   )
-  create(@Body() dto: CreateProgramDto, @UploadedFile() logo?: Express.Multer.File) {
-    return this.programsService.create(dto, logo);
+  create(@Body() dto: CreateProgramDto, @Req() req: AuthenticatedRequest, @UploadedFile() logo?: Express.Multer.File) {
+    return this.programsService.create(dto, req.user!.sub, logo);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
   @Get('super-admin/programs-list')
   findAll(@Headers('languageId') languageId?: string) {
     const langId = languageId ? Number(languageId) : undefined;
     return this.programsService.findAll(langId);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
   @Get('super-admin/program/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.programsService.findOne(id);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
   @Get('super-admin/dropdown/list')
   programDropDown(
     @Query('instituteId') instituteId: number,
@@ -66,6 +75,8 @@ export class ProgramsController {
     const instId = Number(instituteId);
     return this.programsService.ProgramDropDown(instId,langId);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
   @Get('super-admin/dropdown/user/list')
   programsForUserDropDown(
     @Headers('languageId') languageId: number | undefined,
@@ -75,6 +86,8 @@ export class ProgramsController {
     const instId = Number(instituteId);
     return this.programsService.ProgramsForUserDropDown(instId, langId);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
   @Get('super-admin/program/:programId/institutes')
 async institutesForProgram(
   @Param('programId', ParseIntPipe) programId: number,
@@ -87,7 +100,8 @@ async institutesForProgram(
   );
 }
 
-  
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN') // بس ال SUPER_ADMIN و INSTITUTE_ADMIN يقدر يشوف برامج معهد معين
   @Get('super-admin/dropdown/inst-CP')
   instProgCourses(
     @Query('instituteId') instituteId: number,
@@ -98,7 +112,7 @@ async institutesForProgram(
     return this.programsService.programsAndCoursesForInstitute(instId, langId)
   }
 
-  /** برامج عامة متاحة للاختيار (من غير عزل معهد) */
+  
   @Get('selection')
   findAllForSelection(@Headers('languageId') languageId?: string) {
     const langId = languageId ? Number(languageId) : undefined;
@@ -129,7 +143,8 @@ async institutesForProgram(
     const instituteId = req.user!.instituteId;
     return this.programsService.findOneAProgramForInstitute(id, instituteId, langId);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** تحديث برنامج (logo + translations) */
   @Patch('super-admin/:id')
   // @UseGuards(JwtAuthGuard)
@@ -147,13 +162,16 @@ async institutesForProgram(
   ) {
     return this.programsService.update(id, dto, logo);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** حذف برنامج (soft delete) */
   @Delete('super-admin/:id')
   // @UseGuards(JwtAuthGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.programsService.remove(id);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Patch('super-admin/prorgram-status/:id')
   async changeProgramStatus(@Param('id', ParseIntPipe) id: number) {
     return this.programsService.toggleActive(id);

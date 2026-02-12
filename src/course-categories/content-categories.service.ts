@@ -10,6 +10,7 @@ import { ContentCategory } from './entities/content-category.entity';
 import { ContentCategoryTranslation } from './entities/content-category-translation.entity';
 import { CreateContentCategoryDto } from './dto/create-content-category.dto';
 import { UpdateContentCategoryDto } from './dto/update-content-category.dto';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Injectable()
 export class ContentCategoriesService {
@@ -22,12 +23,22 @@ export class ContentCategoriesService {
 
     @InjectRepository(Language)
     private readonly languageRepository: Repository<Language>,
+
+    @InjectRepository(SystemUser)
+    private readonly systemUserRepository: Repository<SystemUser>,
   ) {}
 
   // ✅ إنشاء تصنيف محتوى جديد
-  async create(dto: CreateContentCategoryDto) {
+  async create(dto: CreateContentCategoryDto, userId: number) {
+    const user = await this.systemUserRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
     const category = this.categoryRepository.create({
       is_active: 1,
+      createdBy: user,
     });
 
     const savedCategory = await this.categoryRepository.save(category);
@@ -58,7 +69,7 @@ export class ContentCategoriesService {
   // ✅ عرض كل التصنيفات مع الترجمة المناسبة
   async findAll(languageId?: number) {
     const categories = await this.categoryRepository.find({
-      relations: ['translations', 'translations.language'],
+      relations: ['translations', 'translations.language', 'createdBy'],
       order: { id: 'ASC' },
     });
 
@@ -73,6 +84,12 @@ export class ContentCategoriesService {
         name: selectedTranslation?.name ?? null,
         description: selectedTranslation?.description ?? null,
         is_active: cat.is_active,
+        created_by: cat.createdBy
+          ? {
+              id: cat.createdBy.id,
+              name: cat.createdBy.full_name,
+            }
+          : null,
       };
     });
   }
@@ -81,7 +98,7 @@ export class ContentCategoriesService {
   async findOne(id: number) {
     const category = await this.categoryRepository.findOne({
       where: { id },
-      relations: ['translations', 'translations.language'],
+      relations: ['translations', 'translations.language', 'createdBy'],
     });
 
     if (!category) throw new NotFoundException(`Category ${id} not found`);
@@ -94,6 +111,9 @@ export class ContentCategoriesService {
         description: t.description,
         languageId: t.language.id,
       })),
+      created_by: category.createdBy
+        ? { id: category.createdBy.id, name: category.createdBy.full_name }
+        : null,
     };
   }
 

@@ -5,9 +5,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Country } from './entities/country.entity';
 import { CountryTranslation } from './entities/country-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Country, CountryTranslation, Language])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Country,
+      CountryTranslation,
+      Language,
+      SystemUser,
+    ]),
+  ],
   controllers: [CountriesController],
   providers: [CountriesService],
 })

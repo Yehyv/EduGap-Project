@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -11,6 +12,7 @@ import {
 import { RegionTranslation } from './region-translation.entity';
 import { City } from 'src/cities/entities/city.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Entity()
 export class Region {
   @PrimaryGeneratedColumn()
@@ -38,4 +40,11 @@ export class Region {
   translations: RegionTranslation[];
   @OneToMany(() => Institute, (institutes) => institutes.region)
   institutes: Institute[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

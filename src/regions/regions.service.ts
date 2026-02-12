@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { RegionTranslation } from './entities/region-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { City } from 'src/cities/entities/city.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 interface RegionDropDownRaw {
   id: number;
   name: string;
@@ -21,8 +22,12 @@ export class RegionsService {
     private languageRepository: Repository<Language>,
     @InjectRepository(City)
     private cityRepository: Repository<City>,
+    @InjectRepository(SystemUser)
+    private systemUserRepository: Repository<SystemUser>,
   ) {}
-  async create(createRegionDto: CreateRegionDto) {
+  async create(createRegionDto: CreateRegionDto, userId: number) {
+    const user = await this.systemUserRepository.findOneBy({ id: userId });
+    if (!user) throw new Error(`User with id ${userId} not found`);
     const city = await this.cityRepository.findOne({
       where: { id: createRegionDto.cityId },
     });
@@ -31,6 +36,7 @@ export class RegionsService {
     const region = this.regionRepository.create({
       city: city,
       isActive: 1,
+      createdBy: user,
     });
     const savedRegion = await this.regionRepository.save(region);
     const translations = await Promise.all(
@@ -53,7 +59,7 @@ export class RegionsService {
 
   async findAll(languageId?: number) {
     const regions = await this.regionRepository.find({
-      relations: ['translations', 'translations.language'],
+      relations: ['translations', 'translations.language', 'createdBy'],
     });
     if (!regions.length) return [];
     return regions.map((c) => {
@@ -64,6 +70,10 @@ export class RegionsService {
         id: c.id,
         isActive: c.isActive,
         name: tr?.name,
+        createdBy: {
+          id: c.createdBy?.id,
+          name: c.createdBy ? `${c.createdBy.full_name}` : null,
+        },
       };
     });
   }
@@ -71,7 +81,7 @@ export class RegionsService {
   async findOne(id: number, languageId?: number) {
     const region = await this.regionRepository.findOne({
       where: { id },
-      relations: ['translations', 'translations.language'],
+      relations: ['translations', 'translations.language', 'createdBy'],
     });
     if (!region) return null;
     const tr =
@@ -81,6 +91,10 @@ export class RegionsService {
       id: region.id,
       isActive: region.isActive,
       name: tr?.name,
+      createdBy: {
+        id: region.createdBy?.id,
+        name: region.createdBy ? `${region.createdBy.full_name}` : null,
+      },
     };
   }
 

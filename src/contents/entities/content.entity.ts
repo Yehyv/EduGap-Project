@@ -9,6 +9,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinTable,
+  JoinColumn,
 } from 'typeorm';
 import { ContentTranslation } from './content-translation.entity';
 import { Course } from 'src/courses/entities/course.entity';
@@ -22,6 +23,7 @@ import { SavedLesson } from 'src/saved-lesson/entities/saved-lesson.entity';
 import { LessonMaterial } from 'src/lesson-materials/entities/lesson-material.entity';
 import { LessonNote } from 'src/lesson-notes/entities/lesson-note.entity';
 import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Entity()
 export class Content {
   @PrimaryGeneratedColumn()
@@ -105,4 +107,11 @@ export class Content {
   educator: Educator | null;
   @OneToMany(() => SavedContent, (saved) => saved.content)
   savedByUsers: SavedContent[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

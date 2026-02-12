@@ -24,6 +24,8 @@ import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { imageStorage } from 'src/common/helpers/upload.helper';
 import { UpdateContentDto } from './dto/update-content.dto';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -39,6 +41,8 @@ export class ContentsController {
   ) {}
 
   /** إنشاء محتوى (بدون أي عزل) */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Post()
   @UseInterceptors(
     FileInterceptor(
@@ -46,16 +50,20 @@ export class ContentsController {
     imageStorage('content-images'),
     )
   )
-  create(@Body() dto: CreateContentDto, @UploadedFile() image?: Express.Multer.File) {
-    return this.contentsService.create(dto, image);
+  create(@Body() dto: CreateContentDto,@Req() req: AuthenticatedRequest, @UploadedFile() image?: Express.Multer.File) {
+    return this.contentsService.create(dto, req.user.sub, image);
   }
 
   /** كل المحتويات (فلترة اختيارية باللغة عبر الهيدر languageId) */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/content-list')
   findAll(@Headers('languageId') languageId?: string) {
     const langId = languageId ? Number(languageId) : undefined;
     return this.contentsService.findAll(langId);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/dropdown/list')
   contentDropDown(
     @Query('courseId') courseId: number,
@@ -65,6 +73,8 @@ export class ContentsController {
     const courseIdNum = Number(courseId);
     return this.contentsService.contentDropDown(courseIdNum, langId);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/package/:packageId/list')
 contentsForPackage(
   @Param('packageId', ParseIntPipe) packageId: number,
@@ -75,6 +85,8 @@ contentsForPackage(
     languageId ? Number(languageId) : undefined,
   );
 }
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'SUPER_ADMIN')
 @Get('super-admin/educator/:educatorId/list')
 contentsForEducator(
   @Param('educatorId', ParseIntPipe) educatorId: number,
@@ -86,7 +98,8 @@ contentsForEducator(
   );
 }
 
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/course/:courseId/list')
 getContentsByCourse(
   @Param('courseId', ParseIntPipe) courseId: number,
@@ -97,6 +110,8 @@ getContentsByCourse(
     languageId ? Number(languageId) : undefined,
   );
 }
+@UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
 @Get('super-admin/educators/contents/dropdown')
 contentsUnassignedForEducator(
   @Headers('languageId') languageId?: number,
@@ -132,6 +147,8 @@ contentsUnassignedForEducator(
   //   const courId = Number(courseId)
   //   return this.contentsService.contentsForCourse(courId, langId)
   // }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Patch('super-admin/content-status/:id')
   async changeContentStatus(@Param('id', ParseIntPipe) id: number) {
     return this.contentsService.toggleActive(id);
@@ -365,7 +382,8 @@ findLatestOne(
       programIdNum,
     );
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('ADMIN', 'SUPER_ADMIN')
   /** محتوى واحد بالتفصيل */
   @Get('super-admin/content/:id')
   findOne(
@@ -373,7 +391,8 @@ findLatestOne(
   ) {
     return this.contentsService.findOne(id);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** تحديث المحتوى/الترجمات */
   @Patch('super-admin/:id')
   @UseInterceptors(
@@ -389,7 +408,8 @@ findLatestOne(
   ) {
     return this.contentsService.update(id, dto, image);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** ربط المحتوى بكورسات */
   @Patch(':id/course/:courseIds/assign')
   assignToCourses(
@@ -398,7 +418,8 @@ findLatestOne(
   ) {
     return this.contentsService.assignToCourses(contentId, courseIds);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** فك الربط بين المحتوى وكورسات */
   @Delete(':id/course/:courseIds/unassign')
   removeFromCourses(
@@ -407,18 +428,22 @@ findLatestOne(
   ) {
     return this.contentsService.removeFromCourses(contentId, courseIds);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** حذف (Soft delete) */
   @Delete('super-admin/:id')
   softDelete(@Param('id', ParseIntPipe) id: number) {
     return this.contentsService.softDelete(id);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   /** استرجاع محتوى محذوف */
   @Patch(':id/restore')
   restore(@Param('id', ParseIntPipe) id: number) {
     return this.contentsService.restore(id);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Post(':id/educator/:educatorId/assign')
   assignEducator(
     @Param('id', ParseIntPipe) id: number,
@@ -426,12 +451,14 @@ findLatestOne(
   ) {
     return this.contentsService.assignEducator(id, educatorId);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Delete(':id/educator')
   unassignEducator(@Param('id', ParseIntPipe) id: number) {
     return this.contentsService.unassignEducator(id);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Post(':id/educator/restore')
   restoreEducator(
     @Param('id', ParseIntPipe) id: number,

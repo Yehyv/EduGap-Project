@@ -7,18 +7,36 @@ import {
   Param,
   Delete,
   Headers,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { CitiesService } from './cities.service';
 import { CreateCityDto } from './dto/create-city.dto';
 import { UpdateCityDto } from './dto/update-city.dto';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+  };
+}
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('cities')
 export class CitiesController {
   constructor(private readonly citiesService: CitiesService) {}
 
   @Post()
-  create(@Body() createCityDto: CreateCityDto) {
-    return this.citiesService.create(createCityDto);
+  create(
+    @Body() createCityDto: CreateCityDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.citiesService.create(createCityDto, req.user!.sub);
   }
 
   @Get()

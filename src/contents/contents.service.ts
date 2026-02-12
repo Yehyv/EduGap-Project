@@ -31,6 +31,8 @@ interface contentRow {
   translation_what_to_learn: string[];
   category_id: number;
   categoryTranslation_name: string;
+  created_by_id: number;
+  created_by_full_name: string;
 }
 @Injectable()
 export class ContentsService {
@@ -94,7 +96,15 @@ export class ContentsService {
   /** ----------------------------------------------------------------
    * ✅ إنشاء محتوى جديد فقط (بدون أي ربط بالكورسات)
    * ---------------------------------------------------------------- */
-  async create(dto: CreateContentDto, image?: Express.Multer.File) {
+  async create(
+    dto: CreateContentDto,
+    userId: number,
+    image?: Express.Multer.File,
+  ) {
+    const user = await this.educatorRepo.findOne({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('User not found');
     const category = await this.categoryRepo.findOne({
       where: { id: dto.categoryId },
     });
@@ -110,6 +120,7 @@ export class ContentsService {
       adVideo: dto.adVideo ?? '',
       contentCategory: category,
       hasPrerequiest: dto.hasPrerequiest ?? 0,
+      createdBy: user,
     });
 
     const savedContent = await this.contentRepo.save(content);
@@ -143,29 +154,6 @@ export class ContentsService {
    * ✅ عرض كل المحتويات
    * ---------------------------------------------------------------- */
   async findAll(languageId?: number) {
-    // const contents = await this.contentRepo.find({
-    //   relations: ['translations', 'contentCategory'],
-    //   order: { id: 'DESC' },
-    // });
-
-    // return contents.map((c) => {
-    //   const tr =
-    //     c.translations.find((t) => t.language?.id === languageId) ||
-    //     c.translations[0];
-
-    //   return {
-    //     id: c.id,
-    //     name: tr?.name ?? '',
-    //     description: tr?.description ?? '',
-    //     image: c.image,
-    //     level: c.level,
-    //     rate: c.rate,
-    //     whatToLearn: tr?.what_to_learn?.split(',') ?? [],
-    //     category: {
-    //       id: c.contentCategory?.id ?? null,
-    //     },
-    //   };
-    // });
     const query = this.contentRepo
       .createQueryBuilder('content')
       .leftJoin(
@@ -182,17 +170,20 @@ export class ContentsService {
         languageId ? 'categoryTranslation.languageId = :languageId' : undefined,
         { languageId },
       )
+      .leftJoin('content.createdBy', 'createdBy')
       .select([
-        'content.id',
-        'content.image',
-        'content.level',
-        'content.rate',
-        'translation.id',
-        'translation.name',
-        'translation.description',
-        'translation.what_to_learn',
-        'category.id',
-        'categoryTranslation.name',
+        'content.id AS content_id',
+        'content.image AS content_image',
+        'content.level AS content_level',
+        'content.rate AS content_rate',
+        'translation.id AS translation_id',
+        'translation.name AS translation_name',
+        'translation.description AS translation_description',
+        'translation.what_to_learn AS translation_what_to_learn',
+        'category.id AS category_id',
+        'categoryTranslation.name AS categoryTranslation_name',
+        'createdBy.id AS created_by_id',
+        'createdBy.full_name AS created_by_full_name',
       ]);
     const rows = await query.getRawMany<contentRow>();
     return rows.map((r) => ({
@@ -205,6 +196,9 @@ export class ContentsService {
       whatToLearn: r.translation_what_to_learn,
       categoryId: r.category_id,
       categoryName: r.categoryTranslation_name,
+      createdBy: r.created_by_id
+        ? { id: r.created_by_id, name: r.created_by_full_name }
+        : null,
     }));
   }
 
@@ -219,6 +213,7 @@ export class ContentsService {
       .leftJoinAndSelect('content.contentCategory', 'category')
       .leftJoinAndSelect('category.translations', 'categoryTranslation')
       .leftJoinAndSelect('categoryTranslation.language', 'categoryLanguage')
+      .leftJoinAndSelect('content.createdBy', 'createdBy')
       .where('content.id = :id', { id })
       .getOne();
 
@@ -243,6 +238,9 @@ export class ContentsService {
           name: ct.name,
         })),
       },
+      createdBy: content.createdBy
+        ? { id: content.createdBy.id, name: content.createdBy.full_name }
+        : null,
     };
   }
 

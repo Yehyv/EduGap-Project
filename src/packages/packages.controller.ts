@@ -20,6 +20,9 @@ import { UpdatePackageDto } from './dto/update-package.dto';
 import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { imageStorage } from 'src/common/helpers/upload.helper';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 interface AuthenticatedRequest extends Request {
   user?: {
     sub: number;
@@ -31,16 +34,19 @@ interface AuthenticatedRequest extends Request {
 @Controller('packages')
 export class PackagesController {
   constructor(private readonly packagesService: PackagesService) {}
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Post()
   @UseInterceptors(FileInterceptor('image', imageStorage('package-images')))
   create(
     @Body() createPackageDto: CreatePackageDto,
+    @Req() req: AuthenticatedRequest,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.packagesService.create(createPackageDto, image);
+    return this.packagesService.create(createPackageDto, req.user!.sub, image);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/packages-list')
   findAll(@Headers('languageId') languageId?: string) {
     const langId = languageId ? Number(languageId) : undefined;
@@ -51,12 +57,14 @@ export class PackagesController {
     const langId = languageId ? Number(languageId) : undefined;
     return this.packagesService.packagesNav(langId);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/package/:id')
   findOne(@Param('id') id: number) {
     return this.packagesService.findOne(id);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Patch('super-admin/:id')
   @UseInterceptors(FileInterceptor('image', imageStorage('package-images')))
   update(
@@ -66,7 +74,8 @@ export class PackagesController {
   ) {
     return this.packagesService.update(id, updatePackageDto, image);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Delete('super-admin/:id')
   remove(@Param('id') id: string) {
     return this.packagesService.remove(+id);

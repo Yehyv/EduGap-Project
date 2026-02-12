@@ -22,6 +22,7 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { Content } from 'src/contents/entities/content.entity';
 import { TopicWithLessonsStatus } from './types/lesson-status.types';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 type ReactionStatus = 'liked' | 'disliked' | 'none';
 type SavedStatus = 'saved' | 'unsaved';
@@ -43,6 +44,7 @@ export class LessonsService {
     @InjectRepository(Content) private readonly contentRepo: Repository<Content>,
     @InjectRepository(Enrollment) private readonly enrollRepo: Repository<Enrollment>,
     @InjectRepository(LessonProgress) private readonly progressRepo: Repository<LessonProgress>,
+    @InjectRepository(SystemUser) private readonly sysUserRepo: Repository<SystemUser>,
   ) {}
 
   /** احسب الترتيب التالي داخل نفس الـ Topic */
@@ -63,9 +65,11 @@ export class LessonsService {
 
   /** إنشاء Lesson داخل Topic محدد (بدون أي عزل معهد/كورس) */
  
-async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
+async create(dto: CreateLessonDto, userId: number, image?: Express.Multer.File ) {
   const topic = await this.topicRepo.findOne({ where: { id: dto.topicId } });
   if (!topic) throw new NotFoundException('Topic not found');
+  const user = await this.sysUserRepo.findOne({ where: { id: userId } });
+  if (!user) throw new NotFoundException('User not found');
   const baseUrl = process.env.APP_URL || '';
   const imageUrl = image
       ? `${baseUrl}/uploads/lesson-images/${image.filename}`
@@ -88,6 +92,7 @@ async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
     video_link: dto.videoLink ?? undefined,
     lesson_type: dto.lessonType ?? 0,
     image: imageUrl,
+    createdBy: user,
     questions_percentage_score:
       (dto.lessonType ?? 0) === 1
         ? (dto.questionsPercentageScore ?? undefined)
@@ -106,7 +111,8 @@ async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
   async findAll(languageId?: number, topicId?: number) {
     const qb = this.lessonRepo
       .createQueryBuilder('lesson')
-      .leftJoinAndSelect('lesson.translations', 'tr');
+      .leftJoinAndSelect('lesson.translations', 'tr')
+      .leftJoinAndSelect('lesson.createdBy', 'createdBy');
 
     if (topicId) qb.where('lesson.topicId = :topicId', { topicId });
     if (languageId) qb.andWhere('tr.language_id = :languageId', { languageId });
@@ -129,6 +135,7 @@ async create(dto: CreateLessonDto, image?: Express.Multer.File ) {
     .leftJoin('lesson.topic', 'topic')
     .leftJoin('topic.translations', 'tt')
     .leftJoin('tt.language', 'ttlang')
+    .leftJoin('lesson.createdBy', 'createdBy')
     .where('lesson.id = :id', { id });
 
   if (topicId !== undefined) {

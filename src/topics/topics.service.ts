@@ -13,6 +13,7 @@ import { Content } from 'src/contents/entities/content.entity';
 
 import { CreateTopicDto, TopicTranslationDto } from './dto/create-topic.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 interface topicRow {
   topic_id: number;
   topic_order_id: number;
@@ -20,6 +21,8 @@ interface topicRow {
   topic_translation_name: string;
   topic_translation_description: string;
   topic_content_id: number;
+  created_by_id: number;
+  created_by_name: string;
 }
 @Injectable()
 export class TopicsService {
@@ -32,6 +35,8 @@ export class TopicsService {
     private readonly langRepo: Repository<Language>,
     @InjectRepository(Content)
     private readonly contentRepo: Repository<Content>,
+    @InjectRepository(SystemUser)
+    private readonly systemUserRepo: Repository<SystemUser>,
   ) {}
 
   /** Helper: يحسب order_id التالي داخل نفس الـ content */
@@ -45,7 +50,9 @@ export class TopicsService {
   }
 
   /** إنشاء Topic داخل Content محدد (Content مستقل تمامًا) */
-  async create(dto: CreateTopicDto) {
+  async create(dto: CreateTopicDto, userId: number) {
+    const user = await this.systemUserRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
     const content = await this.contentRepo.findOne({
       where: { id: dto.contentId },
     });
@@ -58,6 +65,7 @@ export class TopicsService {
       content,
       order_id: order,
       is_active: dto.isActive ?? 1,
+      createdBy: user,
     });
     const saved = await this.topicRepo.save(topic);
 
@@ -74,6 +82,7 @@ export class TopicsService {
       .leftJoin('topic.translations', 'translation', languageId ? 'translation.languageId = :languageId' : undefined, { languageId})
       .leftJoin('translation.language', 'language')
       .leftJoin('topic.content', 'content')
+      .leftJoin('topic.createdBy', 'createdBy')
       .where('content.id = :contentId', {  contentId  })
       .select([
         'topic.id',
@@ -82,6 +91,8 @@ export class TopicsService {
         'translation.name AS topic_translation_name',
         'translation.description AS topic_translation_description',
         'content.id AS topic_content_id',
+        'createdBy.id AS created_by_id',
+        'createdBy.name AS created_by_name',
       ]);
     const rows = await query.getRawMany<topicRow>();
     if( !rows ) throw new NotFoundException('topic not found');
@@ -91,7 +102,11 @@ export class TopicsService {
       is_active: r.topic_is_active,
       name: r.topic_translation_name,
       description: r.topic_translation_description,
-      contentId : r.topic_content_id      
+      contentId : r.topic_content_id,
+      createdBy: {
+        id: r.created_by_id,
+        name: r.created_by_name,
+      } 
     }))
 
   }
@@ -102,6 +117,7 @@ export class TopicsService {
     .createQueryBuilder('topic')
     .leftJoin('topic.translations', 'translation')
     .leftJoin('topic.content', 'content')
+    .leftJoin('topic.createdBy', 'createdBy')
     .andWhere('topic.id = :id', { id });
 
   if (contentId !== undefined) {
@@ -116,6 +132,8 @@ export class TopicsService {
       'translation.name AS topic_translation_name',
       'translation.description AS topic_translation_description',
       'content.id AS topic_content_id',
+      'createdBy.id AS created_by_id',
+      'createdBy.name AS created_by_name',
     ])
     .getRawMany<topicRow>();
 

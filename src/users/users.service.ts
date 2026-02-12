@@ -17,6 +17,7 @@ import { ActivationLog } from './entities/activation-log.entity';
 import { CreateStudentDto } from './dto/create-student.dto';
 import * as ExcelJS from 'exceljs';
 import { Response } from 'express';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 interface userRow {
   user_id: number;
   user_full_name: string;
@@ -36,7 +37,8 @@ interface userRow {
   role_id: number;
   role_role_title: string;
   role_role_category: number;
-
+  created_by_id: number;
+  created_by_name: string;
 }
 @Injectable()
 export class UsersService {
@@ -53,6 +55,8 @@ export class UsersService {
     private readonly systemRoleRepo: Repository<SystemRole>,
     @InjectRepository(ActivationLog)
     private readonly activationLogRepo: Repository<ActivationLog>,
+    @InjectRepository(SystemUser)
+    private readonly systemUserRepo: Repository<SystemUser>,
   ) {}
 
   private async logPasswordAction(
@@ -78,31 +82,79 @@ export class UsersService {
   }
 
   // Create User with default password = phone, username = national_id
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const { instituteId, programId, phone, national_id, ...rest } =
-      createUserDto;
+  async create(createUserDto: CreateUserDto, userId: number): Promise<User> {
+    const sysUser = await this.systemUserRepo.findOne({
+      where: { id: userId },
+    });
+
+    if (!sysUser) {
+      throw new NotFoundException(`System user with ID ${userId} not found`);
+    }
+
+    // ✅ تحقق من institute
+    let institute: Institute | null = null;
+    if (createUserDto.instituteId) {
+      institute = await this.instituteRepositry.findOne({
+        where: { id: createUserDto.instituteId },
+      });
+
+      if (!institute) {
+        throw new NotFoundException(
+          `Institute with ID ${createUserDto.instituteId} not found`,
+        );
+      }
+    }
+
+    // ✅ تحقق من program
+    let program: Program | null = null;
+    if (createUserDto.programId) {
+      program = await this.programRepository.findOne({
+        where: { id: createUserDto.programId },
+      });
+
+      if (!program) {
+        throw new NotFoundException(
+          `Program with ID ${createUserDto.programId} not found`,
+        );
+      }
+    }
+
+    const { phone, national_id, ...rest } = createUserDto;
+
     const username = national_id;
     const hashedPassword = await this.hashPassword(phone);
     const baseUrl = process.env.APP_URL || '';
     const profileImage = `${baseUrl}/uploads/defaults/default-user.png`;
+
     const user = this.userRepositry.create({
       ...rest,
       username,
       national_id,
       phone,
       password: hashedPassword,
-      institute: instituteId ? { id: instituteId } : undefined,
-      program: programId ? { id: programId } : undefined,
+      institute: institute ?? undefined,
+      program: program ?? undefined,
       added_type: createUserDto.added_type || 0,
       is_verified: 0,
       is_active: 1,
       user_image: profileImage,
       UserRole: { id: createUserDto.roleId },
+      createdBy: sysUser,
     });
 
     return this.userRepositry.save(user);
   }
-  async createStudent(createUserDto: CreateStudentDto): Promise<User> {
+
+  async createStudent(
+    createUserDto: CreateStudentDto,
+    userId: number,
+  ): Promise<User> {
+    const sysUser = await this.systemUserRepo.findOne({
+      where: { id: userId },
+    });
+    if (!sysUser) {
+      throw new NotFoundException(`System user with ID ${userId} not found`);
+    }
     const { instituteId, programId, phone, national_id, ...rest } =
       createUserDto;
     const username = national_id;
@@ -129,6 +181,7 @@ export class UsersService {
       is_active: 1,
       user_image: profileImage,
       UserRole: { id: user_role.id },
+      createdBy: sysUser,
     });
 
     return this.userRepositry.save(user);
@@ -145,6 +198,7 @@ export class UsersService {
         { languageId },
       )
       .leftJoin('user.UserRole', 'role')
+      .leftJoin('user.createdBy', 'createdBy')
       .select([
         'user.id AS user_id',
         'user.full_name AS user_full_name',
@@ -153,6 +207,8 @@ export class UsersService {
         'user.createdAt AS createdAt',
         'user.is_active AS user_is_active',
         'user.user_image AS user_user_image',
+        'createdBy.id AS created_by_id',
+        'createdBy.full_name AS created_by_name',
 
         'it.name AS it_name',
 
@@ -183,6 +239,10 @@ export class UsersService {
         role: {
           role_title: u.role_role_title,
           role_category: u.role_role_category,
+        },
+        createdBy: {
+          id: u.created_by_id,
+          name: u.created_by_name,
         },
       })),
     };
@@ -271,23 +331,26 @@ export class UsersService {
         { languageId },
       )
       .leftJoin('user.UserRole', 'role')
+      .leftJoin('user.createdBy', 'createdBy')
       .where('user.id = :id', { id })
       .select([
-        'user.id',
-        'user.full_name',
-        'user.username',
-        'user.email',
-        'user.phone',
-        'user.phone_key',
-        'user.is_active',
-        'user.user_image',
-        'institute.id',
-        'institute.logo',
-        'it.name',
-        'pt.name',
-        'role.role_title',
-        'role.id',
-        'role.role_category',
+        'user.id AS user_id',
+        'user.full_name AS user_full_name',
+        'user.username AS user_username',
+        'user.email AS user_email',
+        'user.phone AS user_phone',
+        'user.phone_key AS phone_key',
+        'user.is_active AS user_is_active',
+        'user.user_image AS user_user_image',
+        'institute.id AS institute_id',
+        'institute.logo AS institute_logo',
+        'it.name AS it_name',
+        'pt.name AS pt_name',
+        'role.role_title AS role_role_title',
+        'role.id AS role_id',
+        'role.role_category AS role_role_category',
+        'createdBy.id AS created_by_id',
+        'createdBy.full_name AS created_by_full_name',
       ]);
     const row = await query.getRawOne<userRow>();
     if (!row) {
@@ -313,6 +376,10 @@ export class UsersService {
         role_category: row.role_role_category,
       },
       program: row.pt_name,
+      createdBy: {
+        id: row.created_by_id,
+        full_name: row.created_by_name,
+      },
     };
   }
 
@@ -372,7 +439,7 @@ export class UsersService {
   async remove(id: number): Promise<{ message: string }> {
     const user = await this.userRepositry.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`User with id ${id} not found`);
-    await this.userRepositry.softDelete(id);
+    await this.userRepositry.softRemove(user);
     return { message: 'user deleted successfully' };
   }
 

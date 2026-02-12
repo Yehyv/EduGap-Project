@@ -28,6 +28,7 @@ import { PasswordAction } from './password-action.entity';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 import { ActivationLog } from './activation-log.entity';
 import { UsersBatchUpload } from 'src/users-batch-upload/entities/users-batch-upload.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -156,4 +157,11 @@ export class User {
 
   @ManyToOne(() => UsersBatchUpload, { nullable: true })
   batchUpload?: UsersBatchUpload;
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

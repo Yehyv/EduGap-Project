@@ -44,6 +44,7 @@ import { RegionsModule } from './regions/regions.module';
 import { SystemRolesModule } from './system-roles/system-roles.module';
 import { SystemAuthModule } from './system-auth/system-auth.module';
 import { UsersBatchUploadModule } from './users-batch-upload/users-batch-upload.module';
+import { AuditSubscriber } from './common/subscribers/audit.subscriber';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -96,6 +97,6 @@ import { UsersBatchUploadModule } from './users-batch-upload/users-batch-upload.
     UsersBatchUploadModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AuditSubscriber],
 })
 export class AppModule {}

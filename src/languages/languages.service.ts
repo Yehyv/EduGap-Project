@@ -5,12 +5,15 @@ import { Repository, IsNull } from 'typeorm';
 import { Language } from './entities/language.entity';
 import { CreateLanguageDto } from './dto/create-language.dto';
 import { UpdateLanguageDto } from './dto/update-language.dto';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Injectable()
 export class LanguagesService {
   constructor(
     @InjectRepository(Language)
     private readonly languageRepo: Repository<Language>,
+    @InjectRepository(SystemUser)
+    private readonly systemUserRepo: Repository<SystemUser>,
   ) {}
 
   // helper: حوّل boolean -> 0/1 (مع default)
@@ -20,7 +23,11 @@ export class LanguagesService {
   }
 
   /** Create */
-  async create(dto: CreateLanguageDto): Promise<Language> {
+  async create(dto: CreateLanguageDto, userId: number): Promise<Language> {
+    const systemUser = await this.systemUserRepo.findOne({ where: { id: userId } });
+    if (!systemUser) {
+      throw new NotFoundException('System user not found');
+    }
     const name = dto.name.trim();
 
     // لو هي الافتراضية، اطفي أي افتراضية تانية
@@ -35,31 +42,61 @@ export class LanguagesService {
       name,
       isDefault: isDefault,
       isActive: isActive,
+      createdBy: systemUser,
     });
 
     return this.languageRepo.save(lang);
   }
 
   /** List (غير المحذوفة) */
-  async findAll(): Promise<Language[]> {
+  async findAll(){
+    const languages = await this.languageRepo.find({
+      where: { deletedAt: IsNull() },
+      order: { id: 'ASC' },
+      relations: ['createdBy'],
+    });
+    return languages.map((c) => {
+      return {
+        ...c,
+        createdBy: c.createdBy ? {
+          id: c.createdBy.id,
+          name: c.createdBy.full_name,
+        } : null,
+      };
+    });
+  }
+
+  /** List (غير المحذوفة) */
+  async findAllSimple(): Promise<Language[]> {
     return this.languageRepo.find({
       where: { deletedAt: IsNull() },
       order: { id: 'ASC' },
+      relations: ['createdBy'],
     });
   }
 
   /** Get one (غير محذوف) */
-  async findOne(id: number): Promise<Language> {
+  async findOne(id: number) {
     const language = await this.languageRepo.findOne({
       where: { id, deletedAt: IsNull() },
+      relations: ['createdBy'],
     });
     if (!language) throw new NotFoundException('Language not found');
-    return language;
+    return {
+      ...language,
+      createdBy: language.createdBy ? {
+        id: language.createdBy.id,
+        name: language.createdBy.full_name,
+      } : null,
+    };
   }
 
   /** Update */
-  async update(id: number, dto: UpdateLanguageDto): Promise<Language> {
-    const language = await this.findOne(id);
+  async update(id: number, dto: UpdateLanguageDto) {
+    const language = await this.languageRepo.findOneBy({ id });
+    if (!language) {
+      throw new NotFoundException('Language not found');
+    }
 
     if (typeof dto.name === 'string') {
       language.name = dto.name.trim();
@@ -79,12 +116,14 @@ export class LanguagesService {
     }
 
     await this.languageRepo.save(language);
-    return this.findOne(id);
   }
 
   /** Soft delete */
   async softDelete(id: number): Promise<{ message: string }> {
-    const language = await this.findOne(id);
+    const language = await this.languageRepo.findOneBy({ id });
+    if (!language) {
+      throw new NotFoundException('Language not found');
+    }
     await this.languageRepo.softRemove(language);
     return { message: 'language deleted successfully' };
   }

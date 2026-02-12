@@ -20,6 +20,7 @@ import { Content } from 'src/contents/entities/content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 interface courseRow {
   course_id: number;
   course_image: string;
@@ -28,6 +29,8 @@ interface courseRow {
   translation_name: string;
   translation_description: string;
   translation_whatToLearn: string[];
+  created_by_id: number;
+  created_by_name: string;
 }
 @Injectable()
 export class CoursesService {
@@ -64,10 +67,21 @@ export class CoursesService {
 
     @InjectRepository(SavedCourse)
     private readonly savedCourse: Repository<SavedCourse>,
+
+    @InjectRepository(SystemUser)
+    private readonly systemUserRepository: Repository<SystemUser>,
   ) {}
 
   /** 1) إنشاء كورس عام بدون أي ربط */
-  async create(dto: CreateCourseDto, image?: Express.Multer.File) {
+  async create(
+    dto: CreateCourseDto,
+    userId: number,
+    image?: Express.Multer.File,
+  ) {
+    const user = await this.systemUserRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException(`User ${userId} not found`);
     const baseUrl = process.env.APP_URL || '';
     const imagePath = image
       ? `${baseUrl}/uploads/course-images/${image.filename}`
@@ -76,6 +90,7 @@ export class CoursesService {
       image: imagePath,
       notes: dto.notes,
       isActive: 1,
+      createdBy: user,
     });
     const savedCourse = await this.courseRepository.save(course);
 
@@ -380,6 +395,7 @@ export class CoursesService {
         { languageId },
       )
       .leftJoin('translation.language', 'language')
+      .leftJoin('course.createdBy', 'created_by')
       .select([
         'course.id AS course_id',
         'course.image AS course_image',
@@ -388,6 +404,8 @@ export class CoursesService {
         'translation.name AS translation_name',
         'translation.description AS translation_description',
         'translation.whatToLearn AS translation_whatToLearn',
+        'created_by.id AS created_by_id',
+        'created_by.name AS created_by_name',
       ]);
     const rows = await query.getRawMany<courseRow>();
     return rows.map((row) => ({
@@ -398,6 +416,10 @@ export class CoursesService {
       name: row.translation_name,
       description: row.translation_description,
       whatToLearn: row.translation_whatToLearn ?? [],
+      createdBy: {
+        id: row.created_by_id,
+        name: row.created_by_name,
+      },
     }));
   }
   async findOne(id: number) {
@@ -405,6 +427,7 @@ export class CoursesService {
       .createQueryBuilder('course')
       .leftJoin('course.translations', 'translation')
       .leftJoin('translation.language', 'language')
+      .leftJoin('course.createdBy', 'created_by')
       .where('course.id = :id', { id })
       .select([
         'course.id AS course_id',
@@ -413,6 +436,8 @@ export class CoursesService {
         'translation.name AS translation_name',
         'translation.description AS translation_description',
         'translation.whatToLearn AS translation_whatToLearn',
+        'created_by.id AS created_by_id',
+        'created_by.name AS created_by_name',
       ])
       .getRawMany<courseRow>();
 
@@ -427,6 +452,10 @@ export class CoursesService {
         description: row.translation_description,
         whatToLearn: row.translation_whatToLearn ?? [],
       })),
+      createdBy: {
+        id: rows[0].created_by_id,
+        name: rows[0].created_by_name,
+      },
     };
   }
 

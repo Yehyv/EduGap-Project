@@ -13,6 +13,7 @@ import { ProgramCourse } from 'src/programs/entities/program-course.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
       InstitutePrograms,
       LessonProgress,
       SavedCourse,
+      SystemUser,
     ]),
   ],
   controllers: [CoursesController],

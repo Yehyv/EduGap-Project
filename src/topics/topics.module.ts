@@ -7,6 +7,7 @@ import { Content } from 'src/contents/entities/content.entity';
 import { TopicTranslation } from './entities/topic-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { Lesson } from 'src/lessons/entities/lesson.entity';
       Language,
       Content,
       Lesson,
+      SystemUser,
     ]),
   ],
   controllers: [TopicsController],

@@ -74,4 +74,7 @@ export class SystemUser {
 
   @OneToMany(() => ActivationLog, (activationLog) => activationLog.systemUser)
   activationLogs: ActivationLog[];
+
+  @OneToMany(() => Institute, (institute) => institute.createdBy)
+  institutes: Institute[];
 }

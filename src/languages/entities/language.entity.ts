@@ -1,3 +1,4 @@
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import {
   Entity,
   Column,
@@ -5,6 +6,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 @Entity()
 export class Language {
@@ -28,4 +31,11 @@ export class Language {
 
   @Column({ type: 'enum', enum: [0, 1], default: 1 })
   isActive: number;
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   Column,
+  JoinColumn,
 } from 'typeorm';
 import { LessonTranslation } from './lesson-translation.entity';
 import { Topic } from 'src/topics/entities/topic.entity';
@@ -17,6 +18,7 @@ import { LessonMaterial } from 'src/lesson-materials/entities/lesson-material.en
 import { LessonNote } from 'src/lesson-notes/entities/lesson-note.entity';
 import { LessonReaction } from 'src/lesson-reactions/entities/lesson-reaction.entity';
 import { Question } from 'src/questions/entities/question.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 export enum LessonType {
   LESSON = 0,
   QUESTIONS = 1,
@@ -89,4 +91,11 @@ export class Lesson {
 
   @OneToMany(() => Question, (question) => question.lesson)
   questions: Question[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

@@ -5,6 +5,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import * as express from 'express';
 import { join } from 'path';
+import { ContextInterceptor } from './common/interceptors/context.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,6 +16,7 @@ async function bootstrap() {
     }),
   );
   app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(new ContextInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
   app.enableCors({
     origin: [

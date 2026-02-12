@@ -16,6 +16,7 @@ import { Content } from 'src/contents/entities/content.entity';
 import { Progress } from 'src/progress/entities/progress.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonUnlockGuard } from './lesson-unlock.guard';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { LessonUnlockGuard } from './lesson-unlock.guard';
       Content,
       Progress,
       Enrollment,
+      SystemUser,
     ]),
   ],
   controllers: [LessonsController],

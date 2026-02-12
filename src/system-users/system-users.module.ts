@@ -14,6 +14,7 @@ import { ActivationLog } from 'src/users/entities/activation-log.entity';
       Institute,
       SystemRole,
       ActivationLog,
+      Institute,
     ]),
   ],
   controllers: [SystemUsersController],

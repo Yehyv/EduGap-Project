@@ -7,9 +7,12 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { PackageTranslation } from './package-translation.entity';
 import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Entity('packages')
 export class Package {
   @PrimaryGeneratedColumn()
@@ -41,4 +44,11 @@ export class Package {
 
   @OneToMany(() => SavedPackage, (saved) => saved.package)
   savedByUsers: SavedPackage[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+      nullable: true,
+      onDelete: 'SET NULL',
+    })
+    @JoinColumn({ name: 'created_by' })
+    createdBy: SystemUser;
 }

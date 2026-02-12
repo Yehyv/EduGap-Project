@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
@@ -36,4 +37,12 @@ export class Transaction {
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+      nullable: true,
+      onDelete: 'SET NULL',
+    })
+    @JoinColumn({ name: 'created_by' })
+    createdBy: SystemUser;
+
 }

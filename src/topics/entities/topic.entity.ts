@@ -7,10 +7,12 @@ import {
   ManyToOne,
   OneToMany,
   Column,
+  JoinColumn,
 } from 'typeorm';
 import { Content } from 'src/contents/entities/content.entity';
 import { TopicTranslation } from './topic-translation.entity';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Entity()
 export class Topic {
   @PrimaryGeneratedColumn()
@@ -42,4 +44,11 @@ export class Topic {
 
   @OneToMany(() => Lesson, (lesson) => lesson.topic)
   lessons: Lesson[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

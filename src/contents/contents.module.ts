@@ -20,6 +20,7 @@ import { SavedContent } from 'src/saved-contents/entities/saved-content.entity';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { Progress } from 'src/progress/entities/progress.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { Progress } from 'src/progress/entities/progress.entity';
       Lesson,
       LessonProgress,
       Lesson,
+      SystemUser,
     ]),
     EnrollmentsModule,
   ],

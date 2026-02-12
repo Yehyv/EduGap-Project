@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { Language } from 'src/languages/entities/language.entity';
 import { CityTranslation } from './entities/city-translation.entity';
 import { Country } from 'src/countries/entities/country.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 interface CityDropDownRaw {
   id: number;
   name: string;
@@ -21,8 +22,12 @@ export class CitiesService {
     private languageRepository: Repository<Language>,
     @InjectRepository(Country)
     private readonly countryRepository: Repository<Country>,
+    @InjectRepository(SystemUser)
+    private readonly systemUserRepository: Repository<SystemUser>,
   ) {}
-  async create(createCityDto: CreateCityDto) {
+  async create(createCityDto: CreateCityDto, userId: number) {
+    const user = await this.systemUserRepository.findOneBy({ id: userId });
+    if (!user) throw new Error(`User with id ${userId} not found`);
     const country = await this.countryRepository.findOne({
       where: { id: createCityDto.countryId },
     });
@@ -30,6 +35,7 @@ export class CitiesService {
     const city = this.cityRepository.create({
       country,
       isActive: 1,
+      createdBy: user,
     });
     const savedCity = await this.cityRepository.save(city);
     const translations = await Promise.all(
@@ -52,7 +58,7 @@ export class CitiesService {
 
   async findAll(languageId?: number) {
     const cities = await this.cityRepository.find({
-      relations: ['translations', 'translations.language'],
+      relations: ['translations', 'translations.language', 'createdBy'],
     });
     if (!cities.length) return [];
     return cities.map((c) => {
@@ -63,6 +69,10 @@ export class CitiesService {
         id: c.id,
         isActive: c.isActive,
         name: tr?.name,
+        createdBy: {
+          id: c.createdBy?.id,
+          name: c.createdBy?.full_name,
+        },
       };
     });
   }
@@ -70,7 +80,7 @@ export class CitiesService {
   async findOne(id: number, languageId?: number) {
     const city = await this.cityRepository.findOne({
       where: { id },
-      relations: ['translations', 'translations.language'],
+      relations: ['translations', 'translations.language', 'createdBy'],
     });
     if (!city) return null;
     const tr =
@@ -80,6 +90,10 @@ export class CitiesService {
       id: city.id,
       isActive: city.isActive,
       name: tr?.name,
+      createdBy: {
+        id: city.createdBy?.id,
+        name: city.createdBy?.full_name,
+      },
     };
   }
 

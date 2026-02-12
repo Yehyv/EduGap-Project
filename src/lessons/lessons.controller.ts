@@ -22,6 +22,8 @@ import { TopicWithLessonsStatus } from './types/lesson-status.types';
 import { LessonUnlockGuard } from './lesson-unlock.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { imageStorage } from 'src/common/helpers/upload.helper';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -42,9 +44,10 @@ export class LessonsController {
   @UseInterceptors(FileInterceptor('image', imageStorage('lesson-images')))
   create(
     @Body() createLessonDto: CreateLessonDto,
+    @Req() req: AuthenticatedRequest,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.lessonsService.create(createLessonDto, image);
+    return this.lessonsService.create(createLessonDto, req.user.sub, image);
   }
 
   /**

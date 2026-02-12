@@ -7,18 +7,35 @@ import {
   Param,
   Delete,
   Headers,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { RegionsService } from './regions.service';
 import { CreateRegionDto } from './dto/create-region.dto';
 import { UpdateRegionDto } from './dto/update-region.dto';
-
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+interface AuthenticatedRequest extends Request {
+  user?: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+  };
+}
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('regions')
 export class RegionsController {
   constructor(private readonly regionsService: RegionsService) {}
 
   @Post()
-  create(@Body() createRegionDto: CreateRegionDto) {
-    return this.regionsService.create(createRegionDto);
+  create(
+    @Body() createRegionDto: CreateRegionDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.regionsService.create(createRegionDto, req.user!.sub);
   }
 
   @Get()

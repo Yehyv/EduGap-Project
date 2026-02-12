@@ -7,6 +7,7 @@ import { RegionTranslation } from './entities/region-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { City } from 'src/cities/entities/city.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { Institute } from 'src/institutes/entities/institute.entity';
       Language,
       City,
       Institute,
+      SystemUser,
     ]),
   ],
   controllers: [RegionsController],

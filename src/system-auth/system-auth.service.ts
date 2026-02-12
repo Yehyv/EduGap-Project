@@ -23,12 +23,12 @@ export class SystemAuthService {
     const payload = {
       sub: user.id,
       instituteId: user.institute?.id || 0,
-      roleId: user.SysUserrole?.id,
+      role: user.SysUserrole?.role_title,
     };
     const tokens = await this.getTokens(
       payload.sub,
       payload.instituteId,
-      payload.roleId,
+      payload.role,
     );
     await this.systemUserRepository.update(user.id, {
       refresh_token: await bcrypt.hash(tokens.refresh_token, 10),
@@ -53,18 +53,18 @@ export class SystemAuthService {
     const tokens = await this.getTokens(
       user.id,
       user.institute?.id || 0,
-      user.SysUserrole?.id || 0,
+      user.SysUserrole?.role_title || '',
     );
     await this.systemUserService.update(user.id, {
       refreshToken: await bcrypt.hash(tokens.refresh_token, 10),
     });
     return tokens;
   }
-  async getTokens(userId: number, instituteId: number, roleId: number) {
+  async getTokens(userId: number, instituteId: number, role: string) {
     const payload = {
       sub: userId,
       instituteId,
-      roleId,
+      role,
     };
     const [accessToken, refresh_token] = await Promise.all([
       this.jwtService.signAsync(payload, {

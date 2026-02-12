@@ -6,12 +6,15 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { ProgramTranslation } from './program-translation.entity';
 import { ProgramCourse } from './program-course.entity';
 import { User } from 'src/users/entities/user.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Entity()
 export class Program {
   @PrimaryGeneratedColumn()
@@ -48,4 +51,11 @@ export class Program {
 
   @OneToMany(() => InstitutePrograms, (ip) => ip.program)
   institutePrograms: InstitutePrograms[];
+
+  @ManyToOne(() => SystemUser, (sysUser) => sysUser.institutes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: SystemUser;
 }

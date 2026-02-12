@@ -7,18 +7,34 @@ import {
   Param,
   Delete,
   Headers,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { CountriesService } from './countries.service';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
-
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+interface AuthenticatedRequest extends Request {
+  user?: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+  };
+}
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('countries')
 export class CountriesController {
   constructor(private readonly countriesService: CountriesService) {}
-
   @Post()
-  create(@Body() createCountryDto: CreateCountryDto) {
-    return this.countriesService.create(createCountryDto);
+  create(
+    @Body() createCountryDto: CreateCountryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.countriesService.create(createCountryDto, req.user!.sub);
   }
 
   @Get()
