@@ -5,7 +5,6 @@ import Swal from "sweetalert2";
 
 import PlusIcon from "@/assets/svgs/PlusSign.svg?react";
 import PlusIconGray from "@/assets/svgs/PlusIconGray.svg?react";
-import TrashIcon from "@/assets/svgs/TrashIconDashboard.svg?react";
 import CloseIcon from "@/assets/svgs/CloseRedIcon.svg?react";
 
 import AddCourseToInstituteProgram from "./AddCourseToInstituteProgram";
@@ -45,7 +44,7 @@ const ArrowUp = () => (
   </svg>
 );
 
-const PorgramsInInstitute = () => {
+const ProgramsInInstitute = () => {
   /* ===== State ===== */
   const [openId, setOpenId] = useState<number | null>(null);
 
@@ -241,4 +240,4 @@ const PorgramsInInstitute = () => {
   );
 };
 
-export default PorgramsInInstitute;
+export default ProgramsInInstitute;

@@ -159,7 +159,7 @@ export default function AppRoutes() {
             element={<InstituteDetails />}
           />
           <Route
-            path="/dashboard/institutes/batch-results/:instituteId"
+            path="/dashboard/institutes/:instituteId/batch-results/:batchId"
             element={<BatchResults />}
           />
           <Route

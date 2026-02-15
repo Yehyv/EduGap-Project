@@ -15,7 +15,7 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import { phoneKeys } from "@/shared/utils/globals";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Formik, Form, useFormikContext } from "formik";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import * as Yup from "yup";
@@ -32,7 +32,6 @@ const CitiesHandler = ({ setCitiesOptions, setRegionsOptions }) => {
 
   useEffect(() => {
     if (values.country && data?.data) {
-      // Only update when we have data
       setCitiesOptions(
         data.data.map((c) => ({
           label: c.name,
@@ -40,7 +39,6 @@ const CitiesHandler = ({ setCitiesOptions, setRegionsOptions }) => {
         })),
       );
     } else if (!values.country) {
-      // Clear everything when no country selected
       setCitiesOptions([]);
       setRegionsOptions([]);
       setFieldValue("city", "");
@@ -69,7 +67,6 @@ const RegionsHandler = ({ setRegionsOptions }) => {
 
   useEffect(() => {
     if (values.city && data?.data) {
-      // Only update when we have data
       setRegionsOptions(
         data.data.map((r) => ({
           label: r.name,
@@ -77,7 +74,6 @@ const RegionsHandler = ({ setRegionsOptions }) => {
         })),
       );
     } else if (!values.city) {
-      // Clear region when no city selected
       setRegionsOptions([]);
       setFieldValue("region", "");
     }
@@ -92,42 +88,47 @@ const EditInstituteDetails = () => {
   const [regionsOptions, setRegionsOptions] = useState([]);
   const { instituteId } = useParams();
   const queryClient = useQueryClient();
+
+  /* ================= QUERIES ================= */
   const { data, isLoading } = useQuery({
     queryKey: ["getInstituteDataToUpdate", instituteId],
     queryFn: () => instituteDetails(instituteId),
   });
 
-  /* ================= COUNTRIES ================= */
   const { data: countriesData } = useQuery({
     queryKey: ["getCountries"],
     queryFn: getCountriesDropdown,
   });
 
-  const countriesOptions = countriesData?.data?.map((c) => ({
-    label: c.name,
-    value: c.id,
-  }));
+  const countriesOptions = useMemo(
+    () =>
+      countriesData?.data?.map((c) => ({
+        label: c.name,
+        value: c.id,
+      })) || [],
+    [countriesData],
+  );
 
   /* ================= MUTATION ================= */
   const { mutate, isPending } = useMutation({
     mutationFn: editInstitute,
-
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Institute edited successfully",
+        title: t("success") || "Success",
+        text:
+          t("instituteEditedSuccessfully") || "Institute edited successfully",
         confirmButtonColor: "#0d6efd",
       });
       queryClient.invalidateQueries({ queryKey: ["getInstituteDataToUpdate"] });
     },
-
     onError: (error) => {
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: t("error") || "Error",
         text:
           error?.response?.data?.message ||
+          t("somethingWentWrong") ||
           "Something went wrong, please try again",
         confirmButtonColor: "#dc3545",
       });
@@ -147,7 +148,7 @@ const EditInstituteDetails = () => {
     formData.append(
       "location",
       `${values.city}, ${
-        countriesOptions?.find((c) => c.value === values.country)?.label
+        countriesOptions?.find((c) => c.value === values.country)?.label || ""
       }`,
     );
 
@@ -155,7 +156,6 @@ const EditInstituteDetails = () => {
       formData.append(`translations[${index}][name]`, item.name);
       formData.append(`translations[${index}][address]`, item.address);
       formData.append(`translations[${index}][languageId]`, item.languageId);
-
       formData.append(
         `translations[${index}][contactPersopnName]`,
         values.contact_person_name,
@@ -171,21 +171,73 @@ const EditInstituteDetails = () => {
 
   /* ================= VALIDATION ================= */
   const instituteSchema = Yup.object({
-    logo: Yup.mixed().required(),
-    image_profile: Yup.mixed().required(),
-    email: Yup.string().email().required(),
-    phoneKey: Yup.string().required(),
-    phone: Yup.string().required(),
-    country: Yup.string().required(),
-    city: Yup.string().required(),
-    region: Yup.string().required(),
+    logo: Yup.mixed().required(t("logoRequired") || "Logo is required"),
+    image_profile: Yup.mixed().required(
+      t("profileImageRequired") || "Profile image is required",
+    ),
+    email: Yup.string()
+      .email(t("invalidEmail") || "Invalid email")
+      .required(t("emailRequired") || "Email is required"),
+    phoneKey: Yup.string().required(
+      t("phoneKeyRequired") || "Phone key is required",
+    ),
+    phone: Yup.string().required(t("phoneRequired") || "Phone is required"),
+    country: Yup.string().required(
+      t("countryRequired") || "Country is required",
+    ),
+    city: Yup.string().required(t("cityRequired") || "City is required"),
+    region: Yup.string().required(t("regionRequired") || "Region is required"),
+    contact_person_name: Yup.string().required(
+      t("contactPersonRequired") || "Contact person is required",
+    ),
+    contact_person_position: Yup.string().required(
+      t("contactPersonPositionRequired") ||
+        "Contact person position is required",
+    ),
     translations: Yup.array().of(
       Yup.object({
-        name: Yup.string().required(),
-        address: Yup.string().required(),
+        name: Yup.string().required(t("nameRequired") || "Name is required"),
+        address: Yup.string().required(
+          t("addressRequired") || "Address is required",
+        ),
       }),
     ),
   });
+
+  /* ================= DATA COMPARISON ================= */
+  const hasDataChanged = (currentValues, originalData) => {
+    if (!originalData) return true;
+
+    const originalDataAr = originalData.translations[0];
+    const originalDataEn = originalData.translations[1];
+
+    // Compare simple fields
+    const simpleFieldsChanged =
+      currentValues.email !== originalData.email ||
+      currentValues.phoneKey !== originalData.phone_key ||
+      currentValues.phone !== originalData.phone ||
+      currentValues.country !== originalData.region?.city?.country?.id ||
+      currentValues.city !== originalData.region?.city?.id ||
+      currentValues.region !== originalData.region?.id ||
+      currentValues.contact_person_name !==
+        originalDataEn?.contactPersopnName ||
+      currentValues.contact_person_position !==
+        originalDataEn?.contactPersonPostion;
+
+    // Compare translations
+    const translationsChanged =
+      currentValues.translations[0].name !== originalDataAr?.name ||
+      currentValues.translations[0].address !== originalDataAr?.address ||
+      currentValues.translations[1].name !== originalDataEn?.name ||
+      currentValues.translations[1].address !== originalDataEn?.address;
+
+    // Compare files (check if they are File objects, which means they've been changed)
+    const filesChanged =
+      currentValues.logo instanceof File ||
+      currentValues.image_profile instanceof File;
+
+    return simpleFieldsChanged || translationsChanged || filesChanged;
+  };
 
   const instituteData = data?.data;
   const instituteDataAr = instituteData?.translations[0];
@@ -196,29 +248,31 @@ const EditInstituteDetails = () => {
   return (
     <>
       <DashboardPageTitle
-        text={`Edit Institute ${instituteData?.translation?.name ?? ""}`}
+        text={`${t("editInstitute") || "Edit Institute"} ${
+          instituteDataEn?.name ?? ""
+        }`}
       />
       <Formik
         initialValues={{
-          logo: instituteData?.logo,
-          image_profile: instituteData?.image_profile,
-          email: instituteData?.email,
-          phoneKey: instituteData?.phone_key,
-          phone: instituteData?.phone,
-          country: instituteData?.region?.city?.country?.id,
-          city: instituteData?.region?.city?.id,
-          region: instituteData?.region?.id,
-          contact_person_name: instituteDataEn?.contactPersopnName,
-          contact_person_position: instituteDataEn?.contactPersonPostion,
+          logo: instituteData?.logo || "",
+          image_profile: instituteData?.image_profile || "",
+          email: instituteData?.email || "",
+          phoneKey: instituteData?.phone_key || "",
+          phone: instituteData?.phone || "",
+          country: instituteData?.region?.city?.country?.id || "",
+          city: instituteData?.region?.city?.id || "",
+          region: instituteData?.region?.id || "",
+          contact_person_name: instituteDataEn?.contactPersopnName || "",
+          contact_person_position: instituteDataEn?.contactPersonPostion || "",
           translations: [
             {
-              name: instituteDataAr?.name,
-              address: instituteDataAr?.address,
+              name: instituteDataAr?.name || "",
+              address: instituteDataAr?.address || "",
               languageId: 1,
             },
             {
-              name: instituteDataEn?.name,
-              address: instituteDataEn?.address,
+              name: instituteDataEn?.name || "",
+              address: instituteDataEn?.address || "",
               languageId: 2,
             },
           ],
@@ -226,6 +280,19 @@ const EditInstituteDetails = () => {
         validationSchema={instituteSchema}
         enableReinitialize
         onSubmit={(values, { resetForm }) => {
+          // Check if data has changed
+          if (!hasDataChanged(values, instituteData)) {
+            Swal.fire({
+              icon: "info",
+              title: t("noChanges") || "No Changes",
+              text:
+                t("noDataChanged") ||
+                "No data has been changed. Please make changes before saving.",
+              confirmButtonColor: "#0d6efd",
+            });
+            return;
+          }
+
           const formData = buildFormData(values);
           mutate(
             {
@@ -247,7 +314,32 @@ const EditInstituteDetails = () => {
               setRegionsOptions={setRegionsOptions}
             />
             <RegionsHandler setRegionsOptions={setRegionsOptions} />
+
+            {/* English Section */}
+            <div className="bg-white rounded-xl p-4 mb-4">
+              <h3 className="text-lg font-semibold mb-4">
+                {t("englishInformation") || "English Information"}
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <TextField
+                  label={t("instituteNameEnglish")}
+                  name="translations[1].name"
+                  moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
+                />
+                <TextField
+                  label={t("instituteAddressEnglish")}
+                  name="translations[1].address"
+                  moreStyle="!border-[#ACACAC] bg-[#F9F8F8] pb-12"
+                  as="textarea"
+                />
+              </div>
+            </div>
+
+            {/* Arabic Section */}
             <div className="bg-white rounded-xl p-4">
+              <h3 className="text-lg font-semibold mb-4">
+                {t("arabicInformation") || "Arabic Information"}
+              </h3>
               <div className="grid grid-cols-1 gap-4">
                 <TextField
                   label={t("instituteNameArabic")}
@@ -258,9 +350,17 @@ const EditInstituteDetails = () => {
                   label={t("instituteAddressArabic")}
                   name="translations[0].address"
                   moreStyle="!border-[#ACACAC] bg-[#F9F8F8] pb-12"
+                  as="textarea"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            </div>
+
+            {/* General Information */}
+            <div className="bg-white rounded-xl p-4 mt-4">
+              <h3 className="text-lg font-semibold mb-4">
+                {t("generalInformation") || "General Information"}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <DropdownMenu
                   label={t("country")}
                   name="country"
@@ -310,7 +410,7 @@ const EditInstituteDetails = () => {
                   name="contact_person_position"
                   moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
                 />
-                <div></div>
+                <div className="md:col-span-2"></div>
                 <FileUploadField
                   label={t("logo")}
                   name="logo"
@@ -325,22 +425,13 @@ const EditInstituteDetails = () => {
                 />
               </div>
             </div>
-            <div className="bg-white rounded-xl p-4 mt-4">
-              <TextField
-                label={t("instituteNameEnglish")}
-                name="translations[1].name"
-                moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
-              />
-              <TextField
-                label={t("instituteAddressEnglish")}
-                name="translations[1].address"
-                moreStyle="!border-[#ACACAC] bg-[#F9F8F8] pb-12"
-              />
-            </div>
+
+            {/* Submit Button */}
             <div className="text-end my-5">
               <button
                 type="submit"
-                className="bg-secondary hover:bg-secondary-dark text-white px-12 py-1.5 rounded-xl"
+                disabled={isPending}
+                className="bg-secondary hover:bg-secondary-dark text-white px-12 py-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isPending ? <ButtonLoader /> : t("saveInstitute")}
               </button>

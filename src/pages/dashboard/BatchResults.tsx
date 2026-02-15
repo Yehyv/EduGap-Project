@@ -88,11 +88,11 @@ const BatchResultsSkeleton = () => (
 /* ---------------- Component ---------------- */
 
 const BatchResults = () => {
-  const { instituteId } = useParams();
+  const { batchId, instituteId } = useParams();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["batch-result", instituteId],
-    queryFn: () => fetchBatchResult(instituteId),
+    queryKey: ["batch-result", batchId],
+    queryFn: () => fetchBatchResult(batchId ?? ""),
   });
 
   if (isLoading) return <BatchResultsSkeleton />;
@@ -234,7 +234,7 @@ const BatchResults = () => {
         </div>
       )}
 
-      <div className="flex gap-2 justify-end my-5">
+      <div className="flex gap-2 justify-end my-5 max-md:flex-col">
         <Link to={`/dashboard/institutes/${instituteId}`} className="me-auto">
           <Undo2 className="inline-block me-2" />
           <span>Back To Uploads</span>

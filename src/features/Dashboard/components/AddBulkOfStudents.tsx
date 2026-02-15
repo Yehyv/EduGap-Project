@@ -4,7 +4,7 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState, useRef } from "react";
 import { UploadIcon, XIcon, FileIcon } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
@@ -30,6 +30,7 @@ interface Props {
 
 const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
   const { instituteId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -106,6 +107,11 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
         icon: "success",
         title: "Success",
         text: "Students uploaded successfully",
+      }).then(() => {
+        const batchId = response.data.data.batchId;
+        navigate(
+          `/dashboard/institutes/${instituteId}/batch-results/${batchId}`,
+        );
       });
 
       setReviewModalOpen(false);

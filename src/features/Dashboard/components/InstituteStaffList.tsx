@@ -3,22 +3,17 @@ import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTit
 import {
   deleteStudent,
   getAllPrograms,
-  getStudentsInInstitute,
+  getInstituteStaff,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
 import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
 import SearchIcon from "@/assets/svgs/SearchIconDashboard.svg?react";
-import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
 import FilterIcon from "@/assets/svgs/FilterIcon.svg?react";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link, useParams } from "react-router-dom";
+import type { User } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
-import type { Student } from "@/features/Dashboard/types/dashboardTypes";
-import AddNewStudentToInstitute from "./AddNewStudentToInstitute";
-import AddBulkOfStudents from "./AddBulkOfStudents";
-import DownloadExcelTemplate from "./DownloadExcelTemplate";
-import ExportStudentsButton from "./ExportStudentExcel";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -47,122 +42,145 @@ const customStyles = {
 const columns = [
   {
     name: "Num",
-    selector: (_: unknown, index: number) => index + 1,
+    selector: (_: User, index: number) => index + 1,
+    sortable: false,
     width: "60px",
     style: { justifyContent: "center" },
   },
   {
-    name: "Image",
-    cell: (row: Student) => (
+    name: "Photo",
+    cell: (row: User) => (
       <img
-        src={row?.image || "/default-avatar.png"}
-        alt={row?.name}
+        src={row.image || "/default-avatar.png"}
+        alt={row.full_name}
         className="w-12 h-12 rounded-full object-cover"
       />
     ),
+    sortable: false,
     minWidth: "80px",
     style: { justifyContent: "center" },
   },
   {
     name: "Name",
-    cell: (row: Student) => (
+    cell: (row: User) => (
       <Link
         className="underline text-sm hover:text-secondary"
         to={`/dashboard/users/${row.id}`}
       >
-        {row.name}
+        {row?.name || "-"}
       </Link>
     ),
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
-    name: "Email",
-    selector: (row: Student) => row?.email || "-",
+    name: "User Role",
+    selector: (row: User) => row?.role ?? "-",
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
     name: "Phone",
-    selector: (row: Student) => row?.phone || "-",
+    selector: (row: User) => row?.phone ?? "-",
     sortable: true,
     style: { justifyContent: "center" },
   },
   {
-    name: "Program",
-    selector: (row: Student) => row?.program?.name ?? "-",
+    name: "Created At",
+    selector: (row: User) =>
+      row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-",
     sortable: true,
     style: { justifyContent: "center" },
+  },
+  {
+    name: "Status",
+    style: { justifyContent: "center" },
+    cell: (row: User) => {
+      const isActive = row?.is_active;
+      return (
+        <button
+          className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
+            isActive
+              ? "border-green-500 text-green-500"
+              : "border-red-500 text-red-500"
+          }`}
+        >
+          {isActive ? "Active" : "Inactive"}
+          <span
+            className={`absolute w-1.5 h-1.5 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
+              isActive ? "bg-green-500" : "bg-red-500"
+            }`}
+          />
+        </button>
+      );
+    },
+    sortable: true,
   },
   {
     name: "Edit",
     style: { justifyContent: "center" },
-    cell: (row: Student) => (
+    cell: (row: User) => (
       <Link
-        to={`/dashboard/students/edit/${row?.id}`}
+        to={`/dashboard/users/edit/${row.id}`}
         className="cursor-pointer hover:opacity-70"
       >
         <EditIcon />
       </Link>
     ),
     ignoreRowClick: true,
+    allowOverflow: true,
     button: true,
     minWidth: "50px",
   },
   {
     name: "Delete",
     style: { justifyContent: "center" },
-    cell: (row: Student) => (
+    cell: (row: User) => (
       <DeleteButton
-        deleteApi={() => deleteStudent(row?.id)}
-        successMessage="Student deleted successfully!"
-        errorMessage="Error while deleting student!"
-        refetchFunction="getStudentsInInstitute"
+        deleteApi={() => deleteStudent(row.id)}
+        successMessage="Staff member deleted successfully"
+        errorMessage="Error occurred during deletion"
+        refetchFunction="getInstituteStaff"
       />
     ),
     ignoreRowClick: true,
+    allowOverflow: true,
     button: true,
     minWidth: "60px",
   },
 ];
 
-const StudentsInInstitute = () => {
-  const { instituteId } = useParams();
-  const [isOpenModal, setOpenModal] = useState(false);
-  const [addBulkStudentsModal, setAddBulkStudentsModal] = useState(false);
+const InstituteStaffList = () => {
   const [filterText, setFilterText] = useState("");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const filterDropdownRef = useRef<HTMLDivElement>(null);
+  const { instituteId } = useParams();
 
-  // Use separate state for students filters (not URL-based to avoid conflicts)
-  const [studentProgramId, setStudentProgramId] = useState("");
-  const [studentIsActive, setStudentIsActive] = useState("");
+  // Use separate state for staff filters (not URL-based to avoid conflicts with students)
+  const [staffProgramId, setStaffProgramId] = useState("");
+  const [staffIsActive, setStaffIsActive] = useState("");
 
   // Temporary filter states for editing
   const [tempProgramId, setTempProgramId] = useState("");
   const [tempIsActive, setTempIsActive] = useState("");
 
-  // Fetch all programs
-  const { data: allProgramsInInstitute } = useQuery({
-    queryKey: ["getAllPrograms", instituteId],
-    queryFn: () => getAllPrograms(instituteId ?? ""),
-    enabled: !!instituteId,
-  });
+  // Fetch all programs for the institute
+  const { data: allProgramsInInstitute, isLoading: programsLoading } = useQuery(
+    {
+      queryKey: ["getAllPrograms", instituteId],
+      queryFn: () => getAllPrograms(instituteId ?? ""),
+      enabled: !!instituteId,
+    },
+  );
 
-  // Fetch students with filters
-  const { data, isLoading } = useQuery({
-    queryKey: [
-      "getStudentsInInstitute",
-      instituteId,
-      studentProgramId,
-      studentIsActive,
-    ],
+  // Fetch institute staff with filters
+  const { data: instituteStaffData, isLoading: staffLoading } = useQuery({
+    queryKey: ["getInstituteStaff", instituteId, staffProgramId, staffIsActive],
     queryFn: () =>
-      getStudentsInInstitute(
-        instituteId ?? "",
-        studentProgramId,
-        studentIsActive,
-      ),
+      getInstituteStaff(instituteId ?? "", {
+        programId: staffProgramId,
+        isActive: staffIsActive,
+      }),
     enabled: !!instituteId,
   });
 
@@ -175,8 +193,8 @@ const StudentsInInstitute = () => {
       ) {
         setShowFilterDropdown(false);
         // Reset temp values
-        setTempProgramId(studentProgramId);
-        setTempIsActive(studentIsActive);
+        setTempProgramId(staffProgramId);
+        setTempIsActive(staffIsActive);
       }
     };
 
@@ -187,29 +205,29 @@ const StudentsInInstitute = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showFilterDropdown, studentProgramId, studentIsActive]);
+  }, [showFilterDropdown, staffProgramId, staffIsActive]);
 
   const filteredItems = useMemo(() => {
-    if (!data?.data?.data) return [];
-    return data.data.data.filter((item: Student) =>
-      item?.name?.toLowerCase().includes(filterText.toLowerCase()),
+    if (!instituteStaffData?.data?.data) return [];
+    return instituteStaffData.data.data.filter((item) =>
+      item?.name?.toLowerCase().includes(filterText?.toLowerCase()),
     );
-  }, [filterText, data?.data?.data]);
+  }, [filterText, instituteStaffData]);
 
   const handleApplyFilters = () => {
-    setStudentProgramId(tempProgramId);
-    setStudentIsActive(tempIsActive);
+    setStaffProgramId(tempProgramId);
+    setStaffIsActive(tempIsActive);
     setShowFilterDropdown(false);
   };
 
   const handleClearFilters = () => {
     setTempProgramId("");
     setTempIsActive("");
-    setStudentProgramId("");
-    setStudentIsActive("");
+    setStaffProgramId("");
+    setStaffIsActive("");
   };
 
-  const hasActiveFilters = studentProgramId || studentIsActive;
+  const hasActiveFilters = staffProgramId || staffIsActive;
 
   const subHeaderComponent = useMemo(() => {
     return (
@@ -243,7 +261,7 @@ const StudentsInInstitute = () => {
               <span>Filter</span>
               {hasActiveFilters && (
                 <span className="ml-1 bg-secondary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                  {[studentProgramId, studentIsActive].filter(Boolean).length}
+                  {[staffProgramId, staffIsActive].filter(Boolean).length}
                 </span>
               )}
             </button>
@@ -252,7 +270,7 @@ const StudentsInInstitute = () => {
               <div className="fixed md:absolute top-auto md:top-full left-4 right-4 md:left-0 md:right-auto mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 w-auto md:w-64">
                 <div className="space-y-3">
                   <h3 className="font-semibold text-gray-800 text-sm mb-2">
-                    Filter Students
+                    Filter Staff
                   </h3>
 
                   {/* Program Filter */}
@@ -263,12 +281,13 @@ const StudentsInInstitute = () => {
                     <select
                       value={tempProgramId}
                       onChange={(e) => setTempProgramId(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
+                      disabled={programsLoading}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary disabled:bg-gray-100"
                     >
                       <option value="">All Programs</option>
                       {allProgramsInInstitute?.data?.map((program) => (
-                        <option key={program?.id} value={program?.id}>
-                          {program?.name}
+                        <option key={program.id} value={program.id}>
+                          {program.name}
                         </option>
                       ))}
                     </select>
@@ -312,25 +331,6 @@ const StudentsInInstitute = () => {
             )}
           </div>
         </div>
-
-        {/* Right side - Action Buttons */}
-        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-          <button
-            onClick={() => setOpenModal(true)}
-            className="flex items-center justify-center from-secondary to-secondary-dark text-white bg-gradient-to-r rounded-2xl h-9 px-4 whitespace-nowrap hover:shadow-md transition-shadow"
-          >
-            <PlusIcon className="h-5 w-5" />
-            <span className="ml-2">Add New Student</span>
-          </button>
-
-          <button
-            onClick={() => setAddBulkStudentsModal(true)}
-            className="bg-gradient-to-r justify-center from-[#FCB737] to-[#BB831A] text-white text-sm flex items-center gap-2 rounded-2xl h-9 px-4 whitespace-nowrap hover:shadow-md transition-shadow"
-          >
-            <PlusIcon className="h-5 w-5" />
-            <span className="ml-2">Add List Of Students</span>
-          </button>
-        </div>
       </div>
     );
   }, [
@@ -339,20 +339,20 @@ const StudentsInInstitute = () => {
     tempProgramId,
     tempIsActive,
     hasActiveFilters,
+    programsLoading,
     allProgramsInInstitute,
   ]);
 
   return (
     <>
-      <DashboardPageTitle text="Students" />
-
+      <DashboardPageTitle text="Institute Staff" />
       <div className="w-full">
         <DataTable
           columns={columns}
           data={filteredItems}
           highlightOnHover
           customStyles={customStyles}
-          progressPending={isLoading}
+          progressPending={staffLoading}
           subHeader
           subHeaderComponent={subHeaderComponent}
           pagination
@@ -360,26 +360,12 @@ const StudentsInInstitute = () => {
           paginationRowsPerPageOptions={[10, 20, 30, 50]}
           progressComponent={<CircleLoader />}
           noDataComponent={
-            <div className="py-8 text-gray-500">No students found</div>
+            <div className="py-8 text-gray-500">No staff members found</div>
           }
         />
       </div>
-
-      <div className="flex gap-2 items-center mt-6">
-        <DownloadExcelTemplate excelContent="Add Students" />
-        <ExportStudentsButton />
-      </div>
-
-      <AddNewStudentToInstitute
-        reviewModalOpen={isOpenModal}
-        setReviewModalOpen={setOpenModal}
-      />
-      <AddBulkOfStudents
-        setReviewModalOpen={setAddBulkStudentsModal}
-        reviewModalOpen={addBulkStudentsModal}
-      />
     </>
   );
 };
 
-export default StudentsInInstitute;
+export default InstituteStaffList;

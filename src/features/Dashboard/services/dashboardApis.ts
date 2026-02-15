@@ -630,7 +630,7 @@ export async function getAllProgramsForDropdown(
   instituteId: number | string,
 ): Promise<CitiesResponse> {
   const res = await dashboardApi.get<CitiesResponse>(
-    `/programs/super-admin/dropdown/list/?instituteId=${instituteId}`,
+    `/programs/super-admin/dropdown/list?instituteId=${instituteId}`,
   );
   return res.data;
 }
@@ -1027,7 +1027,39 @@ export async function roleActiveToggle(roleId: number): Promise<void> {
   );
   return res.data;
 }
-export const fetchBatchResult = async (instituteId: number) => {
-  const { data } = await dashboardApi.get(`/users-batch-upload/${instituteId}`);
+export const fetchBatchResult = async (batchId: number | string) => {
+  const { data } = await dashboardApi.get(`/users-batch-upload/${batchId}`);
   return data.data;
+};
+
+interface GetInstituteStaffParams {
+  programId?: string;
+  isActive?: string;
+}
+export const getInstituteStaff = async (
+  instituteId: string,
+  params: GetInstituteStaffParams = {},
+) => {
+  const queryParams = new URLSearchParams();
+
+  if (params.programId) {
+    queryParams.append("programId", params.programId);
+  }
+
+  if (params.isActive) {
+    queryParams.append("isActive", params.isActive);
+  }
+
+  const queryString = queryParams.toString();
+  const url = `/users/super-admin/institute/${instituteId}/stuff${queryString ? `?${queryString}` : ""}`;
+
+  const response = await dashboardApi.get(url);
+  return response.data;
+};
+
+export const getProgramInstitutes = async (programId: string) => {
+  const response = await dashboardApi.get(
+    `/programs/super-admin/program/${programId}/institutes`,
+  );
+  return response.data;
 };

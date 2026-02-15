@@ -217,7 +217,7 @@ const StudentDetails = () => {
 
           <div>
             <h6 className="text-[#444444] text-sm">{t("created_by")}</h6>
-            <p>{student?.createdBy || "-"}</p>
+            <p>{student?.createdBy?.name || "-"}</p>
           </div>
         </div>
       </div>

@@ -30,7 +30,6 @@ const navLinkClass = ({ isActive }) =>
       ? "text-secondary font-bold bg-[#ECF8FF]"
       : "text-[#ACACAC] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
   }
-  dark:hover:bg-gray-700
 `;
 
 const InstitutesPage = () => {
@@ -47,12 +46,12 @@ const InstitutesPage = () => {
   };
 
   return (
-    <div className="min-h-screen gap-2 bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen gap-2 bg-gray-50">
       {/* Sidebar */}
       <aside
         className={`
           flex flex-col justify-between
-          fixed top-0 start-0 h-screen w-64 bg-white z-40 dark:bg-gray-800
+          fixed top-0 start-0 h-screen w-64 bg-white z-40 
           transform transition-transform duration-200
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0 md:fixed
@@ -143,10 +142,10 @@ const InstitutesPage = () => {
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-h-screen ml-0 md:me-4 md:ms-64 pt-2">
         {/* Header */}
-        <header className="py-2 bg-white dark:bg-gray-900 rounded-2xl flex items-center mx-6 justify-between px-4">
+        <header className="py-2 bg-white  rounded-2xl flex items-center mx-6 justify-between px-4">
           <button
             onClick={() => setOpen(true)}
-            className="md:hidden p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="md:hidden p-2 rounded hover:bg-gray-100 "
           >
             <svg
               className="w-6 h-6"
