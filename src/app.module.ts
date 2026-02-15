@@ -17,7 +17,7 @@ import { LessonsModule } from './lessons/lessons.module';
 import { EducatorsModule } from './educators/educators.module';
 import { ProgressModule } from './progress/progress.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
-import { ContentCategoriesModule } from './course-categories/content-categories.module';
+import { ContentCategoriesModule } from './content-categories/content-categories.module';
 import { SystemUsersModule } from './system-users/system-users.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { SavedLessonModule } from './saved-lesson/saved-lesson.module';
@@ -45,6 +45,7 @@ import { SystemRolesModule } from './system-roles/system-roles.module';
 import { SystemAuthModule } from './system-auth/system-auth.module';
 import { UsersBatchUploadModule } from './users-batch-upload/users-batch-upload.module';
 import { AuditSubscriber } from './common/subscribers/audit.subscriber';
+import { CourseCategoriesModule } from './course-categories/course-categories.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -95,6 +96,7 @@ import { AuditSubscriber } from './common/subscribers/audit.subscriber';
     SystemRolesModule,
     SystemAuthModule,
     UsersBatchUploadModule,
+    CourseCategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuditSubscriber],

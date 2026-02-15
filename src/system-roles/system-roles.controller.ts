@@ -31,6 +31,7 @@ interface AuthenticatedRequest extends Request {
 export class SystemRolesController {
   constructor(private readonly systemRolesService: SystemRolesService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(
     @Body() createSystemRoleDto: CreateSystemRoleDto,

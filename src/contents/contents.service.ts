@@ -11,7 +11,7 @@ import { ContentTranslation } from './entities/content-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { Course } from 'src/courses/entities/course.entity';
 import { CourseContent } from 'src/courses/entities/course-content.entity';
-import { ContentCategory } from 'src/course-categories/entities/content-category.entity';
+import { ContentCategory } from 'src/content-categories/entities/content-category.entity';
 import { CreateContentDto } from './dto/create-content.dto';
 import { Package } from 'src/packages/entities/package.entity';
 import { PackageContent } from 'src/packages/entities/package-content.entity';
