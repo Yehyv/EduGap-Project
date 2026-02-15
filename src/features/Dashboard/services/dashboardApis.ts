@@ -1021,6 +1021,14 @@ export async function systemUserActiveToggle(
   );
   return res.data;
 }
+export async function instituteActiveToggle(
+  instituteId: number | string,
+): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `/institutes/super-admin/institute-status/${instituteId}`,
+  );
+  return res.data;
+}
 export async function roleActiveToggle(roleId: number): Promise<void> {
   const res = await dashboardApi.patch<void>(
     `/system-roles/super-admin/role-status/${roleId}`,

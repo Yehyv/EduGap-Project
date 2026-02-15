@@ -3,6 +3,7 @@ import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTit
 import {
   deleteInstitute,
   getInstitutes,
+  instituteActiveToggle,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
@@ -14,6 +15,7 @@ import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { Institute } from "@/features/Dashboard/types/dashboardTypes";
+import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -104,20 +106,14 @@ const columns = [
     cell: (row: Institute) => {
       const isActive = row?.is_active;
       return (
-        <button
-          className={`px-6 py-1 rounded-full border font-medium text-sm text-nowrap relative ${
-            isActive
-              ? "border-green-500 text-green-500"
-              : "border-red-500 text-red-500"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-          <span
-            className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
-              isActive ? " bg-green-500" : " bg-red-500"
-            }`}
-          ></span>
-        </button>
+        <ActiveStatusButton
+          itemId={row.id ?? ""}
+          activateApi={() => instituteActiveToggle(row.id ?? "")}
+          deactivateApi={() => instituteActiveToggle(row.id ?? "")}
+          isActive={isActive ?? false}
+          refetchKey={"getInstitutesForDashboard"}
+          showModal={false}
+        />
       );
     },
     sortable: true,

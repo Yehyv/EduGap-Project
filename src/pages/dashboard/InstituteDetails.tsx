@@ -1,7 +1,9 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useState } from "react";
-import EditIcon from "@/assets/svgs/PencilIcon.svg?react";
-import { instituteDetails } from "@/features/Dashboard/services/dashboardApis";
+import {
+  instituteActiveToggle,
+  instituteDetails,
+} from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
@@ -9,6 +11,7 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import ProgramsInInstitute from "@/features/Dashboard/components/ProgramsInInstitute";
 import StudentsInInstitute from "@/features/Dashboard/components/StudentsInInstitute";
 import InstituteStaffList from "@/features/Dashboard/components/InstituteStaffList";
+import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 
 const InstituteDetails = () => {
   const { instituteId } = useParams();
@@ -51,30 +54,14 @@ const InstituteDetails = () => {
           <h2 className="mb-0">{instituteDataAr?.name ?? ""}</h2>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
-              instituteData?.is_active
-                ? "border-green-500 text-green-500"
-                : "border-red-500 text-red-500"
-            }`}
-          >
-            {instituteData?.is_active ? t("active") : t("inactive")}
-            <span
-              className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 ${
-                instituteData?.is_active ? "bg-green-500" : "bg-red-500"
-              }`}
-            />
-          </button>
-
-          <Link
-            to={`/dashboard/institutes/edit/${instituteData?.id}`}
-            className="bg-gradient-to-r from-[#F6F6F6] to-[#F6F6F6] border border-secondary py-0.5 px-4 rounded-xl shadow-md flex items-center hover:shadow-lg transition-shadow"
-          >
-            <EditIcon className="h-8 mx-2" />
-            <span className="text-secondary">{t("institute_edit")}</span>
-          </Link>
-        </div>
+        <ActiveStatusButton
+          itemId={instituteId ?? ""}
+          activateApi={() => instituteActiveToggle(instituteId ?? "")}
+          deactivateApi={() => instituteActiveToggle(instituteId ?? "")}
+          isActive={instituteData?.is_active ?? false}
+          refetchKey={"instituteDetailsForDashboard"}
+          showModal={false}
+        />
       </div>
 
       {/* ================= TABS ================= */}
