@@ -1,6 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
-
 import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
 import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
 import DashboardIcon from "@/assets/svgs/DashboardIcon.svg?react";
@@ -8,7 +7,6 @@ import GovernmentIcon from "@/assets/svgs/GovernmentIcon.svg?react";
 import StudentIcon from "@/assets/svgs/studentSidebarIcon.svg?react";
 import SystemUsersIcon from "@/assets/svgs/SystemUsersIcon.svg?react";
 import CoursesDashboardIcon from "@/assets/svgs/CoursesDashboardIcon.svg?react";
-import Arrow from "@/assets/svgs/RightArrow.svg?react";
 import ProgramsIcon from "@/assets/svgs/ProgramsIcon.svg?react";
 import LearningPathsIcon from "@/assets/svgs/LearningPaths.svg?react";
 import EducatorsIcon from "@/assets/svgs/educatorsIcon.svg?react";
@@ -16,11 +14,11 @@ import ConentsIcon from "@/assets/svgs/contentIcon.svg?react";
 import LogoutIcon from "@/assets/svgs/LogoutIcon.svg?react";
 import LocationIcon from "@/assets/svgs/LocationIcon.svg?react";
 import SettingSidebarIcon from "@/assets/svgs/SettingSidebarIcon.svg?react";
-import PersonIcon from "@/assets/imgs/ForDev/Person.jpg";
-
 import SearchBar from "@/features/Dashboard/components/SearchBar";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { logoutDashboardUser } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
+import ProfileSection from "@/features/Dashboard/components/ProfileSection";
 
 const navLinkClass = ({ isActive }) =>
   `
@@ -34,6 +32,9 @@ const navLinkClass = ({ isActive }) =>
 
 const InstitutesPage = () => {
   const [open, setOpen] = useState(false);
+  const { lang, setLang } = useLanguage();
+  const { t } = useLanguage();
+
   const { dashboardLogout } = useAuth();
   const navigate = useNavigate();
   const handleLogout = () => {
@@ -50,12 +51,19 @@ const InstitutesPage = () => {
       {/* Sidebar */}
       <aside
         className={`
-          flex flex-col justify-between
-          fixed top-0 start-0 h-screen w-64 bg-white z-40 
-          transform transition-transform duration-200
-          ${open ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0 md:fixed
-        `}
+    flex flex-col justify-between
+    fixed top-0 h-screen w-64 bg-white z-40 shadow-lg
+    transform transition-all duration-300 ease-in-out
+    ${lang === "en" ? "left-0" : "right-0"}
+    ${
+      open
+        ? "translate-x-0 opacity-100"
+        : lang === "en"
+          ? "-translate-x-full opacity-0"
+          : "translate-x-full opacity-0"
+    }
+    md:translate-x-0 md:opacity-100 md:shadow-none
+  `}
       >
         <div>
           <button
@@ -75,59 +83,59 @@ const InstitutesPage = () => {
 
         {/* Navigation */}
         <nav className="py-2 px-3 flex flex-col gap-1 overflow-y-auto">
-          <h5 className="text-[#ACACAC] mb-2 mx-2">Menu</h5>
+          <h5 className="text-[#ACACAC] mb-2 mx-2">{t("menu")}</h5>
 
           <NavLink to="/dashboard/home" end className={navLinkClass}>
             <DashboardIcon />
-            <span>Dashboard</span>
+            <span>{t("dashboard")}</span>
           </NavLink>
 
           <NavLink to="/dashboard/institutes" className={navLinkClass}>
             <GovernmentIcon />
-            <span>Institutes</span>
+            <span>{t("institutes")}</span>
           </NavLink>
 
           <NavLink to="/dashboard/users" className={navLinkClass}>
             <StudentIcon />
-            <span>Users</span>
+            <span>{t("users")}</span>
           </NavLink>
 
           <NavLink to="/dashboard/system-users" className={navLinkClass}>
             <SystemUsersIcon />
-            <span>System Users</span>
+            <span>{t("systemUsers")}</span>
           </NavLink>
 
           <NavLink to="/dashboard/programs" className={navLinkClass}>
             <ProgramsIcon />
-            <span>Programs</span>
+            <span>{t("programs")}</span>
           </NavLink>
 
           <NavLink to="/dashboard/courses" className={navLinkClass}>
             <CoursesDashboardIcon />
-            <span>Courses</span>
+            <span>{t("courses")}</span>
           </NavLink>
 
           <NavLink to="/dashboard/learning-paths" className={navLinkClass}>
             <LearningPathsIcon />
-            <span>Learning Paths</span>
+            <span>{t("learningPaths")}</span>
           </NavLink>
 
           <NavLink to="/dashboard/experts" className={navLinkClass}>
             <EducatorsIcon />
-            <span>Experts</span>
+            <span>{t("experts")}</span>
           </NavLink>
 
           <NavLink to="/dashboard/contents" className={navLinkClass}>
             <ConentsIcon />
-            <span>Training Courses</span>
+            <span>{t("trainingCourses")}</span>
           </NavLink>
           <NavLink to="/dashboard/location" className={navLinkClass}>
             <LocationIcon />
-            <span>Location</span>
+            <span>{t("location")}</span>
           </NavLink>
           <NavLink to="/dashboard/roles" className={navLinkClass}>
             <SettingSidebarIcon />
-            <span>Roles</span>
+            <span>{t("roles")}</span>
           </NavLink>
         </nav>
         <button
@@ -135,7 +143,7 @@ const InstitutesPage = () => {
           className="pb-10 mx-4 pt-2 flex items-center gap-2 text-[#ACACAC] border-t border-[#ACACAC]"
         >
           <LogoutIcon className="rotate-180" />
-          <span>Logout</span>
+          <span>{t("logout")}</span>
         </button>
       </aside>
 
@@ -161,22 +169,15 @@ const InstitutesPage = () => {
             </svg>
           </button>
 
-          <SearchBar placeholder="Search" />
+          <SearchBar placeholder={t("search")} />
 
-          {/* Profile */}
-          <div className="bg-[#F5F5F5] px-2 py-1 rounded-lg flex items-center gap-3 text-sm cursor-pointer shadow-sm hover:shadow-md transition-shadow">
-            <img
-              src={PersonIcon}
-              alt="Person"
-              className="h-10 rounded-lg object-cover"
-              loading="lazy"
-            />
-            <div className="flex-1 overflow-hidden max-sm:hidden">
-              <h5 className="font-medium truncate">Abdullah Shaaban</h5>
-              <span className="text-[#ACACAC] truncate block">Admin</span>
-            </div>
-            <Arrow className="w-5 rotate-90 ms-4 max-sm:hidden" />
-          </div>
+          <ProfileSection
+            userName="Abdullah Shaaban"
+            userRole={t("admin")}
+            userImage="/path/to/profile-image.jpg"
+            currentLang={lang}
+            onLanguageChange={setLang}
+          />
         </header>
 
         {/* Outlet */}

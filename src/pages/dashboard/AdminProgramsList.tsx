@@ -75,6 +75,12 @@ const columns = [
     sortable: true,
     style: { justifyContent: "center" },
   },
+  {
+    name: "Courses Count",
+    selector: (row: ProgramsForAdmin) => row?.courses_count ?? "-",
+    sortable: true,
+    style: { justifyContent: "center" },
+  },
 
   {
     name: "Is Active",

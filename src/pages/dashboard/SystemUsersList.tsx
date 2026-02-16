@@ -87,7 +87,7 @@ const columns = [
   },
   {
     name: "Role",
-    selector: (row: SystemUsers) => row.SysUserrole.role_title,
+    selector: (row: SystemUsers) => row?.SysUserrole?.role_title,
     sortable: true,
     center: true,
   },

@@ -1,3 +1,6 @@
+import dashboardMenuTranslations from "./dashboardTranslations";
+import homeTranslations from "./homeTranslations";
+
 const translations = {
   en: {
     hero_title:
@@ -812,6 +815,8 @@ const translations = {
     expert_name: "Expert Name",
     dashboard: "Dashboard",
     login_dashboard_title: "Login To Your Dashboard",
+    ...dashboardMenuTranslations.en,
+    ...homeTranslations.en,
   },
 
   ar: {
@@ -1675,6 +1680,8 @@ const translations = {
     expert_name: "اسم الخبير",
     dashboard: "لوحة التحكم",
     login_dashboard_title: "تسجيل الدخول الي لوحة التحكم",
+    ...dashboardMenuTranslations.ar,
+    ...homeTranslations.ar,
   },
 } as const;
 

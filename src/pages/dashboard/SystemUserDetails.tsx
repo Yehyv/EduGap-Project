@@ -98,7 +98,7 @@ const SystemUserDetails = () => {
           </div>
           <div>
             <h6 className="text-[#444444] text-sm">Role</h6>
-            <p>{systemUser?.SysUserrole.role_title || "-"}</p>
+            <p>{systemUser?.SysUserrole?.role_title || "-"}</p>
           </div>
 
           <div>
