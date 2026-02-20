@@ -21,6 +21,7 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
+import { CourseCategory } from 'src/course-categories/entities/course-category.entity';
 interface courseRow {
   course_id: number;
   course_image: string;
@@ -31,6 +32,8 @@ interface courseRow {
   translation_whatToLearn: string[];
   created_by_id: number;
   created_by_name: string;
+  category_id: number;
+  category_name: string;
 }
 @Injectable()
 export class CoursesService {
@@ -70,6 +73,9 @@ export class CoursesService {
 
     @InjectRepository(SystemUser)
     private readonly systemUserRepository: Repository<SystemUser>,
+
+    @InjectRepository(CourseCategory)
+    private readonly courseCategoryRepo: Repository<CourseCategory>,
   ) {}
 
   /** 1) إنشاء كورس عام بدون أي ربط */
@@ -91,6 +97,9 @@ export class CoursesService {
       notes: dto.notes,
       isActive: 1,
       createdBy: user,
+      courseCategory: dto.courseCategoryId
+        ? { id: dto.courseCategoryId }
+        : undefined,
     });
     const savedCourse = await this.courseRepository.save(course);
 
@@ -385,9 +394,11 @@ export class CoursesService {
   }
 
   /** بقية الدوال القديمة (findAll / findOne / update / remove) تبقى كما هي تقريبًا */
-  async findAll(languageId?: number) {
+  async findAll(languageId?: number, categoryId?: number) {
     const query = this.courseRepository
       .createQueryBuilder('course')
+
+      // translations
       .leftJoin(
         'course.translations',
         'translation',
@@ -395,19 +406,46 @@ export class CoursesService {
         { languageId },
       )
       .leftJoin('translation.language', 'language')
+
+      // created by
       .leftJoin('course.createdBy', 'created_by')
-      .select([
-        'course.id AS course_id',
-        'course.image AS course_image',
-        'course.isActive',
-        'course.createdAt AS course_createdAt',
-        'translation.name AS translation_name',
-        'translation.description AS translation_description',
-        'translation.whatToLearn AS translation_whatToLearn',
-        'created_by.id AS created_by_id',
-        'created_by.name AS created_by_name',
-      ]);
+
+      // ✅ category join
+      .leftJoin('course.courseCategory', 'category')
+      .leftJoin(
+        'category.translations',
+        'catTr',
+        languageId ? 'catTr.languageId = :languageId' : undefined,
+        { languageId },
+      )
+
+      .where('course.deletedAt IS NULL');
+
+    // ✅ فلتر بالكاتيجوري
+    if (categoryId) {
+      query.andWhere('category.id = :categoryId', { categoryId });
+    }
+
+    query.select([
+      'course.id AS course_id',
+      'course.image AS course_image',
+      'course.isActive AS course_isActive',
+      'course.createdAt AS course_createdAt',
+
+      'translation.name AS translation_name',
+      'translation.description AS translation_description',
+      'translation.whatToLearn AS translation_whatToLearn',
+
+      'created_by.id AS created_by_id',
+      'created_by.full_name AS created_by_name',
+
+      // ✅ category fields
+      'category.id AS category_id',
+      'catTr.name AS category_name',
+    ]);
+
     const rows = await query.getRawMany<courseRow>();
+
     return rows.map((row) => ({
       id: row.course_id,
       image: row.course_image,
@@ -416,6 +454,12 @@ export class CoursesService {
       name: row.translation_name,
       description: row.translation_description,
       whatToLearn: row.translation_whatToLearn ?? [],
+      category: row.category_id
+        ? {
+            id: row.category_id,
+            name: row.category_name,
+          }
+        : null,
       createdBy: {
         id: row.created_by_id,
         name: row.created_by_name,
@@ -437,7 +481,7 @@ export class CoursesService {
         'translation.description AS translation_description',
         'translation.whatToLearn AS translation_whatToLearn',
         'created_by.id AS created_by_id',
-        'created_by.name AS created_by_name',
+        'created_by.full_name AS created_by_name',
       ])
       .getRawMany<courseRow>();
 

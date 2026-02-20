@@ -5,6 +5,29 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Content } from 'src/contents/entities/content.entity';
 import { Repository } from 'typeorm';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import { User } from 'src/users/entities/user.entity';
+interface userRow {
+  user_id: number;
+  user_full_name: string;
+  user_username: string;
+  user_email: string;
+  user_phone: string;
+  phone_key: string;
+  user_user_image: string;
+  user_is_active: number;
+  institute_id: number;
+  institute_logo: string;
+  it_name: string;
+  pt_name: string;
+  createdAt: Date;
+  program_id: number;
+  program_name: string;
+  role_id: number;
+  role_role_title: string;
+  role_role_category: number;
+  created_by_id: number;
+  created_by_name: string;
+}
 type SearchContentItem = {
   id: number;
   name: string;
@@ -29,6 +52,8 @@ export class SearchService {
     private readonly contentRepo: Repository<Content>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepo: Repository<Enrollment>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
   private pickTranslation<T extends { language?: { id?: number } }>(
     list: T[] | undefined,
@@ -201,6 +226,126 @@ export class SearchService {
     const totalPages = Math.ceil(total / limit);
     return {
       items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
+  }
+  async searchUsers(
+    q: string,
+    {
+      page = 1,
+      limit = 10,
+      onlyStudents = false,
+      roleCategory,
+      languageId,
+    }: {
+      page?: number;
+      limit?: number;
+      onlyStudents?: boolean;
+      roleCategory?: number;
+      languageId?: number;
+    } = {},
+  ) {
+    const skip = (page - 1) * limit;
+    const search = q?.trim();
+
+    const qb = this.userRepo
+      .createQueryBuilder('user')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin(
+        'institute.translations',
+        'it',
+        languageId ? 'it.languageId = :languageId' : undefined,
+        { languageId },
+      )
+      .leftJoin('user.UserRole', 'role')
+      .leftJoin('user.createdBy', 'createdBy')
+      .where('user.deletedAt IS NULL')
+      .andWhere('user.is_active = 1');
+
+    // 🔍 Smart Search
+    if (search) {
+      const isNumeric = /^\d+$/.test(search);
+
+      if (isNumeric) {
+        qb.andWhere(`(user.phone LIKE :term OR user.national_id LIKE :term)`, {
+          term: `%${search}%`,
+        });
+      } else {
+        qb.andWhere(`LOWER(user.full_name) LIKE :term`, {
+          term: `%${search.toLowerCase()}%`,
+        });
+      }
+    }
+
+    // 🎓 Students only
+    if (onlyStudents) {
+      qb.andWhere('role.role_title = :roleTitle', {
+        roleTitle: 'STUDENT',
+      });
+    }
+
+    // 🔹 filter by role category (زي findAll)
+    if (roleCategory !== undefined) {
+      qb.andWhere('role.role_category = :roleCategory', {
+        roleCategory,
+      });
+    }
+
+    qb.select([
+      'user.id AS user_id',
+      'user.full_name AS user_full_name',
+      'user.phone_key AS phone_key',
+      'user.phone AS user_phone',
+      'user.createdAt AS createdAt',
+      'user.is_active AS user_is_active',
+      'user.user_image AS user_user_image',
+
+      'createdBy.id AS created_by_id',
+      'createdBy.full_name AS created_by_name',
+
+      'it.name AS it_name',
+
+      'role.role_title AS role_role_title',
+      'role.role_category AS role_role_category',
+    ])
+      .orderBy('user.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [users, total] = await Promise.all([
+      qb.getRawMany<userRow>(),
+      qb.getCount(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      message: 'List of users',
+      users: users.map((u) => ({
+        id: u.user_id,
+        name: u.user_full_name,
+        phone: `${u.phone_key}${u.user_phone}`,
+        phone_key: u.phone_key,
+        institute: u.it_name,
+        createdAt: u.createdAt,
+        is_active: u.user_is_active,
+        user_image: u.user_user_image,
+        role: {
+          role_title: u.role_role_title,
+          role_category: u.role_role_category,
+        },
+        createdBy: {
+          id: u.created_by_id,
+          name: u.created_by_name,
+        },
+      })),
       pagination: {
         page,
         limit,

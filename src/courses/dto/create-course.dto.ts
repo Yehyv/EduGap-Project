@@ -42,4 +42,9 @@ export class CreateCourseDto {
   @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   programIds: number[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  courseCategoryId?: number;
 }

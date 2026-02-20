@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CourseCategory } from './entities/course-category.entity';
 import { CourseCategoryTranslation } from './entities/course-category-translation.entity';
 import { Course } from 'src/courses/entities/course.entity';
+import { Language } from 'src/languages/entities/language.entity';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { Course } from 'src/courses/entities/course.entity';
       CourseCategory,
       CourseCategoryTranslation,
       Course,
+      Language
     ]),
   ],
   controllers: [CourseCategoriesController],

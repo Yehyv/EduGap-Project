@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  Headers,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CourseCategoriesService } from './course-categories.service';
 import { CreateCourseCategoryDto } from './dto/create-course-category.dto';
@@ -13,35 +15,33 @@ import { UpdateCourseCategoryDto } from './dto/update-course-category.dto';
 
 @Controller('course-categories')
 export class CourseCategoriesController {
-  constructor(
-    private readonly courseCategoriesService: CourseCategoriesService,
-  ) {}
+  constructor(private readonly service: CourseCategoriesService) {}
 
   @Post()
-  create(@Body() createCourseCategoryDto: CreateCourseCategoryDto) {
-    return this.courseCategoriesService.create(createCourseCategoryDto);
+  create(@Body() dto: CreateCourseCategoryDto) {
+    return this.service.create(dto);
   }
 
   @Get()
-  findAll() {
-    return this.courseCategoriesService.findAll();
+  findAll(@Headers('languageId') languageId?: string) {
+    return this.service.findAll(languageId ? Number(languageId) : undefined);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.courseCategoriesService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findOne(id);
   }
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
-    @Body() updateCourseCategoryDto: UpdateCourseCategoryDto,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateCourseCategoryDto,
   ) {
-    return this.courseCategoriesService.update(+id, updateCourseCategoryDto);
+    return this.service.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.courseCategoriesService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.service.remove(id);
   }
 }

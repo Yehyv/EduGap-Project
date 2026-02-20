@@ -38,4 +38,17 @@ export class SearchController {
       userId,
     });
   }
+  @Get('users')
+  async searchUsers(
+    @Query('q') q: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('onlyStudents') onlyStudents?: string,
+  ) {
+    return this.searchService.searchUsers(q, {
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
+      onlyStudents: onlyStudents === 'true',
+    });
+  }
 }

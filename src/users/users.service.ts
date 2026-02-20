@@ -187,7 +187,14 @@ export class UsersService {
     return this.userRepositry.save(user);
   }
 
-  async findAll(roleCategory?: number, languageId?: number) {
+  async findAll(
+    roleCategory?: number,
+    languageId?: number,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const skip = (page - 1) * limit;
+
     const usersQuery = this.userRepositry
       .createQueryBuilder('user')
       .leftJoin('user.institute', 'institute')
@@ -199,6 +206,7 @@ export class UsersService {
       )
       .leftJoin('user.UserRole', 'role')
       .leftJoin('user.createdBy', 'createdBy')
+      .where('user.deletedAt IS NULL')
       .select([
         'user.id AS user_id',
         'user.full_name AS user_full_name',
@@ -207,6 +215,7 @@ export class UsersService {
         'user.createdAt AS createdAt',
         'user.is_active AS user_is_active',
         'user.user_image AS user_user_image',
+
         'createdBy.id AS created_by_id',
         'createdBy.full_name AS created_by_name',
 
@@ -216,14 +225,22 @@ export class UsersService {
         'role.role_category AS role_role_category',
       ]);
 
-    // 🔹 filter by role category (optional)
+    // 🔹 filter by role category
     if (roleCategory !== undefined) {
       usersQuery.andWhere('role.role_category = :roleCategory', {
         roleCategory,
       });
     }
 
-    const users = await usersQuery.getRawMany<userRow>();
+    // 🔥 pagination
+    usersQuery.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
+
+    const [users, total] = await Promise.all([
+      usersQuery.getRawMany<userRow>(),
+      usersQuery.getCount(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     return {
       message: 'List of users',
@@ -245,6 +262,14 @@ export class UsersService {
           name: u.created_by_name,
         },
       })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
     };
   }
   async exportUsersToExcel(
@@ -731,8 +756,12 @@ export class UsersService {
     languageId?: number,
     programId?: number,
     isActive?: number,
+    page: number = 1,
+    limit: number = 10,
   ) {
-    const students = this.userRepositry
+    const skip = (page - 1) * limit;
+
+    const qb = this.userRepositry
       .createQueryBuilder('user')
       .innerJoin('user.UserRole', 'role')
       .leftJoin('user.program', 'program')
@@ -753,41 +782,63 @@ export class UsersService {
         'user.phone AS user_phone',
         'user.email AS user_email',
         'user.createdAt AS createdAt',
-
         'program.id AS program_id',
         'pt.name AS program_name',
       ]);
+
     if (programId !== undefined) {
-      students.andWhere('program.id = :programId', { programId });
+      qb.andWhere('program.id = :programId', { programId });
     }
+
     if (isActive !== undefined) {
-      students.andWhere('user.is_active = :isActive', { isActive });
+      qb.andWhere('user.is_active = :isActive', { isActive });
     }
 
-    const studentsList = await students.getRawMany<userRow>();
+    qb.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
 
-    return studentsList.map((s) => ({
-      id: s.user_id,
-      name: s.user_full_name,
-      image: s.user_user_image,
-      phone: `${s.phone_key}${s.user_phone}`,
-      email: s.user_email,
-      createdAt: s.createdAt,
-      program: s.program_id
-        ? {
-            id: s.program_id,
-            name: s.program_name,
-          }
-        : null,
-    }));
+    const [rows, total] = await Promise.all([
+      qb.getRawMany<userRow>(),
+      qb.getCount(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: rows.map((s) => ({
+        id: s.user_id,
+        name: s.user_full_name,
+        image: s.user_user_image,
+        phone: `${s.phone_key}${s.user_phone}`,
+        email: s.user_email,
+        createdAt: s.createdAt,
+        program: s.program_id
+          ? {
+              id: s.program_id,
+              name: s.program_name,
+            }
+          : null,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
   async stuffForInstitute(
     instituteId: number,
     languageId?: number,
     programId?: number,
     isActive?: number,
+    page: number = 1,
+    limit: number = 10,
   ) {
-    const users = this.userRepositry
+    const skip = (page - 1) * limit;
+
+    const qb = this.userRepositry
       .createQueryBuilder('user')
       .innerJoin('user.UserRole', 'role')
       .leftJoin('user.program', 'program')
@@ -798,12 +849,8 @@ export class UsersService {
         { languageId },
       )
       .innerJoin('user.institute', 'institute')
-
-      // 👇 الفرق الوحيد الحقيقي
       .where('role.role_title <> :roleTitle', { roleTitle: 'student' })
-
       .andWhere('institute.id = :instituteId', { instituteId })
-
       .select([
         'user.id AS user_id',
         'user.full_name AS user_full_name',
@@ -812,36 +859,50 @@ export class UsersService {
         'user.phone AS user_phone',
         'user.email AS user_email',
         'user.createdAt AS createdAt',
-
         'program.id AS program_id',
         'pt.name AS program_name',
-        'role.role_title AS role_role_title',
       ]);
 
     if (programId !== undefined) {
-      users.andWhere('program.id = :programId', { programId });
+      qb.andWhere('program.id = :programId', { programId });
     }
 
     if (isActive !== undefined) {
-      users.andWhere('user.is_active = :isActive', { isActive });
+      qb.andWhere('user.is_active = :isActive', { isActive });
     }
 
-    const usersList = await users.getRawMany<userRow>();
+    qb.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
 
-    return usersList.map((u) => ({
-      id: u.user_id,
-      name: u.user_full_name,
-      image: u.user_user_image,
-      phone: `${u.phone_key}${u.user_phone}`,
-      email: u.user_email,
-      createdAt: u.createdAt,
-      role: u.role_role_title,
-      program: u.program_id
-        ? {
-            id: u.program_id,
-            name: u.program_name,
-          }
-        : null,
-    }));
+    const [rows, total] = await Promise.all([
+      qb.getRawMany<userRow>(),
+      qb.getCount(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: rows.map((s) => ({
+        id: s.user_id,
+        name: s.user_full_name,
+        image: s.user_user_image,
+        phone: `${s.phone_key}${s.user_phone}`,
+        email: s.user_email,
+        createdAt: s.createdAt,
+        program: s.program_id
+          ? {
+              id: s.program_id,
+              name: s.program_name,
+            }
+          : null,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
 }

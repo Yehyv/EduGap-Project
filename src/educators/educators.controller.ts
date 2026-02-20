@@ -36,6 +36,8 @@ export class EducatorsController {
   constructor(private readonly educatorsService: EducatorsService) {}
 
   /** POST /educators — إنشاء محاضر */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Post()
   @UseInterceptors(FileInterceptor('image', imageStorage('educator-images')))
   create(
