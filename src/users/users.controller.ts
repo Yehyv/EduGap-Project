@@ -71,7 +71,7 @@ export class UsersController {
     @Query('roleCategory') roleCategory?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('search') search?: string, // 👈 الجديد
+    @Query('search') search?: string,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
     const role_cat = roleCategory ? Number(roleCategory) : undefined;

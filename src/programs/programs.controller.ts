@@ -87,6 +87,18 @@ export class ProgramsController {
     return this.programsService.ProgramsForUserDropDown(instId, langId);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Get('super-admin/course/:courseId/programs')
+  getProgramsForCourse(
+  @Param('courseId') courseId: string,
+  @Headers('languageId') languageId?: string,
+) {
+  return this.programsService.getProgramsForCourse(
+    Number(courseId),
+    languageId ? Number(languageId) : undefined,
+  );
+}
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
   @Get('super-admin/program/:programId/institutes')
 async institutesForProgram(

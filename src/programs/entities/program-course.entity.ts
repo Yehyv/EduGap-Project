@@ -28,8 +28,8 @@ export class ProgramCourse {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deleted_at?: Date | null;
 
-  @Column({ name: 'is_active', type: 'enum', enum: [0, 1], default: 1 })
-  is_active: number;
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
+  isActive: number;
 
   @ManyToOne(() => Program, (program) => program.programCourses)
   @JoinColumn({ name: 'program_id' })

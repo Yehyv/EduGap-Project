@@ -151,7 +151,7 @@ export class CoursesService {
     if (exist && exist.deleted_at) {
       await this.programCourseRepository.restore(exist.id);
       await this.programCourseRepository.update(exist.id, {
-        is_active: 1,
+        isActive: 1,
       });
 
       return { message: 'Course re-assigned to program successfully.' };
@@ -162,7 +162,7 @@ export class CoursesService {
       this.programCourseRepository.create({
         program: { id: programId },
         course: { id: courseId },
-        is_active: 1,
+        isActive: 1,
       }),
     );
 

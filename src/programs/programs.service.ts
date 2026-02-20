@@ -16,6 +16,7 @@ import { Institute } from 'src/institutes/entities/institute.entity';
 import { InstitutePrograms } from 'src/institutes/entities/institute-programs.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
+import { ProgramCourse } from './entities/program-course.entity';
 interface ProgramRaw {
   program_id: number;
   program_logo: string;
@@ -59,6 +60,9 @@ export class ProgramsService {
     private readonly ip: Repository<InstitutePrograms>,
     @InjectRepository(SystemUser)
     private readonly sysUserRepository: Repository<SystemUser>,
+
+    @InjectRepository(ProgramCourse)
+    private readonly pc: Repository<ProgramCourse>,
   ) {}
 
   // ✅ إنشاء برنامج بدون معهد (العزل لاحق بالـ assign)
@@ -563,43 +567,50 @@ export class ProgramsService {
     const query = this.instituteRepository
       .createQueryBuilder('i')
 
-      // المعاهد المرتبطة بالبرنامج
+      // ✅ 1️⃣ get institutes linked to this program
       .innerJoin(
-        'institute_program_course',
-        'ipc',
-        'ipc.instituteId = i.id AND ipc.programId = :programId',
+        'institute_programs',
+        'ip',
+        'ip.institute_id = i.id AND ip.program_id = :programId',
         { programId },
       )
 
-      // ترجمة اسم المعهد
+      // ✅ 2️⃣ get courses for this institute + program combination
+      .leftJoin(
+        'institute_program_course',
+        'ipc',
+        'ipc.instituteId = ip.institute_id AND ipc.programId = ip.program_id',
+      )
+
+      // ✅ 3️⃣ translation
       .leftJoin(
         'i.translations',
         'it',
-        languageId ? 'it.languageId = :languageId' : undefined,
-        { languageId },
+        languageId ? 'it.languageId = :languageId' : '1=1',
+        languageId ? { languageId } : {},
       )
 
-      // الطلاب
+      // ✅ 4️⃣ students for this institute + program
       .leftJoin(
         'user',
         'u',
-        'u.institute_id = i.id AND u.program_id = :programId',
+        `u.institute_id = i.id 
+       AND u.program_id = :programId 
+       AND u.deletedAt IS NULL 
+       AND u.is_active = 1`,
         { programId },
       )
 
       .select([
-        'i.id AS institute_id',
-        'i.logo AS institute_logo',
+        'i.id    AS institute_id',
+        'i.logo  AS institute_logo',
         'it.name AS institute_name',
       ])
-
-      // عدد الكورسات
       .addSelect('COUNT(DISTINCT ipc.courseId)', 'courses_count')
-
-      // عدد الطلاب
       .addSelect('COUNT(DISTINCT u.id)', 'students_count')
 
       .groupBy('i.id')
+      .addGroupBy('i.logo')
       .addGroupBy('it.name');
 
     const rows = await query.getRawMany<ProgramRaw>();
@@ -611,5 +622,48 @@ export class ProgramsService {
       coursesCount: Number(row.courses_count),
       studentsCount: Number(row.students_count),
     }));
+  }
+
+  async getProgramsForCourse(courseId: number, languageId?: number) {
+    const qb = this.pc
+      .createQueryBuilder('pc')
+      .innerJoin('pc.course', 'course')
+      .innerJoin('pc.program', 'program')
+      .leftJoin(
+        'program.translations',
+        'pt',
+        languageId ? 'pt.languageId = :languageId' : undefined,
+        languageId ? { languageId } : {},
+      )
+      .where('course.id = :courseId', { courseId })
+      .andWhere('pc.isActive = 1')
+      .andWhere('program.isActive = 1')
+      .select([
+        'program.id   AS program_id',
+        'program.logo AS program_logo',
+        'pt.name      AS program_name',
+      ]);
+
+    // لو languageId مش مبعوت: هات أول ترجمة (بدون duplicates)
+    if (!languageId) {
+      qb.addSelect('MIN(pt.name)', 'program_name')
+        .groupBy('program.id')
+        .addGroupBy('program.logo');
+    }
+
+    const rows = await qb.getRawMany<{
+      program_id: number;
+      program_logo: string;
+      program_name: string | null;
+    }>();
+
+    return {
+      message: 'Programs for course',
+      data: rows.map((r) => ({
+        id: Number(r.program_id),
+        logo: r.program_logo,
+        name: r.program_name ?? null,
+      })),
+    };
   }
 }

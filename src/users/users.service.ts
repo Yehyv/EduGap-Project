@@ -197,77 +197,104 @@ export class UsersService {
     const skip = (page - 1) * limit;
     const search = q?.trim();
 
-    const usersQuery = this.userRepositry
+    const baseQb = this.userRepositry
+      .createQueryBuilder('user')
+      .leftJoin('user.UserRole', 'role')
+      .where('user.deletedAt IS NULL')
+      .andWhere('user.is_active = 1');
+
+    if (search) {
+      const term = `%${search.toLowerCase()}%`;
+      baseQb.andWhere(
+        `(
+      LOWER(user.full_name)   LIKE :term OR
+      LOWER(user.email)       LIKE :term OR
+      LOWER(user.phone)       LIKE :term OR
+      LOWER(user.national_id) LIKE :term
+    )`,
+        { term },
+      );
+    }
+
+    if (roleCategory !== undefined) {
+      baseQb.andWhere('role.role_category = :roleCategory', { roleCategory });
+    }
+
+    // ✅ 1️⃣ Count distinct users
+    const totalRaw = await baseQb
+      .clone()
+      .select('COUNT(DISTINCT(user.id))', 'cnt')
+      .getRawOne<{ cnt: string }>();
+
+    const total = Number(totalRaw?.cnt ?? 0);
+
+    // ✅ 2️⃣ Paginated IDs via groupBy (avoids DISTINCT syntax error)
+    const idsRows = await baseQb
+      .clone()
+      .select('user.id', 'id')
+      .addSelect('user.createdAt', 'createdAt')
+      .groupBy('user.id')
+      .addGroupBy('user.createdAt')
+      .orderBy('user.createdAt', 'DESC')
+      .limit(limit)
+      .offset(skip)
+      .getRawMany<{ id: number }>();
+
+    const ids = idsRows.map((r) => r.id);
+
+    if (!ids.length) {
+      return {
+        message: 'List of users',
+        users: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: false,
+          hasPrev: page > 1,
+        },
+      };
+    }
+
+    // ✅ 3️⃣ Fetch full details for paginated IDs
+    const rows = await this.userRepositry
       .createQueryBuilder('user')
       .leftJoin('user.institute', 'institute')
       .leftJoin(
         'institute.translations',
         'it',
-        languageId ? 'it.languageId = :languageId' : undefined,
-        { languageId },
+        languageId ? 'it.languageId = :languageId' : '1=1',
+        languageId ? { languageId } : {},
       )
       .leftJoin('user.UserRole', 'role')
       .leftJoin('user.createdBy', 'createdBy')
-      .where('user.deletedAt IS NULL')
-      .andWhere('user.is_active = 1');
-
-    // 🔎 Smart Search
-    if (search) {
-      usersQuery.andWhere(
-        `
-      (
-        LOWER(user.full_name) LIKE :term
-        OR LOWER(user.email) LIKE :term
-        OR user.phone LIKE :term
-        OR user.national_id LIKE :term
-      )
-    `,
-        { term: `%${search.toLowerCase()}%` },
-      );
-    }
-
-    // 🔹 filter by role category
-    if (roleCategory !== undefined) {
-      usersQuery.andWhere('role.role_category = :roleCategory', {
-        roleCategory,
-      });
-    }
-
-    usersQuery
+      .where('user.id IN (:...ids)', { ids })
       .select([
-        'user.id AS user_id',
-        'user.full_name AS user_full_name',
-        'user.phone_key AS phone_key',
-        'user.phone AS user_phone',
-        'user.createdAt AS createdAt',
-        'user.is_active AS user_is_active',
-        'user.user_image AS user_user_image',
-
-        'createdBy.id AS created_by_id',
-        'createdBy.full_name AS created_by_name',
-
-        'it.name AS it_name',
-
-        'role.role_title AS role_role_title',
-        'role.role_category AS role_role_category',
+        'user.id                AS user_id',
+        'user.full_name         AS user_full_name',
+        'user.phone_key         AS phone_key',
+        'user.phone             AS user_phone',
+        'user.createdAt         AS createdAt',
+        'user.is_active         AS user_is_active',
+        'user.user_image        AS user_user_image',
+        'createdBy.id           AS created_by_id',
+        'createdBy.full_name    AS created_by_name',
+        'it.name                AS it_name',
+        'role.role_title        AS role_role_title',
+        'role.role_category     AS role_role_category',
       ])
       .orderBy('user.createdAt', 'DESC')
-      .skip(skip)
-      .take(limit);
-
-    const [users, total] = await Promise.all([
-      usersQuery.getRawMany<userRow>(),
-      usersQuery.getCount(),
-    ]);
+      .getRawMany<userRow>();
 
     const totalPages = Math.ceil(total / limit);
 
     return {
       message: 'List of users',
-      users: users.map((u) => ({
+      users: rows.map((u) => ({
         id: u.user_id,
         name: u.user_full_name,
-        phone: `${u.phone_key}${u.user_phone}`,
+        phone: `${u.phone_key ?? ''}${u.user_phone ?? ''}`,
         phone_key: u.phone_key,
         institute: u.it_name,
         createdAt: u.createdAt,
@@ -783,61 +810,97 @@ export class UsersService {
     const skip = (page - 1) * limit;
     const search = q?.trim();
 
-    const qb = this.userRepositry
+    // ✅ Base filter query (no select, just filters)
+    const baseQb = this.userRepositry
       .createQueryBuilder('user')
       .innerJoin('user.UserRole', 'role')
       .leftJoin('user.program', 'program')
-      .leftJoin(
-        'program.translations',
-        'pt',
-        languageId ? 'pt.languageId = :languageId' : undefined,
-        { languageId },
-      )
       .innerJoin('user.institute', 'institute')
       .where('role.role_title = :roleTitle', { roleTitle: 'student' })
       .andWhere('institute.id = :instituteId', { instituteId })
-      .andWhere('user.deletedAt IS NULL')
-      .select([
-        'user.id AS user_id',
-        'user.full_name AS user_full_name',
-        'user.user_image AS user_user_image',
-        'user.phone_key AS phone_key',
-        'user.phone AS user_phone',
-        'user.email AS user_email',
-        'user.createdAt AS createdAt',
-        'program.id AS program_id',
-        'pt.name AS program_name',
-      ]);
+      .andWhere('user.deletedAt IS NULL');
 
-    // 🔎 Smart Search
     if (search) {
-      qb.andWhere(
-        `
-      (
-        LOWER(user.full_name) LIKE :term
-        OR LOWER(user.email) LIKE :term
-        OR user.phone LIKE :term
-        OR user.national_id LIKE :term
-      )
-    `,
-        { term: `%${search.toLowerCase()}%` },
+      const term = `%${search.toLowerCase()}%`;
+      baseQb.andWhere(
+        `(
+        LOWER(user.full_name)   LIKE :term OR
+        LOWER(user.email)       LIKE :term OR
+        LOWER(user.phone)       LIKE :term OR
+        LOWER(user.national_id) LIKE :term
+      )`,
+        { term },
       );
     }
 
     if (programId !== undefined) {
-      qb.andWhere('program.id = :programId', { programId });
+      baseQb.andWhere('program.id = :programId', { programId });
     }
 
     if (isActive !== undefined) {
-      qb.andWhere('user.is_active = :isActive', { isActive });
+      baseQb.andWhere('user.is_active = :isActive', { isActive });
     }
 
-    qb.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
+    // ✅ 1️⃣ Count distinct users
+    const totalRaw = await baseQb
+      .clone()
+      .select('COUNT(DISTINCT(user.id))', 'cnt')
+      .getRawOne<{ cnt: string }>();
 
-    const [rows, total] = await Promise.all([
-      qb.getRawMany<userRow>(),
-      qb.getCount(),
-    ]);
+    const total = Number(totalRaw?.cnt ?? 0);
+
+    // ✅ 2️⃣ Paginated IDs
+    const idsRows = await baseQb
+      .clone()
+      .select('user.id', 'id')
+      .addSelect('user.createdAt', 'createdAt')
+      .groupBy('user.id')
+      .addGroupBy('user.createdAt')
+      .orderBy('user.createdAt', 'DESC')
+      .limit(limit)
+      .offset(skip)
+      .getRawMany<{ id: number }>();
+
+    const ids = idsRows.map((r) => r.id);
+
+    if (!ids.length) {
+      return {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: false,
+          hasPrev: page > 1,
+        },
+      };
+    }
+
+    // ✅ 3️⃣ Full data fetch for those IDs only
+    const rows = await this.userRepositry
+      .createQueryBuilder('user')
+      .leftJoin('user.program', 'program')
+      .leftJoin(
+        'program.translations',
+        'pt',
+        languageId ? 'pt.languageId = :languageId' : '1=1',
+        languageId ? { languageId } : {},
+      )
+      .where('user.id IN (:...ids)', { ids })
+      .select([
+        'user.id          AS user_id',
+        'user.full_name   AS user_full_name',
+        'user.user_image  AS user_user_image',
+        'user.phone_key   AS phone_key',
+        'user.phone       AS user_phone',
+        'user.email       AS user_email',
+        'user.createdAt   AS createdAt',
+        'program.id       AS program_id',
+        'pt.name          AS program_name',
+      ])
+      .orderBy('user.createdAt', 'DESC')
+      .getRawMany<userRow>();
 
     const totalPages = Math.ceil(total / limit);
 
@@ -846,14 +909,11 @@ export class UsersService {
         id: s.user_id,
         name: s.user_full_name,
         image: s.user_user_image,
-        phone: `${s.phone_key}${s.user_phone}`,
+        phone: `${s.phone_key ?? ''}${s.user_phone ?? ''}`,
         email: s.user_email,
         createdAt: s.createdAt,
         program: s.program_id
-          ? {
-              id: s.program_id,
-              name: s.program_name,
-            }
+          ? { id: s.program_id, name: s.program_name }
           : null,
       })),
       pagination: {
@@ -866,6 +926,7 @@ export class UsersService {
       },
     };
   }
+
   async stuffForInstitute(
     instituteId: number,
     languageId?: number,
@@ -878,61 +939,97 @@ export class UsersService {
     const skip = (page - 1) * limit;
     const search = q?.trim();
 
-    const qb = this.userRepositry
+    // ✅ Base filter query
+    const baseQb = this.userRepositry
       .createQueryBuilder('user')
       .innerJoin('user.UserRole', 'role')
       .leftJoin('user.program', 'program')
-      .leftJoin(
-        'program.translations',
-        'pt',
-        languageId ? 'pt.languageId = :languageId' : undefined,
-        { languageId },
-      )
       .innerJoin('user.institute', 'institute')
       .where('role.role_title <> :roleTitle', { roleTitle: 'student' })
       .andWhere('institute.id = :instituteId', { instituteId })
-      .andWhere('user.deletedAt IS NULL')
-      .select([
-        'user.id AS user_id',
-        'user.full_name AS user_full_name',
-        'user.user_image AS user_user_image',
-        'user.phone_key AS phone_key',
-        'user.phone AS user_phone',
-        'user.email AS user_email',
-        'user.createdAt AS createdAt',
-        'program.id AS program_id',
-        'pt.name AS program_name',
-      ]);
+      .andWhere('user.deletedAt IS NULL');
 
-    // 🔎 Smart Search
     if (search) {
-      qb.andWhere(
-        `
-      (
-        LOWER(user.full_name) LIKE :term
-        OR LOWER(user.email) LIKE :term
-        OR user.phone LIKE :term
-        OR user.national_id LIKE :term
-      )
-      `,
-        { term: `%${search.toLowerCase()}%` },
+      const term = `%${search.toLowerCase()}%`;
+      baseQb.andWhere(
+        `(
+        LOWER(user.full_name)   LIKE :term OR
+        LOWER(user.email)       LIKE :term OR
+        LOWER(user.phone)       LIKE :term OR
+        LOWER(user.national_id) LIKE :term
+      )`,
+        { term },
       );
     }
 
     if (programId !== undefined) {
-      qb.andWhere('program.id = :programId', { programId });
+      baseQb.andWhere('program.id = :programId', { programId });
     }
 
     if (isActive !== undefined) {
-      qb.andWhere('user.is_active = :isActive', { isActive });
+      baseQb.andWhere('user.is_active = :isActive', { isActive });
     }
 
-    qb.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
+    // ✅ 1️⃣ Count distinct users
+    const totalRaw = await baseQb
+      .clone()
+      .select('COUNT(DISTINCT(user.id))', 'cnt')
+      .getRawOne<{ cnt: string }>();
 
-    const [rows, total] = await Promise.all([
-      qb.getRawMany<userRow>(),
-      qb.getCount(),
-    ]);
+    const total = Number(totalRaw?.cnt ?? 0);
+
+    // ✅ 2️⃣ Paginated IDs
+    const idsRows = await baseQb
+      .clone()
+      .select('user.id', 'id')
+      .addSelect('user.createdAt', 'createdAt')
+      .groupBy('user.id')
+      .addGroupBy('user.createdAt')
+      .orderBy('user.createdAt', 'DESC')
+      .limit(limit)
+      .offset(skip)
+      .getRawMany<{ id: number }>();
+
+    const ids = idsRows.map((r) => r.id);
+
+    if (!ids.length) {
+      return {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: false,
+          hasPrev: page > 1,
+        },
+      };
+    }
+
+    // ✅ 3️⃣ Full data fetch for those IDs only
+    const rows = await this.userRepositry
+      .createQueryBuilder('user')
+      .leftJoin('user.program', 'program')
+      .leftJoin(
+        'program.translations',
+        'pt',
+        languageId ? 'pt.languageId = :languageId' : '1=1',
+        languageId ? { languageId } : {},
+      )
+      .where('user.id IN (:...ids)', { ids })
+      .select([
+        'user.id          AS user_id',
+        'user.full_name   AS user_full_name',
+        'user.user_image  AS user_user_image',
+        'user.phone_key   AS phone_key',
+        'user.phone       AS user_phone',
+        'user.email       AS user_email',
+        'user.createdAt   AS createdAt',
+        'program.id       AS program_id',
+        'pt.name          AS program_name',
+      ])
+      .orderBy('user.createdAt', 'DESC')
+      .getRawMany<userRow>();
 
     const totalPages = Math.ceil(total / limit);
 
@@ -941,14 +1038,11 @@ export class UsersService {
         id: s.user_id,
         name: s.user_full_name,
         image: s.user_user_image,
-        phone: `${s.phone_key}${s.user_phone}`,
+        phone: `${s.phone_key ?? ''}${s.user_phone ?? ''}`,
         email: s.user_email,
         createdAt: s.createdAt,
         program: s.program_id
-          ? {
-              id: s.program_id,
-              name: s.program_name,
-            }
+          ? { id: s.program_id, name: s.program_name }
           : null,
       })),
       pagination: {
