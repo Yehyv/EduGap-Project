@@ -71,6 +71,7 @@ export class UsersController {
     @Query('roleCategory') roleCategory?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string, // 👈 الجديد
   ) {
     const langId = languageId ? Number(languageId) : undefined;
     const role_cat = roleCategory ? Number(roleCategory) : undefined;
@@ -80,6 +81,7 @@ export class UsersController {
       langId,
       page ? Number(page) : 1,
       limit ? Number(limit) : 10,
+      search,
     );
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -131,19 +133,17 @@ export class UsersController {
     @Query('isActive') isActive?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string, // 👈 الجديد
   ) {
-    return {
-      status: 200,
-      message: 'Request successful',
-      data: await this.usersService.studentsForInst(
-        instituteId,
-        languageId ? Number(languageId) : undefined,
-        programId ? Number(programId) : undefined,
-        isActive ? Number(isActive) : undefined,
-        page ? Number(page) : 1,
-        limit ? Number(limit) : 10,
-      ),
-    };
+    return this.usersService.studentsForInst(
+      instituteId,
+      languageId ? Number(languageId) : undefined,
+      programId ? Number(programId) : undefined,
+      isActive ? Number(isActive) : undefined,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 10,
+      search,
+    );
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
@@ -155,17 +155,19 @@ export class UsersController {
     @Query('isActive') isActive?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string, // 👈 الجديد
   ) {
     return {
       status: 200,
       message: 'Request successful',
-      data: await this.usersService.studentsForInst(
+      data: await this.usersService.stuffForInstitute(
         instituteId,
         languageId ? Number(languageId) : undefined,
         programId ? Number(programId) : undefined,
         isActive ? Number(isActive) : undefined,
         page ? Number(page) : 1,
         limit ? Number(limit) : 10,
+        search,
       ),
     };
   }

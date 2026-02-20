@@ -192,8 +192,10 @@ export class UsersService {
     languageId?: number,
     page: number = 1,
     limit: number = 10,
+    q?: string,
   ) {
     const skip = (page - 1) * limit;
+    const search = q?.trim();
 
     const usersQuery = this.userRepositry
       .createQueryBuilder('user')
@@ -207,6 +209,31 @@ export class UsersService {
       .leftJoin('user.UserRole', 'role')
       .leftJoin('user.createdBy', 'createdBy')
       .where('user.deletedAt IS NULL')
+      .andWhere('user.is_active = 1');
+
+    // 🔎 Smart Search
+    if (search) {
+      usersQuery.andWhere(
+        `
+      (
+        LOWER(user.full_name) LIKE :term
+        OR LOWER(user.email) LIKE :term
+        OR user.phone LIKE :term
+        OR user.national_id LIKE :term
+      )
+    `,
+        { term: `%${search.toLowerCase()}%` },
+      );
+    }
+
+    // 🔹 filter by role category
+    if (roleCategory !== undefined) {
+      usersQuery.andWhere('role.role_category = :roleCategory', {
+        roleCategory,
+      });
+    }
+
+    usersQuery
       .select([
         'user.id AS user_id',
         'user.full_name AS user_full_name',
@@ -223,17 +250,10 @@ export class UsersService {
 
         'role.role_title AS role_role_title',
         'role.role_category AS role_role_category',
-      ]);
-
-    // 🔹 filter by role category
-    if (roleCategory !== undefined) {
-      usersQuery.andWhere('role.role_category = :roleCategory', {
-        roleCategory,
-      });
-    }
-
-    // 🔥 pagination
-    usersQuery.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
+      ])
+      .orderBy('user.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
 
     const [users, total] = await Promise.all([
       usersQuery.getRawMany<userRow>(),
@@ -758,8 +778,10 @@ export class UsersService {
     isActive?: number,
     page: number = 1,
     limit: number = 10,
+    q?: string,
   ) {
     const skip = (page - 1) * limit;
+    const search = q?.trim();
 
     const qb = this.userRepositry
       .createQueryBuilder('user')
@@ -774,6 +796,7 @@ export class UsersService {
       .innerJoin('user.institute', 'institute')
       .where('role.role_title = :roleTitle', { roleTitle: 'student' })
       .andWhere('institute.id = :instituteId', { instituteId })
+      .andWhere('user.deletedAt IS NULL')
       .select([
         'user.id AS user_id',
         'user.full_name AS user_full_name',
@@ -785,6 +808,21 @@ export class UsersService {
         'program.id AS program_id',
         'pt.name AS program_name',
       ]);
+
+    // 🔎 Smart Search
+    if (search) {
+      qb.andWhere(
+        `
+      (
+        LOWER(user.full_name) LIKE :term
+        OR LOWER(user.email) LIKE :term
+        OR user.phone LIKE :term
+        OR user.national_id LIKE :term
+      )
+    `,
+        { term: `%${search.toLowerCase()}%` },
+      );
+    }
 
     if (programId !== undefined) {
       qb.andWhere('program.id = :programId', { programId });
@@ -835,8 +873,10 @@ export class UsersService {
     isActive?: number,
     page: number = 1,
     limit: number = 10,
+    q?: string,
   ) {
     const skip = (page - 1) * limit;
+    const search = q?.trim();
 
     const qb = this.userRepositry
       .createQueryBuilder('user')
@@ -851,6 +891,7 @@ export class UsersService {
       .innerJoin('user.institute', 'institute')
       .where('role.role_title <> :roleTitle', { roleTitle: 'student' })
       .andWhere('institute.id = :instituteId', { instituteId })
+      .andWhere('user.deletedAt IS NULL')
       .select([
         'user.id AS user_id',
         'user.full_name AS user_full_name',
@@ -862,6 +903,21 @@ export class UsersService {
         'program.id AS program_id',
         'pt.name AS program_name',
       ]);
+
+    // 🔎 Smart Search
+    if (search) {
+      qb.andWhere(
+        `
+      (
+        LOWER(user.full_name) LIKE :term
+        OR LOWER(user.email) LIKE :term
+        OR user.phone LIKE :term
+        OR user.national_id LIKE :term
+      )
+      `,
+        { term: `%${search.toLowerCase()}%` },
+      );
+    }
 
     if (programId !== undefined) {
       qb.andWhere('program.id = :programId', { programId });
