@@ -4,14 +4,17 @@ import { UpdateSystemRoleDto } from './dto/update-system-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SystemRole } from './entities/system-role.entity';
 import { Repository } from 'typeorm';
+import { SystemUser } from 'src/system-users/entities/system-user.entity';
 @Injectable()
 export class SystemRolesService {
   constructor(
     @InjectRepository(SystemRole)
     private readonly sysRoleRepository: Repository<SystemRole>,
+    @InjectRepository(SystemUser)
+    private readonly sysUserRepository: Repository<SystemUser>,
   ) {}
   async create(createSystemRoleDto: CreateSystemRoleDto, userId: number) {
-    const user = await this.sysRoleRepository.findOne({
+    const user = await this.sysUserRepository.findOne({
       where: { id: userId },
     });
     if (!user) throw new NotFoundException(`User with id ${userId} not found`);
