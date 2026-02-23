@@ -45,15 +45,14 @@ const AddProgramToInstitute = ({
         icon: "success",
         title: "Program Assigned!",
         text: "The program has been successfully added to the institute.",
-      }).then(() => {
-        setCurrentChoice(null);
-        setReviewModalOpen(false);
-        queryClient.invalidateQueries({
-          queryKey: ["programsAndCoursesInInstit", instituteId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["getAllProgramsToAssign"],
-        });
+      });
+      setCurrentChoice(null);
+      setReviewModalOpen(false);
+      queryClient.invalidateQueries({
+        queryKey: ["programsAndCoursesInInstit", instituteId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["getAllProgramsToAssign"],
       });
     },
     onError: (err: any) => {

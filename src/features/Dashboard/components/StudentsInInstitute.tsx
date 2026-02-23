@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
+  activateStudent,
+  deactivateStudent,
   deleteStudent,
   getAllPrograms,
   getStudentsInInstitute,
@@ -19,6 +21,7 @@ import AddNewStudentToInstitute from "./AddNewStudentToInstitute";
 import AddBulkOfStudents from "./AddBulkOfStudents";
 import DownloadExcelTemplate from "./DownloadExcelTemplate";
 import ExportStudentsButton from "./ExportStudentExcel";
+import ActiveStatusButton from "./ActiveStatusButton";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -95,11 +98,29 @@ const columns = [
     style: { justifyContent: "center" },
   },
   {
+    name: "Is Active",
+    style: { justifyContent: "center" },
+    cell: (row: Student) => {
+      const isActive = row?.isActive;
+      return (
+        <ActiveStatusButton
+          itemId={row?.id}
+          activateApi={activateStudent}
+          deactivateApi={deactivateStudent}
+          isActive={isActive ?? false}
+          refetchKey={"getStudentsInInstitute"}
+          showModal={true}
+        />
+      );
+    },
+    sortable: true,
+  },
+  {
     name: "Edit",
     style: { justifyContent: "center" },
     cell: (row: Student) => (
       <Link
-        to={`/dashboard/students/edit/${row?.id}`}
+        to={`/dashboard/users/edit/${row.id}`}
         className="cursor-pointer hover:opacity-70"
       >
         <EditIcon />
@@ -134,39 +155,40 @@ const StudentsInInstitute = () => {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const filterDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Use separate state for students filters (not URL-based to avoid conflicts)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const [studentProgramId, setStudentProgramId] = useState("");
   const [studentIsActive, setStudentIsActive] = useState("");
-
-  // Temporary filter states for editing
   const [tempProgramId, setTempProgramId] = useState("");
   const [tempIsActive, setTempIsActive] = useState("");
 
-  // Fetch all programs
   const { data: allProgramsInInstitute } = useQuery({
     queryKey: ["getAllPrograms", instituteId],
     queryFn: () => getAllPrograms(instituteId ?? ""),
     enabled: !!instituteId,
   });
 
-  // Fetch students with filters
   const { data, isLoading } = useQuery({
     queryKey: [
       "getStudentsInInstitute",
       instituteId,
       studentProgramId,
       studentIsActive,
+      currentPage,
+      rowsPerPage,
     ],
     queryFn: () =>
       getStudentsInInstitute(
         instituteId ?? "",
         studentProgramId,
         studentIsActive,
+        currentPage,
+        rowsPerPage,
       ),
     enabled: !!instituteId,
   });
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -174,7 +196,6 @@ const StudentsInInstitute = () => {
         !filterDropdownRef.current.contains(event.target as Node)
       ) {
         setShowFilterDropdown(false);
-        // Reset temp values
         setTempProgramId(studentProgramId);
         setTempIsActive(studentIsActive);
       }
@@ -190,15 +211,27 @@ const StudentsInInstitute = () => {
   }, [showFilterDropdown, studentProgramId, studentIsActive]);
 
   const filteredItems = useMemo(() => {
-    if (!data?.data?.data) return [];
-    return data.data.data.filter((item: Student) =>
+    if (!data?.data?.items) return [];
+    return data.data.items.filter((item: Student) =>
       item?.name?.toLowerCase().includes(filterText.toLowerCase()),
     );
-  }, [filterText, data?.data?.data]);
+  }, [filterText, data?.data?.items]);
+
+  const totalRows = data?.data?.pagination?.totalPages ?? 0;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleRowsPerPageChange = (newLimit: number) => {
+    setRowsPerPage(newLimit);
+    setCurrentPage(1);
+  };
 
   const handleApplyFilters = () => {
     setStudentProgramId(tempProgramId);
     setStudentIsActive(tempIsActive);
+    setCurrentPage(1);
     setShowFilterDropdown(false);
   };
 
@@ -207,6 +240,7 @@ const StudentsInInstitute = () => {
     setTempIsActive("");
     setStudentProgramId("");
     setStudentIsActive("");
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = studentProgramId || studentIsActive;
@@ -214,7 +248,6 @@ const StudentsInInstitute = () => {
   const subHeaderComponent = useMemo(() => {
     return (
       <div className="flex flex-col lg:flex-row gap-3 justify-between items-start md:items-center w-full">
-        {/* Left side - Search and Filter */}
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
             <input
@@ -229,7 +262,6 @@ const StudentsInInstitute = () => {
             </span>
           </div>
 
-          {/* Filter Dropdown */}
           <div className="relative" ref={filterDropdownRef}>
             <button
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -254,8 +286,6 @@ const StudentsInInstitute = () => {
                   <h3 className="font-semibold text-gray-800 text-sm mb-2">
                     Filter Students
                   </h3>
-
-                  {/* Program Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Program
@@ -273,8 +303,6 @@ const StudentsInInstitute = () => {
                       ))}
                     </select>
                   </div>
-
-                  {/* Active Status Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Status
@@ -289,8 +317,6 @@ const StudentsInInstitute = () => {
                       <option value="0">Inactive</option>
                     </select>
                   </div>
-
-                  {/* Filter Actions */}
                   <div className="flex gap-2 pt-2">
                     <button
                       type="button"
@@ -313,7 +339,6 @@ const StudentsInInstitute = () => {
           </div>
         </div>
 
-        {/* Right side - Action Buttons */}
         <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
           <button
             onClick={() => setOpenModal(true)}
@@ -356,8 +381,12 @@ const StudentsInInstitute = () => {
           subHeader
           subHeaderComponent={subHeaderComponent}
           pagination
-          paginationPerPage={10}
-          paginationRowsPerPageOptions={[10, 20, 30, 50]}
+          paginationServer
+          paginationTotalRows={totalRows}
+          paginationPerPage={rowsPerPage}
+          paginationRowsPerPageOptions={[1, 10, 20, 30, 50]}
+          onChangePage={handlePageChange}
+          onChangeRowsPerPage={handleRowsPerPageChange}
           progressComponent={<CircleLoader />}
           noDataComponent={
             <div className="py-8 text-gray-500">No students found</div>

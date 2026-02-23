@@ -71,6 +71,8 @@ const EditContent = () => {
   });
 
   const contentData = content?.data;
+  const contentDataAr = contentData?.translations[0];
+  const contentDataEn = contentData?.translations[1];
 
   const handleContents = contentsData?.data.map((c) => ({
     label: c.name,
@@ -117,7 +119,6 @@ const EditContent = () => {
   /* ================= FORM DATA BUILDER ================= */
   const buildFormData = (values: AddContentFormValues) => {
     const formData = new FormData();
-    console.log(values);
 
     formData.append(
       "hasPrerequiest",
@@ -189,30 +190,31 @@ const EditContent = () => {
   const initialValues: AddContentFormValues = {
     hasPrerequiest: false,
     image: contentData?.image ?? "",
-    level: "",
+    level: contentData?.level,
     adVideo: "",
-    categoryId: contentData?.categoryId ?? "",
+    categoryId: contentData?.category?.id ?? "",
     educator: "",
     prerequisites: [],
     translations: [
       {
         languageId: 1,
-        name: contentData?.name ?? "",
-        description: contentData?.description ?? "",
-        levelName: contentData?.level ?? "",
+        name: contentDataAr?.name ?? "",
+        description: contentDataAr?.description ?? "",
+        levelName: contentDataAr?.level ?? "",
         previousBackground: "",
         languageType: "",
         whatToLearn:
-          formatCommaSeparatedToLines(contentData?.whatToLearn) ?? "",
+          formatCommaSeparatedToLines(contentDataAr?.whatToLearn) ?? "",
       },
       {
         languageId: 2,
-        name: "",
-        description: "",
-        levelName: "",
+        name: contentDataEn?.name ?? "",
+        description: contentDataEn?.description ?? "",
+        levelName: contentDataEn?.level ?? "",
         previousBackground: "",
         languageType: "",
-        whatToLearn: "",
+        whatToLearn:
+          formatCommaSeparatedToLines(contentDataEn?.whatToLearn) ?? "",
       },
     ],
   };

@@ -6,11 +6,9 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useUser } from "../context/UserContext";
 
 const useDashboardLogin = () => {
   const { t } = useLanguage();
-  const { fetchUser } = useUser();
   const { dashboardLogin, saveRefreshTokenDashoard } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -31,8 +29,6 @@ const useDashboardLogin = () => {
         const { accessToken, refresh_token } = response.data.data;
         dashboardLogin(accessToken);
         saveRefreshTokenDashoard(refresh_token);
-        // await fetchUser();
-
         navigate("/dashboard/home");
       })
       .catch((error) => {

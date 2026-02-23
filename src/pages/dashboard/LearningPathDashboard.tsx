@@ -147,7 +147,7 @@ const LearningPathDashboard = () => {
                 <h6 className="text-[#444444] text-sm font-bold">
                   {t("fieldCreatedBy")}
                 </h6>
-                <p>{learningPathData?.createdBy ?? "-"}</p>
+                <p>{learningPathData?.createdBy?.name ?? "-"}</p>
               </div>
             </div>
           </div>

@@ -19,7 +19,6 @@ const InstituteDetails = () => {
 
   const [activeTab, setActiveTab] = useState("informations");
 
-  /* ================= QUERY ================= */
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["instituteDetailsForDashboard", instituteId],
     queryFn: () => instituteDetails(instituteId ?? ""),
@@ -29,6 +28,27 @@ const InstituteDetails = () => {
   const instituteData = data?.data;
   const instituteDataAr = instituteData?.translations?.[0];
   const instituteDataEn = instituteData?.translations?.[1];
+
+  const region = instituteData?.region;
+  const city = region?.city;
+  const country = city?.country;
+
+  // AR = index 0 | EN = index 1
+  const arRegion = [
+    country?.translations?.[0]?.name,
+    city?.translations?.[0]?.name,
+    region?.translations?.[0]?.name,
+  ]
+    .filter(Boolean)
+    .join(" ، ");
+
+  const enRegion = [
+    country?.translations?.[1]?.name,
+    city?.translations?.[1]?.name,
+    region?.translations?.[1]?.name,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   if (isLoading) return <CircleLoader />;
   if (isError)
@@ -43,7 +63,7 @@ const InstituteDetails = () => {
 
   return (
     <>
-      {/* ================= HEADER ================= */}
+      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-1 gap-4">
         <div className="flex items-center gap-2">
           <img
@@ -64,38 +84,20 @@ const InstituteDetails = () => {
         />
       </div>
 
-      {/* ================= TABS ================= */}
+      {/* ── TABS ───────────────────────────────────────────────────────────── */}
       <div className="flex gap-4 my-5">
-        <button
-          className={tabClass("informations")}
-          onClick={() => setActiveTab("informations")}
-        >
-          {t("tabs_informations") || "Informations"}
-        </button>
-
-        <button
-          className={tabClass("students")}
-          onClick={() => setActiveTab("students")}
-        >
-          {t("tabs_students") || "Students"}
-        </button>
-
-        <button
-          className={tabClass("programs")}
-          onClick={() => setActiveTab("programs")}
-        >
-          {t("tabs_programs") || "Programs"}
-        </button>
-
-        <button
-          className={tabClass("staff")}
-          onClick={() => setActiveTab("staff")}
-        >
-          {t("tabs_staff") || "Institute Staff"}
-        </button>
+        {["informations", "students", "programs", "staff"].map((tab) => (
+          <button
+            key={tab}
+            className={tabClass(tab)}
+            onClick={() => setActiveTab(tab)}
+          >
+            {t(`tabs_${tab}`) || tab}
+          </button>
+        ))}
       </div>
 
-      {/* ================= TAB CONTENT ================= */}
+      {/* ── TAB CONTENT ────────────────────────────────────────────────────── */}
       {activeTab === "informations" && (
         <>
           {/* Arabic Information */}
@@ -112,7 +114,7 @@ const InstituteDetails = () => {
 
               <div>
                 <h6 className="text-sm font-bold">{t("field_region")}</h6>
-                <p>{instituteData?.region?.name ?? "-"}</p>
+                <p>{arRegion || "-"}</p>
               </div>
 
               <div>
@@ -120,7 +122,7 @@ const InstituteDetails = () => {
                 <p>{instituteDataAr?.address || "-"}</p>
               </div>
 
-              <div></div>
+              <div />
 
               <div>
                 <h6 className="text-sm font-bold">{t("field_email")}</h6>
@@ -187,7 +189,7 @@ const InstituteDetails = () => {
 
               <div>
                 <h6 className="text-sm font-bold">{t("created_by")}</h6>
-                <p>{instituteData?.createdBy?.name || "-"}</p>
+                <p>{instituteData?.createdBy?.full_name || "-"}</p>
               </div>
             </div>
           </div>
@@ -208,12 +210,16 @@ const InstituteDetails = () => {
                 <h6 className="text-sm font-bold">{t("field_address")}</h6>
                 <p>{instituteDataEn?.address || "-"}</p>
               </div>
+
+              <div>
+                <h6 className="text-sm font-bold">{t("field_region")}</h6>
+                <p>{enRegion || "-"}</p>
+              </div>
             </div>
           </div>
         </>
       )}
 
-      {/* ================= OTHER TABS ================= */}
       {activeTab === "students" && <StudentsInInstitute />}
       {activeTab === "programs" && <ProgramsInInstitute />}
       {activeTab === "staff" && <InstituteStaffList />}

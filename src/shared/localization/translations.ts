@@ -360,6 +360,7 @@ const translations = {
     saved_courses: "Training Courses",
     finish_exam: "Finesh Exam",
     question: "Question",
+    contents: "Training Contents",
 
     confirm_submit_title: "Confirm Submission",
     confirm_submit_text: "Are you sure you want to submit your answers?",
@@ -1680,6 +1681,8 @@ const translations = {
     expert_name: "اسم الخبير",
     dashboard: "لوحة التحكم",
     login_dashboard_title: "تسجيل الدخول الي لوحة التحكم",
+    contents: "الدورات التدريبية",
+
     ...dashboardMenuTranslations.ar,
     ...homeTranslations.ar,
   },

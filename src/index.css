@@ -286,7 +286,8 @@
   pointer-events: none;
 
   background:
-    /* top */ repeating-linear-gradient(
+    /* top */
+    repeating-linear-gradient(
         to right,
         #9ca3af 0,
         #9ca3af 12px,
@@ -295,7 +296,7 @@
       )
       top / 100% 1px no-repeat,
     /* bottom */
-      repeating-linear-gradient(
+    repeating-linear-gradient(
         to right,
         #9ca3af 0,
         #9ca3af 12px,
@@ -304,7 +305,7 @@
       )
       bottom / 100% 1px no-repeat,
     /* left */
-      repeating-linear-gradient(
+    repeating-linear-gradient(
         to bottom,
         #9ca3af 0,
         #9ca3af 12px,
@@ -313,7 +314,7 @@
       )
       left / 1px 100% no-repeat,
     /* right */
-      repeating-linear-gradient(
+    repeating-linear-gradient(
         to bottom,
         #9ca3af 0,
         #9ca3af 12px,

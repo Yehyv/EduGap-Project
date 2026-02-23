@@ -74,15 +74,21 @@ const ProgramDetails = () => {
             </div>
           </div>
 
-          <div className="relative w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] me-[50px]">
-            <div className="absolute w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] start-6 bg-[#FCB737] rounded-2xl -rotate-[30deg]" />
-            <div className="absolute rounded-2xl overflow-hidden -rotate-[30deg]">
+          <div className="relative w-[200px] h-[200px] max-md:w-[150px] max-md:h-[150px] me-[50px] group">
+            {/* Background rotated layer */}
+            <div className="absolute inset-0 bg-[#FCB737] rounded-2xl -rotate-[30deg] shadow-xl transition-transform duration-300 group-hover:-rotate-[25deg]" />
+
+            {/* Image wrapper */}
+            <div className="absolute inset-0 rounded-2xl overflow-hidden -rotate-[30deg] shadow-2xl transition-all duration-300 group-hover:-rotate-[25deg] group-hover:scale-105">
               <img
                 src={data?.image ?? programImage}
                 alt={t("program_image_alt")}
-                className="w-full h-full object-cover rotate-[30deg] scale-150"
+                className="w-full h-full object-cover rotate-[30deg] scale-125 transition-transform duration-300 group-hover:scale-150"
               />
             </div>
+
+            {/* Soft glow effect */}
+            <div className="absolute inset-0 rounded-2xl bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </div>
         </div>
       </div>

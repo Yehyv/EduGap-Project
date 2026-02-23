@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
+  activateStudent,
+  deactivateStudent,
   deleteStudent,
   getAllPrograms,
   getInstituteStaff,
@@ -14,6 +16,7 @@ import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link, useParams } from "react-router-dom";
 import type { User } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
+import ActiveStatusButton from "./ActiveStatusButton";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -73,12 +76,7 @@ const columns = [
     sortable: true,
     style: { justifyContent: "center" },
   },
-  {
-    name: "User Role",
-    selector: (row: User) => row?.role ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
+
   {
     name: "Phone",
     selector: (row: User) => row?.phone ?? "-",
@@ -93,25 +91,19 @@ const columns = [
     style: { justifyContent: "center" },
   },
   {
-    name: "Status",
+    name: "Is Active",
     style: { justifyContent: "center" },
     cell: (row: User) => {
-      const isActive = row?.is_active;
+      const isActive = row?.isActive;
       return (
-        <button
-          className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
-            isActive
-              ? "border-green-500 text-green-500"
-              : "border-red-500 text-red-500"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-          <span
-            className={`absolute w-1.5 h-1.5 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
-              isActive ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-        </button>
+        <ActiveStatusButton
+          itemId={row?.id}
+          activateApi={activateStudent}
+          deactivateApi={deactivateStudent}
+          isActive={isActive ?? false}
+          refetchKey={"getInstituteStaff"}
+          showModal={true}
+        />
       );
     },
     sortable: true,
@@ -156,15 +148,14 @@ const InstituteStaffList = () => {
   const filterDropdownRef = useRef<HTMLDivElement>(null);
   const { instituteId } = useParams();
 
-  // Use separate state for staff filters (not URL-based to avoid conflicts with students)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const [staffProgramId, setStaffProgramId] = useState("");
   const [staffIsActive, setStaffIsActive] = useState("");
-
-  // Temporary filter states for editing
   const [tempProgramId, setTempProgramId] = useState("");
   const [tempIsActive, setTempIsActive] = useState("");
 
-  // Fetch all programs for the institute
   const { data: allProgramsInInstitute, isLoading: programsLoading } = useQuery(
     {
       queryKey: ["getAllPrograms", instituteId],
@@ -173,18 +164,25 @@ const InstituteStaffList = () => {
     },
   );
 
-  // Fetch institute staff with filters
   const { data: instituteStaffData, isLoading: staffLoading } = useQuery({
-    queryKey: ["getInstituteStaff", instituteId, staffProgramId, staffIsActive],
+    queryKey: [
+      "getInstituteStaff",
+      instituteId,
+      staffProgramId,
+      staffIsActive,
+      currentPage,
+      rowsPerPage,
+    ],
     queryFn: () =>
       getInstituteStaff(instituteId ?? "", {
         programId: staffProgramId,
         isActive: staffIsActive,
+        page: currentPage,
+        limit: rowsPerPage,
       }),
     enabled: !!instituteId,
   });
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -192,7 +190,6 @@ const InstituteStaffList = () => {
         !filterDropdownRef.current.contains(event.target as Node)
       ) {
         setShowFilterDropdown(false);
-        // Reset temp values
         setTempProgramId(staffProgramId);
         setTempIsActive(staffIsActive);
       }
@@ -208,15 +205,27 @@ const InstituteStaffList = () => {
   }, [showFilterDropdown, staffProgramId, staffIsActive]);
 
   const filteredItems = useMemo(() => {
-    if (!instituteStaffData?.data?.data) return [];
-    return instituteStaffData.data.data.filter((item) =>
+    if (!instituteStaffData?.data?.data?.items) return [];
+    return instituteStaffData.data.data.items.filter((item: User) =>
       item?.name?.toLowerCase().includes(filterText?.toLowerCase()),
     );
-  }, [filterText, instituteStaffData]);
+  }, [filterText, instituteStaffData?.data?.data?.items]);
+
+  const totalRows = instituteStaffData?.data?.data?.pagination?.total ?? 0;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleRowsPerPageChange = (newLimit: number) => {
+    setRowsPerPage(newLimit);
+    setCurrentPage(1);
+  };
 
   const handleApplyFilters = () => {
     setStaffProgramId(tempProgramId);
     setStaffIsActive(tempIsActive);
+    setCurrentPage(1); // reset to page 1 when filters change
     setShowFilterDropdown(false);
   };
 
@@ -225,6 +234,7 @@ const InstituteStaffList = () => {
     setTempIsActive("");
     setStaffProgramId("");
     setStaffIsActive("");
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = staffProgramId || staffIsActive;
@@ -232,7 +242,6 @@ const InstituteStaffList = () => {
   const subHeaderComponent = useMemo(() => {
     return (
       <div className="flex flex-col lg:flex-row gap-3 justify-between items-start md:items-center w-full">
-        {/* Left side - Search and Filter */}
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
             <input
@@ -247,7 +256,6 @@ const InstituteStaffList = () => {
             </span>
           </div>
 
-          {/* Filter Dropdown */}
           <div className="relative" ref={filterDropdownRef}>
             <button
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -273,7 +281,6 @@ const InstituteStaffList = () => {
                     Filter Staff
                   </h3>
 
-                  {/* Program Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Program
@@ -285,15 +292,14 @@ const InstituteStaffList = () => {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary disabled:bg-gray-100"
                     >
                       <option value="">All Programs</option>
-                      {allProgramsInInstitute?.data?.map((program) => (
+                      {allProgramsInInstitute?.data?.items?.map((program) => (
                         <option key={program.id} value={program.id}>
-                          {program.name}
+                          {program?.name}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Active Status Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Status
@@ -309,7 +315,6 @@ const InstituteStaffList = () => {
                     </select>
                   </div>
 
-                  {/* Filter Actions */}
                   <div className="flex gap-2 pt-2">
                     <button
                       type="button"
@@ -356,8 +361,12 @@ const InstituteStaffList = () => {
           subHeader
           subHeaderComponent={subHeaderComponent}
           pagination
-          paginationPerPage={10}
+          paginationServer
+          paginationTotalRows={totalRows}
+          paginationPerPage={rowsPerPage}
           paginationRowsPerPageOptions={[10, 20, 30, 50]}
+          onChangePage={handlePageChange}
+          onChangeRowsPerPage={handleRowsPerPageChange}
           progressComponent={<CircleLoader />}
           noDataComponent={
             <div className="py-8 text-gray-500">No staff members found</div>

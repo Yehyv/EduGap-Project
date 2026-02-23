@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
+  activateStudent,
+  deactivateStudent,
   deleteStudent,
-  getAllRoles,
   getStudents,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link, useSearchParams } from "react-router-dom";
 import type { User } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
+import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -101,20 +103,14 @@ const columns = [
     cell: (row: User) => {
       const isActive = row?.is_active;
       return (
-        <button
-          className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
-            isActive
-              ? "border-green-500 text-green-500"
-              : "border-red-500 text-red-500"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-          <span
-            className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
-              isActive ? " bg-green-500" : " bg-red-500"
-            }`}
-          ></span>
-        </button>
+        <ActiveStatusButton
+          itemId={row?.id}
+          activateApi={activateStudent}
+          deactivateApi={deactivateStudent}
+          isActive={isActive ?? false}
+          refetchKey={"getStudents"}
+          showModal={true}
+        />
       );
     },
     sortable: true,
@@ -156,6 +152,10 @@ const StudentsPage = () => {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const filterDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
   const roleCategory = searchParams.get("roleCategory") || "";
 
   const [tempRoleCategory, setTempRoleCategory] = useState(roleCategory);
@@ -185,29 +185,39 @@ const StudentsPage = () => {
   }, [showFilterDropdown, roleCategory]);
 
   const { data: studentsData, isLoading } = useQuery({
-    queryKey: ["getStudents", roleCategory],
-    queryFn: () => getStudents(roleCategory),
+    queryKey: ["getStudents", roleCategory, currentPage, perPage, filterText],
+    queryFn: () => getStudents(roleCategory, currentPage, perPage, filterText),
     keepPreviousData: true,
   });
 
-  const { data: rolesData } = useQuery({
-    queryKey: ["getRolesList", 1, 100],
-    queryFn: () => getAllRoles(1, 100),
-    keepPreviousData: true,
-  });
+  const rolesData = [
+    {
+      name: "Portal",
+      value: 0,
+    },
+    {
+      name: "Dashboard",
+      value: 1,
+    },
+  ];
 
-  const filteredItems = useMemo(() => {
-    if (!studentsData?.data?.users) return [];
-    return studentsData?.data?.users.filter((item) =>
-      item?.name?.toLowerCase().includes(filterText?.toLowerCase()),
-    );
-  }, [filterText, studentsData]);
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Handle rows per page change
+  const handlePerRowsChange = (newPerPage: number, page: number) => {
+    setPerPage(newPerPage);
+    setCurrentPage(page);
+  };
 
   const handleApplyFilters = () => {
     const params = new URLSearchParams();
     if (tempRoleCategory) params.set("roleCategory", tempRoleCategory);
     setSearchParams(params);
     setShowFilterDropdown(false);
+    setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
@@ -223,7 +233,10 @@ const StudentsPage = () => {
             placeholder="Search by name"
             className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
             value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
+            onChange={(e) => {
+              setFilterText(e.target.value);
+              setCurrentPage(1); // Reset to first page when search changes
+            }}
           />
           <button
             type="button"
@@ -262,9 +275,9 @@ const StudentsPage = () => {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
                     >
                       <option value="">All Roles</option>
-                      {rolesData?.data?.items?.map((role: any) => (
-                        <option key={role.id} value={role.id}>
-                          {role.role_title}
+                      {rolesData?.map((role: any) => (
+                        <option key={role.value} value={role.value}>
+                          {role.name}
                         </option>
                       ))}
                     </select>
@@ -311,13 +324,19 @@ const StudentsPage = () => {
       <div className="w-full">
         <DataTable
           columns={columns}
-          data={filteredItems}
+          data={studentsData?.data?.data?.users || []}
           highlightOnHover
           customStyles={customStyles}
           progressPending={isLoading}
           subHeader
           subHeaderComponent={subHeaderComponent}
           pagination
+          paginationServer
+          paginationTotalRows={studentsData?.data?.data?.pagination?.total || 0}
+          onChangePage={handlePageChange}
+          onChangeRowsPerPage={handlePerRowsChange}
+          paginationDefaultPage={currentPage}
+          paginationPerPage={perPage}
           progressComponent={<CircleLoader />}
         />
       </div>

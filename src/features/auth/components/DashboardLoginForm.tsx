@@ -5,6 +5,7 @@ import type { LoginFormValues } from "../auth.types";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { motion } from "framer-motion";
 import useDashboardLogin from "../hooks/useDashboardLogin";
+import { User, Lock, Eye, EyeOff } from "lucide-react";
 
 const DashboardLoginForm = () => {
   const { handleSubmit, initialValues, validationSchema, isLoading } =
@@ -45,37 +46,55 @@ const DashboardLoginForm = () => {
       >
         <Form className="flex flex-col gap-4 max-w-sm mx-auto w-full">
           {/* Username */}
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="relative">
+            <User
+              size={16}
+              className="absolute start-3 top-[38px] text-gray-400 pointer-events-none z-10"
+            />
             <TextField
               label={t("username")}
               name="username"
               type="text"
               placeholder={t("username")}
+              moreStyle="ps-9"
             />
           </motion.div>
 
           {/* Password with eye */}
           <motion.div variants={itemVariants} className="relative">
+            <Lock
+              size={16}
+              className="absolute start-3 top-[38px] text-gray-400 pointer-events-none z-10"
+            />
             <TextField
               label={t("passowrd")}
               name="password"
               type={showPassword ? "text" : "password"}
               placeholder={t("passowrd")}
+              moreStyle="ps-9 pe-10"
             />
-
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
               className="
                 absolute
-                right-3
+                end-3
                 top-[38px]
                 cursor-pointer
-                text-gray-500
+                text-gray-400
+                hover:text-gray-600
+                transition-colors
+                duration-150
                 select-none
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-offset-1
+                focus-visible:ring-blue-400
+                rounded
               "
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? "🙈" : "👁️"}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </motion.div>
 

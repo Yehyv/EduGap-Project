@@ -10,7 +10,7 @@ import SmoothLazy from "./SmoothLazy";
 
 const UserIcon = SmoothLazy(
   () => import("@/assets/svgs/UserIcon.svg?react"),
-  "w-6 h-6"
+  "w-6 h-6",
 );
 // const NotificationIcon = smoothLazy(
 //   () => import("@/assets/svgs/Notification.svg?react"),
@@ -22,15 +22,15 @@ const UserIcon = SmoothLazy(
 // );
 const CoursesIcon = SmoothLazy(
   () => import("@/assets/svgs/MyCoursesIcon.svg?react"),
-  "w-5 h-5"
+  "w-5 h-5",
 );
 const SavedIcon = SmoothLazy(
   () => import("@/assets/svgs/SaveIconWhite.svg?react"),
-  "w-5 h-5"
+  "w-5 h-5",
 );
 const CertificateIcon = SmoothLazy(
   () => import("@/assets/svgs/CertificateBoldIcon.svg?react"),
-  "w-5 h-5"
+  "w-5 h-5",
 );
 // const EditIcon = SmoothLazy(
 //   () => import("@/assets/svgs/EditIcon.svg?react"),
@@ -38,23 +38,23 @@ const CertificateIcon = SmoothLazy(
 // );
 const LanguageIcon = SmoothLazy(
   () => import("@/assets/svgs/LanguageIcon.svg?react"),
-  "w-5 h-5"
+  "w-5 h-5",
 );
 const MoonIcon = SmoothLazy(
   () => import("@/assets/svgs/MoonIcon.svg?react"),
-  "w-5 h-5"
+  "w-5 h-5",
 );
 const QuestionIcon = SmoothLazy(
   () => import("@/assets/svgs/QuestitionIcon.svg?react"),
-  "w-5 h-5"
+  "w-5 h-5",
 );
 const LogoutIcon = SmoothLazy(
   () => import("@/assets/svgs/LogoutIcon.svg?react"),
-  "w-5 h-5"
+  "w-5 h-5",
 );
 const SettingIcon = SmoothLazy(
   () => import("@/assets/svgs/SettingIcon.svg?react"),
-  "w-5 h-5"
+  "w-5 h-5",
 );
 
 const LanguageDropdown = lazy(() => import("./ui/LanguageDropdown"));
@@ -161,7 +161,7 @@ const UserNav = () => {
                 {
                   icon: <CertificateIcon />,
                   label: t("my_certificates"),
-                  to: "",
+                  to: "/my-certificates",
                 },
                 {
                   icon: <SavedIcon />,

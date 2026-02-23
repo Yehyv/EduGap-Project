@@ -3,16 +3,13 @@ import { useState } from "react";
 import EditIcon from "@/assets/svgs/PencilIcon.svg?react";
 import {
   courseDetailsForDashboard,
-  // activateCourse,
-  // deactivateCourse,
-  // getProgramsForCourse,
+  getProgramsForCourse,
 } from "@/features/Dashboard/services/dashboardApis";
 import { useQuery } from "@tanstack/react-query";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ContentsInCourse from "@/features/Dashboard/components/ContentsInCourse";
-// import ActiveStatusButton from "@/shared/components/ui/ActiveStatusButton";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import { FolderOpen } from "lucide-react";
 
@@ -36,8 +33,6 @@ interface CourseData {
 interface ProgramInCourse {
   id: string;
   name: string;
-  logo?: string;
-  description?: string;
 }
 
 const CourseDetailsDashboard = () => {
@@ -45,7 +40,6 @@ const CourseDetailsDashboard = () => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>("data");
 
-  /* ================= QUERY ================= */
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["courseDetailsForDashboard", courseId],
     queryFn: () => courseDetailsForDashboard(courseId ?? ""),
@@ -56,7 +50,6 @@ const CourseDetailsDashboard = () => {
   const courseDataEn = courseData?.translations?.[0];
   const courseDataAr = courseData?.translations?.[1];
 
-  /* ================= LOADING & ERROR STATES ================= */
   if (isLoading) return <CircleLoader />;
 
   if (isError) {
@@ -67,7 +60,6 @@ const CourseDetailsDashboard = () => {
     return <ErrorMessage message="Course not found" />;
   }
 
-  /* ================= TAB STYLING ================= */
   const tabClass = (tab: TabType) =>
     `rounded-lg border flex-1 py-2.5 px-4 cursor-pointer transition-all font-medium ${
       activeTab === tab
@@ -77,7 +69,6 @@ const CourseDetailsDashboard = () => {
 
   return (
     <div className="space-y-5">
-      {/* ================= HEADER ================= */}
       <DashboardPageTitle
         text={`${t("courseTitle")} ${courseDataEn?.name || ""}`}
         button
@@ -93,20 +84,6 @@ const CourseDetailsDashboard = () => {
         }
       />
 
-      {/* ================= STATUS BUTTON ================= */}
-      {/* <div className="flex justify-end">
-        <ActiveStatusButton
-          isActive={courseData.isActive}
-          itemId={courseId ?? ""}
-          itemName="Course"
-          activateApi={activateCourse}
-          deactivateApi={deactivateCourse}
-          refetchKey={["courseDetailsForDashboard", courseId]}
-          showModal={true}
-        />
-      </div> */}
-
-      {/* ================= TABS ================= */}
       <div className="flex gap-4">
         <button
           className={tabClass("data")}
@@ -130,7 +107,6 @@ const CourseDetailsDashboard = () => {
         </button>
       </div>
 
-      {/* ================= TAB CONTENT ================= */}
       {activeTab === "data" && (
         <DataTab
           courseData={courseData}
@@ -142,7 +118,7 @@ const CourseDetailsDashboard = () => {
 
       {activeTab === "sessions" && <ContentsInCourse />}
 
-      {activeTab === "programs" && <ProgramsTab courseId={courseId} t={t} />}
+      {activeTab === "programs" && <ProgramsTab courseId={courseId} />}
     </div>
   );
 };
@@ -163,7 +139,6 @@ const DataTab = ({
 }: DataTabProps) => {
   return (
     <div className="space-y-6">
-      {/* English Data Section */}
       <div className="bg-white rounded-lg p-6 shadow-sm">
         <h5 className="text-lg font-semibold text-secondary border-b border-gray-200 pb-3 mb-4">
           {t("courseDataTitle")}
@@ -203,13 +178,17 @@ const DataTab = ({
             </ul>
           </div>
 
-          <DataField label={t("fieldCreatedAt")} value={courseData.createdAt} />
-
-          <DataField label={t("fieldCreatedBy")} value={courseData.createdBy} />
+          <DataField
+            label={t("fieldCreatedAt")}
+            value={courseData?.createdAt ?? ""}
+          />
+          <DataField
+            label={t("fieldCreatedBy")}
+            value={courseData?.createdBy?.name ?? ""}
+          />
         </div>
       </div>
 
-      {/* Arabic Data Section */}
       <div className="bg-white rounded-lg p-6 shadow-sm">
         <h5 className="text-lg font-semibold text-secondary border-b border-gray-200 pb-3 mb-4">
           {t("courseDataTitle")} (Arabic)
@@ -217,7 +196,6 @@ const DataTab = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <DataField label={t("fieldName")} value={courseDataAr?.name} />
-
           <DataField
             label={t("fieldDescription")}
             value={courseDataAr?.description}
@@ -244,40 +222,20 @@ const DataTab = ({
 /* ================= PROGRAMS TAB COMPONENT ================= */
 interface ProgramsTabProps {
   courseId?: string;
-  t: (key: string) => string;
 }
 
-const ProgramsTab = ({ courseId, t }: ProgramsTabProps) => {
-  // TODO: Replace with actual API call when backend is ready
-  // const { data, isLoading, error } = useQuery({
-  //   queryKey: ["programsForCourse", courseId],
-  //   queryFn: () => getProgramsForCourse(courseId ?? ""),
-  //   enabled: !!courseId,
-  // });
+const ProgramsTab = ({ courseId }: ProgramsTabProps) => {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["programsForCourse", courseId],
+    queryFn: () => getProgramsForCourse(courseId ?? ""),
+    enabled: !!courseId,
+  });
 
-  // if (isLoading) return <CircleLoader />;
-  // if (error) return <ErrorMessage message="Error loading programs" />;
+  const programs: ProgramInCourse[] = data?.data?.data ?? [];
 
-  // Mock data - replace with actual data from API
-  const mockPrograms: ProgramInCourse[] = [
-    {
-      id: "1",
-      name: "Full Stack Development Program",
-      description: "Complete web development training",
-    },
-    {
-      id: "2",
-      name: "Data Science Bootcamp",
-      description: "Comprehensive data science course",
-    },
-    {
-      id: "3",
-      name: "Digital Marketing Masterclass",
-      description: "Advanced marketing strategies",
-    },
-  ];
+  if (isLoading) return <CircleLoader />;
 
-  const programs = mockPrograms; // Replace with: data?.data || []
+  if (isError) return <ErrorMessage message="Error loading programs" />;
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -299,7 +257,7 @@ const ProgramsTab = ({ courseId, t }: ProgramsTabProps) => {
               <Link
                 key={program.id}
                 to={`/dashboard/programs/${program.id}`}
-                className="flex items-start gap-3 p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100 group"
+                className="flex items-center gap-3 p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100 group"
               >
                 <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/20 transition-colors">
                   <span className="text-secondary font-semibold">
@@ -311,11 +269,6 @@ const ProgramsTab = ({ courseId, t }: ProgramsTabProps) => {
                   <h6 className="text-gray-800 font-medium group-hover:text-secondary transition-colors">
                     {program.name}
                   </h6>
-                  {program.description && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      {program.description}
-                    </p>
-                  )}
                 </div>
 
                 <svg
@@ -346,15 +299,6 @@ const ProgramsTab = ({ courseId, t }: ProgramsTabProps) => {
           </p>
         </div>
       )}
-
-      {/* TODO: Add the following features when integrating with real API:
-          - Program logos
-          - Number of students enrolled via this program
-          - Program status (active/inactive)
-          - Pagination if many programs
-          - Search/filter functionality
-          - Program statistics (completion rate, etc.)
-      */}
     </div>
   );
 };

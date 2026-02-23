@@ -162,7 +162,7 @@ const ExpertDetailsDashboard = () => {
 
           <div>
             <h6 className="text-[#444444] text-sm">{t("created_by")}</h6>
-            <p>{expert?.created_by || "-"}</p>
+            <p>{expert?.createdBy?.full_name || "-"}</p>
           </div>
         </div>
       </div>

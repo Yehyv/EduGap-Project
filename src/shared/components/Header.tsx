@@ -90,7 +90,7 @@ const Dropdown = ({
 const ProgramsDropdown = ({ data }: { data: ProgramsType[] }) => (
   <motion.div
     {...dropdownAnimation}
-    className="absolute top-full end-0 bg-white shadow-lg rounded-xl p-3 min-w-[250px] z-40"
+    className="absolute top-full end-0 bg-white shadow-lg rounded-xl p-3 min-w-[250px] z-40 text-wrap"
   >
     {data?.map((item) => (
       <Link
@@ -283,7 +283,7 @@ const Header = ({
                           )}
                         </div>
                       </Link>
-                    )
+                    ),
                   )}
                   {savedContentData?.items?.length == 0 && (
                     <p className="text-gray-500 text-sm text-center w-full inline-block">
@@ -312,7 +312,7 @@ const Header = ({
                           <span className="font-semibold">{item?.name}</span>
                         </div>
                       </Link>
-                    )
+                    ),
                   )}
                   {institutionalSubjectsData?.length == 0 && (
                     <p className="text-gray-500 text-sm text-center w-full inline-block">

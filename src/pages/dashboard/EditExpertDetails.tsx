@@ -64,7 +64,9 @@ const EditExpertDetails = () => {
 
   return (
     <>
-      <DashboardPageTitle text={t("editExpertDetails")} />
+      <DashboardPageTitle
+        text={`${t("editExpertDetails")} ${expertData?.data.user.full_name}`}
+      />
 
       <ExpertDetailsForm
         isForEdit={true}

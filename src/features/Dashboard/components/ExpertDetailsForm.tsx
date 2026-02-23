@@ -20,8 +20,8 @@ const ExpertDetailsForm = ({
     queryKey: ["getAllUsers"],
     queryFn: () => getStudents(),
   });
-  const handleGetUsersData = studentsData?.data.users.map((u) => ({
-    label: u.full_name,
+  const handleGetUsersData = studentsData?.data?.data?.users?.map((u) => ({
+    label: u.name,
     value: u.id,
   }));
 
@@ -51,12 +51,14 @@ const ExpertDetailsForm = ({
         {/* ================= ARABIC ================= */}
         <div className="bg-white rounded-xl p-4">
           <div className="grid grid-cols-1 gap-4">
-            <DropdownMenu
-              label={t("user")}
-              name="userId"
-              options={handleGetUsersData}
-              isDisabled={true}
-            />
+            {!isForEdit && (
+              <DropdownMenu
+                label={t("user")}
+                name="userId"
+                options={handleGetUsersData}
+                isDisabled={true}
+              />
+            )}
 
             <TextField
               label={t("expert_title")}

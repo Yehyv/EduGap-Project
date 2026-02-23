@@ -34,6 +34,7 @@ const EditCourseDetails = () => {
     queryFn: () => courseDetailsForDashboard(courseId ?? ""),
     enabled: !!courseId,
   });
+
   const courseDetailsForUpdate = data?.data;
   const courseDetailsEn = data?.data?.translations?.[0];
   const courseDetailsAr = data?.data?.translations?.[1];

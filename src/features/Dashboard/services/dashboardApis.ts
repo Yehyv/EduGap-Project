@@ -180,19 +180,21 @@ export async function deleteInstitute(instituteId: number): Promise<void> {
   return res.data;
 }
 
-export async function getStudents(
+export const getStudents = async (
   roleCategory: string,
-): Promise<UsersResponse> {
-  const res = await dashboardApi.get<UsersResponse>(
-    `/users/super-admin/users-list`,
-    {
-      params: {
-        roleCategory,
-      },
-    },
-  );
-  return res.data;
-}
+  page: number = 1,
+  limit: number = 10,
+  search: string = "",
+) => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(roleCategory && { roleCategory }),
+    ...(search && { search }),
+  });
+
+  return dashboardApi.get(`/users/super-admin/users-list?${params.toString()}`);
+};
 export async function getStudentDetails(
   studentId: string,
 ): Promise<UserResponse> {
@@ -520,6 +522,8 @@ export async function getStudentsInInstitute(
   instituteId: string,
   programId?: string,
   isActive?: string,
+  page?: number,
+  limit?: number,
 ): Promise<InstituteStudentsResponse> {
   const params = new URLSearchParams();
 
@@ -529,7 +533,12 @@ export async function getStudentsInInstitute(
   const queryString = params.toString();
   const url = `/users/super-admin/institute/${instituteId}/students${queryString ? `?${queryString}` : ""}`;
 
-  const res = await dashboardApi.get<InstituteStudentsResponse>(url);
+  const res = await dashboardApi.get<InstituteStudentsResponse>(url, {
+    params: {
+      page,
+      limit,
+    },
+  });
   return res.data;
 }
 export async function getExpertDetailsForDashboard(
@@ -1017,7 +1026,7 @@ export async function systemUserActiveToggle(
   systemUserId: number,
 ): Promise<void> {
   const res = await dashboardApi.patch<void>(
-    `/users/super-admin/user-status/${systemUserId}`,
+    `/system-users/super-admin/system-user-status/${systemUserId}`,
   );
   return res.data;
 }
@@ -1026,6 +1035,14 @@ export async function instituteActiveToggle(
 ): Promise<void> {
   const res = await dashboardApi.patch<void>(
     `/institutes/super-admin/institute-status/${instituteId}`,
+  );
+  return res.data;
+}
+export async function courseActiveToggle(
+  courseId: number | string,
+): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `/courses/super-admin/course-status/${courseId}`,
   );
   return res.data;
 }
@@ -1068,6 +1085,13 @@ export const getInstituteStaff = async (
 export const getProgramInstitutes = async (programId: string) => {
   const response = await dashboardApi.get(
     `/programs/super-admin/program/${programId}/institutes`,
+  );
+  return response.data;
+};
+
+export const getProgramsForCourse = async (courseId: string) => {
+  const response = await dashboardApi.get(
+    `/programs/super-admin/course/${courseId}/programs`,
   );
   return response.data;
 };

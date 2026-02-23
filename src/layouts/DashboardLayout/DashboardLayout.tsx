@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { jwtDecode } from "jwt-decode";
 import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
 import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
 import DashboardIcon from "@/assets/svgs/DashboardIcon.svg?react";
@@ -20,23 +21,56 @@ import { logoutDashboardUser } from "@/features/Dashboard/services/dashboardApis
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ProfileSection from "@/features/Dashboard/components/ProfileSection";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ROLES
+// ─────────────────────────────────────────────────────────────────────────────
+const ROLES = {
+  SUPER_ADMIN: "SUPER_ADMIN",
+  ADMIN: "ADMIN",
+  INST_ADMIN: "INST_ADMIN",
+};
+
+const ALL_ROLES = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INST_ADMIN];
+const SUPER_AND_ADMIN = [ROLES.SUPER_ADMIN, ROLES.ADMIN];
+const SUPER_ONLY = [ROLES.SUPER_ADMIN];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAV LINK CLASS
+// ─────────────────────────────────────────────────────────────────────────────
 const navLinkClass = ({ isActive }) =>
-  `
-  p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+  `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
   ${
     isActive
       ? "text-secondary font-bold bg-[#ECF8FF]"
       : "text-[#ACACAC] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
-  }
-`;
+  }`;
 
-const InstitutesPage = () => {
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+const DashboardLayout = () => {
   const [open, setOpen] = useState(false);
-  const { lang, setLang } = useLanguage();
-  const { t } = useLanguage();
-
-  const { dashboardLogout } = useAuth();
+  const { lang, setLang, t } = useLanguage();
+  const { dashboardToken, dashboardLogout } = useAuth();
   const navigate = useNavigate();
+
+  // Decode token safely
+  const decoded = (() => {
+    try {
+      return dashboardToken ? jwtDecode(dashboardToken) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const role = decoded?.role;
+  const instituteId = decoded?.instituteId;
+
+  const isSuperAdmin = role === ROLES.SUPER_ADMIN;
+  const isAdmin = role === ROLES.ADMIN;
+  const isInstAdmin = role === ROLES.INST_ADMIN;
+  const isSuperOrAdmin = isSuperAdmin || isAdmin;
+
   const handleLogout = () => {
     logoutDashboardUser()
       .then(() => {
@@ -51,19 +85,19 @@ const InstitutesPage = () => {
       {/* Sidebar */}
       <aside
         className={`
-    flex flex-col justify-between
-    fixed top-0 h-screen w-64 bg-white z-40 shadow-lg
-    transform transition-all duration-300 ease-in-out
-    ${lang === "en" ? "left-0" : "right-0"}
-    ${
-      open
-        ? "translate-x-0 opacity-100"
-        : lang === "en"
-          ? "-translate-x-full opacity-0"
-          : "translate-x-full opacity-0"
-    }
-    md:translate-x-0 md:opacity-100 md:shadow-none
-  `}
+          flex flex-col justify-between
+          fixed top-0 h-screen w-64 bg-white z-40 shadow-lg
+          transform transition-all duration-300 ease-in-out
+          ${lang === "en" ? "left-0" : "right-0"}
+          ${
+            open
+              ? "translate-x-0 opacity-100"
+              : lang === "en"
+                ? "-translate-x-full opacity-0"
+                : "translate-x-full opacity-0"
+          }
+          md:translate-x-0 md:opacity-100 md:shadow-none
+        `}
       >
         <div>
           <button
@@ -82,62 +116,154 @@ const InstitutesPage = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="py-2 px-3 flex flex-col gap-1 overflow-y-auto">
+        <nav className="py-2 px-3 flex flex-col gap-1 overflow-y-auto flex-1">
           <h5 className="text-[#ACACAC] mb-2 mx-2">{t("menu")}</h5>
 
-          <NavLink to="/dashboard/home" end className={navLinkClass}>
+          {/* ── ALL roles ─────────────────────────────────────────────────── */}
+          <NavLink
+            to="/dashboard/home"
+            end
+            className={navLinkClass}
+            onClick={() => setOpen(false)}
+          >
             <DashboardIcon />
             <span>{t("dashboard")}</span>
           </NavLink>
 
-          <NavLink to="/dashboard/institutes" className={navLinkClass}>
-            <GovernmentIcon />
-            <span>{t("institutes")}</span>
-          </NavLink>
+          {/* Institutes:
+              SUPER_ADMIN & ADMIN → /dashboard/institutes (list)
+              INST_ADMIN          → /dashboard/institutes/:instituteId (their own) */}
+          {isSuperOrAdmin && (
+            <NavLink
+              to="/dashboard/institutes"
+              className={navLinkClass}
+              onClick={() => setOpen(false)}
+            >
+              <GovernmentIcon />
+              <span>{t("institutes")}</span>
+            </NavLink>
+          )}
 
-          <NavLink to="/dashboard/users" className={navLinkClass}>
-            <StudentIcon />
-            <span>{t("users")}</span>
-          </NavLink>
+          {isInstAdmin && instituteId ? (
+            <>
+              <NavLink
+                to={`/dashboard/institutes/${instituteId}`}
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <GovernmentIcon />
+                <span>{t("institutes")}</span>
+              </NavLink>
+              ,
+            </>
+          ) : (
+            <></>
+          )}
 
-          <NavLink to="/dashboard/system-users" className={navLinkClass}>
-            <SystemUsersIcon />
-            <span>{t("systemUsers")}</span>
-          </NavLink>
-
-          <NavLink to="/dashboard/programs" className={navLinkClass}>
-            <ProgramsIcon />
-            <span>{t("programs")}</span>
-          </NavLink>
-
-          <NavLink to="/dashboard/courses" className={navLinkClass}>
-            <CoursesDashboardIcon />
-            <span>{t("courses")}</span>
-          </NavLink>
-
-          <NavLink to="/dashboard/learning-paths" className={navLinkClass}>
-            <LearningPathsIcon />
-            <span>{t("learningPaths")}</span>
-          </NavLink>
-
-          <NavLink to="/dashboard/experts" className={navLinkClass}>
-            <EducatorsIcon />
-            <span>{t("experts")}</span>
-          </NavLink>
-
-          <NavLink to="/dashboard/contents" className={navLinkClass}>
+          {/* Training Courses — ALL roles
+              ⚠️ Uses /dashboard/institute-courses to avoid collision
+                 with the client-side /institute-courses route */}
+          {/* <NavLink
+            to="/dashboard/institute-courses"
+            className={navLinkClass}
+            onClick={() => setOpen(false)}
+          >
             <ConentsIcon />
             <span>{t("trainingCourses")}</span>
-          </NavLink>
-          <NavLink to="/dashboard/location" className={navLinkClass}>
-            <LocationIcon />
-            <span>{t("location")}</span>
-          </NavLink>
-          <NavLink to="/dashboard/roles" className={navLinkClass}>
-            <SettingSidebarIcon />
-            <span>{t("roles")}</span>
-          </NavLink>
+          </NavLink> */}
+
+          {/* ── SUPER_ADMIN & ADMIN only ──────────────────────────────────── */}
+          {isSuperOrAdmin && (
+            <>
+              <NavLink
+                to="/dashboard/users"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <StudentIcon />
+                <span>{t("users")}</span>
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/programs"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <ProgramsIcon />
+                <span>{t("nav_programs")}</span>
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/courses"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <CoursesDashboardIcon />
+                <span>{t("courses")}</span>
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/learning-paths"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <LearningPathsIcon />
+                <span>{t("learningPaths")}</span>
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/experts"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <EducatorsIcon />
+                <span>{t("experts")}</span>
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/contents"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <ConentsIcon />
+                <span>{t("contents")}</span>
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/location"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <LocationIcon />
+                <span>{t("location")}</span>
+              </NavLink>
+            </>
+          )}
+
+          {/* ── SUPER_ADMIN only ──────────────────────────────────────────── */}
+          {isSuperAdmin && (
+            <>
+              <NavLink
+                to="/dashboard/roles"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <SettingSidebarIcon />
+                <span>{t("roles")}</span>
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/system-users"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <SystemUsersIcon />
+                <span>{t("systemUsers")}</span>
+              </NavLink>
+            </>
+          )}
         </nav>
+
         <button
           onClick={handleLogout}
           className="pb-10 mx-4 pt-2 flex items-center gap-2 text-[#ACACAC] border-t border-[#ACACAC]"
@@ -150,10 +276,10 @@ const InstitutesPage = () => {
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-h-screen ml-0 md:me-4 md:ms-64 pt-2">
         {/* Header */}
-        <header className="py-2 bg-white  rounded-2xl flex items-center mx-6 justify-between px-4">
+        <header className="py-2 bg-white rounded-2xl flex items-center mx-6 justify-between px-4">
           <button
             onClick={() => setOpen(true)}
-            className="md:hidden p-2 rounded hover:bg-gray-100 "
+            className="md:hidden p-2 rounded hover:bg-gray-100"
           >
             <svg
               className="w-6 h-6"
@@ -169,12 +295,12 @@ const InstitutesPage = () => {
             </svg>
           </button>
 
-          <SearchBar placeholder={t("search")} />
+          <SearchBar placeholder={t("search")} lang={lang} />
 
           <ProfileSection
-            userName="Abdullah Shaaban"
-            userRole={t("admin")}
-            userImage="/path/to/profile-image.jpg"
+            userName={""}
+            userRole={role}
+            userImage={""}
             currentLang={lang}
             onLanguageChange={setLang}
           />
@@ -189,4 +315,4 @@ const InstitutesPage = () => {
   );
 };
 
-export default InstitutesPage;
+export default DashboardLayout;
