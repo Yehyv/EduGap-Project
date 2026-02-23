@@ -414,6 +414,7 @@ export class UsersService {
         'user.phone_key AS phone_key',
         'user.is_active AS user_is_active',
         'user.user_image AS user_user_image',
+        'user.createdAt AS createdAt',
         'institute.id AS institute_id',
         'institute.logo AS institute_logo',
         'it.name AS it_name',
@@ -437,6 +438,7 @@ export class UsersService {
       phone_key: row.phone_key,
       isActive: row.user_is_active,
       user_image: row.user_user_image,
+      createdAt: row.createdAt,
       institute: {
         id: row.institute_id,
         logo: row.institute_logo,
