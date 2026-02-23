@@ -420,13 +420,13 @@ findLatestOne(
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   /** ربط المحتوى بكورسات */
-  @Patch(':id/course/:courseIds/assign')
-  assignToCourses(
-    @Param('id', ParseIntPipe) contentId: number,
-    @Param('courseIds') courseIds: number[],
-  ) {
-    return this.contentsService.assignToCourses(contentId, courseIds);
-  }
+  @Patch(':id/course/:courseId/assign')
+assignToCourse(
+  @Param('id', ParseIntPipe) contentId: number,
+  @Param('courseId', ParseIntPipe) courseId: number,
+) {
+  return this.contentsService.assignToCourse(contentId, courseId);
+}
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   /** فك الربط بين المحتوى وكورسات */

@@ -326,59 +326,46 @@ export class ContentsService {
   /** ----------------------------------------------------------------
    * ✅ ربط محتوى بكورسات (assign)
    * ---------------------------------------------------------------- */
-  async assignToCourses(contentId: number, courseIds: number[]) {
-    if (!courseIds?.length) {
-      throw new BadRequestException('courseIds must be provided');
-    }
-
-    const content = await this.contentRepo.findOne({
-      where: { id: contentId },
-    });
+  async assignToCourse(contentId: number, courseId: number) {
+    const content = await this.contentRepo.findOneBy({ id: contentId });
     if (!content) {
       throw new NotFoundException(`Content ${contentId} not found`);
     }
 
-    const courses = await this.courseRepo.findBy({ id: In(courseIds) });
-    if (courses.length !== courseIds.length) {
-      throw new NotFoundException('Some courses not found');
+    const course = await this.courseRepo.findOneBy({ id: courseId });
+    if (!course) {
+      throw new NotFoundException(`Course ${courseId} not found`);
     }
 
-    for (const course of courses) {
-      const exist = await this.courseContentRepo.findOne({
-        where: {
-          content: { id: contentId },
-          course: { id: course.id },
-        },
-        withDeleted: true,
-      });
+    const exist = await this.courseContentRepo.findOne({
+      where: {
+        content: { id: contentId },
+        course: { id: courseId },
+      },
+      withDeleted: true,
+    });
 
-      // ✔️ موجود ومفعل
-      if (exist && !exist.deleted_at) {
-        throw new ConflictException(
-          `Content already assigned to course ${course.id}`,
-        );
-      }
-
-      // ✔️ موجود لكن soft-deleted → restore
-      if (exist && exist.deleted_at) {
-        await this.courseContentRepo.restore(exist.id);
-        await this.courseContentRepo.update(exist.id, {
-          is_active: 1,
-        });
-        continue;
-      }
-
-      // ✔️ مش موجود → create
-      await this.courseContentRepo.save(
-        this.courseContentRepo.create({
-          content: { id: contentId },
-          course: { id: course.id },
-          is_active: 1,
-        }),
+    if (exist && !exist.deleted_at) {
+      throw new ConflictException(
+        `Content already assigned to course ${courseId}`,
       );
     }
 
-    return { message: 'Content assigned to courses successfully' };
+    if (exist && exist.deleted_at) {
+      await this.courseContentRepo.restore(exist.id);
+      await this.courseContentRepo.update(exist.id, { is_active: 1 });
+      return { message: 'Content restored successfully' };
+    }
+
+    await this.courseContentRepo.save(
+      this.courseContentRepo.create({
+        content: { id: contentId },
+        course: { id: courseId },
+        is_active: 1,
+      }),
+    );
+
+    return { message: 'Content assigned successfully' };
   }
 
   /** ----------------------------------------------------------------
