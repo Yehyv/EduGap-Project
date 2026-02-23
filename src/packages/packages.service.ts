@@ -161,7 +161,7 @@ export class PackagesService {
       'pkg.id AS pkg_id',
       'pkg.image AS pkg_image',
       'pkg.is_active AS pkg_isActive',
-      'pkg.createdAt AS pkg_createdAt',
+      'pkg.created_at AS pkg_createdAt',
       'translation.title AS translation_title',
       'translation.description AS translation_description',
       'translation.learning_outcoms AS translation_outcoms',
