@@ -422,7 +422,7 @@ export class UsersService {
         'role.id AS role_id',
         'role.role_category AS role_role_category',
         'createdBy.id AS created_by_id',
-        'createdBy.full_name AS created_by_full_name',
+        'createdBy.full_name AS created_by_name',
       ]);
     const row = await query.getRawOne<userRow>();
     if (!row) {

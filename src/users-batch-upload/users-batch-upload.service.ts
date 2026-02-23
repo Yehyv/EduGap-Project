@@ -104,6 +104,7 @@ export class UsersBatchUploadService {
           instituteId,
           studentRole.id,
           batch.id,
+          systemUserId,
         ),
       );
     }
@@ -355,6 +356,7 @@ export class UsersBatchUploadService {
     instituteId: number,
     roleId: number,
     batchId: number,
+    systemUserId: number,
   ): Promise<User> {
     const baseUrl = process.env.APP_URL || '';
     const profileImage = `${baseUrl}/uploads/defaults/default-user.png`;
@@ -379,6 +381,7 @@ export class UsersBatchUploadService {
       phone_key: '20',
 
       batchUpload: { id: batchId },
+      createdBy: { id: systemUserId }
     });
   }
 
