@@ -24,6 +24,7 @@ interface pkgRow {
   pkg_isActive: number;
   created_by_id: number;
   created_by_name: string;
+  pkg_createdAt: Date;
 }
 function pickTranslation<T extends { language?: { id?: number } }>(
   list: T[] | undefined,
@@ -108,6 +109,7 @@ export class PackagesService {
         'pkg.id AS pkg_id',
         'pkg.image AS pkg_image',
         'pkg.is_active AS pkg_isActive',
+        'pkg.createdAt AS pkg_createdAt',
         'translation.title AS translation_title',
         'translation.description AS translation_description',
         'translation.learning_outcoms AS translation_outcoms',
@@ -119,6 +121,7 @@ export class PackagesService {
         id: row.pkg_id,
         image: row.pkg_image,
         isActive: row.pkg_isActive,
+        createdAt: row.pkg_createdAt,
         title: row.translation_title,
         description: row.translation_description,
         learning_outcoms: row.translation_outcoms,
@@ -158,6 +161,7 @@ export class PackagesService {
       'pkg.id AS pkg_id',
       'pkg.image AS pkg_image',
       'pkg.is_active AS pkg_isActive',
+      'pkg.createdAt AS pkg_createdAt',
       'translation.title AS translation_title',
       'translation.description AS translation_description',
       'translation.learning_outcoms AS translation_outcoms',
@@ -174,6 +178,7 @@ export class PackagesService {
     id: rows[0].pkg_id,
     image: rows[0].pkg_image,
     isActive: rows[0].pkg_isActive,
+    createdAt: rows[0].pkg_createdAt,
     createdBy: rows[0].created_by_id ? {
       id: rows[0].created_by_id,
       name: rows[0].created_by_name,

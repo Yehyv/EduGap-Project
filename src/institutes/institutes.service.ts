@@ -8,6 +8,7 @@ import { In, Repository } from 'typeorm';
 import { instituteTranslation } from './entities/institute-translation.entity';
 import { Language } from 'src/languages/entities/language.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
+import { Region } from 'src/regions/entities/region.entity';
 interface InstituteFiles {
   logo?: Express.Multer.File[];
   image_profile?: Express.Multer.File[];
@@ -312,48 +313,47 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles, user
 
   }
   async update(id: number, updateInstituteDto: UpdateInstituteDto) {
-    const institute = await this.instituteRepository.findOne({
-      where: { id },
-      relations: ['translations', 'translations.language', 'region'],
-    });
-    if (!institute) throw new NotFoundException(`Institute ${id} not found`);
+  const institute = await this.instituteRepository.findOne({
+    where: { id },
+    relations: ['translations', 'translations.language', 'region'],
+  });
 
-    // تعديل بيانات الـ Institute
-    Object.assign(institute, {
-      
-      email: updateInstituteDto.email ?? institute.email,
-      phone_key: updateInstituteDto.phone_key ?? institute.phone_key,
-      phone: updateInstituteDto.phone ?? institute.phone,
-      region: updateInstituteDto.regionId ?? institute.region,});
-    await this.instituteRepository.save(institute);
+  if (!institute)
+    throw new NotFoundException(`Institute ${id} not found`);
 
-    if (updateInstituteDto.translations) {
-      // استخدام upsert للتراجم
-      const translationsData = await Promise.all(
-        updateInstituteDto.translations.map(async (t) => {
-          const language = await this.languageRepository.findOne({
-            where: { id: t.languageId },
-          });
-          if (!language)
-            throw new NotFoundException(`Language ${t.languageId} not found`);
+  // 🔹 Update fields
+  if (updateInstituteDto.email !== undefined)
+    institute.email = updateInstituteDto.email;
 
-          return this.instituteTranslationRepository.create({
-            name: t.name,
-            address: t.address,
-            language,
-            institute,
-          });
-        }),
-      );
+  if (updateInstituteDto.phone_key !== undefined)
+    institute.phone_key = updateInstituteDto.phone_key;
 
-      await this.instituteTranslationRepository.upsert(translationsData, {
-        conflictPaths: ['institute', 'language'], // بفضل الـ @Unique
-        skipUpdateIfNoValuesChanged: true,
-      });
-    }
+  if (updateInstituteDto.phone !== undefined)
+    institute.phone = updateInstituteDto.phone;
 
-    return this.findOne(id);
+  // 🔹 Fix region relation
+  if (updateInstituteDto.regionId !== undefined) {
+    institute.region = { id: updateInstituteDto.regionId } as Region;
   }
+
+  await this.instituteRepository.save(institute);
+
+  // 🔹 Translations
+  if (updateInstituteDto.translations?.length) {
+    const translationsData = updateInstituteDto.translations.map((t) => ({
+      name: t.name,
+      address: t.address,
+      language: { id: t.languageId },
+      institute: { id },
+    }));
+
+    await this.instituteTranslationRepository.upsert(translationsData, {
+      conflictPaths: ['institute', 'language'],
+    });
+  }
+
+  return this.findOne(id);
+}
 
   async remove(id: number) {
     const institute = await this.instituteRepository.findOne({
