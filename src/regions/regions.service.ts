@@ -69,6 +69,7 @@ export class RegionsService {
       return {
         id: c.id,
         isActive: c.isActive,
+        createdAt: c.createdAt,
         name: tr?.name,
         createdBy: {
           id: c.createdBy?.id,

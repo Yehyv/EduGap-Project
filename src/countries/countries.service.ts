@@ -69,6 +69,7 @@ export class CountriesService {
           name: c.createdBy?.full_name,
         },
         isActive: c.isActive,
+        createdAt: c.createdAt,
         name: tr?.name,
       };
     });

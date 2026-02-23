@@ -25,18 +25,20 @@ export class SystemUsersService {
     const role = await this.systemRoleRepo.findOne({
       where: { id: dto.roleId },
     });
-
+    console.log('Role found:', role);
     if (!role) throw new BadRequestException('Invalid roleId');
 
-    const isManager = role.role_title?.toLowerCase() === 'manager';
+    const isInstAdmin = role.role_title === 'INST_ADMIN';
 
     // لو Manager لازم instituteId
-    if (isManager && !dto.instituteId) {
-      throw new BadRequestException('instituteId is required for Manager role');
+    if (isInstAdmin && !dto.instituteId) {
+      throw new BadRequestException(
+        'instituteId is required for INST_ADMIN role',
+      );
     }
 
     // لو مش Manager الأفضل نخليها null (اختياري)
-    if (!isManager) {
+    if (!isInstAdmin) {
       dto.instituteId = undefined;
     }
 
