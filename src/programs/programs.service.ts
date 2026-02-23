@@ -625,7 +625,7 @@ export class ProgramsService {
   }
 
   async getProgramsForCourse(courseId: number, languageId?: number) {
-    const qb = this.pc
+    const rows = await this.pc
       .createQueryBuilder('pc')
       .innerJoin('pc.course', 'course')
       .innerJoin('pc.program', 'program')
@@ -636,33 +636,20 @@ export class ProgramsService {
         languageId ? { languageId } : {},
       )
       .where('course.id = :courseId', { courseId })
-      .andWhere('pc.isActive = 1')
+      .andWhere('pc.is_active = 1')
       .andWhere('program.isActive = 1')
       .select([
         'program.id   AS program_id',
-        'program.logo AS program_logo',
-        'pt.name      AS program_name',
-      ]);
-
-    // لو languageId مش مبعوت: هات أول ترجمة (بدون duplicates)
-    if (!languageId) {
-      qb.addSelect('MIN(pt.name)', 'program_name')
-        .groupBy('program.id')
-        .addGroupBy('program.logo');
-    }
-
-    const rows = await qb.getRawMany<{
-      program_id: number;
-      program_logo: string;
-      program_name: string | null;
-    }>();
+        'pt.name      AS translation_name',
+      ])
+      .distinct(true) // ✅ أهم حاجة
+      .getRawMany<ProgramRaw>();
 
     return {
       message: 'Programs for course',
       data: rows.map((r) => ({
-        id: Number(r.program_id),
-        logo: r.program_logo,
-        name: r.program_name ?? null,
+        id: r.program_id,
+        name: r.translation_name ?? null,
       })),
     };
   }

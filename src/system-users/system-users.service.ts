@@ -148,4 +148,25 @@ export class SystemUsersService {
       ],
     });
   }
+
+  async toggleActive(userId: number) {
+    const user = await this.sysUserRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`SystemUser with ID ${userId} not found`);
+    }
+
+    // 🔄 Toggle
+    user.is_active = user.is_active ? 0 : 1;
+
+    await this.sysUserRepository.save(user);
+
+    return {
+      message: `SystemUser is_active changed to ${user.is_active}`,
+      id: user.id,
+      is_active: user.is_active,
+    };
+  }
 }

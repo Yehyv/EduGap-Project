@@ -423,33 +423,50 @@ export class ContentsService {
     languageId?: number,
     instituteId?: number,
     programId?: number,
-    userId?: number, // اختياري
+    userId?: number,
   ) {
     const offset = (page - 1) * limit;
 
-    // 1) IDs مرتبة حسب عدد الـ enrollments
+    // 1️⃣ Base Query (IDs + counts) — نظيفة وصارمة
     const baseQb = this.contentRepo
       .createQueryBuilder('c')
+      .innerJoin(
+        'c.courseContents',
+        'cc',
+        'cc.deleted_at IS NULL AND cc.is_active = 1',
+      )
+      .innerJoin(
+        'cc.course',
+        'course',
+        'course.deleted_at IS NULL AND course.isActive = 1',
+      )
       .leftJoin('c.enrollments', 'e')
-      .leftJoin('c.courseContents', 'cc')
-      .leftJoin('cc.course', 'course')
-      .leftJoin('course.instituteProgramCourses', 'ipc')
+      .where('c.deleted_at IS NULL')
+      .andWhere('c.is_active = 1')
       .select('c.id', 'id')
-      .addSelect('COUNT(e.id)', 'cnt')
+      .addSelect('COUNT(e.id)', 'enrollmentsCount')
       .groupBy('c.id')
-      .orderBy('cnt', 'DESC');
+      .orderBy('enrollmentsCount', 'DESC');
 
-    if (instituteId)
-      baseQb.andWhere('ipc.instituteId = :instituteId', { instituteId });
-    if (programId) baseQb.andWhere('ipc.programId = :programId', { programId });
+    // 🔵 فلترة حسب البرنامج والمعهد
+    if (instituteId && programId) {
+      baseQb.innerJoin(
+        'course.instituteProgramCourses',
+        'ipc',
+        'ipc.instituteId = :instituteId AND ipc.programId = :programId',
+        { instituteId, programId },
+      );
+    }
 
-    const allRows = await baseQb.getRawMany<{ id: number; cnt: string }>();
-    const total = allRows.length;
+    // 🔢 total count
+    const totalRows = await baseQb.getRawMany();
+    const total = totalRows.length;
 
+    // 📄 pagination
     const pageRows = await baseQb
       .limit(limit)
       .offset(offset)
-      .getRawMany<{ id: number; cnt: string }>();
+      .getRawMany<{ id: number; enrollmentsCount: string }>();
 
     if (!pageRows.length) {
       return {
@@ -466,16 +483,19 @@ export class ContentsService {
     }
 
     const ids = pageRows.map((r) => Number(r.id));
-    const countMap = new Map<number, number>(
-      ids.map((id, i) => [id, Number(pageRows[i].cnt)]),
+    const enrollCountMap = new Map<number, number>(
+      pageRows.map((r) => [Number(r.id), Number(r.enrollmentsCount)]),
     );
-    const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
 
-    // 2) متوسط التقييم → خزّنه في content.rate
-    const avgRows = await this.contentRepo
+    // 2️⃣ stats query (duration + ratings)
+    const statsRows = await this.contentRepo
       .createQueryBuilder('c')
+      .leftJoin('c.topics', 't')
+      .leftJoin('t.lessons', 'l')
       .leftJoin('c.enrollments', 'e2')
+      .where('c.id IN (:...ids)', { ids })
       .select('c.id', 'id')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
       .addSelect(
         `
       CASE
@@ -487,43 +507,30 @@ export class ContentsService {
         )
       END
       `,
-        'avg',
+        'avgRate',
       )
-      .where('c.id IN (:...ids)', { ids })
-      .groupBy('c.id')
-      .getRawMany<{ id: number; avg: string }>();
-
-    for (const r of avgRows) {
-      await this.contentRepo.update(
-        { id: Number(r.id) },
-        { rate: Number(r.avg) },
-      );
-    }
-
-    // 3) المدة + عدّاد المقيمين
-    const statsRows = await this.contentRepo
-      .createQueryBuilder('c')
-      .leftJoin('c.topics', 't')
-      .leftJoin('t.lessons', 'l')
-      .leftJoin('c.enrollments', 'e3')
-      .select('c.id', 'id')
-      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
       .addSelect(
-        'SUM(CASE WHEN e3.rating > 0 THEN 1 ELSE 0 END)',
+        'SUM(CASE WHEN e2.rating > 0 THEN 1 ELSE 0 END)',
         'ratersCount',
       )
-      .where('c.id IN (:...ids)', { ids })
       .groupBy('c.id')
-      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+      .getRawMany();
 
-    const durationMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
-    );
-    const ratersMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    const statsMap = new Map<
+      number,
+      { duration: number; avg: number; raters: number }
+    >(
+      statsRows.map((r) => [
+        Number(r.id),
+        {
+          duration: Number(r.totalDuration),
+          avg: Number(r.avgRate),
+          raters: Number(r.ratersCount),
+        },
+      ]),
     );
 
-    // 4) فلاج الالتحاق (يكفي وجود صف)
+    // 3️⃣ enrollment flags
     let enrolledMap = new Map<
       number,
       { isEnrolled: boolean; isCompleted: boolean }
@@ -550,46 +557,37 @@ export class ContentsService {
         ]),
       );
     }
+
     const savedMap = await this.buildSavedMap(userId, ids);
 
-    // 5) حمّل تفاصيل المحتويات + ترجمات التصنيف والـ educator
+    // 4️⃣ تحميل التفاصيل
     const contents = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoinAndSelect(
         'c.translations',
         'tr',
         languageId ? 'tr.languageId = :languageId' : undefined,
-        { languageId },
+        languageId ? { languageId } : {},
       )
       .leftJoinAndSelect('c.contentCategory', 'cat')
       .leftJoinAndSelect(
         'cat.translations',
         'catTr',
         languageId ? 'catTr.languageId = :languageId' : undefined,
-        { languageId },
+        languageId ? { languageId } : {},
       )
       .leftJoinAndSelect('c.educator', 'educator')
       .leftJoinAndSelect('educator.user', 'eduUser')
       .where('c.id IN (:...ids)', { ids })
       .getMany();
 
-    contents.sort(
-      (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
-    );
-
     const items = contents.map((c) => {
-      const tr =
-        c.translations.find(
-          (t: any) =>
-            t?.language?.id === languageId || t?.languageId === languageId,
-        ) || c.translations[0];
+      const tr = c.translations[0];
+      const catTr = c.contentCategory?.translations?.[0];
+      const stats = statsMap.get(c.id);
 
-      const catTr =
-        c.contentCategory?.translations?.find(
-          (t: any) =>
-            t?.language?.id === languageId || t?.languageId === languageId,
-        ) || c.contentCategory?.translations?.[0];
       const enrollInfo = enrolledMap.get(c.id);
+
       return {
         id: c.id,
         name: tr?.name ?? '',
@@ -597,9 +595,9 @@ export class ContentsService {
         image: c.image,
         level: c.level,
 
-        rate: c.rate ?? 0,
-        ratersCount: ratersMap.get(c.id) ?? 0,
-        totalDuration: durationMap.get(c.id) ?? 0,
+        rate: stats?.avg ?? 0,
+        ratersCount: stats?.raters ?? 0,
+        totalDuration: stats?.duration ?? 0,
 
         isEnrolled: enrollInfo?.isEnrolled ?? false,
         isCompleted: enrollInfo?.isCompleted ?? false,
@@ -614,11 +612,13 @@ export class ContentsService {
           : null,
 
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
+
         category: {
           id: c.contentCategory?.id ?? null,
           name: catTr?.name ?? '',
         },
-        enrollmentsCount: countMap.get(c.id) ?? 0,
+
+        enrollmentsCount: enrollCountMap.get(c.id) ?? 0,
       };
     });
 
@@ -1427,63 +1427,60 @@ export class ContentsService {
     instituteId,
     programId,
     languageId,
-    limitPerCategory = 5, // أول N من كل كاتيجوري
+    limitPerCategory = 5,
   }: {
-    instituteId?: number; // ✅ بقى Optional
-    programId?: number; // ✅ بقى Optional
+    instituteId?: number;
+    programId?: number;
     languageId?: number;
     limitPerCategory?: number;
   }) {
-    // 1) نبني الـ Query Builder مرة واحدة
     const qb = this.contentRepo
       .createQueryBuilder('c')
       .leftJoin(
         'c.courseContents',
         'cc',
-        'cc.deleted_at IS NULL AND cc.is_active != 0',
+        'cc.deleted_at IS NULL AND cc.is_active = 1',
       )
-      .leftJoin('cc.course', 'course');
+      .leftJoin('cc.course', 'course')
+      .where('c.deleted_at IS NULL')
+      .andWhere('c.is_active = 1');
 
-    // لو في معهد/برنامج فلتر على IPC
-    if (instituteId || programId) {
-      qb.leftJoin('course.instituteProgramCourses', 'ipc');
-
-      if (instituteId) {
-        qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
-      }
-      if (programId) {
-        qb.andWhere('ipc.programId = :programId', { programId });
-      }
+    // 🔵 Logged-in mode
+    if (instituteId && programId) {
+      qb.innerJoin(
+        'course.instituteProgramCourses',
+        'ipc',
+        'ipc.instituteId = :instituteId AND ipc.programId = :programId',
+        { instituteId, programId },
+      );
     }
 
     qb.leftJoinAndSelect(
       'c.translations',
       'tr',
       languageId ? 'tr.languageId = :languageId' : undefined,
-      { languageId },
+      languageId ? { languageId } : {},
     )
       .leftJoinAndSelect('c.contentCategory', 'cat')
       .leftJoinAndSelect(
         'cat.translations',
         'catTr',
         languageId ? 'catTr.languageId = :languageId' : undefined,
-        { languageId },
+        languageId ? { languageId } : {},
       )
       .leftJoinAndSelect('c.educator', 'edu')
       .leftJoinAndSelect('edu.user', 'eduUser')
-      .where('c.deleted_at IS NULL')
-      .andWhere('c.is_active != 0')
       .orderBy('c.created_at', 'DESC');
 
     const rows = await qb.getMany();
 
     if (!rows.length) return { categories: [] };
 
-    // 2) group by category
+    // 🔹 Group by category
     const byCategory = new Map<number, typeof rows>();
 
     for (const c of rows) {
-      const catId = c.contentCategory?.id ?? 0; // 0 = بدون تصنيف
+      const catId = c.contentCategory?.id ?? 0;
       const arr = byCategory.get(catId) ?? [];
       arr.push(c);
       byCategory.set(catId, arr);
@@ -1494,7 +1491,6 @@ export class ContentsService {
         arr[0].contentCategory?.translations,
         languageId,
       );
-      const catName = catId === 0 ? 'General' : (catTr?.name ?? '');
 
       const items = arr.slice(0, limitPerCategory).map((c) => {
         const tr = this.pickTr(c.translations, languageId);
@@ -1514,12 +1510,11 @@ export class ContentsService {
 
       return {
         id: catId || null,
-        name: catName,
+        name: catId === 0 ? 'General' : (catTr?.name ?? ''),
         items,
       };
     });
 
-    // 3) ترتيب حسب اسم التصنيف (اختياري)
     categories.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     return { categories };

@@ -431,5 +431,4 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles, user
       id: institute.id,
       is_active: institute.is_active};
   }
-
 }
