@@ -144,20 +144,15 @@ const DashboardLayout = () => {
             </NavLink>
           )}
 
-          {isInstAdmin && instituteId ? (
-            <>
-              <NavLink
-                to={`/dashboard/institutes/${instituteId}`}
-                className={navLinkClass}
-                onClick={() => setOpen(false)}
-              >
-                <GovernmentIcon />
-                <span>{t("institutes")}</span>
-              </NavLink>
-              ,
-            </>
-          ) : (
-            <></>
+          {isInstAdmin && instituteId && (
+            <NavLink
+              to={`/dashboard/institutes/${instituteId}`}
+              className={navLinkClass}
+              onClick={() => setOpen(false)}
+            >
+              <GovernmentIcon />
+              <span>{t("institutes")}</span>
+            </NavLink>
           )}
 
           {/* Training Courses — ALL roles
