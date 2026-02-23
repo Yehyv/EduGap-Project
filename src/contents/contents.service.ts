@@ -26,6 +26,8 @@ interface contentRow {
   content_image: string;
   content_level: string;
   content_rate: number;
+  content_isActive: number;
+  content_createdAt: Date;
   translation_name: string;
   translation_description: string;
   translation_what_to_learn: string[];
@@ -176,6 +178,8 @@ export class ContentsService {
         'content.image AS content_image',
         'content.level AS content_level',
         'content.rate AS content_rate',
+        'content.is_active AS content_isActive',
+        'content.created_at AS content_createdAt',
         'translation.id AS translation_id',
         'translation.name AS translation_name',
         'translation.description AS translation_description',
@@ -193,6 +197,8 @@ export class ContentsService {
       image: r.content_image,
       level: r.content_level,
       rate: r.content_rate,
+      isActive: r.content_isActive,
+      createdAt: r.content_createdAt,
       whatToLearn: r.translation_what_to_learn,
       categoryId: r.category_id,
       categoryName: r.categoryTranslation_name,
