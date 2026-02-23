@@ -321,7 +321,7 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles, user
   if (!institute)
     throw new NotFoundException(`Institute ${id} not found`);
 
-  // 🔹 Update fields
+  // 🔹 Update scalar fields
   if (updateInstituteDto.email !== undefined)
     institute.email = updateInstituteDto.email;
 
@@ -331,25 +331,40 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles, user
   if (updateInstituteDto.phone !== undefined)
     institute.phone = updateInstituteDto.phone;
 
-  // 🔹 Fix region relation
-  if (updateInstituteDto.regionId !== undefined) {
+  // 🔹 Update region relation
+  if (updateInstituteDto.regionId !== undefined)
     institute.region = { id: updateInstituteDto.regionId } as Region;
-  }
 
   await this.instituteRepository.save(institute);
 
-  // 🔹 Translations
+  // 🔹 Update translations
   if (updateInstituteDto.translations?.length) {
-    const translationsData = updateInstituteDto.translations.map((t) => ({
-      name: t.name,
-      address: t.address,
-      language: { id: t.languageId },
-      institute: { id },
-    }));
+    for (const t of updateInstituteDto.translations) {
+      const existing = await this.instituteTranslationRepository.findOne({
+        where: {
+          institute: { id },
+          language: { id: t.languageId },
+        },
+      });
 
-    await this.instituteTranslationRepository.upsert(translationsData, {
-      conflictPaths: ['institute', 'language'],
-    });
+      if (existing) {
+        await this.instituteTranslationRepository.update(existing.id, {
+          ...(t.name !== undefined && { name: t.name }),
+          ...(t.address !== undefined && { address: t.address }),
+          ...(t.contactPersopnName !== undefined && { contactPersopnName: t.contactPersopnName }),
+          ...(t.contactPersonPostion !== undefined && { contactPersonPostion: t.contactPersonPostion }),
+        });
+      } else {
+        await this.instituteTranslationRepository.save({
+          name: t.name,
+          address: t.address,
+          contactPersopnName: t.contactPersopnName,
+          contactPersonPostion: t.contactPersonPostion,
+          language: { id: t.languageId },
+          institute: { id },
+        });
+      }
+    }
   }
 
   return this.findOne(id);
