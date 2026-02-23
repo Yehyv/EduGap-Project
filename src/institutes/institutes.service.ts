@@ -297,6 +297,12 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles, user
                       })),
                   }
                 : null,
+              region: institute.region ? {
+                id: institute.region.id,
+                translations: institute.region.translations.map(t => ({
+                  name: t.name,
+                })),
+              } : null,
             }
           : null,
       }

@@ -898,6 +898,7 @@ export class UsersService {
         'user.createdAt   AS createdAt',
         'program.id       AS program_id',
         'pt.name          AS program_name',
+        'user.is_active    AS user_is_active',
       ])
       .orderBy('user.createdAt', 'DESC')
       .getRawMany<userRow>();
@@ -912,6 +913,7 @@ export class UsersService {
         phone: `${s.phone_key ?? ''}${s.user_phone ?? ''}`,
         email: s.user_email,
         createdAt: s.createdAt,
+        isActive: s.user_is_active,
         program: s.program_id
           ? { id: s.program_id, name: s.program_name }
           : null,
@@ -1027,6 +1029,7 @@ export class UsersService {
         'user.createdAt   AS createdAt',
         'program.id       AS program_id',
         'pt.name          AS program_name',
+        'user.is_active    AS user_is_active',
       ])
       .orderBy('user.createdAt', 'DESC')
       .getRawMany<userRow>();
@@ -1041,6 +1044,7 @@ export class UsersService {
         phone: `${s.phone_key ?? ''}${s.user_phone ?? ''}`,
         email: s.user_email,
         createdAt: s.createdAt,
+        isActive: s.user_is_active,
         program: s.program_id
           ? { id: s.program_id, name: s.program_name }
           : null,
