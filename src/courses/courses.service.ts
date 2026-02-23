@@ -482,6 +482,7 @@ export class CoursesService {
         'translation.whatToLearn AS translation_whatToLearn',
         'created_by.id AS created_by_id',
         'created_by.full_name AS created_by_name',
+        'course.createdAt AS course_createdAt',
       ])
       .getRawMany<courseRow>();
 
@@ -491,6 +492,7 @@ export class CoursesService {
       id: rows[0].course_id,
       image: rows[0].course_image,
       isActive: rows[0].course_isActive,
+      createdAt: rows[0].course_createdAt,
       translations: rows.map((row) => ({
         name: row.translation_name,
         description: row.translation_description,

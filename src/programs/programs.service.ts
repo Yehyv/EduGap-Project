@@ -181,6 +181,7 @@ export class ProgramsService {
         'language.id AS language_id',
         'createdBy.id AS created_by_id',
         'createdBy.full_name AS created_by_name',
+        'program.createdAt AS program_createdAt',
       ])
       .where('program.id = :id', { id })
       .getRawMany<ProgramRaw>();
@@ -193,6 +194,7 @@ export class ProgramsService {
       id: rows[0].program_id,
       logo: rows[0].program_logo,
       isActive: rows[0].isActive,
+      createdAt: rows[0].program_createdAt,
       translations: rows.map((row) => ({
         name: row.translation_name,
         description: row.translation_description,
