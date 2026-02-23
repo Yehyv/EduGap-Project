@@ -155,16 +155,27 @@ export class ContentsService {
   /** ----------------------------------------------------------------
    * ✅ عرض كل المحتويات
    * ---------------------------------------------------------------- */
-  async findAll(languageId?: number) {
+  async findAll(languageId?: number, instituteId?: number, role?: string) {
     const query = this.contentRepo
       .createQueryBuilder('content')
+      .leftJoin('content.courseContents', 'cc')
+      .leftJoin('cc.course', 'course')
+      .leftJoin('course.instituteProgramCourses', 'ipc')
+      .where('content.deleted_at IS NULL')
+      .andWhere('content.is_active = 1');
+
+    // 🔵 لو عنده instituteId (يعني INST_ADMIN)
+    if (role === 'INST_ADMIN' && instituteId) {
+      query.andWhere('ipc.instituteId = :instituteId', { instituteId });
+    }
+
+    query
       .leftJoin(
         'content.translations',
         'translation',
         languageId ? 'translation.languageId = :languageId' : undefined,
         { languageId },
       )
-      .leftJoin('translation.language', 'language')
       .leftJoin('content.contentCategory', 'category')
       .leftJoin(
         'category.translations',
@@ -174,13 +185,12 @@ export class ContentsService {
       )
       .leftJoin('content.createdBy', 'createdBy')
       .select([
-        'content.id AS content_id',
+        'DISTINCT content.id AS content_id',
         'content.image AS content_image',
         'content.level AS content_level',
         'content.rate AS content_rate',
         'content.is_active AS content_isActive',
         'content.created_at AS content_createdAt',
-        'translation.id AS translation_id',
         'translation.name AS translation_name',
         'translation.description AS translation_description',
         'translation.what_to_learn AS translation_what_to_learn',
@@ -189,7 +199,9 @@ export class ContentsService {
         'createdBy.id AS created_by_id',
         'createdBy.full_name AS created_by_full_name',
       ]);
+
     const rows = await query.getRawMany<contentRow>();
+
     return rows.map((r) => ({
       id: r.content_id,
       name: r.translation_name,

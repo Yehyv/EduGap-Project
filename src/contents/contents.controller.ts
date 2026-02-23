@@ -32,6 +32,7 @@ interface AuthenticatedRequest extends Request {
     email: string;
     instituteId: number;
     refreshToken?: string;
+    role: string;
   };
 }
 @Controller('contents')
@@ -56,12 +57,20 @@ export class ContentsController {
 
   /** كل المحتويات (فلترة اختيارية باللغة عبر الهيدر languageId) */
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/content-list')
-  findAll(@Headers('languageId') languageId?: string) {
-    const langId = languageId ? Number(languageId) : undefined;
-    return this.contentsService.findAll(langId);
-  }
+  findAll(
+  @Headers('languageId') languageId?: string,
+  @Req() req?: AuthenticatedRequest,
+) {
+    const instituteId = req?.user?.instituteId;
+    const role = req?.user?.role;
+  return this.contentsService.findAll(
+    languageId ? Number(languageId) : undefined,
+    instituteId,
+    role,
+  );
+}
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/dropdown/list')
