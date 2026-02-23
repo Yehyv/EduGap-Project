@@ -182,6 +182,34 @@ export class EducatorsService {
       },
     };
   }
+  async findEducator(id: number) {
+    const educator = await this.educatorRepo.findOne({
+      where: { id },
+      relations: ['user', 'createdBy'], // 👈 مهم: عشان نطلع full_name
+    });
+    if (!educator) throw new NotFoundException(`Educator ${id} not found`);
+
+    return {
+      id: educator.id,
+      title: educator.title,
+      bio: educator.bio,
+      image: educator.image,
+      video_intro: educator.video_intro,
+      is_active: educator.is_active,
+      created_at: educator.created_at,
+      updated_at: educator.updated_at,
+      deleted_at: educator.deleted_at,
+      user: {
+        id: educator.user?.id ?? null,
+        full_name: educator.user?.full_name ?? '',
+        email: educator.user?.email ?? '',
+      },
+      createdBy: {
+        id: educator.createdBy?.id ?? null,
+        full_name: educator.createdBy?.full_name ?? '',
+      },
+    };
+  }
 
   /** Update (يدعم تبديل اليوزر مع ضمان 1:1) */
   async update(

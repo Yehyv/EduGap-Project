@@ -94,6 +94,11 @@ export class EducatorsController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.educatorsService.findOne(id);
   }
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get('educator/:id')
+  findEducator(@Param('id', ParseIntPipe) id: number) {
+    return this.educatorsService.findEducator(id);
+  }
 
   /** PATCH /educators/:id — تحديث محاضر */
   @UseGuards(JwtAuthGuard, RolesGuard)
