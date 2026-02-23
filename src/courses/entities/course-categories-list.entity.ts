@@ -32,7 +32,7 @@ export class CourseCategoriesList {
   @DeleteDateColumn({ name: 'deleted_at' })
   deleted_at: Date;
 
-  @Column({ name: 'is_active', type: 'enum', enum: [0, 1], default: 1 })
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   is_active: number;
 
   @Column({ name: 'added_by', type: 'int', nullable: true })
