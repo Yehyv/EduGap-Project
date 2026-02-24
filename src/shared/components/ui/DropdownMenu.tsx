@@ -6,6 +6,7 @@ export default function DropdownMenu({
   name,
   options,
   disabled = false,
+  required = false,
 }) {
   const { setFieldValue, setFieldTouched } = useFormikContext();
   const [field, meta] = useField(name);
@@ -15,13 +16,18 @@ export default function DropdownMenu({
 
   return (
     <div className="flex flex-col gap-1">
-      {label && <label className="font-medium">{label}</label>}
+      {label && (
+        <label className="font-medium">
+          {label}
+          <span className="text-red-500 ms-1">{required ? "*" : ""}</span>
+        </label>
+      )}
 
       <Select
         isDisabled={disabled}
         value={currentValue}
         options={options}
-        className="react-select-container "
+        className="react-select-container"
         classNamePrefix="react-select"
         onChange={(opt) => {
           setFieldValue(name, opt?.value ?? "");
@@ -32,7 +38,7 @@ export default function DropdownMenu({
         styles={{
           control: (base) => ({
             ...base,
-            backgroundColor: "#F9F8F8",
+            backgroundColor: `${disabled ? "#9ca3af5c" : "white"}`,
           }),
         }}
       />

@@ -541,7 +541,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <ContentsList />
               </DashboardRoute>
             }

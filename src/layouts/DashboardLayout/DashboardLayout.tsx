@@ -155,17 +155,14 @@ const DashboardLayout = () => {
             </NavLink>
           )}
 
-          {/* Training Courses — ALL roles
-              ⚠️ Uses /dashboard/institute-courses to avoid collision
-                 with the client-side /institute-courses route */}
-          {/* <NavLink
-            to="/dashboard/institute-courses"
+          <NavLink
+            to="/dashboard/contents"
             className={navLinkClass}
             onClick={() => setOpen(false)}
           >
             <ConentsIcon />
             <span>{t("trainingCourses")}</span>
-          </NavLink> */}
+          </NavLink>
 
           {/* ── SUPER_ADMIN & ADMIN only ──────────────────────────────────── */}
           {isSuperOrAdmin && (
@@ -213,15 +210,6 @@ const DashboardLayout = () => {
               >
                 <EducatorsIcon />
                 <span>{t("experts")}</span>
-              </NavLink>
-
-              <NavLink
-                to="/dashboard/contents"
-                className={navLinkClass}
-                onClick={() => setOpen(false)}
-              >
-                <ConentsIcon />
-                <span>{t("contents")}</span>
               </NavLink>
 
               <NavLink

@@ -1052,6 +1052,14 @@ export async function roleActiveToggle(roleId: number): Promise<void> {
   );
   return res.data;
 }
+export async function trainingCourseToggle(
+  trainingCourseId: number,
+): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `/contents/super-admin/content-status/${trainingCourseId}`,
+  );
+  return res.data;
+}
 export const fetchBatchResult = async (batchId: number | string) => {
   const { data } = await dashboardApi.get(`/users-batch-upload/${batchId}`);
   return data.data;

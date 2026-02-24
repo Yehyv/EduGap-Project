@@ -98,19 +98,19 @@ const Locations = () => {
       },
       {
         name: "Name",
-        selector: (row: CountriesTypes) => row.name,
+        selector: (row: CountriesTypes) => row?.name,
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
         name: "Created At",
-        selector: (row: CountriesTypes) => row.created_at,
+        selector: (row: CountriesTypes) => row?.createdAt,
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
         name: "Created By",
-        selector: (row: CountriesTypes) => row.created_by,
+        selector: (row: CountriesTypes) => row?.createdBy?.name,
         sortable: true,
         style: { justifyContent: "center" },
       },

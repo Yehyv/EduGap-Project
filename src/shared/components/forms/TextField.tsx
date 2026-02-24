@@ -9,6 +9,7 @@ type TextFieldProps = {
   maxLength?: number;
   disabled?: boolean;
   moreStyle?: string;
+  required?: boolean;
 };
 
 const TextField = ({
@@ -20,6 +21,7 @@ const TextField = ({
   maxLength,
   disabled = false,
   moreStyle,
+  required = false,
 }: TextFieldProps) => {
   const [, meta] = useField(name);
 
@@ -30,8 +32,10 @@ const TextField = ({
     <div className="flex flex-col gap-1">
       <label htmlFor={name} className="font-medium">
         {label}
+        <span className="text-red-500 ms-1">{required ? "*" : ""}</span>
       </label>
       <Field
+        required
         id={name}
         name={name}
         type={type}
@@ -44,7 +48,7 @@ const TextField = ({
           if (onlyNumbers) {
             e.currentTarget.value = e.currentTarget.value.replace(
               /[^0-9]/g,
-              ""
+              "",
             );
           }
         }}

@@ -49,8 +49,8 @@ const columns = [
     name: "Image",
     selector: (row: SystemUsers) => (
       <img
-        src={row.user_image}
-        alt={row.full_name}
+        src={row?.user_image}
+        alt={row?.full_name}
         className="w-12 h-12 rounded-full"
       />
     ),
@@ -61,7 +61,7 @@ const columns = [
     name: "Full Name",
     selector: (row: SystemUsers) => (
       <Link className="underline" to={`/dashboard/system-users/${row.id}`}>
-        {row.full_name}
+        {row?.full_name}
       </Link>
     ),
     sortable: true,
@@ -69,19 +69,19 @@ const columns = [
   },
   {
     name: "Email",
-    selector: (row: SystemUsers) => row.email,
+    selector: (row: SystemUsers) => row?.email,
     sortable: true,
     center: true,
   },
   {
     name: "National ID",
-    selector: (row: SystemUsers) => row.national_id,
+    selector: (row: SystemUsers) => row?.national_id,
     sortable: true,
     center: true,
   },
   {
     name: "Phone",
-    selector: (row: SystemUsers) => row.phone,
+    selector: (row: SystemUsers) => row?.phone,
     sortable: true,
     center: true,
   },
@@ -93,7 +93,8 @@ const columns = [
   },
   {
     name: "Institute",
-    selector: (row: SystemUsers) => row.institute ?? "-",
+    selector: (row: SystemUsers) =>
+      row?.institute?.translations?.[0]?.name ?? "-",
     sortable: true,
     center: true,
   },

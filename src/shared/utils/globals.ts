@@ -85,3 +85,13 @@ export const LANGUAGES = [
   { label: "Arabic", value: "Arabic" },
   { label: "English", value: "English" },
 ];
+
+export const ROLES = {
+  SUPER_ADMIN: "SUPER_ADMIN",
+  ADMIN: "ADMIN",
+  INST_ADMIN: "INST_ADMIN",
+};
+
+export const ALL_ROLES = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INST_ADMIN];
+export const SUPER_AND_ADMIN = [ROLES.SUPER_ADMIN, ROLES.ADMIN];
+export const SUPER_ONLY = [ROLES.SUPER_ADMIN];

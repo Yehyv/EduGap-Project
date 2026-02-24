@@ -12,6 +12,7 @@ const AddNewSystemUser = () => {
     phone_key: "",
     phone: "",
     roleId: "",
+    instituteId: "",
   };
 
   /* ================= MUTATION ================= */

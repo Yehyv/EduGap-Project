@@ -24,6 +24,7 @@ const EditSystemUser = () => {
     phone_key: data?.data.phone_key,
     phone: data?.data.phone,
     roleId: data?.data.SysUserrole?.id,
+    instituteId: data?.data?.institute?.name,
   };
   const queryClient = useQueryClient();
   /* ================= MUTATION ================= */
