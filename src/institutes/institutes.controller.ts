@@ -75,7 +75,7 @@ export class InstitutesController {
     return this.institutesService.instituteNav(languageId, limit);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN') // بس ال SUPER_ADMIN يقدر يشوف تفاصيل ال institute
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN') // بس ال SUPER_ADMIN يقدر يشوف تفاصيل ال institute
   @Get('super-admin/institute/:id')
   findOne(@Param('id') id: string) {
     return this.institutesService.findOne(+id);
