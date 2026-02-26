@@ -68,6 +68,7 @@ export class UsersBatchUploadService {
     file: Express.Multer.File,
     instituteId: number,
     systemUserId: number,
+    programId?: number,
   ) {
     // 1️⃣ get student role once
     const studentRole = await this.roleRepo.findOne({
@@ -105,6 +106,7 @@ export class UsersBatchUploadService {
           studentRole.id,
           batch.id,
           systemUserId,
+          programId,
         ),
       );
     }
@@ -357,6 +359,7 @@ export class UsersBatchUploadService {
     roleId: number,
     batchId: number,
     systemUserId: number,
+    programId?: number,
   ): Promise<User> {
     const baseUrl = process.env.APP_URL || '';
     const profileImage = `${baseUrl}/uploads/defaults/default-user.png`;
@@ -379,9 +382,9 @@ export class UsersBatchUploadService {
       added_type: 1,
       user_image: profileImage,
       phone_key: '20',
-
+      program: programId ? { id: programId } : undefined,
       batchUpload: { id: batchId },
-      createdBy: { id: systemUserId }
+      createdBy: { id: systemUserId },
     });
   }
 

@@ -94,7 +94,8 @@ export class TopicsController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.topicsService.remove(id);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get(':contentId/topics')
   async getTopics(
     @Param('contentId') contentId: string,

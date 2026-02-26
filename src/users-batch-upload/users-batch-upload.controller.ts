@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   Res,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import express from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -48,16 +49,14 @@ export class UsersBatchUploadController {
     @UploadedFile() file: Express.Multer.File,
     @Body('instituteId', ParseIntPipe) instituteId: number,
     @Req() req: AuthenticatedRequest,
+    @Query('programId') programId?: string,
   ) {
-    /**
-     * req.user.id
-     * جاي من auth guard
-     * وده system user اللي عمل ال upload
-     */
+    const progId = programId ? Number(programId) : undefined;
     return this.usersBatchUploadService.processUpload(
       file,
       instituteId,
       req.user.sub,
+      progId,
     );
   }
 

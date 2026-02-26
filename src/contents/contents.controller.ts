@@ -392,7 +392,7 @@ findLatestOne(
     );
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('ADMIN', 'SUPER_ADMIN')
+    @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   /** محتوى واحد بالتفصيل */
   @Get('super-admin/content/:id')
   findOne(
