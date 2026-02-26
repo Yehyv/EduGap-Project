@@ -38,4 +38,6 @@ export class UsersBatchUploadError {
 
   @CreateDateColumn()
   createdAt: Date;
+  @Column({ type: 'json', nullable: true })
+  rowData: any;
 }

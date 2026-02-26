@@ -30,6 +30,7 @@ interface BatchErrorInput {
   rowNumber: number;
   errorType: string;
   errorMessage: string;
+  rowData?: ParsedExcelRow;
 }
 
 interface ValidUserInput extends ParsedExcelRow {
@@ -83,10 +84,9 @@ export class UsersBatchUploadService {
 
     // 3️⃣ parse excel
     const rows = await this.parseExcel(file);
-
     await this.updateTotalRows(batch, rows.length);
 
-    // file-level validation
+    // 4️⃣ file-level validation
     const { validUsers, errors: validationErrors } = await this.validateRows(
       rows,
       batch.id,
@@ -122,8 +122,18 @@ export class UsersBatchUploadService {
       validationErrors.length + dbErrors.length,
     );
 
-    // 9️⃣ response
-    return this.buildResponse(batch, [...validationErrors, ...dbErrors]);
+    // 9️⃣ build response
+    const allErrors = [...validationErrors, ...dbErrors];
+
+    return {
+      ...this.buildResponse(batch, allErrors),
+
+      // 👇 optional احترافي لو حابب
+      rejectedFileUrl:
+        allErrors.length > 0
+          ? `/users-batch-upload/${batch.id}/rejected-excel`
+          : null,
+    };
   }
   private normalizeCellValue(value: unknown): string {
     if (value === null || value === undefined) return '';
@@ -247,7 +257,6 @@ export class UsersBatchUploadService {
     const errors: BatchErrorInput[] = [];
 
     for (const row of rows) {
-      // 🔥 CRITICAL: Enable transformers!
       const dto = plainToInstance(ExcelStudentRowDto, row, {
         enableImplicitConversion: true,
         excludeExtraneousValues: false,
@@ -264,30 +273,27 @@ export class UsersBatchUploadService {
           batchUpload: { id: batchId },
           rowNumber: row.rowNumber,
           errorType: 'INVALID_FORMAT',
-          errorMessage: errorMessage,
+          errorMessage,
+          rowData: row, // 👈 مهم
         });
         continue;
       }
 
-      /* File-level Duplicates */
+      // File-level duplicates
       if (phoneSet.has(row.phone)) {
-        errors.push(this.buildError(batchId, row.rowNumber, 'DUPLICATE_PHONE'));
+        errors.push(this.buildError(batchId, row, 'DUPLICATE_PHONE'));
         continue;
       }
 
       if (nationalSet.has(row.national_id)) {
-        errors.push(
-          this.buildError(batchId, row.rowNumber, 'DUPLICATE_NATIONAL_ID'),
-        );
+        errors.push(this.buildError(batchId, row, 'DUPLICATE_NATIONAL_ID'));
         continue;
       }
 
       if (row.email) {
         const normalizedEmail = row.email.toLowerCase();
         if (emailSet.has(normalizedEmail)) {
-          errors.push(
-            this.buildError(batchId, row.rowNumber, 'DUPLICATE_EMAIL'),
-          );
+          errors.push(this.buildError(batchId, row, 'DUPLICATE_EMAIL'));
           continue;
         }
         emailSet.add(normalizedEmail);
@@ -296,7 +302,6 @@ export class UsersBatchUploadService {
       phoneSet.add(row.phone);
       nationalSet.add(row.national_id);
 
-      /* Accept Row */
       validUsers.push({
         ...row,
         batchUpload: { id: batchId },
@@ -315,6 +320,7 @@ export class UsersBatchUploadService {
     const emails = users
       .filter((u) => u.email)
       .map((u) => u.email!.toLowerCase());
+
     const existing = await this.userRepo.find({
       where: [
         { phone: In(phones) },
@@ -326,7 +332,7 @@ export class UsersBatchUploadService {
     const existingPhones = new Set(existing.map((u) => u.phone));
     const existingNids = new Set(existing.map((u) => u.national_id));
     const existingEmails = new Set(
-      existing.filter((u) => u.email).map((u) => u.email.toLowerCase()),
+      existing.filter((u) => u.email).map((u) => u.email!.toLowerCase()),
     );
 
     const finalUsers: ValidUserInput[] = [];
@@ -338,11 +344,10 @@ export class UsersBatchUploadService {
         existingNids.has(user.national_id) ||
         (user.email && existingEmails.has(user.email.toLowerCase()))
       ) {
-        errors.push(
-          this.buildError(batchId, user.rowNumber, 'DUPLICATE_IN_DATABASE'),
-        );
+        errors.push(this.buildError(batchId, user, 'DUPLICATE_IN_DATABASE'));
         continue;
       }
+
       finalUsers.push(user);
     }
 
@@ -425,20 +430,69 @@ export class UsersBatchUploadService {
         row: e.rowNumber,
         error: e.errorType,
         message: e.errorMessage,
+        data: e.rowData
+          ? {
+              full_name: e.rowData.full_name,
+              email: e.rowData.email,
+              phone: e.rowData.phone,
+              national_id: e.rowData.national_id,
+              student_id: e.rowData.student_id,
+            }
+          : null,
       })),
     };
+  }
+  private async generateRejectedExcel(
+    errors: BatchErrorInput[],
+  ): Promise<Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Rejected Rows');
+
+    sheet.addRow(['full_name', 'email', 'phone', 'national_id', 'student_id']);
+
+    errors.forEach((e) => {
+      if (!e.rowData) return;
+
+      sheet.addRow([
+        e.rowData.full_name,
+        e.rowData.email,
+        e.rowData.phone,
+        e.rowData.national_id,
+        e.rowData.student_id,
+      ]);
+    });
+
+    const uint8Array = await workbook.xlsx.writeBuffer(); // Uint8Array
+    return Buffer.from(uint8Array); // 👈 الحل
+  }
+  async downloadRejectedExcel(batchId: number): Promise<Buffer> {
+    const batch = await this.batchRepo.findOne({
+      where: { id: batchId },
+      relations: ['errors'],
+    });
+
+    if (!batch) {
+      throw new NotFoundException(`Batch ${batchId} not found`);
+    }
+
+    if (!batch.errors?.length) {
+      throw new NotFoundException('No rejected rows found for this batch');
+    }
+
+    return this.generateRejectedExcel(batch.errors);
   }
 
   private buildError(
     batchId: number,
-    row: number,
+    row: ParsedExcelRow,
     type: string,
   ): BatchErrorInput {
     return {
       batchUpload: { id: batchId },
-      rowNumber: row,
+      rowNumber: row.rowNumber,
       errorType: type,
       errorMessage: type.replace(/_/g, ' '),
+      rowData: row,
     };
   }
   async getBatchDetails(batchId: number) {

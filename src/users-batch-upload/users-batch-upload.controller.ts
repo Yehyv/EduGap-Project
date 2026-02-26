@@ -59,6 +59,27 @@ export class UsersBatchUploadController {
       progId,
     );
   }
+  // @UseGuards(JwtAuthGuard)
+  @Get(':batchId/rejected-excel')
+  async downloadRejectedExcel(
+    @Param('batchId', ParseIntPipe) batchId: number,
+    @Res() res: express.Response,
+  ) {
+    const buffer =
+      await this.usersBatchUploadService.downloadRejectedExcel(batchId);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="rejected-rows-${batchId}.xlsx"`,
+    );
+
+    res.end(buffer); // 👈 مش send JSON
+  }
 
   /* =========================
      3️⃣ Get Batch Details
