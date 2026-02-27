@@ -71,7 +71,7 @@ const columns = [
     cell: (row: Student) => (
       <Link
         className="underline text-sm hover:text-secondary"
-        to={`/dashboard/users/${row.id}`}
+        to={`/dashboard/institutes/student/${row.id}`}
       >
         {row.name}
       </Link>
