@@ -13,7 +13,7 @@ import { Language } from 'src/languages/entities/language.entity';
       CourseCategory,
       CourseCategoryTranslation,
       Course,
-      Language
+      Language,
     ]),
   ],
   controllers: [CourseCategoriesController],

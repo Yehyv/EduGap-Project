@@ -31,7 +31,7 @@ import { CourseCategory } from 'src/course-categories/entities/course-category.e
       LessonProgress,
       SavedCourse,
       SystemUser,
-      CourseCategory
+      CourseCategory,
     ]),
   ],
   controllers: [CoursesController],

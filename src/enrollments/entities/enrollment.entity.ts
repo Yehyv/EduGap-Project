@@ -7,6 +7,7 @@ import {
   ManyToOne,
   Column,
   OneToMany,
+  CreateDateColumn,
 } from 'typeorm';
 @Entity()
 export class Enrollment {
@@ -20,6 +21,8 @@ export class Enrollment {
   @Column({ type: 'int', default: 0 })
   rating: number; // 0 = لم يقيّم بعد
 
+  @CreateDateColumn()
+  created_at: Date;
   @ManyToOne(() => User, (user) => user.enrollments, {
     onDelete: 'CASCADE',
   })

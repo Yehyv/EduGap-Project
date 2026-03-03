@@ -332,7 +332,7 @@ export class UsersBatchUploadService {
     const existingPhones = new Set(existing.map((u) => u.phone));
     const existingNids = new Set(existing.map((u) => u.national_id));
     const existingEmails = new Set(
-      existing.filter((u) => u.email).map((u) => u.email!.toLowerCase()),
+      existing.filter((u) => u.email).map((u) => u.email.toLowerCase()),
     );
 
     const finalUsers: ValidUserInput[] = [];

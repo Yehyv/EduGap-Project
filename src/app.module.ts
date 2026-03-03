@@ -46,6 +46,7 @@ import { SystemAuthModule } from './system-auth/system-auth.module';
 import { UsersBatchUploadModule } from './users-batch-upload/users-batch-upload.module';
 import { AuditSubscriber } from './common/subscribers/audit.subscriber';
 import { CourseCategoriesModule } from './course-categories/course-categories.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -97,6 +98,7 @@ import { CourseCategoriesModule } from './course-categories/course-categories.mo
     SystemAuthModule,
     UsersBatchUploadModule,
     CourseCategoriesModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuditSubscriber],
