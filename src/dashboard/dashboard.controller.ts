@@ -11,7 +11,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
-
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { UseGuards } from '@nestjs/common';
+import { Roles } from 'src/common/decorators/roles.decorator';
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
