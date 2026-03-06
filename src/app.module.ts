@@ -47,6 +47,8 @@ import { UsersBatchUploadModule } from './users-batch-upload/users-batch-upload.
 import { AuditSubscriber } from './common/subscribers/audit.subscriber';
 import { CourseCategoriesModule } from './course-categories/course-categories.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { PackageEnrollmentsModule } from './package-enrollments/package-enrollments.module';
+import { CertificatesModule } from './certificates/certificates.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -99,6 +101,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     UsersBatchUploadModule,
     CourseCategoriesModule,
     DashboardModule,
+    PackageEnrollmentsModule,
+    CertificatesModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuditSubscriber],

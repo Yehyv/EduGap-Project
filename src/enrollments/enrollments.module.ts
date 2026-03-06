@@ -9,6 +9,7 @@ import { Content } from 'src/contents/entities/content.entity';
 import { CourseContent } from 'src/courses/entities/course-content.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequiest-content.entity';
+import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PrerequisiteContent } from 'src/prerequiest-contents/entities/prerequie
       CourseContent,
       InstituteProgramCourse,
       PrerequisiteContent,
+      PackageEnrollment,
     ]),
   ],
   controllers: [EnrollmentsController],

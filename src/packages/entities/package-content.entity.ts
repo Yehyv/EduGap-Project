@@ -38,6 +38,6 @@ export class PackageContent {
   @DeleteDateColumn({ name: 'deleted_at' })
   deleted_at: Date;
 
-  @Column({ type: 'enum', enum: [0, 1], default: 1 })
+  @Column({ type: 'tinyint', width: 1, default: 1 })
   is_active: number;
 }

@@ -1,4 +1,5 @@
 import { Content } from 'src/contents/entities/content.entity';
+import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
@@ -33,4 +34,9 @@ export class Enrollment {
   content: Content;
   @OneToMany(() => LessonProgress, (progress) => progress.enrollment)
   progress: LessonProgress[];
+
+  @ManyToOne(() => PackageEnrollment, (pkgEnr) => pkgEnr.contentsEnrollment, {
+    nullable: true,
+  })
+  packageEnrollment?: PackageEnrollment;
 }
