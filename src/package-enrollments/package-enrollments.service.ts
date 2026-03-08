@@ -247,4 +247,110 @@ export class PackageEnrollmentsService {
       enrolledAt: enrolledAtFormatted,
     };
   }
+  async checkAllUserPackagesCompletion(userId: number, languageId?: number) {
+    // هات كل اشتراكات الباكدجات للمستخدم
+    const userPackageEnrollments = await this.packageEnrollmentRepo.find({
+      where: {
+        user: { id: userId },
+      },
+      relations: ['package', 'user'],
+      order: {
+        created_at: 'DESC',
+      },
+    });
+
+    if (!userPackageEnrollments.length) {
+      return [];
+    }
+
+    const results = await Promise.all(
+      userPackageEnrollments.map(async (userPackageEnrollment) => {
+        const packageId = userPackageEnrollment.package.id;
+
+        // هات كل محتويات الباكدج
+        const pkgContents = await this.packageContentRepo.find({
+          where: {
+            package: { id: packageId },
+            is_active: 1,
+          },
+          relations: ['content'],
+        });
+
+        const contentIds = pkgContents.map((pc) => pc.content.id);
+
+        // هات enrollments الخاصة بالمستخدم في محتويات الباكدج
+        const enrollments = contentIds.length
+          ? await this.enrollmentRepo.find({
+              where: {
+                user: { id: userId },
+                content: { id: In(contentIds) },
+              },
+              relations: ['content'],
+            })
+          : [];
+
+        // احسب هل كل المحتويات مكتملة
+        const allCompleted = pkgContents.every((pc) =>
+          enrollments.some(
+            (e) => e.content.id === pc.content.id && e.status === 1,
+          ),
+        );
+
+        // عدد المحتويات المكتملة
+        const completedContentsCount = enrollments.filter(
+          (e) => e.status === 1,
+        ).length;
+
+        // النسبة المئوية
+        const percentage = pkgContents.length
+          ? Math.round((completedContentsCount / pkgContents.length) * 100)
+          : 0;
+
+        // هات اسم الباكدج بالترجمة
+        const packageEntity = await this.pkgRepo.findOne({
+          where: { id: packageId },
+          relations: ['translations', 'translations.language'],
+        });
+
+        let packageName:
+          | string
+          | { languageId: number; languageName: string; title: string }[] =
+          'Package Name Not Found';
+
+        if (packageEntity) {
+          if (languageId) {
+            const translation = packageEntity.translations.find(
+              (t) => t.language.id === languageId,
+            );
+
+            packageName =
+              translation?.title ??
+              packageEntity.translations[0]?.title ??
+              packageName;
+          } else {
+            packageName = packageEntity.translations.map((t) => ({
+              languageId: t.language.id,
+              languageName: t.language.name,
+              title: t.title,
+            }));
+          }
+        }
+
+        return {
+          packageId,
+          userId,
+          packageName,
+          totalContents: pkgContents.length,
+          completedContents: completedContentsCount,
+          allCompleted,
+          percentage,
+          enrolledAt: userPackageEnrollment.created_at
+            ? userPackageEnrollment.created_at.toLocaleString()
+            : null,
+        };
+      }),
+    );
+
+    return results;
+  }
 }

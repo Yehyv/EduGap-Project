@@ -11,7 +11,7 @@ import { User } from 'src/users/entities/user.entity';
 
 export enum CertificateType {
   CONTENT = 0,
-  LEARNING_PATH = 1,
+  PACKAGE = 1,
 }
 
 export enum CertificateLanguage {
@@ -27,11 +27,7 @@ export class Certificate {
   @Column({ type: 'varchar', length: 100, unique: true })
   serialNumber: string;
 
-  @Column({
-    type: 'enum',
-    enum: CertificateType,
-    default: CertificateType.CONTENT,
-  })
+  @Column({ type: 'tinyint', default: CertificateType.CONTENT })
   type: CertificateType;
 
   @Column({
@@ -53,7 +49,7 @@ export class Certificate {
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   issueDate: Date;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   hours: number;
 
   @CreateDateColumn()

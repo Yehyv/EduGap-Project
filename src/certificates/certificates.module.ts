@@ -6,6 +6,11 @@ import { CertificateContent } from './entities/certificate-content.entity';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { Content } from 'src/contents/entities/content.entity';
 import { Certificate } from './entities/certificate.entity';
+import { User } from 'src/users/entities/user.entity';
+import { CertificatePackage } from './entities/certificate-package.entity';
+import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
+import { Package } from 'src/packages/entities/package.entity';
+import { PackageContent } from 'src/packages/entities/package-content.entity';
 
 @Module({
   imports: [
@@ -14,6 +19,11 @@ import { Certificate } from './entities/certificate.entity';
       CertificateContent,
       Enrollment,
       Content,
+      User,
+      CertificatePackage,
+      PackageEnrollment,
+      Package,
+      PackageContent,
     ]),
   ], // Add your entities here
   controllers: [CertificatesController],

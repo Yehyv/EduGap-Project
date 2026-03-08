@@ -17,6 +17,7 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
+import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SystemUser } from 'src/system-users/entities/system-user.entity';
       LessonProgress,
       SavedPackage,
       SystemUser,
+      PackageEnrollment,
     ]),
     ContentsModule, // <-- أهم سطر: عشان يوفر ContentsService للكنترولر
   ],

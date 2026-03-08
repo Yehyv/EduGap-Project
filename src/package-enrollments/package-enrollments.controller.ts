@@ -96,6 +96,19 @@ export class PackageEnrollmentsController {
       langId,
     );
   }
+  @Get('user/packages-completion')
+  async getUserPackagesCompletion(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+  ) {
+    const langId = languageId ? parseInt(languageId) : undefined;
+    const userId = req.user?.sub;
+    if (!userId) throw new Error('User not authenticated');
+    return this.packageEnrollmentsService.checkAllUserPackagesCompletion(
+      userId,
+      langId,
+    );
+  }
   // @Patch(':packageEnrollmentId/update-status')
   // async updatePackageStatus(
   //   @Param('packageEnrollmentId', ParseIntPipe) packageEnrollmentId: number,

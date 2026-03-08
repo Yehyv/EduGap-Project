@@ -15,6 +15,7 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { SavedPackage } from 'src/saved-packages/entities/saved-package.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
+import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 interface pkgRow {
   pkg_id: number;
   pkg_image: string;
@@ -46,6 +47,7 @@ export class PackagesService {
     @InjectRepository(LessonProgress) private readonly progressRepo: Repository<LessonProgress>,
     @InjectRepository(SavedPackage) private readonly savedPackage: Repository<SavedPackage>,
     @InjectRepository(SystemUser) private readonly systemUserRepo: Repository<SystemUser>,
+    @InjectRepository(PackageEnrollment) private readonly packageEnrollmentRepo: Repository<PackageEnrollment>,
   ) {}
 
   /** helper: upsert translations (replace per language) */
@@ -242,7 +244,7 @@ export class PackagesService {
 
   /** أول 8 باكيدجز */
 /** أول 8 باكيدجز */
-async findPackagesFirst8(languageId?: number) {
+async findPackagesFirst8(languageId?: number, userId?: number) {
   const rows = await this.pkgRepo
     .createQueryBuilder('p')
     .leftJoin(
@@ -272,9 +274,11 @@ async findPackagesFirst8(languageId?: number) {
   if (!rows.length) return [];
 
   const ids = rows.map((r) => Number(r.id));
+
   const countMap = new Map<number, number>(
     rows.map((r) => [Number(r.id), Number(r.contentsCount)]),
   );
+
   const durationMap = new Map<number, number>(
     rows.map((r) => [Number(r.id), Number(r.totalDuration)]),
   );
@@ -283,6 +287,31 @@ async findPackagesFirst8(languageId?: number) {
     where: { id: In(ids) },
     relations: ['translations', 'translations.language'],
   });
+
+  let savedMap = new Map<number, boolean>();
+  let enrolledMap = new Map<number, boolean>();
+
+  if (userId) {
+    const savedRows = await this.savedPackage
+      .createQueryBuilder('sp')
+      .select('sp.packageId', 'packageId')
+      .where('sp.userId = :uid', { uid: userId })
+      .andWhere('sp.packageId IN (:...ids)', { ids })
+      .getRawMany<{ packageId: string }>();
+
+    savedMap = new Map(savedRows.map((r) => [Number(r.packageId), true]));
+
+    const enrolledRows = await this.packageEnrollmentRepo
+      .createQueryBuilder('pe')
+      .select('pe.packageId', 'packageId')
+      .where('pe.userId = :uid', { uid: userId })
+      .andWhere('pe.packageId IN (:...ids)', { ids })
+      .getRawMany<{ packageId: string }>();
+
+    enrolledMap = new Map(
+      enrolledRows.map((r) => [Number(r.packageId), true]),
+    );
+  }
 
   const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
   packs.sort(
@@ -295,14 +324,22 @@ async findPackagesFirst8(languageId?: number) {
       p.translations?.[0] ||
       null;
 
-    return {
+    const base = {
       id: p.id,
       image: p.image,
       title: tr?.title ?? '',
       description: tr?.description ?? '',
       contentsCount: countMap.get(p.id) ?? 0,
-      totalDuration: durationMap.get(p.id) ?? 0, // ⏱️ إجمالي الثواني الخام
+      totalDuration: durationMap.get(p.id) ?? 0,
     };
+
+    return userId
+      ? {
+          ...base,
+          isSaved: savedMap.get(p.id) ?? false,
+          isEnrolled: enrolledMap.get(p.id) ?? false,
+        }
+      : base;
   });
 }
 
@@ -311,6 +348,7 @@ async findPackagesPaginated(
   languageId?: number,
   page: number = 1,
   limit: number = 8,
+  userId?: number,
 ) {
   const offset = (page - 1) * limit;
 
@@ -318,13 +356,21 @@ async findPackagesPaginated(
     .createQueryBuilder('p')
     .select('COUNT(p.id)', 'total')
     .getRawOne<{ total: string }>();
+
   const total = Number(totalRow?.total ?? 0);
   const totalPages = Math.ceil(total / limit);
 
   if (total === 0) {
     return {
       items: [],
-      pagination: { page, limit, total, totalPages, hasNext: false, hasPrev: false },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: false,
+        hasPrev: false,
+      },
     };
   }
 
@@ -370,9 +416,11 @@ async findPackagesPaginated(
   }
 
   const ids = pageRows.map((r) => Number(r.id));
+
   const countMap = new Map<number, number>(
     pageRows.map((r) => [Number(r.id), Number(r.contentsCount)]),
   );
+
   const durationMap = new Map<number, number>(
     pageRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
   );
@@ -381,6 +429,31 @@ async findPackagesPaginated(
     where: { id: In(ids) },
     relations: ['translations', 'translations.language'],
   });
+
+  let savedMap = new Map<number, boolean>();
+  let enrolledMap = new Map<number, boolean>();
+
+  if (userId) {
+    const savedRows = await this.savedPackage
+      .createQueryBuilder('sp')
+      .select('sp.packageId', 'packageId')
+      .where('sp.userId = :uid', { uid: userId })
+      .andWhere('sp.packageId IN (:...ids)', { ids })
+      .getRawMany<{ packageId: string }>();
+
+    savedMap = new Map(savedRows.map((r) => [Number(r.packageId), true]));
+
+    const enrolledRows = await this.packageEnrollmentRepo
+      .createQueryBuilder('pe')
+      .select('pe.packageId', 'packageId')
+      .where('pe.userId = :uid', { uid: userId })
+      .andWhere('pe.packageId IN (:...ids)', { ids })
+      .getRawMany<{ packageId: string }>();
+
+    enrolledMap = new Map(
+      enrolledRows.map((r) => [Number(r.packageId), true]),
+    );
+  }
 
   const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
   packs.sort(
@@ -393,14 +466,22 @@ async findPackagesPaginated(
       p.translations?.[0] ||
       null;
 
-    return {
+    const base = {
       id: p.id,
       image: p.image,
       title: tr?.title ?? '',
       description: tr?.description ?? '',
       contentsCount: countMap.get(p.id) ?? 0,
-      totalDuration: durationMap.get(p.id) ?? 0, // ⏱️ إجمالي الثواني الخام
+      totalDuration: durationMap.get(p.id) ?? 0,
     };
+
+    return userId
+      ? {
+          ...base,
+          isSaved: savedMap.get(p.id) ?? false,
+          isEnrolled: enrolledMap.get(p.id) ?? false,
+        }
+      : base;
   });
 
   return {
@@ -456,6 +537,7 @@ async getPackageBasicById(
     .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
     .getRawOne<{ contentsCount: string; totalDuration: string }>();
     let isSaved = false;
+    let isEnrolled = false;
     if (userId) {
       // لو TypeORM >= 0.3 يدعم getExists()
       const exists = await this.savedPackage
@@ -466,6 +548,15 @@ async getPackageBasicById(
         .andWhere('p.id = :pid', { pid: pkg.id })
         .getExists(); // إن لم تتوفر، استخدم getCount()>0
       isSaved = exists;
+      const enrolledExists = await this.packageEnrollmentRepo
+      .createQueryBuilder('pe')
+      .leftJoin('pe.user', 'u')
+      .leftJoin('pe.package', 'p')
+      .where('u.id = :uid', { uid: userId })
+      .andWhere('p.id = :pid', { pid: pkg.id })
+      .getExists();
+
+    isEnrolled = enrolledExists;
     }
 
   return {
@@ -478,6 +569,7 @@ async getPackageBasicById(
     contentsCount: Number(agg?.contentsCount ?? 0),
     totalDuration: Number(agg?.totalDuration ?? 0), // بالثواني
     isSaved,
+    isEnrolled,
   };
 }
 async getPackageContentsPaginated(
@@ -486,7 +578,7 @@ async getPackageContentsPaginated(
     page = 1,
     limit = 8,
     languageId,
-    userId, // لإظهار isEnrolled + completedLessons
+    userId,
   }: {
     page?: number;
     limit?: number;
@@ -513,16 +605,31 @@ async getPackageContentsPaginated(
   const total = allIdsRows.length;
 
   const pageIdsRows = await baseQb
-    .orderBy('MIN(pc.order_no)', 'ASC') // لو عندك ترتيب داخل الباكيدج
+    .orderBy('MIN(pc.order_no)', 'ASC')
     .offset(offset)
     .limit(limit)
     .getRawMany<{ id: number }>();
 
   const contentIds = pageIdsRows.map((r) => Number(r.id));
 
+  let isPackageEnrolled = false;
+
+  if (userId) {
+    const exists = await this.packageEnrollmentRepo
+      .createQueryBuilder('pe')
+      .leftJoin('pe.user', 'u')
+      .leftJoin('pe.package', 'p')
+      .where('u.id = :uid', { uid: userId })
+      .andWhere('p.id = :pid', { pid: packageId })
+      .getExists();
+
+    isPackageEnrolled = exists;
+  }
+
   if (!contentIds.length) {
     const totalPages = Math.ceil(total / limit);
     return {
+      isEnrolled: isPackageEnrolled,
       items: [],
       pagination: {
         page,
@@ -589,10 +696,9 @@ async getPackageContentsPaginated(
     lessonsCountRows.map((r) => [Number(r.id), Number(r.totalLessons || 0)]),
   );
 
-  // 5) الدروس المكتملة لكل محتوى للمستخدم (لو userId موجود)
+  // 5) الدروس المكتملة لكل محتوى للمستخدم
   let completedLessonsMap = new Map<number, number>();
   if (userId) {
-    // الأضمن: progress -> enrollment -> content
     const completedRows = await this.progressRepo
       .createQueryBuilder('lp')
       .innerJoin('lp.enrollment', 'en')
@@ -610,7 +716,7 @@ async getPackageContentsPaginated(
     );
   }
 
-  // 6) isEnrolled لكل محتوى (اختياري)
+  // 6) isEnrolled لكل محتوى
   let enrolledMap = new Map<number, boolean>();
   if (userId) {
     const enrRows = await this.enrollmentRepo
@@ -619,6 +725,7 @@ async getPackageContentsPaginated(
       .where('en.userId = :uid', { uid: userId })
       .andWhere('en.contentId IN (:...ids)', { ids: contentIds })
       .getRawMany<{ cid: number }>();
+
     enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
   }
 
@@ -626,9 +733,11 @@ async getPackageContentsPaginated(
   const orderIndex = new Map<number, number>(
     contentIds.map((id, i) => [id, i]),
   );
-  contents.sort((a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0));
+  contents.sort(
+    (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
+  );
 
-  // 8) شكّل العناصر بنفس شكل الكارد
+  // 8) شكّل العناصر
   const items = contents.map((c) => {
     const tr = pickTranslation<{
       language?: { id: number };
@@ -652,17 +761,24 @@ async getPackageContentsPaginated(
       ratersCount: ratersMap.get(c.id) ?? 0,
       totalDuration: durationMap.get(c.id) ?? 0,
       whatToLearn: tr?.what_to_learn?.split(',') ?? [],
-      category: { id: c.contentCategory?.id ?? null, name: catTr?.name ?? '' },
+      category: {
+        id: c.contentCategory?.id ?? null,
+        name: catTr?.name ?? '',
+      },
       created_at: c.created_at,
       totalLessons: totalLessonsMap.get(c.id) ?? 0,
       completedLessons: userId ? completedLessonsMap.get(c.id) ?? 0 : 0,
     };
 
-    return userId ? { ...base, isEnrolled: enrolledMap.get(c.id) ?? false } : base;
+    return userId
+      ? { ...base, isEnrolled: enrolledMap.get(c.id) ?? false }
+      : base;
   });
 
   const totalPages = Math.ceil(total / limit);
+
   return {
+    isEnrolled: isPackageEnrolled,
     items,
     pagination: {
       page,
