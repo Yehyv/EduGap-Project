@@ -6,14 +6,21 @@ import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButt
 import {
   activateStudent,
   deactivateStudent,
+  getExamResults,
+  getOverallProgress,
+  getPassedExamsAverage,
+  getStudentContentsProgress,
+  getStudentCoursesProgressSummary,
+  getStudentDetails,
+  getStudentLearningPaths,
 } from "@/features/Dashboard/services/dashboardApis";
 import LineChartIcon from "@/assets/svgs/LineChart.svg?react";
 import PerformanceIcon from "@/assets/svgs/PerformanceIcon.svg?react";
 import WarningIcon from "@/assets/svgs/WarningIcon.svg?react";
 import CheckGreenIcon from "@/assets/svgs/CheckGreenIcon.svg?react";
 import StatCard from "@/features/Dashboard/components/StatCard";
-import defaultImage from "@/assets/imgs/ForDev/CourseSection.png";
 import { DownloadIcon, EyeIcon, Share2Icon, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 // ── Animation Variants ────────────────────────────────────────────────────────
 const pageVariants = {
@@ -408,13 +415,15 @@ const ActivityLogTable = () => {
 // ── Exam Result Card ──────────────────────────────────────────────────────────
 const ExamCard = ({
   title,
-  attempts,
-  score,
+  passPercent,
+  totalQuestions,
+  date,
   passed,
 }: {
   title: string;
-  attempts: number;
-  score: string;
+  passPercent: number;
+  totalQuestions: number;
+  date: string;
   passed: boolean;
 }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
@@ -429,8 +438,13 @@ const ExamCard = ({
       </span>
     </div>
     <div className="flex justify-between text-xs text-gray-500 mt-1">
-      <span>Attempts: {attempts}</span>
-      <span className="font-semibold text-gray-700">{score}</span>
+      <div>
+        <span>Pass Percent: {passPercent}</span>
+        <span className="inline-block ms-2">Date: {date}</span>
+      </div>
+      <span className="font-semibold text-gray-700">
+        total Questions : {totalQuestions}
+      </span>
     </div>
   </div>
 );
@@ -470,22 +484,67 @@ const StudentInInstitute = () => {
   const { studentId } = useParams();
   const isActive = false;
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const { data: overallProgressData } = useQuery({
+    queryKey: ["getOverallProgress"],
+    queryFn: () => getOverallProgress(studentId ?? ""),
+  });
+  const { data: passedExamData } = useQuery({
+    queryKey: ["getPassedExamsAverage"],
+    queryFn: () => getPassedExamsAverage(studentId ?? ""),
+  });
+  const { data: studentContentsProgressData } = useQuery({
+    queryKey: ["getStudentContentsProgress"],
+    queryFn: () => getStudentContentsProgress(studentId ?? ""),
+  });
+  const { data: studentCoursesProgressSummary } = useQuery({
+    queryKey: ["studentCoursesProgressSummary"],
+    queryFn: () => getStudentCoursesProgressSummary(studentId ?? ""),
+  });
+  const { data: studentLearningPathsData } = useQuery({
+    queryKey: ["studentLearningPaths"],
+    queryFn: () => getStudentLearningPaths(studentId ?? ""),
+  });
+  const { data: examResultsData } = useQuery({
+    queryKey: ["examResults"],
+    queryFn: () => getExamResults(studentId ?? ""),
+  });
+
+  const {
+    data: userDataResponse,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["userDetails", studentId],
+    queryFn: () => getStudentDetails(studentId ?? ""),
+    enabled: !!studentId,
+  });
+  const userData = userDataResponse?.data;
+
+  const overallProgress = overallProgressData?.data?.percentage;
+  const passedExam = passedExamData?.data?.passedExams;
+  console.log(studentLearningPathsData);
 
   const infoFields = [
-    { label: "Student Name", value: "Abdullah Shaaban", col: 1, row: 1 },
-    { label: "Student ID", value: "STU-2024-0847", col: 2, row: 1 },
+    { label: "User Name", value: userData?.full_name, col: 1, row: 1 },
+    { label: "User ID", value: userData?.id, col: 2, row: 1 },
     {
       label: "E-mail",
-      value: "yehyaraouf231@gmail.com",
+      value: userData?.email,
       col: 1,
       row: 2,
       breakAll: true,
     },
-    { label: "Institute", value: "Alkatamia", col: 2, row: 2 },
-    { label: "Phone Number", value: "0122 362 5265", col: 1, row: 3 },
-    { label: "Program", value: "Alkatamia", col: 2, row: 3 },
-    { label: "Created at", value: "5/11/2025 17:48 pm", col: 1, row: 4 },
-    { label: "Created by", value: "Mohamed Abdelsalam Ahmed", col: 2, row: 4 },
+    { label: "Institute", value: userData?.institute?.name, col: 2, row: 2 },
+    { label: "Phone Number", value: userData?.phone, col: 1, row: 3 },
+    { label: "Program", value: userData?.program, col: 2, row: 3 },
+    { label: "Created at", value: userData?.createdAt, col: 1, row: 4 },
+    {
+      label: "Created by",
+      value: userData?.createdBy?.full_name,
+      col: 2,
+      row: 4,
+    },
   ];
 
   return (
@@ -493,14 +552,14 @@ const StudentInInstitute = () => {
       {/* Image Modal */}
       {isImageModalOpen && (
         <ImageModal
-          src={defaultImage}
-          alt="Learning Path"
+          src={userData?.user_image}
+          alt="User Image"
           onClose={() => setIsImageModalOpen(false)}
         />
       )}
 
       {/* Page Title */}
-      <motion.h2 variants={slideDown}>Student</motion.h2>
+      <motion.h2 variants={slideDown}>User</motion.h2>
 
       {/* Stats Grid */}
       <motion.div
@@ -509,39 +568,40 @@ const StudentInInstitute = () => {
       >
         <StatCard
           title="Overall Progress"
-          value={68}
+          value={overallProgress}
+          subLabel="Enrolled Courses"
           borderColor="border-secondary"
           textColor="text-secondary"
           bgColor="bg-primary"
           icon={<LineChartIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
         />
-        <StatCard
+        {/* <StatCard
           title="Average Grade"
           value={68}
-          subLabel="Batch avg: 75%"
+          subLabel="Batch avg: 0%"
           borderColor="border-[#9F00BF]"
           textColor="text-[#9F00BF]"
           bgColor="bg-[#F9DDFF]"
           icon={<PerformanceIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
-        />
+        /> */}
         <StatCard
           title="Passed Exams"
-          value={68}
-          subLabel="of 12 total"
+          value={passedExam}
+          subLabel="of 0 total"
           borderColor="border-green-600"
           textColor="text-green-600"
           bgColor="bg-green-100"
           icon={<CheckGreenIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
         />
-        <StatCard
+        {/* <StatCard
           title="Failed Exams"
           value={68}
-          subLabel="of 12 total"
+          subLabel="of 0 total"
           borderColor="border-[#DB6600]"
           textColor="text-[#DB6600]"
           bgColor="bg-[#FFF2E7]"
           icon={<WarningIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
-        />
+        /> */}
       </motion.div>
 
       {/* Student Information */}
@@ -558,7 +618,7 @@ const StudentInInstitute = () => {
               transition={{ type: "spring", stiffness: 380, damping: 20 }}
             >
               <Link
-                to=""
+                to={`/dashboard/users/edit/${studentId}`}
                 className="flex bg-white items-center gap-2 px-3 py-1 rounded-xl shadow-md transition-colors duration-200"
               >
                 <EditIcon className="h-6 w-5 rotate-270 flex-shrink-0" />
@@ -617,17 +677,19 @@ const StudentInInstitute = () => {
 
               <div className="flex flex-col gap-1.5 flex-1">
                 <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
-                  Learning Path Photo
+                  User Image
                 </span>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 300, damping: 22 }}
                   className="flex-1 rounded-xl overflow-hidden border border-gray-100 shadow-sm min-h-[160px] sm:min-h-[180px] cursor-pointer relative group"
-                  onClick={() => setIsImageModalOpen(true)}
+                  onClick={() => {
+                    setIsImageModalOpen(true);
+                  }}
                 >
                   <img
-                    src={defaultImage}
-                    alt="Learning Path"
+                    src={userData?.user_image}
+                    alt="User Image"
                     className="w-full h-full max-h-[250px] object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all duration-200 flex items-center justify-center">
@@ -648,7 +710,7 @@ const StudentInInstitute = () => {
         className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
       >
         <SectionHeader
-          title="Student Courses (3)"
+          title={`Student Courses (${studentContentsProgressData?.data?.count ?? 0})`}
           action={
             <motion.div
               whileHover={{ scale: 1.03 }}
@@ -665,6 +727,9 @@ const StudentInInstitute = () => {
           }
         />
         <div className="p-4">
+          {studentContentsProgressData?.data?.items?.length == 0 && (
+            <p className="text-gray-400 text-center">No Data Available</p>
+          )}
           <motion.div
             variants={infoGridVariants}
             initial="hidden"
@@ -672,16 +737,13 @@ const StudentInInstitute = () => {
             viewport={{ once: true, margin: "-40px" }}
             className="grid grid-cols-1 sm:grid-cols-2 gap-2"
           >
-            <ProgressRow
-              title="Introduction to Data Science"
-              subtitle="Start: Feb 1, 2024"
-              percentage={72}
-            />
-            <ProgressRow
-              title="Machine Learning Fundamentals"
-              subtitle="Start: Mar 10, 2024"
-              percentage={55}
-            />
+            {studentContentsProgressData?.data?.items.map((item) => (
+              <ProgressRow
+                title={item?.name}
+                subtitle={`Start: ${item?.startDate ?? "-"}`}
+                percentage={item?.percentage}
+              />
+            ))}
           </motion.div>
         </div>
       </motion.div>
@@ -716,16 +778,13 @@ const StudentInInstitute = () => {
             viewport={{ once: true, margin: "-40px" }}
             className="grid grid-cols-1 sm:grid-cols-2 gap-2"
           >
-            <ProgressRow
-              title="Data Science Track"
-              subtitle="Start: Feb 1, 2024"
-              percentage={68}
-            />
-            <ProgressRow
-              title="AI & Deep Learning"
-              subtitle="Start: Apr 5, 2024"
-              percentage={40}
-            />
+            {studentLearningPathsData?.data?.data?.map(() => {
+              <ProgressRow
+                title="Data Science Track"
+                subtitle="Start: Feb 1, 2024"
+                percentage={68}
+              />;
+            })}
           </motion.div>
         </div>
       </motion.div>
@@ -734,25 +793,34 @@ const StudentInInstitute = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
         <ChartCard
           title="Student's Courses Out of Total Program Courses"
-          percentage={80}
+          percentage={studentCoursesProgressSummary?.data?.percentage}
           color="var(--color-tertiary, #0ea5e9)"
           trackColor="#E5E7EB"
           legends={[
             {
               color: "var(--color-tertiary, #0ea5e9)",
-              label: "Student Courses: 8",
+              label: `Student Courses: ${studentCoursesProgressSummary?.data?.studentCourses}`,
             },
-            { color: "#D1D5DB", label: "Program Courses: 10" },
+            {
+              color: "#D1D5DB",
+              label: `Program Courses: ${studentCoursesProgressSummary?.data?.totalProgramCourses}`,
+            },
           ]}
         />
         <ChartCard
           title="Progress Distribution"
-          percentage={68}
+          percentage={overallProgressData?.data?.percentage}
           color="#16a34a"
           trackColor="#E5E7EB"
           legends={[
-            { color: "#16a34a", label: "Completed: 68%" },
-            { color: "#D1D5DB", label: "Remaining: 32%" },
+            {
+              color: "#16a34a",
+              label: `Completed: ${overallProgressData?.data?.percentage}%`,
+            },
+            {
+              color: "#D1D5DB",
+              label: `Remaining: ${100 - overallProgressData?.data?.percentage}%`,
+            },
           ]}
         />
       </div>
@@ -761,26 +829,26 @@ const StudentInInstitute = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
         <motion.div
           variants={fadeUp}
-          className="rounded-xl bg-white overflow-hidden shadow-custom"
+          className="rounded-xl bg-white shadow-custom overflow-hidden"
         >
           <SectionHeader title="Exam Results" />
-          <div className="p-4 flex flex-col gap-2">
-            <ExamCard
-              title="Advanced Python Programming"
-              attempts={1}
-              score="8/10"
-              passed
-            />
-            <ExamCard
-              title="Data Structures & Algorithms"
-              attempts={2}
-              score="5/10"
-              passed={false}
-            />
+          <div className="p-4 flex flex-col gap-2  max-h-[200px] overflow-auto">
+            {examResultsData?.data?.items.map((exam) => (
+              <ExamCard
+                title={exam?.examName}
+                passPercent={exam?.passPercent}
+                passed={exam?.result == "Passed"}
+                date={exam?.passedAt}
+                totalQuestions={exam?.totalQuestions}
+              />
+            ))}
+            {examResultsData?.data?.items?.length == 0 && (
+              <p className="text-gray-400 text-center">No Data Available</p>
+            )}
           </div>
         </motion.div>
 
-        <motion.div
+        {/* <motion.div
           variants={fadeUp}
           className="rounded-xl bg-white overflow-hidden shadow-custom"
         >
@@ -795,17 +863,17 @@ const StudentInInstitute = () => {
               issued="Apr 3, 2024"
             />
           </div>
-        </motion.div>
+        </motion.div> */}
       </div>
 
       {/* Activity Log */}
-      <motion.div
+      {/* <motion.div
         variants={fadeUp}
         className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
       >
         <SectionHeader title="Activity Log" />
         <ActivityLogTable />
-      </motion.div>
+      </motion.div> */}
     </motion.div>
   );
 };

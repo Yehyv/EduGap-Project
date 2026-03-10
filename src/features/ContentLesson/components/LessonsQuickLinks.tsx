@@ -3,6 +3,8 @@ import WriteIcon from "@/assets/svgs/WriteIcon.svg?react";
 import AttachementIcon from "@/assets/svgs/AttachmentIcon.svg?react";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import { Link, useParams } from "react-router-dom";
+import GetCertificateButton from "./GetCertificateButton";
+import { fetchCertificate } from "../services/lessonsApis";
 
 const LessonsQuickLinks = () => {
   const { t } = useLanguage();
@@ -43,6 +45,15 @@ const LessonsQuickLinks = () => {
           <span>{label}</span>
         </Link>
       ))}
+      {/* Certificate Button */}
+      {courseId && (
+        <GetCertificateButton
+          courseId={courseId}
+          className=""
+          label={t("get_certificate") || "Get Certificate"}
+          fetchFunction={fetchCertificate}
+        />
+      )}
     </div>
   );
 };

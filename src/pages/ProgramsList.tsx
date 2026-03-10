@@ -11,10 +11,10 @@ import IconsGroup from "@/assets/svgs/iconsGroup.svg?react";
 import { Suspense, lazy } from "react";
 
 const ProgramsSectionCardSkeleton = lazy(
-  () => import("@/shared/components/ui/ProgramsSectionCardSkeleton")
+  () => import("@/shared/components/ui/ProgramsSectionCardSkeleton"),
 );
 const ProgramsSectionCard = lazy(
-  () => import("@/shared/components/EduGap/ProgramsSectionCard")
+  () => import("@/shared/components/EduGap/ProgramsSectionCard"),
 );
 
 const GuestPopularCoursesPage = () => {

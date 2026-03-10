@@ -1,4 +1,5 @@
 import VideoIcon from "@/assets/svgs/VideoIcon.svg?react";
+import LearningPathEnrollButton from "@/features/UserHome/components/LearningPathEnrollButton";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import type { ProgramsType } from "@/shared/types/sharedTypes";
 import { Link } from "react-router-dom";
@@ -26,7 +27,15 @@ const ProgramsSectionCard = ({ data }: { data: ProgramsType }) => {
         <p className="line-clamp-5 mb-5 flex-1" title={data?.description}>
           {data.description}
         </p>
-        <div className="text-end">
+        <div className="flex gap-2 items-center justify-end">
+          <LearningPathEnrollButton
+            isEnrolled={data?.isEnrolled ?? false}
+            programId={data?.id}
+            queryKeyToReCall={[
+              "educationProgramsForSlider",
+              "getGuestProgramsList",
+            ]}
+          />
           <Link
             className="rounded-xl px-4 py-1 bg-[#FCB737] font-bold text-black transform transition-transform duration-300 hover:!text-black hover:-translate-y-0.5 inline-block no-underline"
             to={`/program-details/${data?.id}`}

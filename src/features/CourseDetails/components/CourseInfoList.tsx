@@ -29,6 +29,8 @@ import { motion } from "framer-motion";
 import LessonProgress from "@/features/ContentLesson/components/LessonProgress";
 import SaveButton from "@/features/SavedIrems/components/SaveButton";
 import { useUser } from "@/features/auth/context/UserContext";
+import GetCertificateButton from "@/features/ContentLesson/components/GetCertificateButton";
+import { fetchCertificate } from "@/features/ContentLesson/services/lessonsApis";
 
 type StickyCourseSummaryCardProps = {
   contentDetailsCardData: Partial<ContentDetailsType>;
@@ -100,7 +102,7 @@ const StickyCourseSummaryCard = ({
       icon: TimeIcon,
       label: `${t("content_duration")} : ${formatDuration(
         contentDetailsCardData?.totalDuration ?? 0,
-        lang
+        lang,
       )}`,
     },
     {
@@ -136,8 +138,6 @@ const StickyCourseSummaryCard = ({
           ? "course-lesson"
           : "quiz-page";
 
-      console.log(getNextLessonData?.type);
-
       navigate(`/${path}/${courseId}/${NextLesson}`);
     }
   };
@@ -164,7 +164,7 @@ const StickyCourseSummaryCard = ({
   };
 
   return (
-    <div className="flex flex-col justify-between w-full xl:sticky top-16 xl:w-[28%] bg-neutral-100 rounded-xl px-6 py-5 min-h-[300px] min-lg:h-[400px]">
+    <div className="flex flex-col justify-between w-full xl:sticky top-20 xl:w-[28%] bg-neutral-100 rounded-xl px-6 py-5 min-h-[300px] min-lg:h-fit">
       <h5 className="text-lg font-semibold mb-4">{t("about_course")}</h5>
 
       <ul className="space-y-3 mb-3">
@@ -226,6 +226,14 @@ const StickyCourseSummaryCard = ({
               onClick={() => navigate("/login")}
               type="button"
               moreStyle="px-10 !py-1 mx-auto w-full !rounded-3xl max-w-[300px]"
+            />
+          )}
+          {courseId && (
+            <GetCertificateButton
+              className="mt-4 max-w-fit mx-auto"
+              courseId={courseId}
+              label={t("get_certificate") || "Get Certificate"}
+              fetchFunction={fetchCertificate}
             />
           )}
         </motion.div>

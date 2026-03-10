@@ -2,12 +2,14 @@ import AddModal from "./AddModal";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useRef } from "react";
 import { UploadIcon, XIcon, FileIcon } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
+import DropdownMenu from "@/shared/components/ui/DropdownMenu";
+import { getAllProgramsForDropdown } from "../services/dashboardApis";
 
 /* ================== Validation ================== */
 const bulkStudentSchema = Yup.object({
@@ -21,6 +23,7 @@ const bulkStudentSchema = Yup.object({
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       ].includes(file.type);
     }),
+  programId: Yup.string().required("Program is required"),
 });
 
 interface Props {
@@ -36,6 +39,15 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  const { data } = useQuery({
+    queryKey: ["getAllProgramsForDropdown", instituteId],
+    queryFn: () => getAllProgramsForDropdown(instituteId ?? ""),
+  });
+  const handleProgramsData = data?.data.map((d) => ({
+    label: d.name,
+    value: d.id,
+  }));
 
   const handleFileChange = (
     file: File | null,
@@ -94,7 +106,7 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
       formData.append("instituteId", String(instituteId));
 
       const response = await dashboardApi.post(
-        `/users-batch-upload/upload?instituteId=${instituteId}`,
+        `/users-batch-upload/upload?instituteId=${instituteId}&programId=${values?.programId}`,
         formData,
         {
           headers: {
@@ -140,6 +152,7 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
 
   const initialValues = {
     excel_file: null,
+    programId: "",
   };
 
   return (
@@ -167,6 +180,11 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
         {({ setFieldValue, errors, touched }) => (
           <Form className="">
             <div className="flex flex-col gap-4 max-h-[80vh] overflow-auto px-2 -mt-4 py-2">
+              <DropdownMenu
+                label="Program"
+                name="programId"
+                options={handleProgramsData}
+              />
               {!uploadedFile ? (
                 // Upload Area
                 <div

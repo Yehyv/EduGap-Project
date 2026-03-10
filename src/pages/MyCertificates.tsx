@@ -1,72 +1,33 @@
-import { useState } from "react";
-import { Eye, Download, X, Award, AlertTriangle, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Eye,
+  Download,
+  X,
+  Award,
+  AlertTriangle,
+  Loader2,
+  BookOpen,
+  GitBranch,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { useUser } from "@/features/auth/context/UserContext";
-// Import as URL for canvas drawing + as React component for UI
 import EduGapLogoUrl from "@/assets/svgs/EduGapWithShadow.svg?url";
-import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
+import { useLanguage } from "@/shared/localization/useLanguage";
+import {
+  fetchContentCertificates,
+  fetchLearningPathsCertificates,
+  type ApiCertificate,
+} from "@/features/ContentLesson/services/lessonsApis";
 
 // ── Types ──────────────────────────────────────────────────────────────────
-interface Certificate {
-  id: number;
-  title: string;
-  issuer: string;
-  date: string;
-  duration: string;
-  category: string;
-  certificateNumber: string;
-  badge: string;
-}
+type TabId = "courses" | "paths";
 
 interface PreviewState {
   dataURL: string;
   title: string;
-  cert: Certificate;
+  cert: ApiCertificate;
 }
-
-// ── Dummy data ─────────────────────────────────────────────────────────────
-const DUMMY_CERTIFICATES: Certificate[] = [
-  {
-    id: 1,
-    title: "تطوير الويب المتقدم والبرمجة الكاملة",
-    issuer: "EduGap",
-    date: "11/11/2025",
-    duration: "20 ساعة",
-    category: "تطوير الويب",
-    certificateNumber: "EG-00012345",
-    badge: "💻",
-  },
-  {
-    id: 2,
-    title: "تصميم واجهات المستخدم",
-    issuer: "EduGap",
-    date: "03/03/2025",
-    duration: "15 ساعة",
-    category: "تصميم",
-    certificateNumber: "EG-00012346",
-    badge: "🎨",
-  },
-  {
-    id: 3,
-    title: "هندسة الحوسبة السحابية",
-    issuer: "EduGap",
-    date: "20/11/2024",
-    duration: "30 ساعة",
-    category: "الحوسبة السحابية",
-    certificateNumber: "EG-00012347",
-    badge: "☁️",
-  },
-  {
-    id: 4,
-    title: "إدارة المشاريع الرشيقة",
-    issuer: "EduGap",
-    date: "08/08/2024",
-    duration: "12 ساعة",
-    category: "إدارة المشاريع",
-    certificateNumber: "EG-00012348",
-    badge: "⚡",
-  },
-];
 
 // ── Template image cache ───────────────────────────────────────────────────
 let cachedTemplate: HTMLImageElement | null = null;
@@ -76,18 +37,15 @@ function loadTemplate(): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    // Place Frame_160.png in /public/templates/Frame_160.png
     img.src = "/templates/Frame_160.png";
     img.onload = () => {
       cachedTemplate = img;
       resolve(img);
     };
-    // On error → resolve with null so we fall back to drawn template
     img.onerror = () => resolve(null);
   });
 }
 
-// ── Generic image loader ───────────────────────────────────────────────────
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     if (!src) return resolve(null);
@@ -99,12 +57,19 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
   });
 }
 
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 // ── Certificate Canvas Generator ───────────────────────────────────────────
 async function generateCertificateDataURL(
-  cert: Certificate,
-  userName: string,
-  userLogoUrl?: string, // user.logo URL from API
-  companyLogoUrl?: string, // EduGap SVG passed as EduGapLogoUrl
+  cert: ApiCertificate,
+  isArabic: boolean,
+  companyLogoUrl?: string,
 ): Promise<string> {
   const canvas = document.createElement("canvas");
   canvas.width = 1600;
@@ -112,7 +77,15 @@ async function generateCertificateDataURL(
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
 
-  // ── Helper: RTL Arabic text ────────────────────────────────────────────
+  const userName = cert.userCertificateName;
+  const duration =
+    parseFloat(cert.hours) > 0
+      ? isArabic
+        ? `${cert.hours} ساعة`
+        : `${cert.hours} hours`
+      : "—";
+  const date = formatDate(cert.issueDate);
+
   const rtl = (
     text: string,
     x: number,
@@ -130,7 +103,6 @@ async function generateCertificateDataURL(
     ctx.restore();
   };
 
-  // ── Helper: LTR text ──────────────────────────────────────────────────
   const ltr = (
     text: string,
     x: number,
@@ -148,18 +120,16 @@ async function generateCertificateDataURL(
     ctx.restore();
   };
 
-  // 1. Load template + both logos in parallel
-  const [template, userLogo, companyLogo] = await Promise.all([
+  const [template, instituteLogo, companyLogo] = await Promise.all([
     loadTemplate(),
-    userLogoUrl ? loadImage(userLogoUrl) : Promise.resolve(null),
+    cert.instituteLogo ? loadImage(cert.instituteLogo) : Promise.resolve(null),
     companyLogoUrl ? loadImage(companyLogoUrl) : Promise.resolve(null),
   ]);
 
-  // ── Helper: draw a logo image centred in a box, preserving aspect ratio ──
   const drawLogo = (
     img: HTMLImageElement,
-    cx: number, // centre x
-    cy: number, // centre y
+    cx: number,
+    cy: number,
     maxW: number,
     maxH: number,
   ) => {
@@ -169,81 +139,117 @@ async function generateCertificateDataURL(
     ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
   };
 
-  if (template) {
-    // ── REAL TEMPLATE PATH ────────────────────────────────────────────────
-    ctx.drawImage(template, 0, 0, 1600, 1000);
+  const drawText = isArabic ? rtl : ltr;
 
-    // "تمنح الشهادة الي الطالب"
-    rtl(
-      "تمنح الشهادة الي الطالب",
+  const labels = isArabic
+    ? {
+        certifiedLabel: "شهادة معتمدة",
+        awardedTo: "تمنح الشهادة الي الطالب",
+        completed: "لإتمام دورة",
+        durationLabel: "مدة الدورة:",
+        dateLabel: "تاريخ الاصدار:",
+        certNumberLabel: "رقم الشهادة",
+      }
+    : {
+        certifiedLabel: "Certificate of Completion",
+        awardedTo: "This certificate is awarded to",
+        completed: "for completing the course",
+        durationLabel: "Duration:",
+        dateLabel: "Issue Date:",
+        certNumberLabel: "Certificate Number",
+      };
+
+  if (template) {
+    ctx.drawImage(template, 0, 0, 1600, 1000);
+    drawText(
+      labels.awardedTo,
       800,
       330,
       "400 32px 'Cairo','Tajawal',Arial",
       "#333333",
     );
-
-    // Student name — large bold
-    rtl(userName, 800, 440, "bold 88px 'Cairo','Tajawal',Arial", "#1a1a2e");
-
-    // "لإتمام دورة"
-    rtl("لإتمام دورة", 800, 510, "400 30px 'Cairo','Tajawal',Arial", "#333333");
-
-    // Course title
-    rtl(cert.title, 800, 590, "bold 50px 'Cairo','Tajawal',Arial", "#1a1a2e");
-
-    // Duration
-    rtl(
-      `مدة الدورة: ${cert.duration}`,
-      620,
-      698,
-      "bold 28px 'Cairo','Tajawal',Arial",
+    drawText(
+      userName,
+      800,
+      440,
+      "bold 88px 'Cairo','Tajawal',Arial",
+      "#1a1a2e",
+    );
+    drawText(
+      labels.completed,
+      800,
+      510,
+      "400 30px 'Cairo','Tajawal',Arial",
+      "#333333",
+    );
+    drawText(
+      cert.title,
+      800,
+      590,
+      "bold 50px 'Cairo','Tajawal',Arial",
       "#1a1a2e",
     );
 
-    // Issue date label
-    rtl(
-      "تاريخ الاصدار:",
-      1100,
-      698,
-      "bold 28px 'Cairo','Tajawal',Arial",
-      "#1a1a2e",
-    );
-    ltr(cert.date, 940, 698, "28px 'Cairo','Tajawal',Arial", "#1a1a2e");
+    if (isArabic) {
+      rtl(
+        `${labels.durationLabel} ${duration}`,
+        620,
+        698,
+        "bold 28px 'Cairo','Tajawal',Arial",
+        "#1a1a2e",
+      );
+      rtl(
+        labels.dateLabel,
+        1100,
+        698,
+        "bold 28px 'Cairo','Tajawal',Arial",
+        "#1a1a2e",
+      );
+      ltr(date, 940, 698, "28px 'Cairo','Tajawal',Arial", "#1a1a2e");
+    } else {
+      ltr(
+        `${labels.durationLabel} ${duration}`,
+        400,
+        698,
+        "bold 28px 'Cairo','Tajawal',Arial",
+        "#1a1a2e",
+        "left",
+      );
+      ltr(
+        labels.dateLabel,
+        900,
+        698,
+        "bold 28px 'Cairo','Tajawal',Arial",
+        "#1a1a2e",
+        "left",
+      );
+      ltr(date, 1080, 698, "28px 'Cairo','Tajawal',Arial", "#1a1a2e", "left");
+    }
 
-    // Certificate number label — gold
-    rtl(
-      "رقم الشهادة",
+    drawText(
+      labels.certNumberLabel,
       390,
       845,
       "bold 26px 'Cairo','Tajawal',Arial",
       "#C9A84C",
     );
-    ltr(cert.certificateNumber, 390, 892, "bold 32px Georgia,serif", "#1a1a2e");
+    ltr(cert.serialNumber, 390, 892, "bold 32px Georgia,serif", "#1a1a2e");
 
-    // ── Logos at bottom-right (where the template has logo placeholders) ──
-    // Company logo (EduGap) — right side ~x:1200, y:900
     if (companyLogo) drawLogo(companyLogo, 1200, 905, 180, 90);
-    // User / institution logo — next to company logo
-    if (userLogo) drawLogo(userLogo, 1390, 905, 160, 90);
+    if (instituteLogo) drawLogo(instituteLogo, 1390, 905, 160, 90);
   } else {
-    // ── FALLBACK: clean white certificate with elegant gold frame ─────────
-
-    // White base
+    // ── Fallback white certificate ─────────────────────────────────────────
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, 1600, 1000);
 
-    // ── Outer gold border ─────────────────────────────────────────────────
     ctx.strokeStyle = "#C9A84C";
     ctx.lineWidth = 6;
     ctx.strokeRect(30, 30, 1540, 940);
-
-    // ── Inner thin gold border ────────────────────────────────────────────
     ctx.lineWidth = 1.5;
     ctx.globalAlpha = 0.5;
     ctx.strokeRect(48, 48, 1504, 904);
     ctx.globalAlpha = 1;
 
-    // ── Corner ornaments — small gold squares rotated 45° ─────────────────
     const drawCornerOrnament = (cx: number, cy: number) => {
       ctx.save();
       ctx.fillStyle = "#C9A84C";
@@ -251,7 +257,6 @@ async function generateCertificateDataURL(
       ctx.rotate(Math.PI / 4);
       ctx.fillRect(-10, -10, 20, 20);
       ctx.restore();
-      // Outer dot
       ctx.beginPath();
       ctx.arc(cx, cy, 5, 0, Math.PI * 2);
       ctx.fillStyle = "#C9A84C";
@@ -262,42 +267,30 @@ async function generateCertificateDataURL(
     drawCornerOrnament(30, 970);
     drawCornerOrnament(1570, 970);
 
-    // ── Top & bottom center ornament lines ────────────────────────────────
-    // Top center
     ctx.strokeStyle = "#C9A84C";
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(600, 30);
-    ctx.lineTo(780, 30);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(820, 30);
-    ctx.lineTo(1000, 30);
-    ctx.stroke();
-    // Small diamond at top center
-    ctx.save();
-    ctx.fillStyle = "#C9A84C";
-    ctx.translate(800, 30);
-    ctx.rotate(Math.PI / 4);
-    ctx.fillRect(-7, -7, 14, 14);
-    ctx.restore();
-    // Bottom center mirror
-    ctx.beginPath();
-    ctx.moveTo(600, 970);
-    ctx.lineTo(780, 970);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(820, 970);
-    ctx.lineTo(1000, 970);
-    ctx.stroke();
-    ctx.save();
-    ctx.fillStyle = "#C9A84C";
-    ctx.translate(800, 970);
-    ctx.rotate(Math.PI / 4);
-    ctx.fillRect(-7, -7, 14, 14);
-    ctx.restore();
+    for (const [x1, x2] of [
+      [600, 780],
+      [820, 1000],
+    ]) {
+      ctx.beginPath();
+      ctx.moveTo(x1, 30);
+      ctx.lineTo(x2, 30);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x1, 970);
+      ctx.lineTo(x2, 970);
+      ctx.stroke();
+    }
+    [30, 970].forEach((y) => {
+      ctx.save();
+      ctx.fillStyle = "#C9A84C";
+      ctx.translate(800, y);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-7, -7, 14, 14);
+      ctx.restore();
+    });
 
-    // ── Right decorative diagonal lines (top-right corner) ────────────────
     const diagLine = (
       x1: number,
       y1: number,
@@ -319,32 +312,21 @@ async function generateCertificateDataURL(
     diagLine(1455, 55, 1565, 165, 1.0, 3);
     diagLine(1425, 65, 1535, 175, 0.5, 2);
     diagLine(1395, 75, 1505, 185, 0.2, 1.5);
-    // Bottom-right mirror
     diagLine(1485, 820, 1565, 900, 0.45, 2);
     diagLine(1505, 840, 1565, 900, 0.2, 1.5);
 
-    // ── TOP-RIGHT LOGOS — clean on white ──────────────────────────────────
     if (companyLogo) {
       drawLogo(companyLogo, 1420, 105, 210, 120);
     } else {
-      ctx.font = "bold 30px 'Cairo','Tajawal',Arial";
-      ctx.fillStyle = "#C9A84C";
-      ctx.textAlign = "center";
-      ctx.direction = "ltr";
-      ctx.fillText("EduGap", 1420, 110);
+      ltr("EduGap", 1420, 110, "bold 30px 'Cairo','Tajawal',Arial", "#C9A84C");
     }
-    if (userLogo) {
-      drawLogo(userLogo, 1420, 232, 170, 95);
-    }
+    if (instituteLogo) drawLogo(instituteLogo, 1420, 232, 170, 95);
 
-    // ── "شهادة معتمدة" — gold title ───────────────────────────────────────
-    ctx.font = "bold 72px 'Cairo','Tajawal',Arial";
-    ctx.fillStyle = "#C9A84C";
-    ctx.textAlign = "center";
-    ctx.direction = "rtl";
-    ctx.fillText("شهادة معتمدة", 830, 135);
+    const titleFont = isArabic
+      ? "bold 72px 'Cairo','Tajawal',Arial"
+      : "bold 60px Georgia,serif";
+    drawText(labels.certifiedLabel, 830, 135, titleFont, "#C9A84C");
 
-    // ── Thin gold separator under title ───────────────────────────────────
     ctx.strokeStyle = "#C9A84C";
     ctx.lineWidth = 1.5;
     ctx.globalAlpha = 0.35;
@@ -354,19 +336,35 @@ async function generateCertificateDataURL(
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // ── Dynamic text ──────────────────────────────────────────────────────
-    rtl(
-      "تمنح الشهادة الي الطالب",
+    drawText(
+      labels.awardedTo,
       830,
       290,
       "400 30px 'Cairo','Tajawal',Arial",
       "#666666",
     );
-    rtl(userName, 830, 418, "bold 84px 'Cairo','Tajawal',Arial", "#1a1a2e");
-    rtl("لإتمام دورة", 830, 490, "400 28px 'Cairo','Tajawal',Arial", "#666666");
-    rtl(cert.title, 830, 580, "bold 48px 'Cairo','Tajawal',Arial", "#1a1a2e");
+    drawText(
+      userName,
+      830,
+      418,
+      "bold 84px 'Cairo','Tajawal',Arial",
+      "#1a1a2e",
+    );
+    drawText(
+      labels.completed,
+      830,
+      490,
+      "400 28px 'Cairo','Tajawal',Arial",
+      "#666666",
+    );
+    drawText(
+      cert.title,
+      830,
+      580,
+      "bold 48px 'Cairo','Tajawal',Arial",
+      "#1a1a2e",
+    );
 
-    // ── Mid divider ───────────────────────────────────────────────────────
     ctx.strokeStyle = "#d8d8d8";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -374,24 +372,60 @@ async function generateCertificateDataURL(
     ctx.lineTo(1360, 620);
     ctx.stroke();
 
-    // ── Duration & date ───────────────────────────────────────────────────
-    ctx.font = "bold 27px 'Cairo','Tajawal',Arial";
-    ctx.fillStyle = "#C9A84C";
-    ctx.textAlign = "right";
-    ctx.direction = "rtl";
-    ctx.fillText("مدة الدورة:", 800, 690);
-    ctx.fillStyle = "#1a1a2e";
-    ctx.fillText(cert.duration, 640, 690);
+    if (isArabic) {
+      rtl(
+        "مدة الدورة:",
+        800,
+        690,
+        "bold 27px 'Cairo','Tajawal',Arial",
+        "#C9A84C",
+        "right",
+      );
+      rtl(
+        duration,
+        640,
+        690,
+        "bold 27px 'Cairo','Tajawal',Arial",
+        "#1a1a2e",
+        "right",
+      );
+      rtl(
+        "تاريخ الاصدار:",
+        1250,
+        690,
+        "bold 27px 'Cairo','Tajawal',Arial",
+        "#C9A84C",
+        "right",
+      );
+      ltr(date, 870, 690, "27px 'Cairo','Tajawal',Arial", "#1a1a2e", "left");
+    } else {
+      ltr(
+        "Duration:",
+        300,
+        690,
+        "bold 27px 'Cairo','Tajawal',Arial",
+        "#C9A84C",
+        "left",
+      );
+      ltr(
+        duration,
+        460,
+        690,
+        "27px 'Cairo','Tajawal',Arial",
+        "#1a1a2e",
+        "left",
+      );
+      ltr(
+        "Issue Date:",
+        800,
+        690,
+        "bold 27px 'Cairo','Tajawal',Arial",
+        "#C9A84C",
+        "left",
+      );
+      ltr(date, 960, 690, "27px 'Cairo','Tajawal',Arial", "#1a1a2e", "left");
+    }
 
-    ctx.fillStyle = "#C9A84C";
-    ctx.fillText("تاريخ الاصدار:", 1250, 690);
-    ctx.font = "27px 'Cairo','Tajawal',Arial";
-    ctx.fillStyle = "#1a1a2e";
-    ctx.textAlign = "left";
-    ctx.direction = "ltr";
-    ctx.fillText(cert.date, 870, 690);
-
-    // ── Bottom divider ────────────────────────────────────────────────────
     ctx.strokeStyle = "#d8d8d8";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -399,21 +433,17 @@ async function generateCertificateDataURL(
     ctx.lineTo(1360, 730);
     ctx.stroke();
 
-    // ── Certificate number ────────────────────────────────────────────────
-    ctx.font = "bold 24px 'Cairo','Tajawal',Arial";
-    ctx.fillStyle = "#C9A84C";
-    ctx.textAlign = "center";
-    ctx.direction = "rtl";
-    ctx.fillText("رقم الشهادة", 500, 830);
-    ctx.font = "bold 30px Georgia,serif";
-    ctx.fillStyle = "#1a1a2e";
-    ctx.textAlign = "center";
-    ctx.direction = "ltr";
-    ctx.fillText(cert.certificateNumber, 500, 878);
+    drawText(
+      labels.certNumberLabel,
+      500,
+      830,
+      "bold 24px 'Cairo','Tajawal',Arial",
+      "#C9A84C",
+    );
+    ltr(cert.serialNumber, 500, 878, "bold 30px Georgia,serif", "#1a1a2e");
 
-    // ── Bottom-right logos ─────────────────────────────────────────────────
     if (companyLogo) drawLogo(companyLogo, 1150, 898, 190, 95);
-    if (userLogo) drawLogo(userLogo, 1360, 898, 160, 90);
+    if (instituteLogo) drawLogo(instituteLogo, 1360, 898, 160, 90);
   }
 
   return canvas.toDataURL("image/png");
@@ -424,23 +454,19 @@ const containerVariants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.1 } },
 };
-
 const cardVariants = {
   hidden: { opacity: 0, y: 40 },
   show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
 };
-
 const headerVariants = {
   hidden: { opacity: 0, y: -24 },
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
 };
-
 const overlayVariants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.2 } },
   exit: { opacity: 0, transition: { duration: 0.2 } },
 };
-
 const modalVariants = {
   hidden: { opacity: 0, scale: 0.88, y: 30 },
   show: {
@@ -451,25 +477,323 @@ const modalVariants = {
   },
   exit: { opacity: 0, scale: 0.92, y: 20, transition: { duration: 0.2 } },
 };
+const tabContentVariants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  exit: { opacity: 0, y: -10, transition: { duration: 0.2 } },
+};
+
+// ── Certificate Grid ───────────────────────────────────────────────────────
+function CertificateGrid({
+  certificates,
+  isArabic,
+  ui,
+  onShow,
+  onDownload,
+}: {
+  certificates: ApiCertificate[];
+  isArabic: boolean;
+  ui: Record<string, string>;
+  onShow: (cert: ApiCertificate) => void;
+  onDownload: (cert: ApiCertificate) => void;
+}) {
+  return (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="max-w-6xl mx-auto px-8 py-12 grid gap-7"
+      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
+    >
+      {certificates.map((cert) => {
+        const displayDate = formatDate(cert.issueDate);
+        const displayHours =
+          parseFloat(cert.hours) > 0 ? `${cert.hours} ${ui.hoursUnit}` : "—";
+
+        return (
+          <motion.div
+            key={cert.certificateId}
+            variants={cardVariants}
+            whileHover={{ y: -8, transition: { duration: 0.25 } }}
+            className="rounded-2xl overflow-hidden flex flex-col border border-border cursor-default bg-card shadow-md"
+          >
+            {/* Thumbnail */}
+            <div className="h-44 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  background:
+                    "repeating-linear-gradient(-45deg, #C9A84C 0px, #C9A84C 2px, transparent 2px, transparent 20px)",
+                }}
+              />
+              <motion.div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(circle at 30% 40%, #C9A84C33, transparent 60%)",
+                }}
+                animate={{ opacity: [0.4, 0.8, 0.4] }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+              {cert.instituteLogo ? (
+                <img
+                  src={cert.instituteLogo}
+                  alt="institute"
+                  className="relative z-10 w-16 h-16 object-cover rounded-full border-2 border-amber-400"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <motion.span
+                  className="text-5xl relative z-10"
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  🎓
+                </motion.span>
+              )}
+              <span className="text-xs font-mono font-bold tracking-widest relative z-10 text-amber-400">
+                {ui.certifiedBadge}
+              </span>
+              <span className="text-xs text-gray-400 relative z-10 font-mono">
+                {cert.serialNumber}
+              </span>
+            </div>
+
+            {/* Body */}
+            <div
+              className="px-6 pt-5 pb-4 flex-1"
+              dir={isArabic ? "rtl" : "ltr"}
+            >
+              <span className="text-xs font-mono tracking-widest px-3 py-1 rounded-full border inline-block mb-3 text-amber-500 border-amber-500/30 uppercase">
+                {cert.language === "ar" ? "عربي" : "English"}
+              </span>
+              <h2 className="text-base font-bold text-card-foreground mb-1 leading-snug">
+                {cert.title}
+              </h2>
+              <p className="text-sm text-secondary font-bold mb-1">EduGap</p>
+              <div className="flex gap-4 text-xs text-black mt-2">
+                <span>📅 {displayDate}</span>
+                <span>⏱ {displayHours}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 px-6 pb-5 pt-3 border-t border-border">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onShow(cert)}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm text-secondary-foreground border border-border bg-secondary hover:bg-secondary/80 transition-colors cursor-pointer"
+              >
+                <Eye size={15} /> {ui.showBtn}
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onDownload(cert)}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm text-secondary-foreground font-medium hover:opacity-80 transition-opacity cursor-pointer bg-tertiary"
+              >
+                <Download size={15} /> {ui.downloadBtn}
+              </motion.button>
+            </div>
+          </motion.div>
+        );
+      })}
+    </motion.div>
+  );
+}
+
+// ── Empty State ────────────────────────────────────────────────────────────
+function EmptyState({
+  isArabic,
+  ui,
+  activeTab,
+}: {
+  isArabic: boolean;
+  ui: Record<string, string>;
+  activeTab: TabId;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="flex flex-col items-center justify-center gap-6 py-24 px-6 text-center"
+      dir={isArabic ? "rtl" : "ltr"}
+    >
+      {/* Decorative animated icon */}
+      <div className="relative">
+        <motion.div
+          className="w-28 h-28 rounded-full flex items-center justify-center"
+          style={{
+            background:
+              "radial-gradient(circle, #fef3c7 0%, rgba(253,230,138,0.2) 60%, transparent 100%)",
+            boxShadow: "0 0 40px rgba(201,168,76,0.15)",
+          }}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        >
+          {activeTab === "courses" ? (
+            <BookOpen size={52} className="text-amber-400 opacity-50" />
+          ) : (
+            <GitBranch size={52} className="text-amber-400 opacity-50" />
+          )}
+        </motion.div>
+
+        {/* Orbiting dots */}
+        <motion.div
+          className="absolute top-2 right-2 w-3 h-3 rounded-full bg-amber-400"
+          animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-3 left-1 w-2 h-2 rounded-full bg-amber-300"
+          animate={{ opacity: [0.2, 0.8, 0.2], scale: [1, 1.3, 1] }}
+          transition={{
+            duration: 2.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5,
+          }}
+        />
+      </div>
+
+      {/* Text */}
+      <div className="max-w-sm">
+        <h3 className="text-xl font-bold text-gray-800 mb-3">
+          {ui.emptyTitle}
+        </h3>
+        <p className="text-sm text-gray-500 leading-relaxed">{ui.emptyDesc}</p>
+      </div>
+
+      {/* Decorative dashed divider */}
+      <div className="flex items-center gap-3 mt-2 opacity-30">
+        <div className="w-12 h-px bg-amber-400" />
+        <Award size={14} className="text-amber-400" />
+        <div className="w-12 h-px bg-amber-400" />
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Tab Panel ──────────────────────────────────────────────────────────────
+function TabPanel({
+  queryKey,
+  fetchFn,
+  isArabic,
+  ui,
+  onShow,
+  onDownload,
+  activeTab,
+}: {
+  queryKey: string[];
+  fetchFn: () => Promise<{ data: { data: ApiCertificate[] } }>;
+  isArabic: boolean;
+  ui: Record<string, string>;
+  onShow: (cert: ApiCertificate) => void;
+  onDownload: (cert: ApiCertificate) => void;
+  activeTab: TabId;
+}) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey,
+    queryFn: fetchFn,
+  });
+
+  const certificates = data?.data?.data;
+
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col items-center justify-center gap-5 py-24"
+      >
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        >
+          <Loader2 className="text-amber-500" size={36} />
+        </motion.div>
+        {/* Fixed: was text-muted-foreground (too faint) → now clearly visible */}
+        <p className="text-gray-700 text-sm font-medium">{ui.loadingText}</p>
+      </motion.div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md mx-auto mt-16 flex items-center gap-4 px-6 py-5 rounded-xl border border-red-300 bg-red-50"
+      >
+        <AlertTriangle size={22} className="text-red-500 shrink-0" />
+        {/* Fixed: was text-destructive on near-transparent bg → now solid readable red */}
+        <p className="text-sm font-medium text-red-700">{ui.errorText}</p>
+      </motion.div>
+    );
+  }
+
+  // ── Empty state ────────────────────────────────────────────────────────
+  if (!certificates || certificates.length === 0) {
+    return <EmptyState isArabic={isArabic} ui={ui} activeTab={activeTab} />;
+  }
+
+  return (
+    <CertificateGrid
+      certificates={certificates}
+      isArabic={isArabic}
+      ui={ui}
+      onShow={onShow}
+      onDownload={onDownload}
+    />
+  );
+}
 
 // ── Main Component ─────────────────────────────────────────────────────────
 export default function MyCertificates() {
-  const loading = false;
-  const error = null;
-  const data = DUMMY_CERTIFICATES;
   const { user } = useUser();
+  const { lang } = useLanguage();
+  const isArabic = lang === "ar";
+
+  // ── Tab state persisted in URL hash ──────────────────────────────────────
+  const getInitialTab = (): TabId => {
+    const hash = window.location.hash.replace("#", "");
+    return hash === "paths" ? "paths" : "courses";
+  };
+  const [activeTab, setActiveTab] = useState<TabId>(getInitialTab);
+
+  const handleTabChange = (tab: TabId) => {
+    setActiveTab(tab);
+    window.location.hash = tab;
+  };
+
+  // Sync tab if user navigates with browser back/forward
+  useEffect(() => {
+    const onHashChange = () => setActiveTab(getInitialTab());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [generating, setGenerating] = useState(false);
 
-  const handleShow = async (cert: Certificate) => {
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const handleShow = async (cert: ApiCertificate) => {
     setGenerating(true);
     try {
       const url = await generateCertificateDataURL(
         cert,
-        user?.userName ?? "اسم الطالب",
-        user?.logo ?? undefined, // user logo from context
-        EduGapLogoUrl, // company logo (EduGap SVG as URL)
+        isArabic,
+        EduGapLogoUrl,
       );
       setPreview({ dataURL: url, title: cert.title, cert });
     } finally {
@@ -477,35 +801,74 @@ export default function MyCertificates() {
     }
   };
 
-  const handleDownload = async (cert: Certificate) => {
+  const handleDownload = async (cert: ApiCertificate) => {
     setGenerating(true);
     try {
       const url = await generateCertificateDataURL(
         cert,
-        user?.userName ?? "اسم الطالب",
-        user?.logo ?? undefined,
+        isArabic,
         EduGapLogoUrl,
       );
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${cert.certificateNumber}_Certificate.png`;
+      a.download = `${cert.serialNumber}_Certificate.png`;
       a.click();
     } finally {
       setGenerating(false);
     }
   };
 
+  // ── UI labels ──────────────────────────────────────────────────────────────
+  const ui = isArabic
+    ? {
+        subtitle: "إنجازاتي",
+        title: "الشهادات",
+        welcome: "مرحباً بعودتك،",
+        earned: "— بياناتك الموثوقة المكتسبة",
+        certifiedBadge: "شهادة معتمدة",
+        showBtn: "عرض",
+        downloadBtn: "تنزيل",
+        downloadCert: "تنزيل الشهادة",
+        hoursUnit: "ساعة",
+        loadingText: "جاري تحميل الشهادات…",
+        errorText: "فشل تحميل الشهادات، حاول مرة أخرى.",
+        tabCourses: "الدورات",
+        tabPaths: "مسارات التعلم",
+        emptyTitle: "لا توجد شهادات بعد",
+        emptyDesc:
+          "أكمل دورة أو مسار تعلم للحصول على شهادتك الأولى وإضافتها هنا.",
+      }
+    : {
+        subtitle: "My Achievements",
+        title: "Certificates",
+        welcome: "Welcome back,",
+        earned: "— your earned credentials",
+        certifiedBadge: "Certified",
+        showBtn: "Show",
+        downloadBtn: "Download",
+        downloadCert: "Download Certificate",
+        hoursUnit: "hours",
+        loadingText: "Loading certificates…",
+        errorText: "Failed to load certificates. Please try again.",
+        tabCourses: "Courses",
+        tabPaths: "Learning Paths",
+        emptyTitle: "No Certificates Yet",
+        emptyDesc:
+          "Complete a course or learning path to earn your first certificate and have it appear here.",
+      };
+
   return (
     <div
       className="min-h-screen text-gray-100"
       style={{ fontFamily: "Georgia, serif" }}
+      dir={isArabic ? "rtl" : "ltr"}
     >
       {/* ── Header ── */}
       <motion.div
         variants={headerVariants}
         initial="hidden"
         animate="show"
-        className="border-b border-secondary/20 px-6 py-16 text-center"
+        className="px-6 py-12 text-center"
       >
         <motion.span
           initial={{ opacity: 0, letterSpacing: "0.1em" }}
@@ -513,7 +876,7 @@ export default function MyCertificates() {
           transition={{ delay: 0.2, duration: 0.6 }}
           className="text-xs text-secondary font-mono block mb-4 uppercase tracking-widest"
         >
-          My Achievements
+          {ui.subtitle}
         </motion.span>
 
         <motion.div
@@ -523,7 +886,7 @@ export default function MyCertificates() {
           className="flex items-center justify-center gap-3 mb-3"
         >
           <Award className="text-secondary" size={36} />
-          <h1 className="text-5xl font-normal text-foreground">Certificates</h1>
+          <h1 className="text-5xl font-normal text-foreground">{ui.title}</h1>
         </motion.div>
 
         <motion.p
@@ -532,41 +895,61 @@ export default function MyCertificates() {
           transition={{ delay: 0.35, duration: 0.5 }}
           className="text-black"
         >
-          Welcome back, <span className="font-bold">{user?.userName}</span> —
-          your earned credentials
+          {ui.welcome} <span className="font-bold">{user?.userName}</span>{" "}
+          {ui.earned}
         </motion.p>
       </motion.div>
 
-      {/* ── Loading ── */}
-      {loading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center gap-5 py-24"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          >
-            <Loader2 className="text-secondary" size={36} />
-          </motion.div>
-          <p className="text-muted-foreground text-sm">Loading certificates…</p>
-        </motion.div>
-      )}
+      {/* ── Tabs ── */}
+      <div className="border-b border-border">
+        <div className="max-w-6xl mx-auto px-8">
+          <div className="flex gap-1 pt-2" role="tablist">
+            {/* Courses Tab */}
+            <motion.button
+              role="tab"
+              aria-selected={activeTab === "courses"}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handleTabChange("courses")}
+              className={`relative flex items-center gap-2 px-6 py-3.5 text-sm font-medium rounded-t-xl transition-colors cursor-pointer ${
+                activeTab === "courses"
+                  ? "text-amber-500 bg-card border border-b-0 border-border"
+                  : " bg-gray-100 text-black hover:text-foreground"
+              }`}
+            >
+              <BookOpen size={16} />
+              {ui.tabCourses}
+              {activeTab === "courses" && (
+                <motion.div
+                  layoutId="tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500"
+                />
+              )}
+            </motion.button>
 
-      {/* ── Error ── */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md mx-auto mt-16 flex items-center gap-4 px-6 py-5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive"
-        >
-          <AlertTriangle size={22} />
-          <p className="text-sm">
-            Failed to load certificates. Please try again later.
-          </p>
-        </motion.div>
-      )}
+            {/* Learning Paths Tab */}
+            <motion.button
+              role="tab"
+              aria-selected={activeTab === "paths"}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handleTabChange("paths")}
+              className={`relative flex items-center gap-2 px-6 py-3.5 text-sm font-medium rounded-t-xl transition-colors cursor-pointer ${
+                activeTab === "paths"
+                  ? "text-amber-500 bg-card border border-b-0 border-border"
+                  : " bg-gray-100 text-black hover:text-foreground"
+              }`}
+            >
+              <GitBranch size={16} />
+              {ui.tabPaths}
+              {activeTab === "paths" && (
+                <motion.div
+                  layoutId="tab-indicator"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500"
+                />
+              )}
+            </motion.button>
+          </div>
+        </div>
+      </div>
 
       {/* ── Generating overlay ── */}
       <AnimatePresence>
@@ -591,104 +974,40 @@ export default function MyCertificates() {
         )}
       </AnimatePresence>
 
-      {/* ── Grid ── */}
-      {!loading && !error && (
+      {/* ── Tab Content ── */}
+      <AnimatePresence mode="wait">
         <motion.div
-          variants={containerVariants}
+          key={activeTab}
+          variants={tabContentVariants}
           initial="hidden"
           animate="show"
-          className="max-w-6xl mx-auto px-8 py-12 grid gap-7"
-          style={{
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-          }}
+          exit="exit"
         >
-          {data.map((cert) => (
-            <motion.div
-              key={cert.id}
-              variants={cardVariants}
-              whileHover={{ y: -8, transition: { duration: 0.25 } }}
-              className="rounded-2xl overflow-hidden flex flex-col border border-border cursor-default bg-card shadow-md"
-            >
-              {/* Thumbnail — mimics the real template's dark + gold style */}
-              <div className="h-44 flex flex-col items-center justify-center gap-2 relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
-                {/* Gold diagonal lines like template */}
-                <div
-                  className="absolute inset-0 opacity-20"
-                  style={{
-                    background:
-                      "repeating-linear-gradient(-45deg, #C9A84C 0px, #C9A84C 2px, transparent 2px, transparent 20px)",
-                  }}
-                />
-                <motion.div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 30% 40%, #C9A84C33, transparent 60%)",
-                  }}
-                  animate={{ opacity: [0.4, 0.8, 0.4] }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
-                <motion.span
-                  className="text-5xl relative z-10"
-                  animate={{ scale: [1, 1.08, 1] }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  {cert.badge}
-                </motion.span>
-                <span className="text-xs font-mono font-bold tracking-widest relative z-10 text-amber-400">
-                  شهادة معتمدة
-                </span>
-                <span className="text-xs text-gray-400 relative z-10 font-mono">
-                  {cert.certificateNumber}
-                </span>
-              </div>
-
-              {/* Body */}
-              <div className="px-6 pt-5 pb-4 flex-1" dir="rtl">
-                <span className="text-xs font-mono tracking-widest px-3 py-1 rounded-full border inline-block mb-3 text-amber-500 border-amber-500/30">
-                  {cert.category}
-                </span>
-                <h2 className="text-base font-bold text-card-foreground mb-1 leading-snug">
-                  {cert.title}
-                </h2>
-                <p className="text-sm text-secondary font-bold mb-1">
-                  {cert.issuer}
-                </p>
-                <div className="flex gap-4 text-xs text-black mt-2">
-                  <span>📅 {cert.date}</span>
-                  <span>⏱ {cert.duration}</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 px-6 pb-5 pt-3 border-t border-border">
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleShow(cert)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm text-secondary-foreground border border-border bg-secondary hover:bg-secondary/80 transition-colors cursor-pointer"
-                >
-                  <Eye size={15} /> Show
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleDownload(cert)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm text-secondary-foreground font-medium hover:opacity-80 transition-opacity cursor-pointer bg-tertiary"
-                >
-                  <Download size={15} /> Download
-                </motion.button>
-              </div>
-            </motion.div>
-          ))}
+          {activeTab === "courses" ? (
+            <TabPanel
+              queryKey={["content-certificates", lang]}
+              fetchFn={() => fetchContentCertificates(lang as "ar" | "en")}
+              isArabic={isArabic}
+              ui={ui}
+              onShow={handleShow}
+              onDownload={handleDownload}
+              activeTab={activeTab}
+            />
+          ) : (
+            <TabPanel
+              queryKey={["package-certificates", lang]}
+              fetchFn={() =>
+                fetchLearningPathsCertificates(lang as "ar" | "en")
+              }
+              isArabic={isArabic}
+              ui={ui}
+              onShow={handleShow}
+              onDownload={handleDownload}
+              activeTab={activeTab}
+            />
+          )}
         </motion.div>
-      )}
+      </AnimatePresence>
 
       {/* ── Preview Modal ── */}
       <AnimatePresence>
@@ -716,7 +1035,6 @@ export default function MyCertificates() {
               style={{ maxHeight: "90vh" }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Modal Header — fixed, never scrolls */}
               <div className="flex bg-primary items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
                 <h3 className="text-card-foreground text-base font-semibold flex items-center gap-2">
                   <Award size={18} className="text-secondary" />
@@ -732,7 +1050,6 @@ export default function MyCertificates() {
                 </motion.button>
               </div>
 
-              {/* Scrollable body */}
               <div className="overflow-y-auto flex-1 min-h-0">
                 <motion.img
                   initial={{ opacity: 0 }}
@@ -745,14 +1062,13 @@ export default function MyCertificates() {
                 />
               </div>
 
-              {/* Download button — fixed at bottom, never scrolls */}
               <div className="px-6 py-4 border-t border-border flex-shrink-0 bg-primary">
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => handleDownload(preview.cert)}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-secondary-foreground font-medium hover:opacity-85 transition-opacity text-sm cursor-pointer bg-tertiary"
                 >
-                  <Download size={16} /> Download Certificate
+                  <Download size={16} /> {ui.downloadCert}
                 </motion.button>
               </div>
             </motion.div>

@@ -9,36 +9,52 @@ import type {
 
 export async function getResumeWhereLeftForSlider(): Promise<ContinueCourseTypeResponse> {
   const res = await api.get<ApiResponse<ContinueCourseTypeResponse>>(
-    "/progress/resume-lessons"
+    "/progress/resume-lessons",
   );
   return res.data.data;
 }
 export async function getInstituteCoursesForSlider(
-  programId?: number
+  programId?: number,
 ): Promise<InstituteCoursesType[]> {
   const res = await api.get<ApiResponse<InstituteCoursesType[]>>(
-    `/courses/first-8?programId=${programId}`
+    `/courses/first-8?programId=${programId}`,
   );
   return res.data.data;
 }
 export async function getInstituteCoursesForPage(
   page: number,
   limit: number,
-  programId?: number
+  programId?: number,
 ): Promise<InstituteCoursesResponse> {
   const res = await api.get<ApiResponse<InstituteCoursesResponse>>(
     `/contents/trending/paginated?programId=${programId}`,
     {
       params: { page, limit },
-    }
+    },
   );
   return res.data.data;
 }
 export async function getRecommenedCourse(
-  prgoramId?: number
+  prgoramId?: number,
 ): Promise<CourseType> {
   const res = await api.get<ApiResponse<CourseType>>(
-    `/contents/latest/one?programId=${prgoramId}`
+    `/contents/latest/one?programId=${prgoramId}`,
+  );
+  return res.data.data;
+}
+export async function enrollLearningPath(
+  programId?: string,
+): Promise<CourseType> {
+  const res = await api.post<ApiResponse<CourseType>>(
+    `/package-enrollments/${programId}/enroll`,
+  );
+  return res.data.data;
+}
+export async function unenrollLearningPath(
+  programId?: string,
+): Promise<CourseType> {
+  const res = await api.delete<ApiResponse<CourseType>>(
+    `/package-enrollments/${programId}/unenroll`,
   );
   return res.data.data;
 }

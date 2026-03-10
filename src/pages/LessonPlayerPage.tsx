@@ -15,13 +15,13 @@ import LessonActions from "@/features/ContentLesson/components/LessonActions";
 import type { ContentTopicsType } from "@/shared/types/sharedTypes";
 
 const LessonComments = lazy(
-  () => import("@/features/ContentLesson/components/LessonComments")
+  () => import("@/features/ContentLesson/components/LessonComments"),
 );
 const LessonAttachments = lazy(
-  () => import("@/features/ContentLesson/components/LessonAttachments")
+  () => import("@/features/ContentLesson/components/LessonAttachments"),
 );
 const LessonNotes = lazy(
-  () => import("@/features/ContentLesson/components/LessonNotes")
+  () => import("@/features/ContentLesson/components/LessonNotes"),
 );
 
 const LessonPlayerPage = () => {

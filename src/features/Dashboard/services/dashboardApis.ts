@@ -1103,3 +1103,37 @@ export const getProgramsForCourse = async (courseId: string) => {
   );
   return response.data;
 };
+export const getOverallProgress = async (studentId: string) => {
+  const response = await dashboardApi.get(`/dashboard/overall/${studentId}`);
+  return response.data;
+};
+export const getPassedExamsAverage = async (studentId: string) => {
+  const response = await dashboardApi.get(
+    `/dashboard/passed-exams/${studentId}`,
+  );
+  return response.data;
+};
+export const getStudentContentsProgress = async (studentId: string) => {
+  const response = await dashboardApi.get(
+    `/dashboard/student-contents-progress/${studentId}`,
+  );
+  return response.data;
+};
+export const getStudentCoursesProgressSummary = async (studentId: string) => {
+  const response = await dashboardApi.get(
+    `/dashboard/student-courses-progress-summary/${studentId}`,
+  );
+  return response.data;
+};
+export const getExamResults = async (studentId: string) => {
+  const response = await dashboardApi.get(
+    `/dashboard/exam-results/${studentId}`,
+  );
+  return response.data;
+};
+export const getStudentLearningPaths = async (studentId: string) => {
+  const response = await dashboardApi.get(
+    `/package-enrollments/${studentId}/completion-status`,
+  );
+  return response.data;
+};

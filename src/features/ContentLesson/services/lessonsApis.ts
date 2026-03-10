@@ -12,16 +12,16 @@ import type {
 } from "@/shared/types/sharedTypes";
 
 export async function getContentEducator(
-  courseId: string
+  courseId: string,
 ): Promise<ContentEducatorType> {
   const res = await api.get<ApiResponse<ContentEducatorType>>(
-    `/contents/${courseId}/educator`
+    `/contents/${courseId}/educator`,
   );
   return res.data.data;
 }
 export async function getMyNotesInLesson(
   page: number,
-  lessonId: string
+  lessonId: string,
 ): Promise<MyNotesInLessonTypeResponse> {
   const res = await api.get<ApiResponse<MyNotesInLessonTypeResponse>>(
     `/lesson-notes/lessons/${lessonId}/me`,
@@ -29,14 +29,14 @@ export async function getMyNotesInLesson(
       params: {
         page,
       },
-    }
+    },
   );
   return res.data.data;
 }
 export async function getMyNotesInContent(
   page: number,
   limit: number,
-  courseId: string
+  courseId: string,
 ): Promise<MyNotesInContentTypeResponse> {
   const res = await api.get<ApiResponse<MyNotesInContentTypeResponse>>(
     `/lesson-notes/content/${courseId}/me`,
@@ -45,70 +45,70 @@ export async function getMyNotesInContent(
         page,
         limit,
       },
-    }
+    },
   );
   return res.data.data;
 }
 export async function rateContent(
   courseId: string,
-  rating: number
+  rating: number,
 ): Promise<void> {
   const res = await api.post<ApiResponse<void>>(
     `/enrollments/${courseId}/rate`,
     {
       rating: +rating,
-    }
+    },
   );
 
   return res.data.data;
 }
 export async function likeLesson(lessonId: string): Promise<void> {
   const res = await api.post<ApiResponse<void>>(
-    `/lesson-reactions/lessons/${lessonId}/like`
+    `/lesson-reactions/lessons/${lessonId}/like`,
   );
 
   return res.data.data;
 }
 export async function dislikeLesson(lessonId: string): Promise<void> {
   const res = await api.post<ApiResponse<void>>(
-    `/lesson-reactions/lessons/${lessonId}/dislike`
+    `/lesson-reactions/lessons/${lessonId}/dislike`,
   );
 
   return res.data.data;
 }
 export async function saveLesson(lessonId: string): Promise<void> {
   const res = await api.post<ApiResponse<void>>(
-    `/saved-lessons/lessons/${lessonId}/toggle`
+    `/saved-lessons/lessons/${lessonId}/toggle`,
   );
 
   return res.data.data;
 }
 export async function addLessonNote(
   lessonId: string,
-  data: { notes: string }
+  data: { notes: string },
 ): Promise<void> {
   const res = await api.post<ApiResponse<void>>(
     `/lesson-notes/lessons/${lessonId}`,
     {
       notes: data.notes,
-    }
+    },
   );
 
   return res.data.data;
 }
 
 export async function getLessonActionsHistory(
-  lessonId: string
+  lessonId: string,
 ): Promise<lessonActionsHistory> {
   const res = await api.get<ApiResponse<lessonActionsHistory>>(
-    `/lessons/${lessonId}/actions`
+    `/lessons/${lessonId}/actions`,
   );
   return res.data.data;
 }
 
 export async function updateNoteInLesson(
   lessonId: number,
-  notes: string
+  notes: string,
 ): Promise<void> {
   const res = await api.patch<ApiResponse<void>>(`/lesson-notes/${lessonId}`, {
     notes,
@@ -124,7 +124,7 @@ export async function deleteNoteInLesson(lessonId: number): Promise<void> {
 
 export async function getComments(
   lessonId: string,
-  page: number
+  page: number,
 ): Promise<CommentsTypeResponse> {
   const res = await api.get<ApiResponse<CommentsTypeResponse>>(
     `/lesson-comments/lessons/${lessonId}`,
@@ -132,21 +132,21 @@ export async function getComments(
       params: {
         page,
       },
-    }
+    },
   );
   return res.data.data;
 }
 export async function getLessonsMaterials(
-  lessonId: string
+  lessonId: string,
 ): Promise<lessonMaterialsTypes[]> {
   const res = await api.get<ApiResponse<lessonMaterialsTypes[]>>(
-    `/lesson-materials/content/${lessonId}`
+    `/lesson-materials/content/${lessonId}`,
   );
   return res.data.data;
 }
 export async function getSavedLessons(
   page: number,
-  limit: number
+  limit: number,
 ): Promise<ContentTopicsTypeResponse> {
   const res = await api.get<ApiResponse<ContentTopicsTypeResponse>>(
     `/saved-lessons`,
@@ -155,52 +155,103 @@ export async function getSavedLessons(
         page,
         limit,
       },
-    }
+    },
   );
   return res.data.data;
 }
 export async function getContentMaterials(
-  courseId: string
+  courseId: string,
 ): Promise<ContentMaterialsTypeResponse> {
   const res = await api.get<ApiResponse<ContentMaterialsTypeResponse>>(
-    `/lesson-materials/content/${courseId}`
+    `/lesson-materials/content/${courseId}`,
   );
   return res.data.data;
 }
 export async function addComment(
   lessonId: string,
-  comment: string
+  comment: string,
 ): Promise<void> {
   const res = await api.post<ApiResponse<void>>(
     `/lesson-comments/lessons/${lessonId}`,
     {
       comment,
-    }
+    },
   );
   return res.data.data;
 }
 export async function deleteComment(lessonId: number): Promise<void> {
   const res = await api.delete<ApiResponse<void>>(
-    `/lesson-comments/${lessonId}`
+    `/lesson-comments/${lessonId}`,
   );
   return res.data.data;
 }
 export async function editComment(
   lessonId: number,
-  comment: string
+  comment: string,
 ): Promise<void> {
   const res = await api.patch<ApiResponse<void>>(
     `/lesson-comments/${lessonId}`,
     {
       comment,
-    }
+    },
   );
   return res.data.data;
 }
 
 export async function completeLesson(lessonId: string): Promise<void> {
   const res = await api.post<ApiResponse<void>>(
-    `/progress/${lessonId}/complete`
+    `/progress/${lessonId}/complete`,
   );
   return res.data.data;
+}
+interface CertificateResponse {
+  url?: string;
+  certificate_url?: string;
+  download_url?: string;
+  [key: string]: unknown;
+}
+
+export const fetchCertificate = async (
+  courseId: string | number,
+): Promise<CertificateResponse> => {
+  const response = api.post(`/certificates/contents/${courseId}/certificates`);
+  return (await response).data;
+};
+export const fetchCertificateForLearningPath = async (
+  programId: string | number,
+): Promise<CertificateResponse> => {
+  const response = api.post(`/certificates/packages/${programId}/certificates`);
+  return (await response).data;
+};
+
+export interface ApiCertificate {
+  certificateId: number;
+  contentId: number;
+  serialNumber: string;
+  language: string;
+  title: string;
+  userCertificateName: string;
+  hours: string;
+  createdAt: string;
+  issueDate: string;
+  instituteLogo: string;
+}
+
+export async function fetchContentCertificates(
+  language: "ar" | "en",
+): Promise<ApiCertificate[]> {
+  const response = api.get(
+    `/certificates/content-certificates?language=${language}`,
+  );
+
+  return (await response).data;
+}
+export async function fetchLearningPathsCertificates(
+  language: "ar" | "en",
+): Promise<ApiCertificate[]> {
+  const response = api.get(
+    `/certificates/package-certificates?language=${language}`,
+  );
+
+  return (await response).data;
 }

@@ -111,6 +111,7 @@ import SystemUserDetails from "@/pages/dashboard/SystemUserDetails";
 import EditSystemUser from "@/features/Dashboard/components/EditSystemUser";
 import DashboardRoute from "./DashboardRoute";
 import StudentInInstitute from "@/pages/dashboard/StudentInInstitute";
+import StudentsInInstitute from "@/features/Dashboard/components/StudentsInInstitute";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -405,7 +406,7 @@ export default function AppRoutes() {
             path="/dashboard/users/:studentId"
             element={
               <DashboardRoute allowed={SUPER_AND_ADMIN}>
-                <StudentDetails />
+                <StudentInInstitute />
               </DashboardRoute>
             }
           />
