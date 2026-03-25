@@ -124,7 +124,7 @@ export class UsersController {
     return this.usersService.exportUsersToExcel(res, role_cat, langId);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/institute/:instituteId/students')
   async getStudentsForInstitute(
     @Param('instituteId', ParseIntPipe) instituteId: number,
@@ -146,7 +146,7 @@ export class UsersController {
     );
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/institute/:instituteId/stuff')
   async getStuffForInstitute(
     @Param('instituteId', ParseIntPipe) instituteId: number,
@@ -221,7 +221,7 @@ export class UsersController {
     }
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/user/:id')
   async findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -231,13 +231,13 @@ export class UsersController {
     return this.usersService.findOne(id, langId);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Patch('super-admin/:id')
   update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(+id, updateUserDto);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Delete('super-admin/:id')
   remove(@Param('id') id: number) {
     return this.usersService.remove(+id);
@@ -277,7 +277,7 @@ export class UsersController {
     return this.usersService.changeName(req.user.sub, newName);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Patch(':id/assign-program/:programId')
   assignUserToProgram(
     @Param('id', ParseIntPipe) userId: number,
