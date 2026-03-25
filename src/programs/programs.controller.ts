@@ -52,20 +52,20 @@ export class ProgramsController {
     return this.programsService.create(dto, req.user!.sub, logo);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/programs-list')
   findAll(@Headers('languageId') languageId?: string) {
     const langId = languageId ? Number(languageId) : undefined;
     return this.programsService.findAll(langId);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/program/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.programsService.findOne(id);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/dropdown/list')
   programDropDown(
     @Query('instituteId') instituteId: number,
@@ -76,7 +76,7 @@ export class ProgramsController {
     return this.programsService.ProgramDropDown(instId,langId);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/dropdown/user/list')
   programsForUserDropDown(
     @Headers('languageId') languageId: number | undefined,
@@ -99,7 +99,7 @@ export class ProgramsController {
   );
 }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/program/:programId/institutes')
 async institutesForProgram(
   @Param('programId', ParseIntPipe) programId: number,
@@ -113,7 +113,7 @@ async institutesForProgram(
 }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN') // بس ال SUPER_ADMIN و INSTITUTE_ADMIN يقدر يشوف برامج معهد معين
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN') // بس ال SUPER_ADMIN و INST_ADMIN يقدر يشوف برامج معهد معين
   @Get('super-admin/dropdown/inst-CP')
   instProgCourses(
     @Query('instituteId') instituteId: number,
