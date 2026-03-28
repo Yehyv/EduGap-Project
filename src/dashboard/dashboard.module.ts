@@ -8,6 +8,8 @@ import { Content } from 'src/contents/entities/content.entity';
 import { User } from 'src/users/entities/user.entity';
 import { InstituteProgramCourse } from 'src/institutes/entities/institute-program-course.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
+import { Certificate } from 'src/certificates/entities/certificate.entity';
+import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
       User,
       InstituteProgramCourse,
       Lesson,
+      Certificate,
+      PackageEnrollment,
     ]),
   ],
   controllers: [DashboardController],

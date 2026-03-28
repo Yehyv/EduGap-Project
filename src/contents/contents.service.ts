@@ -2204,4 +2204,49 @@ export class ContentsService {
       name: r.translation_name,
     }));
   }
+  async countContents(
+    instituteId?: number,
+    programId?: number,
+    currentUserInstituteId?: number,
+    role?: string,
+  ) {
+    const isInstituteAdmin = role === 'INST_ADMIN';
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : instituteId;
+
+    const qb = this.contentRepo
+      .createQueryBuilder('content')
+      .leftJoin(
+        'content.courseContents',
+        'cc',
+        'cc.deleted_at IS NULL AND cc.is_active != 0',
+      )
+      .leftJoin('cc.course', 'course')
+      .leftJoin(
+        'course.instituteProgramCourses',
+        'ipc',
+        'ipc.deleted_at IS NULL AND ipc.is_active != 0',
+      )
+      .where('content.deleted_at IS NULL');
+
+    if (scopedInstituteId !== undefined && scopedInstituteId !== null) {
+      qb.andWhere('ipc.instituteId = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    if (programId !== undefined && programId !== null) {
+      qb.andWhere('ipc.programId = :programId', { programId });
+    }
+
+    const row = await qb
+      .select('COUNT(DISTINCT content.id)', 'totalContents')
+      .getRawOne<{ totalContents: string }>();
+
+    return {
+      totalContents: Number(row?.totalContents ?? 0),
+    };
+  }
 }

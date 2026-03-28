@@ -33,6 +33,7 @@ interface AuthenticatedRequest extends Request {
     email: string;
     instituteId: number;
     refreshToken?: string;
+    role: string;
   };
 }
 
@@ -103,6 +104,31 @@ export class CoursesController {
         languageId ? Number(languageId) : undefined,
       ),
     };
+  }
+    @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
+  @Get('super-admin/count')
+  countCourses(
+    @Query('instituteId') instituteIdRaw?: string,
+    @Query('programId') programIdRaw?: string,
+    @Req() req?: AuthenticatedRequest,
+  ) {
+    const instituteId =
+      instituteIdRaw && !Number.isNaN(Number(instituteIdRaw))
+        ? Number(instituteIdRaw)
+        : undefined;
+
+    const programId =
+      programIdRaw && !Number.isNaN(Number(programIdRaw))
+        ? Number(programIdRaw)
+        : undefined;
+
+    return this.coursesService.countCourses(
+      instituteId,
+      programId,
+      req?.user?.instituteId,
+      req?.user?.role,
+    );
   }
   /** جميع كورسات المعهد الحالي (من IPC) */
   @Get()

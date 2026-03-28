@@ -452,4 +452,15 @@ async create(createInstituteDto: CreateInstituteDto, files: InstituteFiles, user
       id: institute.id,
       is_active: institute.is_active};
   }
+    async countInstitutes() {
+    const row = await this.instituteRepository
+      .createQueryBuilder('institute')
+      .where('institute.deletedAt IS NULL')
+      .select('COUNT(DISTINCT institute.id)', 'totalInstitutes')
+      .getRawOne<{ totalInstitutes: string }>();
+
+    return {
+      totalInstitutes: Number(row?.totalInstitutes ?? 0),
+    };
+  }
 }

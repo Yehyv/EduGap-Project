@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { Repository, In } from 'typeorm';
+import { Repository, In, SelectQueryBuilder } from 'typeorm';
 import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Lesson } from 'src/lessons/entities/lesson.entity';
@@ -9,6 +9,8 @@ import { InstituteProgramCourse } from 'src/institutes/entities/institute-progra
 import { User } from 'src/users/entities/user.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { LessonType } from 'src/lessons/entities/lesson.entity';
+import { Certificate } from 'src/certificates/entities/certificate.entity';
+import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 @Injectable()
 export class DashboardService {
   constructor(
@@ -24,6 +26,10 @@ export class DashboardService {
     private readonly ipcRepo: Repository<InstituteProgramCourse>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(Certificate)
+    private readonly certificateRepo: Repository<Certificate>,
+    @InjectRepository(PackageEnrollment)
+    private readonly packageEnrollmentRepo: Repository<PackageEnrollment>,
   ) {}
   async getOverallProgressPercentage(userId: number) {
     // 1) كل enrollments للمستخدم (in progress + completed)
@@ -449,6 +455,310 @@ export class DashboardService {
     return {
       count: items.length,
       items,
+    };
+  }
+  private applyStudentScope(
+    qb: SelectQueryBuilder<User>,
+    instituteId?: number,
+    programId?: number,
+  ) {
+    qb.innerJoin('user.UserRole', 'role')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin('user.program', 'program')
+      .where('user.deletedAt IS NULL')
+      .andWhere('user.is_active = 1')
+      .andWhere('LOWER(role.role_title) = :roleTitle', {
+        roleTitle: 'student',
+      });
+
+    if (instituteId !== undefined && instituteId !== null) {
+      qb.andWhere('institute.id = :instituteId', { instituteId });
+    }
+
+    if (programId !== undefined && programId !== null) {
+      qb.andWhere('program.id = :programId', { programId });
+    }
+
+    return qb;
+  }
+  private applyStudentTrendScope(
+    qb: SelectQueryBuilder<User>,
+    instituteId?: number,
+    programId?: number,
+  ) {
+    qb.innerJoin('user.UserRole', 'role')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin('user.program', 'program')
+      .where('user.deletedAt IS NULL')
+      .andWhere("LOWER(role.role_title) = 'student'");
+
+    if (instituteId !== undefined && instituteId !== null) {
+      qb.andWhere('institute.id = :instituteId', { instituteId });
+    }
+
+    if (programId !== undefined && programId !== null) {
+      qb.andWhere('program.id = :programId', { programId });
+    }
+
+    return qb;
+  }
+
+  async getStudentEngagementTrend(
+    programId?: number,
+    currentUserInstituteId?: number,
+    role?: string,
+  ) {
+    const isInstituteAdmin =
+      role === 'INST_ADMIN' || role === 'INSTITUTE_ADMIN';
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : undefined;
+
+    const scopedProgramId = isInstituteAdmin ? programId : undefined;
+
+    const now = new Date();
+    const months: string[] = [];
+
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      months.push(`${year}-${month}`);
+    }
+
+    const startDate = new Date(
+      now.getFullYear(),
+      now.getMonth() - 11,
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
+
+    const newStudentsRows = await this.applyStudentTrendScope(
+      this.userRepo.createQueryBuilder('user'),
+      scopedInstituteId,
+      scopedProgramId,
+    )
+      .andWhere('user.createdAt >= :startDate', { startDate })
+      .select("DATE_FORMAT(user.createdAt, '%Y-%m')", 'month')
+      .addSelect('COUNT(DISTINCT user.id)', 'count')
+      .groupBy("DATE_FORMAT(user.createdAt, '%Y-%m')")
+      .orderBy("DATE_FORMAT(user.createdAt, '%Y-%m')", 'ASC')
+      .getRawMany<{ month: string; count: string }>();
+
+    const activeStudentsRows = await this.enrollRepo
+      .createQueryBuilder('enrollment')
+      .innerJoin('enrollment.user', 'user')
+      .innerJoin('user.UserRole', 'role')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin('user.program', 'program')
+      .where('user.deletedAt IS NULL')
+      .andWhere("LOWER(role.role_title) = 'student'")
+      .andWhere('enrollment.created_at >= :startDate', { startDate })
+      .andWhere(
+        scopedInstituteId !== undefined && scopedInstituteId !== null
+          ? 'institute.id = :instituteId'
+          : '1=1',
+        scopedInstituteId !== undefined && scopedInstituteId !== null
+          ? { instituteId: scopedInstituteId }
+          : {},
+      )
+      .andWhere(
+        scopedProgramId !== undefined && scopedProgramId !== null
+          ? 'program.id = :programId'
+          : '1=1',
+        scopedProgramId !== undefined && scopedProgramId !== null
+          ? { programId: scopedProgramId }
+          : {},
+      )
+      .select("DATE_FORMAT(enrollment.created_at, '%Y-%m')", 'month')
+      .addSelect('COUNT(DISTINCT user.id)', 'count')
+      .groupBy("DATE_FORMAT(enrollment.created_at, '%Y-%m')")
+      .orderBy("DATE_FORMAT(enrollment.created_at, '%Y-%m')", 'ASC')
+      .getRawMany<{ month: string; count: string }>();
+
+    const newStudentsMap = new Map(
+      newStudentsRows.map((row) => [row.month, Number(row.count)]),
+    );
+
+    const activeStudentsMap = new Map(
+      activeStudentsRows.map((row) => [row.month, Number(row.count)]),
+    );
+
+    const activeStudentsSeries: number[] = [];
+    const totalStudentsSeries: number[] = [];
+
+    let cumulativeStudents = 0;
+
+    for (const month of months) {
+      cumulativeStudents += newStudentsMap.get(month) ?? 0;
+      totalStudentsSeries.push(cumulativeStudents);
+      activeStudentsSeries.push(activeStudentsMap.get(month) ?? 0);
+    }
+
+    return {
+      categories: months,
+      series: [
+        {
+          name: 'Active Students',
+          data: activeStudentsSeries,
+        },
+        {
+          name: 'Students',
+          data: totalStudentsSeries,
+        },
+      ],
+    };
+  }
+  async getCertificatesIssuedTrend(
+    programId?: number,
+    currentUserInstituteId?: number,
+    role?: string,
+  ) {
+    const isInstituteAdmin =
+      role === 'INST_ADMIN' || role === 'INSTITUTE_ADMIN';
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : undefined;
+
+    const scopedProgramId = isInstituteAdmin ? programId : undefined;
+
+    const now = new Date();
+    const months: string[] = [];
+
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      months.push(`${year}-${month}`);
+    }
+
+    const startDate = new Date(
+      now.getFullYear(),
+      now.getMonth() - 11,
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
+
+    const qb = this.certificateRepo
+      .createQueryBuilder('certificate')
+      .innerJoin('certificate.user', 'user')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin('user.program', 'program')
+      .where('certificate.issueDate >= :startDate', { startDate });
+
+    if (scopedInstituteId !== undefined && scopedInstituteId !== null) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    if (scopedProgramId !== undefined && scopedProgramId !== null) {
+      qb.andWhere('program.id = :programId', {
+        programId: scopedProgramId,
+      });
+    }
+
+    const rows = await qb
+      .select("DATE_FORMAT(certificate.issueDate, '%Y-%m')", 'month')
+      .addSelect('COUNT(certificate.id)', 'count')
+      .groupBy("DATE_FORMAT(certificate.issueDate, '%Y-%m')")
+      .orderBy("DATE_FORMAT(certificate.issueDate, '%Y-%m')", 'ASC')
+      .getRawMany<{ month: string; count: string }>();
+
+    const monthMap = new Map(rows.map((row) => [row.month, Number(row.count)]));
+
+    return {
+      categories: months,
+      series: [
+        {
+          name: 'Certificates',
+          data: months.map((month) => monthMap.get(month) ?? 0),
+        },
+      ],
+    };
+  }
+  async getPackagesCompletedTrend(
+    programId?: number,
+    currentUserInstituteId?: number,
+    role?: string,
+  ) {
+    const isInstituteAdmin =
+      role === 'INST_ADMIN' || role === 'INSTITUTE_ADMIN';
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : undefined;
+
+    const scopedProgramId = isInstituteAdmin ? programId : undefined;
+
+    const now = new Date();
+    const months: string[] = [];
+
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      months.push(`${year}-${month}`);
+    }
+
+    const startDate = new Date(
+      now.getFullYear(),
+      now.getMonth() - 11,
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
+
+    const qb = this.packageEnrollmentRepo
+      .createQueryBuilder('packageEnrollment')
+      .innerJoin('packageEnrollment.user', 'user')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin('user.program', 'program')
+      .where('packageEnrollment.status = :completedStatus', {
+        completedStatus: 1,
+      })
+      .andWhere('packageEnrollment.completed_at IS NOT NULL')
+      .andWhere('packageEnrollment.completed_at >= :startDate', { startDate });
+
+    if (scopedInstituteId !== undefined && scopedInstituteId !== null) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    if (scopedProgramId !== undefined && scopedProgramId !== null) {
+      qb.andWhere('program.id = :programId', {
+        programId: scopedProgramId,
+      });
+    }
+
+    const rows = await qb
+      .select("DATE_FORMAT(packageEnrollment.completed_at, '%Y-%m')", 'month')
+      .addSelect('COUNT(packageEnrollment.id)', 'count')
+      .groupBy("DATE_FORMAT(packageEnrollment.completed_at, '%Y-%m')")
+      .orderBy("DATE_FORMAT(packageEnrollment.completed_at, '%Y-%m')", 'ASC')
+      .getRawMany<{ month: string; count: string }>();
+
+    const monthMap = new Map(rows.map((row) => [row.month, Number(row.count)]));
+
+    return {
+      categories: months,
+      series: [
+        {
+          name: 'Completed Packages',
+          data: months.map((month) => monthMap.get(month) ?? 0),
+        },
+      ],
     };
   }
 }

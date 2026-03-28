@@ -74,6 +74,12 @@ export class InstitutesController {
   ) {
     return this.institutesService.instituteNav(languageId, limit);
   }
+    @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Get('super-admin/count')
+  countInstitutes() {
+    return this.institutesService.countInstitutes();
+  }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN') // بس ال SUPER_ADMIN يقدر يشوف تفاصيل ال institute
   @Get('super-admin/institute/:id')

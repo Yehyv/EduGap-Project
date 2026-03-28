@@ -9,12 +9,23 @@ import {
   ParseIntPipe,
   Headers,
   BadRequestException,
+  Query,
+  Req,
 } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UseGuards } from '@nestjs/common';
 import { Roles } from 'src/common/decorators/roles.decorator';
+interface AuthenticatedRequest extends Request {
+  user?: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    refreshToken?: string;
+    role: string;
+  };
+}
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
 @Controller('dashboard')
@@ -68,5 +79,56 @@ export class DashboardController {
     }
 
     return this.dashboardService.getPassedExamResults(userId, languageId);
+  }
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN', 'INST_ADMIN')
+  @Get('student-engagement')
+  getStudentEngagementTrend(
+    @Query('programId') programIdRaw?: string,
+    @Req() req?: AuthenticatedRequest,
+  ) {
+    const programId =
+      programIdRaw && !Number.isNaN(Number(programIdRaw))
+        ? Number(programIdRaw)
+        : undefined;
+
+    return this.dashboardService.getStudentEngagementTrend(
+      programId,
+      req?.user?.instituteId,
+      req?.user?.role,
+    );
+  }
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN', 'INST_ADMIN')
+  @Get('certificates-issued')
+  getCertificatesIssuedTrend(
+    @Query('programId') programIdRaw?: string,
+    @Req() req?: AuthenticatedRequest,
+  ) {
+    const programId =
+      programIdRaw && !Number.isNaN(Number(programIdRaw))
+        ? Number(programIdRaw)
+        : undefined;
+
+    return this.dashboardService.getCertificatesIssuedTrend(
+      programId,
+      req?.user?.instituteId,
+      req?.user?.role,
+    );
+  }
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN', 'INST_ADMIN')
+  @Get('packages-completed')
+  getPackagesCompletedTrend(
+    @Query('programId') programIdRaw?: string,
+    @Req() req?: AuthenticatedRequest,
+  ) {
+    const programId =
+      programIdRaw && !Number.isNaN(Number(programIdRaw))
+        ? Number(programIdRaw)
+        : undefined;
+
+    return this.dashboardService.getPackagesCompletedTrend(
+      programId,
+      req?.user?.instituteId,
+      req?.user?.role,
+    );
   }
 }

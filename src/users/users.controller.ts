@@ -37,6 +37,7 @@ interface AuthenticatedRequest extends Request {
     email: string;
     instituteId: number;
     refreshToken?: string;
+    role: string;
   };
 }
 @Controller('users')
@@ -82,6 +83,31 @@ export class UsersController {
       page ? Number(page) : 1,
       limit ? Number(limit) : 10,
       search,
+    );
+  }
+    @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
+  @Get('super-admin/students/count')
+  countStudents(
+    @Query('instituteId') instituteIdRaw?: string,
+    @Query('programId') programIdRaw?: string,
+    @Req() req?: AuthenticatedRequest,
+  ) {
+    const instituteId =
+      instituteIdRaw && !Number.isNaN(Number(instituteIdRaw))
+        ? Number(instituteIdRaw)
+        : undefined;
+
+    const programId =
+      programIdRaw && !Number.isNaN(Number(programIdRaw))
+        ? Number(programIdRaw)
+        : undefined;
+
+    return this.usersService.countStudents(
+      instituteId,
+      programId,
+      req?.user?.instituteId,
+      req?.user?.role,
     );
   }
   @UseGuards(JwtAuthGuard, RolesGuard)

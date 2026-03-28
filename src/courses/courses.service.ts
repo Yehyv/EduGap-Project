@@ -1365,4 +1365,43 @@ export class CoursesService {
       name: r.translation_name,
     }));
   }
+  async countCourses(
+    instituteId?: number,
+    programId?: number,
+    currentUserInstituteId?: number,
+    role?: string,
+  ) {
+    const isInstituteAdmin = role === 'INST_ADMIN';
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : instituteId;
+
+    const qb = this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin(
+        'course.instituteProgramCourses',
+        'ipc',
+        'ipc.deleted_at IS NULL AND ipc.is_active != 0',
+      )
+      .where('course.deletedAt IS NULL');
+
+    if (scopedInstituteId !== undefined && scopedInstituteId !== null) {
+      qb.andWhere('ipc.instituteId = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    if (programId !== undefined && programId !== null) {
+      qb.andWhere('ipc.programId = :programId', { programId });
+    }
+
+    const row = await qb
+      .select('COUNT(DISTINCT course.id)', 'totalCourses')
+      .getRawOne<{ totalCourses: string }>();
+
+    return {
+      totalCourses: Number(row?.totalCourses ?? 0),
+    };
+  }
 }

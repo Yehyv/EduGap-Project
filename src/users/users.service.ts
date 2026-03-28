@@ -1061,4 +1061,43 @@ export class UsersService {
       },
     };
   }
+  async countStudents(
+    instituteId?: number,
+    programId?: number,
+    currentUserInstituteId?: number,
+    role?: string,
+  ) {
+    const isInstituteAdmin = role === 'INST_ADMIN';
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : instituteId;
+
+    const qb = this.userRepositry
+      .createQueryBuilder('user')
+      .innerJoin('user.UserRole', 'role')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin('user.program', 'program')
+      .where('user.deletedAt IS NULL')
+      .andWhere('user.is_active = 1')
+      .andWhere('role.role_title = :roleTitle', { roleTitle: 'student' });
+
+    if (scopedInstituteId !== undefined && scopedInstituteId !== null) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    if (programId !== undefined && programId !== null) {
+      qb.andWhere('program.id = :programId', { programId });
+    }
+
+    const row = await qb
+      .select('COUNT(DISTINCT(user.id))', 'totalStudents')
+      .getRawOne<{ totalStudents: string }>();
+
+    return {
+      totalStudents: Number(row?.totalStudents ?? 0),
+    };
+  }
 }
