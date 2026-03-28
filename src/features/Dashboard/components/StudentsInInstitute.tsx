@@ -147,9 +147,13 @@ const columns = [
   },
 ];
 
-const StudentsInInstitute = () => {
+const StudentsInInstitute = ({
+  openAddModal = false,
+}: {
+  openAddModal?: boolean;
+}) => {
   const { instituteId } = useParams();
-  const [isOpenModal, setOpenModal] = useState(false);
+  const [isOpenModal, setOpenModal] = useState(openAddModal ?? false);
   const [addBulkStudentsModal, setAddBulkStudentsModal] = useState(false);
   const [filterText, setFilterText] = useState("");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);

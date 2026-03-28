@@ -4,7 +4,7 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { TextField } from "@/shared/components";
 import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { phoneKeys } from "@/shared/utils/globals";
@@ -95,8 +95,12 @@ const AddNewStudentToInstitute = ({
     programId: "",
   };
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const handleCloseModal = () => {
     setReviewModalOpen(false);
+    searchParams.delete("openAddStudent");
+    setSearchParams(searchParams);
   };
 
   return (

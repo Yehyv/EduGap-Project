@@ -17,6 +17,8 @@ const dashboardMenuTranslations = {
     fastDesc: "Optimized performance for instant access",
     accessible: "Always Accessible",
     accessibleDesc: "Access from anywhere, anytime",
+    totalCourses: "Total Courses",
+    addNewStudent: "Add New Student",
   },
   ar: {
     secure: "آمن ومحمي",
@@ -36,6 +38,8 @@ const dashboardMenuTranslations = {
     roles: "الأدوار",
     search: "بحث",
     admin: "مسؤول",
+    totalCourses: "جميع الدورات",
+    addNewStudent: "اضافة طالب جديد",
   },
 } as const;
 

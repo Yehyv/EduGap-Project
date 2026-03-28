@@ -84,6 +84,12 @@ const columns = [
     style: { justifyContent: "center" },
   },
   {
+    name: "Role",
+    selector: (row: User) => row?.role ?? "-",
+    sortable: true,
+    style: { justifyContent: "center" },
+  },
+  {
     name: "Created At",
     selector: (row: User) =>
       row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-",
@@ -292,7 +298,7 @@ const InstituteStaffList = () => {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary disabled:bg-gray-100"
                     >
                       <option value="">All Programs</option>
-                      {allProgramsInInstitute?.data?.items?.map((program) => (
+                      {allProgramsInInstitute?.data?.map((program) => (
                         <option key={program.id} value={program.id}>
                           {program?.name}
                         </option>

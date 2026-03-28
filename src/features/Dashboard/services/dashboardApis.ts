@@ -1137,3 +1137,83 @@ export const getStudentLearningPaths = async (studentId: string) => {
   );
   return response.data;
 };
+
+export async function getTotalTrainingCoursesCount(
+  programId: number | string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get(`/contents/super-admin/contents/count`, {
+    params: {
+      programId,
+    },
+  });
+  return res.data;
+}
+export async function getTotalStudentsCountData(
+  programId: number | string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get(`/users/super-admin/students/count`, {
+    params: {
+      programId,
+    },
+  });
+  return res.data;
+}
+export async function getTotalCoursesCount(
+  programId: number | string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get(`/courses/super-admin/count`, {
+    params: {
+      programId,
+    },
+  });
+  return res.data;
+}
+
+export interface ChartSeries {
+  name: string;
+  data: number[];
+}
+
+export interface ChartData {
+  categories: string[];
+  series: ChartSeries[];
+}
+
+export interface ChartApiResponse {
+  status: number;
+  message: string;
+  data: ChartData;
+}
+
+const buildParams = (programId?: number) =>
+  programId !== undefined ? { programId } : {};
+
+export const fetchStudentEngagement = async (
+  programId?: number,
+): Promise<ChartData> => {
+  const { data } = await dashboardApi.get<ChartApiResponse>(
+    "/dashboard/student-engagement",
+    { params: buildParams(programId) },
+  );
+  return data.data;
+};
+
+export const fetchCertificatesIssued = async (
+  programId?: number,
+): Promise<ChartData> => {
+  const { data } = await dashboardApi.get<ChartApiResponse>(
+    "/dashboard/certificates-issued",
+    { params: buildParams(programId) },
+  );
+  return data.data;
+};
+
+export const fetchPackagesCompleted = async (
+  programId?: number,
+): Promise<ChartData> => {
+  const { data } = await dashboardApi.get<ChartApiResponse>(
+    "/dashboard/packages-completed",
+    { params: buildParams(programId) },
+  );
+  return data.data;
+};

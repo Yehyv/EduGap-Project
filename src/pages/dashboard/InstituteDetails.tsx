@@ -1,5 +1,4 @@
-import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import {
   instituteActiveToggle,
   instituteDetails,
@@ -12,12 +11,38 @@ import ProgramsInInstitute from "@/features/Dashboard/components/ProgramsInInsti
 import StudentsInInstitute from "@/features/Dashboard/components/StudentsInInstitute";
 import InstituteStaffList from "@/features/Dashboard/components/InstituteStaffList";
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { jwtDecode } from "jwt-decode";
+import { ROLES } from "@/shared/utils/globals";
+
+const VALID_TABS = ["informations", "students", "programs", "staff"] as const;
+type Tab = (typeof VALID_TABS)[number];
 
 const InstituteDetails = () => {
   const { instituteId } = useParams();
   const { t } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { dashboardToken } = useAuth();
+  const userRole = jwtDecode(dashboardToken)?.role;
 
-  const [activeTab, setActiveTab] = useState("informations");
+  // Read tab from searchParams, fallback to "informations"
+  const tabParam = searchParams.get("tab") as Tab | null;
+  const activeTab: Tab =
+    tabParam && VALID_TABS.includes(tabParam) ? tabParam : "informations";
+
+  // Read openAddStudent flag — only truthy when explicitly set (e.g. from another page)
+  const openAddStudent = searchParams.get("openAddStudent") === "true";
+
+  const setActiveTab = (tab: Tab) => {
+    setSearchParams(
+      (prev) => {
+        prev.set("tab", tab);
+        prev.delete("openAddStudent");
+        return prev;
+      },
+      { replace: true },
+    );
+  };
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["instituteDetailsForDashboard", instituteId],
@@ -28,12 +53,10 @@ const InstituteDetails = () => {
   const instituteData = data?.data;
   const instituteDataAr = instituteData?.translations?.[0];
   const instituteDataEn = instituteData?.translations?.[1];
-
   const region = instituteData?.region;
   const city = region?.city;
   const country = city?.country;
 
-  // AR = index 0 | EN = index 1
   const arRegion = [
     country?.translations?.[0]?.name,
     city?.translations?.[0]?.name,
@@ -74,19 +97,21 @@ const InstituteDetails = () => {
           <h2 className="mb-0">{instituteDataAr?.name ?? ""}</h2>
         </div>
 
-        <ActiveStatusButton
-          itemId={instituteId ?? ""}
-          activateApi={() => instituteActiveToggle(instituteId ?? "")}
-          deactivateApi={() => instituteActiveToggle(instituteId ?? "")}
-          isActive={instituteData?.is_active ?? false}
-          refetchKey={"instituteDetailsForDashboard"}
-          showModal={false}
-        />
+        {userRole === ROLES.SUPER_ADMIN && (
+          <ActiveStatusButton
+            itemId={instituteId ?? ""}
+            activateApi={() => instituteActiveToggle(instituteId ?? "")}
+            deactivateApi={() => instituteActiveToggle(instituteId ?? "")}
+            isActive={instituteData?.is_active ?? false}
+            refetchKey={"instituteDetailsForDashboard"}
+            showModal={false}
+          />
+        )}
       </div>
 
       {/* ── TABS ───────────────────────────────────────────────────────────── */}
       <div className="flex gap-4 my-5">
-        {["informations", "students", "programs", "staff"].map((tab) => (
+        {VALID_TABS.map((tab) => (
           <button
             key={tab}
             className={tabClass(tab)}
@@ -220,7 +245,9 @@ const InstituteDetails = () => {
         </>
       )}
 
-      {activeTab === "students" && <StudentsInInstitute />}
+      {activeTab === "students" && (
+        <StudentsInInstitute openAddModal={openAddStudent} />
+      )}
       {activeTab === "programs" && <ProgramsInInstitute />}
       {activeTab === "staff" && <InstituteStaffList />}
     </>

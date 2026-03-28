@@ -18,6 +18,9 @@ import {
 
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { jwtDecode } from "jwt-decode";
+import { ROLES } from "@/shared/utils/globals";
 
 /* ===== Icons ===== */
 const ArrowDown = () => (
@@ -47,6 +50,8 @@ const ArrowUp = () => (
 const ProgramsInInstitute = () => {
   /* ===== State ===== */
   const [openId, setOpenId] = useState<number | null>(null);
+  const { dashboardToken } = useAuth();
+  const userRole = jwtDecode(dashboardToken)?.role;
 
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [activeProgramId, setActiveProgramId] = useState<number | null>(null);
@@ -140,13 +145,15 @@ const ProgramsInInstitute = () => {
       <div className="flex justify-between items-center border-b pb-3">
         <h4 className="text-secondary font-bold">Programs</h4>
 
-        <button
-          onClick={() => setIsProgramModalOpen(true)}
-          className="bg-gradient-to-r from-[#FCB737] to-[#BB831A] py-0.5 px-3 rounded-xl text-white text-sm flex items-center gap-2"
-        >
-          <PlusIcon />
-          Add Program To Institute
-        </button>
+        {userRole === ROLES.SUPER_ADMIN && (
+          <button
+            onClick={() => setIsProgramModalOpen(true)}
+            className="bg-gradient-to-r from-[#FCB737] to-[#BB831A] py-0.5 px-3 rounded-xl text-white text-sm flex items-center gap-2"
+          >
+            <PlusIcon />
+            Add Program To Institute
+          </button>
+        )}
       </div>
 
       {/* ===== List ===== */}
@@ -172,22 +179,24 @@ const ProgramsInInstitute = () => {
                 <div className="flex gap-4 items-center">
                   {isOpen ? <ArrowUp /> : <ArrowDown />}
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveProgram(program.id);
-                    }}
-                  >
-                    <CloseIcon className="inline-block me-1" />
-                    <span className="text-red-500">Unassign</span>
-                  </button>
+                  {userRole === ROLES.SUPER_ADMIN && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveProgram(program.id);
+                      }}
+                    >
+                      <CloseIcon className="inline-block me-1" />
+                      <span className="text-red-500">Unassign</span>
+                    </button>
+                  )}
                 </div>
               </button>
 
               {/* Body */}
               {isOpen && (
                 <div className="px-6 py-4 space-y-3">
-                  {program.courses?.map((course: any, index: number) => (
+                  {program?.courses?.map((course: any, index: number) => (
                     <div
                       key={course.id}
                       className="flex justify-between items-center bg-[#F7FCFF] p-3 rounded-lg"
@@ -196,28 +205,37 @@ const ProgramsInInstitute = () => {
                         {index + 1} - {course.name}
                       </span>
 
-                      <button
-                        onClick={() =>
-                          handleRemoveCourse(course.id, program.id)
-                        }
-                      >
-                        <CloseIcon className="inline-block me-1" />
-                        <span className="text-red-500">Unassign</span>
-                      </button>
+                      {userRole === ROLES.SUPER_ADMIN && (
+                        <button
+                          onClick={() =>
+                            handleRemoveCourse(course.id, program.id)
+                          }
+                        >
+                          <CloseIcon className="inline-block me-1" />
+                          <span className="text-red-500">Unassign</span>
+                        </button>
+                      )}
                     </div>
                   ))}
+                  {program?.courses.length == 0 && (
+                    <p className="text-gray-400 text-center">
+                      there is no courses available
+                    </p>
+                  )}
 
                   {/* Add Course */}
-                  <button
-                    onClick={() => {
-                      setActiveProgramId(program.id);
-                      setIsCourseModalOpen(true);
-                    }}
-                    className="w-full mt-3 dashed-border py-2 rounded-lg text-gray-500 flex justify-center gap-2"
-                  >
-                    Add Course
-                    <PlusIconGray />
-                  </button>
+                  {userRole === ROLES.SUPER_ADMIN && (
+                    <button
+                      onClick={() => {
+                        setActiveProgramId(program.id);
+                        setIsCourseModalOpen(true);
+                      }}
+                      className="w-full mt-3 dashed-border py-2 rounded-lg text-gray-500 flex justify-center gap-2"
+                    >
+                      Add Course
+                      <PlusIconGray />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
