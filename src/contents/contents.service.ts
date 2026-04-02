@@ -111,7 +111,7 @@ export class ContentsService {
       where: { id: dto.categoryId },
     });
     if (!category) throw new NotFoundException('Category not found');
-    const baseUrl = process.env.BASE_URL || '';
+    const baseUrl = process.env.APP_URL || '';
     const imageUrl = image
       ? `${baseUrl}/uploads/content-images/${image.filename}`
       : '';
