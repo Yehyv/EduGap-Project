@@ -1086,7 +1086,7 @@ export class ContentsService {
     languageId?: number,
     instituteId?: number,
     programId?: number,
-    userId?: number, // 👈 جديد
+    userId?: number,
   ) {
     const qb = this.contentRepo
       .createQueryBuilder('c')
@@ -1113,6 +1113,7 @@ export class ContentsService {
     if (instituteId) {
       qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
     }
+
     if (programId) {
       qb.andWhere('ipc.programId = :programId', { programId });
     }
@@ -1122,24 +1123,32 @@ export class ContentsService {
 
     const ids = rows.map((c) => c.id);
 
-    // مدة + عدّاد المقيمين
-    const statsRows = await this.contentRepo
+    // totalDuration لوحدها
+    const durRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.topics', 't')
       .leftJoin('t.lessons', 'l')
-      .leftJoin('c.enrollments', 'e')
       .select('c.id', 'id')
       .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
-      .addSelect('SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END)', 'ratersCount')
       .where('c.id IN (:...ids)', { ids })
       .groupBy('c.id')
-      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+      .getRawMany<{ id: string; totalDuration: string }>();
 
     const durationMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+      durRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
+
+    // ratersCount لوحدها علشان مايضربش مع lessons
+    const ratingRows = await this.enrollmentRepo
+      .createQueryBuilder('e')
+      .select('e.contentId', 'id')
+      .addSelect('SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END)', 'ratersCount')
+      .where('e.contentId IN (:...ids)', { ids })
+      .groupBy('e.contentId')
+      .getRawMany<{ id: string; ratersCount: string }>();
+
     const ratersMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+      ratingRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
     );
 
     // فلاج التحاق
@@ -1164,7 +1173,7 @@ export class ContentsService {
           Number(r.cid),
           {
             isEnrolled: true,
-            isCompleted: r.completed === 1,
+            isCompleted: Number(r.completed) === 1,
           },
         ]),
       );
@@ -1176,27 +1185,27 @@ export class ContentsService {
       const tr =
         c.translations?.find((t) => t.language?.id === languageId) ||
         c.translations?.[0];
+
       const catTr =
         c.contentCategory?.translations?.find(
           (t: any) =>
             t?.language?.id === languageId || t?.languageId === languageId,
         ) || c.contentCategory?.translations?.[0];
+
       const enrollInfo = enrolledMap.get(c.id);
+
       return {
         id: c.id,
         name: tr?.name ?? '',
         description: tr?.description ?? '',
         image: c.image,
         level: c.level,
-
-        // 👇 الحقول المضافة
         rate: c.rate ?? 0,
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
         isEnrolled: enrollInfo?.isEnrolled ?? false,
         isCompleted: enrollInfo?.isCompleted ?? false,
         isSaved: savedMap.get(c.id) ?? false,
-
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: {
           id: c.contentCategory?.id ?? null,
