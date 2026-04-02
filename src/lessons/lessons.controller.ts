@@ -40,6 +40,8 @@ export class LessonsController {
    * POST /lessons
    * إنشاء Lesson داخل Topic محدد
    */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Post()
   @UseInterceptors(FileInterceptor('image', imageStorage('lesson-images')))
   create(
