@@ -428,11 +428,10 @@ export class ContentsService {
     languageId?: number,
     instituteId?: number,
     programId?: number,
-    userId?: number, // اختياري
+    userId?: number,
   ) {
     const offset = (page - 1) * limit;
 
-    // 1) IDs مرتبة حسب عدد الـ enrollments
     const baseQb = this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e')
@@ -440,18 +439,26 @@ export class ContentsService {
       .leftJoin('cc.course', 'course')
       .leftJoin('course.instituteProgramCourses', 'ipc')
       .select('c.id', 'id')
-      .addSelect('COUNT(e.id)', 'cnt')
+      .addSelect('COUNT(DISTINCT e.id)', 'cnt')
       .groupBy('c.id')
       .orderBy('cnt', 'DESC');
 
-    if (instituteId)
+    if (instituteId) {
       baseQb.andWhere('ipc.instituteId = :instituteId', { instituteId });
-    if (programId) baseQb.andWhere('ipc.programId = :programId', { programId });
+    }
 
-    const allRows = await baseQb.getRawMany<{ id: number; cnt: string }>();
+    if (programId) {
+      baseQb.andWhere('ipc.programId = :programId', { programId });
+    }
+
+    const allRows = await baseQb
+      .clone()
+      .getRawMany<{ id: number; cnt: string }>();
+
     const total = allRows.length;
 
     const pageRows = await baseQb
+      .clone()
       .limit(limit)
       .offset(offset)
       .getRawMany<{ id: number; cnt: string }>();
@@ -476,7 +483,7 @@ export class ContentsService {
     );
     const orderIndex = new Map<number, number>(ids.map((id, i) => [id, i]));
 
-    // 2) متوسط التقييم → خزّنه في content.rate
+    // average rating
     const avgRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e2')
@@ -496,7 +503,7 @@ export class ContentsService {
       )
       .where('c.id IN (:...ids)', { ids })
       .groupBy('c.id')
-      .getRawMany<{ id: number; avg: string }>();
+      .getRawMany<{ id: string; avg: string }>();
 
     for (const r of avgRows) {
       await this.contentRepo.update(
@@ -505,30 +512,35 @@ export class ContentsService {
       );
     }
 
-    // 3) المدة + عدّاد المقيمين
-    const statsRows = await this.contentRepo
+    // totalDuration لوحدها
+    const durationRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.topics', 't')
       .leftJoin('t.lessons', 'l')
-      .leftJoin('c.enrollments', 'e3')
       .select('c.id', 'id')
       .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
-      .addSelect(
-        'SUM(CASE WHEN e3.rating > 0 THEN 1 ELSE 0 END)',
-        'ratersCount',
-      )
       .where('c.id IN (:...ids)', { ids })
       .groupBy('c.id')
-      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+      .getRawMany<{ id: string; totalDuration: string }>();
 
     const durationMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
-    );
-    const ratersMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+      durationRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
 
-    // 4) فلاج الالتحاق (يكفي وجود صف)
+    // ratersCount لوحدها
+    const ratingCountRows = await this.enrollmentRepo
+      .createQueryBuilder('e3')
+      .select('e3.contentId', 'id')
+      .addSelect('COUNT(*)', 'ratersCount')
+      .where('e3.contentId IN (:...ids)', { ids })
+      .andWhere('e3.rating > 0')
+      .groupBy('e3.contentId')
+      .getRawMany<{ id: string; ratersCount: string }>();
+
+    const ratersMap = new Map<number, number>(
+      ratingCountRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
     let enrolledMap = new Map<
       number,
       { isEnrolled: boolean; isCompleted: boolean }
@@ -550,14 +562,14 @@ export class ContentsService {
           Number(r.cid),
           {
             isEnrolled: true,
-            isCompleted: r.completed === 1,
+            isCompleted: Number(r.completed) === 1,
           },
         ]),
       );
     }
+
     const savedMap = await this.buildSavedMap(userId, ids);
 
-    // 5) حمّل تفاصيل المحتويات + ترجمات التصنيف والـ educator
     const contents = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoinAndSelect(
@@ -594,22 +606,21 @@ export class ContentsService {
           (t: any) =>
             t?.language?.id === languageId || t?.languageId === languageId,
         ) || c.contentCategory?.translations?.[0];
+
       const enrollInfo = enrolledMap.get(c.id);
+
       return {
         id: c.id,
         name: tr?.name ?? '',
         description: tr?.description ?? '',
         image: c.image,
         level: c.level,
-
         rate: c.rate ?? 0,
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
-
         isEnrolled: enrollInfo?.isEnrolled ?? false,
         isCompleted: enrollInfo?.isCompleted ?? false,
         isSaved: savedMap.get(c.id) ?? false,
-
         educator: c.educator
           ? {
               id: c.educator.id,
@@ -617,7 +628,6 @@ export class ContentsService {
               name: c.educator.user?.full_name ?? '',
             }
           : null,
-
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: {
           id: c.contentCategory?.id ?? null,
@@ -644,9 +654,9 @@ export class ContentsService {
     languageId?: number,
     instituteId?: number,
     programId?: number,
-    userId?: number, // اختياري
+    userId?: number,
   ) {
-    // 1) هات أعلى 8 محتويات حسب عدد الـ enrollments مع تطبيق فلاتر المعهد/البرنامج
+    // 1) أعلى 8 محتويات حسب عدد الـ enrollments
     const qb = this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e')
@@ -654,14 +664,18 @@ export class ContentsService {
       .leftJoin('cc.course', 'course')
       .leftJoin('course.instituteProgramCourses', 'ipc')
       .select('c.id', 'id')
-      .addSelect('COUNT(e.id)', 'cnt')
+      .addSelect('COUNT(DISTINCT e.id)', 'cnt')
       .groupBy('c.id')
       .orderBy('cnt', 'DESC')
       .limit(8);
 
-    if (instituteId)
+    if (instituteId) {
       qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
-    if (programId) qb.andWhere('ipc.programId = :programId', { programId });
+    }
+
+    if (programId) {
+      qb.andWhere('ipc.programId = :programId', { programId });
+    }
 
     const rows = await qb.getRawMany<{ id: number; cnt: string }>();
     if (!rows.length) return [];
@@ -692,7 +706,7 @@ export class ContentsService {
       )
       .where('c.id IN (:...ids)', { ids })
       .groupBy('c.id')
-      .getRawMany<{ id: number; avg: string }>();
+      .getRawMany<{ id: string; avg: string }>();
 
     for (const r of avgRows) {
       await this.contentRepo.update(
@@ -701,30 +715,36 @@ export class ContentsService {
       );
     }
 
-    // 3) مدة المحتوى + عدد المقيمين
-    const statsRows = await this.contentRepo
+    // 3) total duration لوحدها
+    const durationRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.topics', 't')
       .leftJoin('t.lessons', 'l')
-      .leftJoin('c.enrollments', 'e3')
       .select('c.id', 'id')
       .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
-      .addSelect(
-        'SUM(CASE WHEN e3.rating > 0 THEN 1 ELSE 0 END)',
-        'ratersCount',
-      )
       .where('c.id IN (:...ids)', { ids })
       .groupBy('c.id')
-      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+      .getRawMany<{ id: string; totalDuration: string }>();
 
     const durationMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
-    );
-    const ratersMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+      durationRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
 
-    // 4) فلاج الالتحاق (يكفي وجود صف في enrollments)
+    // 4) ratersCount لوحدها بنفس منطق getRatings
+    const ratingCountRows = await this.enrollmentRepo
+      .createQueryBuilder('e3')
+      .select('e3.contentId', 'id')
+      .addSelect('COUNT(*)', 'ratersCount')
+      .where('e3.contentId IN (:...ids)', { ids })
+      .andWhere('e3.rating > 0')
+      .groupBy('e3.contentId')
+      .getRawMany<{ id: string; ratersCount: string }>();
+
+    const ratersMap = new Map<number, number>(
+      ratingCountRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
+    // 5) فلاج الالتحاق
     let enrolledMap = new Map<
       number,
       { isEnrolled: boolean; isCompleted: boolean }
@@ -746,14 +766,15 @@ export class ContentsService {
           Number(r.cid),
           {
             isEnrolled: true,
-            isCompleted: r.completed === 1,
+            isCompleted: Number(r.completed) === 1,
           },
         ]),
       );
     }
+
     const savedMap = await this.buildSavedMap(userId, ids);
 
-    // 5) حمّل تفاصيل المحتويات + ترجمات التصنيف والـ educator
+    // 6) حمّل التفاصيل
     const contents = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoinAndSelect(
@@ -790,7 +811,9 @@ export class ContentsService {
           (t: any) =>
             t?.language?.id === languageId || t?.languageId === languageId,
         ) || c.contentCategory?.translations?.[0];
+
       const enrollInfo = enrolledMap.get(c.id);
+
       return {
         id: c.id,
         name: tr?.name ?? '',
@@ -926,7 +949,7 @@ export class ContentsService {
     languageId?: number,
     instituteId?: number,
     programId?: number,
-    userId?: number, // 👈 جديد لاستخراج isEnrolled
+    userId?: number,
   ) {
     const skip = (page - 1) * limit;
 
@@ -948,7 +971,6 @@ export class ContentsService {
         languageId ? 'catTr.languageId = :languageId' : undefined,
         { languageId },
       )
-
       .where('c.deleted_at IS NULL')
       .orderBy('c.created_at', 'DESC')
       .skip(skip)
@@ -957,6 +979,7 @@ export class ContentsService {
     if (instituteId) {
       qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
     }
+
     if (programId) {
       qb.andWhere('ipc.programId = :programId', { programId });
     }
@@ -978,30 +1001,37 @@ export class ContentsService {
       };
     }
 
-    // ids للباكتش-حسابات
     const ids = rows.map((c) => c.id);
 
-    // 1) المدة الكلية + عدّاد المقيمين (rating>0)
-    const statsRows = await this.contentRepo
+    // totalDuration لوحدها
+    const durationRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.topics', 't')
       .leftJoin('t.lessons', 'l')
-      .leftJoin('c.enrollments', 'e')
       .select('c.id', 'id')
       .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
-      .addSelect('SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END)', 'ratersCount')
       .where('c.id IN (:...ids)', { ids })
       .groupBy('c.id')
-      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+      .getRawMany<{ id: string; totalDuration: string }>();
 
     const durationMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
-    );
-    const ratersMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+      durationRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
 
-    // 2) فلاج التحاق المستخدم (لو متاح userId)
+    // ratersCount لوحدها بنفس منطق getRatings
+    const ratingCountRows = await this.enrollmentRepo
+      .createQueryBuilder('e')
+      .select('e.contentId', 'id')
+      .addSelect('COUNT(*)', 'ratersCount')
+      .where('e.contentId IN (:...ids)', { ids })
+      .andWhere('e.rating > 0')
+      .groupBy('e.contentId')
+      .getRawMany<{ id: string; ratersCount: string }>();
+
+    const ratersMap = new Map<number, number>(
+      ratingCountRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
     let enrolledMap = new Map<
       number,
       { isEnrolled: boolean; isCompleted: boolean }
@@ -1023,7 +1053,7 @@ export class ContentsService {
           Number(r.cid),
           {
             isEnrolled: true,
-            isCompleted: r.completed === 1,
+            isCompleted: Number(r.completed) === 1,
           },
         ]),
       );
@@ -1035,27 +1065,27 @@ export class ContentsService {
       const tr =
         c.translations?.find((t) => t.language?.id === languageId) ||
         c.translations?.[0];
+
       const catTr =
         c.contentCategory?.translations?.find(
           (t: any) =>
             t?.language?.id === languageId || t?.languageId === languageId,
         ) || c.contentCategory?.translations?.[0];
+
       const enrollInfo = enrolledMap.get(c.id);
+
       return {
         id: c.id,
         name: tr?.name ?? '',
         description: tr?.description ?? '',
         image: c.image,
         level: c.level,
-
-        // 👇 الحقول المضافة
         rate: c.rate ?? 0,
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
         isEnrolled: enrollInfo?.isEnrolled ?? false,
         isCompleted: enrollInfo?.isCompleted ?? false,
         isSaved: savedMap.get(c.id) ?? false,
-
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: {
           id: c.contentCategory?.id ?? null,
