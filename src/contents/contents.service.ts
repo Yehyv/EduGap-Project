@@ -1123,7 +1123,7 @@ export class ContentsService {
 
     const ids = rows.map((c) => c.id);
 
-    // totalDuration لوحدها
+    // total duration
     const durRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.topics', 't')
@@ -1138,20 +1138,21 @@ export class ContentsService {
       durRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
 
-    // ratersCount لوحدها علشان مايضربش مع lessons
-    const ratingRows = await this.enrollmentRepo
+    // raters count بنفس منطق getRatings
+    const ratingCountRows = await this.enrollmentRepo
       .createQueryBuilder('e')
       .select('e.contentId', 'id')
-      .addSelect('SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END)', 'ratersCount')
+      .addSelect('COUNT(*)', 'ratersCount')
       .where('e.contentId IN (:...ids)', { ids })
+      .andWhere('e.rating > 0')
       .groupBy('e.contentId')
       .getRawMany<{ id: string; ratersCount: string }>();
 
     const ratersMap = new Map<number, number>(
-      ratingRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+      ratingCountRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
     );
 
-    // فلاج التحاق
+    // enrollment flags
     let enrolledMap = new Map<
       number,
       { isEnrolled: boolean; isCompleted: boolean }
@@ -1206,6 +1207,7 @@ export class ContentsService {
         isEnrolled: enrollInfo?.isEnrolled ?? false,
         isCompleted: enrollInfo?.isCompleted ?? false,
         isSaved: savedMap.get(c.id) ?? false,
+        educator: null,
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: {
           id: c.contentCategory?.id ?? null,
