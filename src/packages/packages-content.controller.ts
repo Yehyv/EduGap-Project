@@ -39,7 +39,6 @@ export class PackageContentsController {
   getFirst8(@Headers('languageId') languageId?: string, @Req() req?: AuthenticatedRequest) {
     const langId = languageId ? Number(languageId) : undefined;
     const userId = req?.user?.sub;
-    if (!userId) throw new Error('User not authenticated');
     return this.packagesService.findPackagesFirst8(langId, userId);
   }
   @UseGuards(OptionalJwtAuthGuard)

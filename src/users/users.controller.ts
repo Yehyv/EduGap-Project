@@ -85,7 +85,7 @@ export class UsersController {
       search,
     );
   }
-    @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Get('super-admin/students/count')
   countStudents(
