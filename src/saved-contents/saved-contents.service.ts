@@ -18,7 +18,79 @@ export class SavedContentsService {
     @InjectRepository(Enrollment)
     private readonly enrollmentRepo: Repository<Enrollment>,
   ) {}
+  private async syncContentRates(contentIds: number[]) {
+    if (!contentIds.length) return;
 
+    const avgRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.enrollments', 'e')
+      .select('c.id', 'id')
+      .addSelect(
+        `
+      CASE
+        WHEN SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END) = 0
+        THEN 0
+        ELSE ROUND(
+          SUM(CASE WHEN e.rating > 0 THEN e.rating ELSE 0 END)
+          / SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END), 2
+        )
+      END
+      `,
+        'avg',
+      )
+      .where('c.id IN (:...ids)', { ids: contentIds })
+      .groupBy('c.id')
+      .getRawMany<{ id: string; avg: string }>();
+
+    for (const r of avgRows) {
+      await this.contentRepo.update(
+        { id: Number(r.id) },
+        { rate: Number(r.avg) },
+      );
+    }
+  }
+
+  private async getDurationMap(contentIds: number[]) {
+    const durationRows = await this.contentRepo
+      .createQueryBuilder('c')
+      .leftJoin('c.topics', 't')
+      .leftJoin('t.lessons', 'l')
+      .select('c.id', 'id')
+      .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
+      .where('c.id IN (:...ids)', { ids: contentIds })
+      .groupBy('c.id')
+      .getRawMany<{ id: string; totalDuration: string }>();
+
+    return new Map<number, number>(
+      durationRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
+    );
+  }
+
+  private async getRatersMap(contentIds: number[]) {
+    const ratingCountRows = await this.enrollmentRepo
+      .createQueryBuilder('e')
+      .select('e.contentId', 'id')
+      .addSelect('COUNT(*)', 'ratersCount')
+      .where('e.contentId IN (:...ids)', { ids: contentIds })
+      .andWhere('e.rating > 0')
+      .groupBy('e.contentId')
+      .getRawMany<{ id: string; ratersCount: string }>();
+
+    return new Map<number, number>(
+      ratingCountRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+  }
+
+  private async getUserEnrolledMap(userId: number, contentIds: number[]) {
+    const enrRows = await this.enrollmentRepo
+      .createQueryBuilder('en')
+      .select('en.contentId', 'cid')
+      .where('en.userId = :uid', { uid: userId })
+      .andWhere('en.contentId IN (:...ids)', { ids: contentIds })
+      .getRawMany<{ cid: string }>();
+
+    return new Map<number, boolean>(enrRows.map((r) => [Number(r.cid), true]));
+  }
   async save(userId: number, contentId: number): Promise<SavedContent> {
     const [user, content] = await Promise.all([
       this.userRepo.findOne({ where: { id: userId } }),
@@ -121,7 +193,6 @@ export class SavedContentsService {
       hasPrev: boolean;
     };
   }> {
-    // -------- sanitize page/limit ----------
     const rawPage = Number(opts?.page);
     const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
 
@@ -131,7 +202,6 @@ export class SavedContentsService {
 
     const languageId = opts?.languageId;
 
-    // -------- base query على SavedContent ----------
     const qb = this.savedRepo
       .createQueryBuilder('s')
       .leftJoin('s.user', 'u')
@@ -151,26 +221,25 @@ export class SavedContentsService {
       )
       .leftJoinAndSelect('c.educator', 'educator')
       .leftJoinAndSelect('educator.user', 'eduUser')
-      .where('u.id = :userId', { userId });
+      .where('u.id = :userId', { userId })
+      .andWhere('c.deleted_at IS NULL')
+      .orderBy('s.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .distinct(true);
 
-    // -------- search (على اسم المحتوى مثلاً) ----------
     if (opts?.search?.trim()) {
       const q = `%${opts.search.trim()}%`;
       qb.andWhere('(tr.name ILIKE :q OR tr.description ILIKE :q)', { q });
     }
 
-    qb.orderBy('s.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .distinct(true);
-
-    // ---- count منفصل لتجنب مشاكل distinct/joins ----
     const countQb = this.savedRepo
       .createQueryBuilder('s')
       .leftJoin('s.user', 'u')
       .leftJoin('s.content', 'c')
       .leftJoin('c.translations', 'trCount')
-      .where('u.id = :userId', { userId });
+      .where('u.id = :userId', { userId })
+      .andWhere('c.deleted_at IS NULL');
 
     if (opts?.search?.trim()) {
       const q = `%${opts.search.trim()}%`;
@@ -180,9 +249,10 @@ export class SavedContentsService {
       );
     }
 
-    const result: { cnt: string | number } | undefined = await countQb
+    const result = await countQb
       .select('COUNT(DISTINCT s.id)', 'cnt')
-      .getRawOne();
+      .getRawOne<{ cnt: string | number }>();
+
     const total = Number(result?.cnt ?? 0);
     const totalPages = Math.ceil(total / limit);
 
@@ -201,9 +271,10 @@ export class SavedContentsService {
     }
 
     const rows = await qb.getMany();
+    const contentIds = rows
+      .map((r) => r.content?.id)
+      .filter(Boolean) as number[];
 
-    // -------- IDs للـ contents المحفوظه ----------
-    const contentIds = rows.map((r) => r.content?.id).filter(Boolean);
     if (!contentIds.length) {
       return {
         items: [],
@@ -218,7 +289,6 @@ export class SavedContentsService {
       };
     }
 
-    // -------- enrollmentsCount لكل محتوى ----------
     const countRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.enrollments', 'e')
@@ -226,25 +296,24 @@ export class SavedContentsService {
       .addSelect('COUNT(e.id)', 'cnt')
       .where('c.id IN (:...ids)', { ids: contentIds })
       .groupBy('c.id')
-      .getRawMany<{ id: number; cnt: string }>();
+      .getRawMany<{ id: string; cnt: string }>();
 
     const enrollmentsCountMap = new Map<number, number>(
       countRows.map((r) => [Number(r.id), Number(r.cnt)]),
     );
 
-    // -------- متوسط التقييم وتحديث content.rate ----------
     const avgRows = await this.contentRepo
       .createQueryBuilder('c')
-      .leftJoin('c.enrollments', 'e2')
+      .leftJoin('c.enrollments', 'e')
       .select('c.id', 'id')
       .addSelect(
         `
       CASE
-        WHEN SUM(CASE WHEN e2.rating > 0 THEN 1 ELSE 0 END) = 0
+        WHEN SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END) = 0
         THEN 0
         ELSE ROUND(
-          SUM(CASE WHEN e2.rating > 0 THEN e2.rating ELSE 0 END)
-          / SUM(CASE WHEN e2.rating > 0 THEN 1 ELSE 0 END), 2
+          SUM(CASE WHEN e.rating > 0 THEN e.rating ELSE 0 END)
+          / SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END), 2
         )
       END
       `,
@@ -252,55 +321,53 @@ export class SavedContentsService {
       )
       .where('c.id IN (:...ids)', { ids: contentIds })
       .groupBy('c.id')
-      .getRawMany<{ id: number; avg: string }>();
+      .getRawMany<{ id: string; avg: string }>();
 
-    for (const r of avgRows) {
-      await this.contentRepo.update(
-        { id: Number(r.id) },
-        { rate: Number(r.avg) },
-      );
-    }
+    const rateMap = new Map<number, number>(
+      avgRows.map((r) => [Number(r.id), Number(r.avg)]),
+    );
 
-    // -------- مدة المحتوى + عدد المقيمين ----------
-    const statsRows = await this.contentRepo
+    const durationRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.topics', 't')
       .leftJoin('t.lessons', 'l')
-      .leftJoin('c.enrollments', 'e3')
       .select('c.id', 'id')
       .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
-      .addSelect(
-        'SUM(CASE WHEN e3.rating > 0 THEN 1 ELSE 0 END)',
-        'ratersCount',
-      )
       .where('c.id IN (:...ids)', { ids: contentIds })
       .groupBy('c.id')
-      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+      .getRawMany<{ id: string; totalDuration: string }>();
 
     const durationMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
-    );
-    const ratersMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+      durationRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
 
-    // -------- isEnrolled لليوزر الحالي ----------
+    const ratingCountRows = await this.enrollmentRepo
+      .createQueryBuilder('e')
+      .select('e.contentId', 'id')
+      .addSelect('COUNT(*)', 'ratersCount')
+      .where('e.contentId IN (:...ids)', { ids: contentIds })
+      .andWhere('e.rating > 0')
+      .groupBy('e.contentId')
+      .getRawMany<{ id: string; ratersCount: string }>();
+
+    const ratersMap = new Map<number, number>(
+      ratingCountRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
     const enrRows = await this.enrollmentRepo
       .createQueryBuilder('en')
-      .leftJoin('en.user', 'u')
-      .leftJoin('en.content', 'c')
-      .select('c.id', 'cid')
-      .where('u.id = :uid', { uid: userId })
-      .andWhere('c.id IN (:...ids)', { ids: contentIds })
-      .getRawMany<{ cid: number }>();
+      .select('en.contentId', 'cid')
+      .where('en.userId = :uid', { uid: userId })
+      .andWhere('en.contentId IN (:...ids)', { ids: contentIds })
+      .getRawMany<{ cid: string }>();
 
     const enrolledMap = new Map<number, boolean>(
       enrRows.map((r) => [Number(r.cid), true]),
     );
 
-    // -------- تكوين الـ items بنفس شكل findCompletedPaginatedForUser ----------
     const items = rows.map((r) => {
       const c = r.content;
+
       const tr =
         c.translations?.find(
           (t: any) =>
@@ -319,13 +386,11 @@ export class SavedContentsService {
         description: tr?.description ?? '',
         image: c.image ?? null,
         level: c.level,
-
-        rate: c.rate ?? 0,
+        rate: rateMap.get(c.id) ?? c.rate ?? 0,
         ratersCount: ratersMap.get(c.id) ?? 0,
         totalDuration: durationMap.get(c.id) ?? 0,
         isEnrolled: enrolledMap.get(c.id) ?? false,
-        isSaved: true, // لأنه جاي من SavedContent
-
+        isSaved: true,
         educator: c.educator
           ? {
               id: c.educator.id,
@@ -333,7 +398,6 @@ export class SavedContentsService {
               name: c.educator.user?.full_name ?? '',
             }
           : null,
-
         whatToLearn: tr?.what_to_learn?.split(',') ?? [],
         category: {
           id: c.contentCategory?.id ?? null,

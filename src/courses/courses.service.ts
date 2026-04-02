@@ -967,7 +967,7 @@ export class CoursesService {
       languageId,
       instituteId,
       programId,
-      userId, // اختياري لإظهار isEnrolled + completedLessons
+      userId,
     }: {
       page?: number;
       limit?: number;
@@ -977,73 +977,68 @@ export class CoursesService {
       userId?: number;
     } = {},
   ) {
-    const skip = (page - 1) * limit;
+    const safePage =
+      Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+    const safeLimit =
+      Number.isFinite(Number(limit)) && Number(limit) > 0
+        ? Math.min(100, Number(limit))
+        : 8;
 
-    // 1) IDs للمحتويات + إجمالي العدد (Typed)
-    let baseQb = this.courseRepository
-      .createQueryBuilder('course')
-      .leftJoin(
-        'course_content',
+    const skip = (safePage - 1) * safeLimit;
+
+    const baseQb = this.contentRepo
+      .createQueryBuilder('c')
+      .innerJoin(
+        'c.courseContents',
         'cc',
-        'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
+        'cc.courseId = :courseId AND cc.deleted_at IS NULL AND cc.is_active != 0',
+        { courseId },
       )
-      .leftJoin('content', 'c', 'c.id = cc.contentId AND c.deleted_at IS NULL')
-      .where('course.id = :courseId', { courseId })
+      .leftJoin('cc.course', 'course')
+      .leftJoin(
+        'course.instituteProgramCourses',
+        'ipc',
+        'ipc.deleted_at IS NULL AND ipc.is_active != 0',
+      )
+      .where('c.deleted_at IS NULL')
       .select('c.id', 'id')
-      .groupBy('c.id');
+      .groupBy('c.id')
+      .orderBy('c.id', 'ASC'); // لو عندك order_no في course_content استبدلها به
 
-    if (instituteId || programId) {
-      const qb = this.ipcRepository
-        .createQueryBuilder('ipc')
-        .innerJoin('ipc.course', 'course', 'course.id = :courseId', {
-          courseId,
-        })
-        .innerJoin(
-          'course_content',
-          'cc',
-          'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
-        )
-        .innerJoin(
-          'content',
-          'c',
-          'c.id = cc.contentId AND c.deleted_at IS NULL',
-        )
-        .select('c.id', 'id')
-        .groupBy('c.id');
-
-      if (instituteId)
-        qb.andWhere('ipc.instituteId = :instituteId', { instituteId });
-      if (programId) qb.andWhere('ipc.programId = :programId', { programId });
-
-      // نحافظ على نفس الواجهة
-      baseQb = qb as unknown as typeof baseQb;
+    if (instituteId) {
+      baseQb.andWhere('ipc.instituteId = :instituteId', { instituteId });
     }
 
-    const allIdRows = await baseQb.getRawMany<{ id: number }>();
+    if (programId) {
+      baseQb.andWhere('ipc.programId = :programId', { programId });
+    }
+
+    const allIdRows = await baseQb.clone().getRawMany<{ id: number }>();
     const total = allIdRows.length;
 
     const pageIdRows = await baseQb
-      .limit(limit)
+      .clone()
+      .limit(safeLimit)
       .offset(skip)
       .getRawMany<{ id: number }>();
+
     const contentIds = pageIdRows.map((r) => Number(r.id));
 
     if (!contentIds.length) {
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(total / safeLimit);
       return {
         items: [],
         pagination: {
-          page,
-          limit,
+          page: safePage,
+          limit: safeLimit,
           total,
           totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1,
+          hasNext: safePage < totalPages,
+          hasPrev: safePage > 1,
         },
       };
     }
 
-    // 2) تفاصيل المحتوى + ترجمات + كاتيجوري
     const contents = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoinAndSelect(
@@ -1060,29 +1055,39 @@ export class CoursesService {
         { languageId },
       )
       .where('c.id IN (:...ids)', { ids: contentIds })
+      .andWhere('c.deleted_at IS NULL')
       .getMany();
 
-    // 3) إحصاءات: duration + ratersCount
-    const statsRows = await this.contentRepo
+    // totalDuration لوحدها
+    const durationRows = await this.contentRepo
       .createQueryBuilder('c')
-      .leftJoin('c.topics', 't')
-      .leftJoin('t.lessons', 'l')
-      .leftJoin('c.enrollments', 'e')
+      .leftJoin('c.topics', 't', 't.deleted_at IS NULL AND t.is_active != 0')
+      .leftJoin('t.lessons', 'l', 'l.deleted_at IS NULL AND l.is_active != 0')
       .select('c.id', 'id')
       .addSelect('COALESCE(SUM(l.duration), 0)', 'totalDuration')
-      .addSelect('SUM(CASE WHEN e.rating > 0 THEN 1 ELSE 0 END)', 'ratersCount')
       .where('c.id IN (:...ids)', { ids: contentIds })
       .groupBy('c.id')
-      .getRawMany<{ id: number; totalDuration: string; ratersCount: string }>();
+      .getRawMany<{ id: string; totalDuration: string }>();
 
     const durationMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
-    );
-    const ratersMap = new Map<number, number>(
-      statsRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+      durationRows.map((r) => [Number(r.id), Number(r.totalDuration)]),
     );
 
-    // 3-bis) إجمالي عدد الدروس (active) لكل محتوى
+    // ratersCount لوحدها بنفس منطق getRatings
+    const ratingCountRows = await this.enrollmentRepo
+      .createQueryBuilder('e')
+      .select('e.contentId', 'id')
+      .addSelect('COUNT(*)', 'ratersCount')
+      .where('e.contentId IN (:...ids)', { ids: contentIds })
+      .andWhere('e.rating > 0')
+      .groupBy('e.contentId')
+      .getRawMany<{ id: string; ratersCount: string }>();
+
+    const ratersMap = new Map<number, number>(
+      ratingCountRows.map((r) => [Number(r.id), Number(r.ratersCount)]),
+    );
+
+    // إجمالي عدد الدروس لكل محتوى
     const lessonsCountRows = await this.contentRepo
       .createQueryBuilder('c')
       .leftJoin('c.topics', 't', 't.deleted_at IS NULL AND t.is_active != 0')
@@ -1091,21 +1096,20 @@ export class CoursesService {
       .addSelect('COUNT(DISTINCT l.id)', 'totalLessons')
       .where('c.id IN (:...ids)', { ids: contentIds })
       .groupBy('c.id')
-      .getRawMany<{ id: number; totalLessons: string }>();
+      .getRawMany<{ id: string; totalLessons: string }>();
 
     const totalLessonsMap = new Map<number, number>(
-      lessonsCountRows.map((r) => [Number(r.id), Number(r.totalLessons || 0)]),
+      lessonsCountRows.map((r) => [Number(r.id), Number(r.totalLessons ?? 0)]),
     );
 
-    // 3-ter) عدد الدروس المكتملة لكل محتوى لهذا المستخدم (لو userId موجود)
     let completedLessonsMap = new Map<number, number>();
+
     if (userId) {
-      // الطريقة المضمونة: progress -> enrollment -> content
       const completedRows = await this.progressRepo
         .createQueryBuilder('lp')
         .innerJoin('lp.enrollment', 'en')
         .innerJoin('en.content', 'c')
-        .where('lp.user_id = :uid', { uid: userId }) // اسم العمود الفعلي
+        .where('lp.user_id = :uid', { uid: userId })
         .andWhere('lp.deleted_at IS NULL')
         .andWhere('c.id IN (:...ids)', { ids: contentIds })
         .select('c.id', 'id')
@@ -1116,30 +1120,31 @@ export class CoursesService {
       completedLessonsMap = new Map<number, number>(
         completedRows.map((r) => [
           Number(r.id),
-          Number(r.completedLessons || 0),
+          Number(r.completedLessons ?? 0),
         ]),
       );
     }
 
-    // 4) isEnrolled (اختياري)
     let enrolledMap = new Map<number, boolean>();
+
     if (userId) {
       const enrRows = await this.enrollmentRepo
         .createQueryBuilder('en')
-        .select(['en.contentId AS cid'])
+        .select('en.contentId', 'cid')
         .where('en.userId = :uid', { uid: userId })
         .andWhere('en.contentId IN (:...ids)', { ids: contentIds })
-        .getRawMany<{ cid: number }>();
-      enrolledMap = new Map(enrRows.map((r) => [Number(r.cid), true]));
+        .getRawMany<{ cid: string }>();
+
+      enrolledMap = new Map<number, boolean>(
+        enrRows.map((r) => [Number(r.cid), true]),
+      );
     }
 
-    // 5) حافظ على ترتيب الـ IDs
     const orderIndex = new Map(contentIds.map((id, i) => [id, i]));
     contents.sort(
       (a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
     );
 
-    // 6) بناء العناصر
     const items = contents.map((c) => {
       const tr = this.pickTranslation<{
         language?: { id: number };
@@ -1173,8 +1178,6 @@ export class CoursesService {
           name: catTr?.name ?? '',
         },
         created_at: c.created_at,
-
-        // الجديد:
         totalLessons,
         completedLessons,
       };
@@ -1184,16 +1187,17 @@ export class CoursesService {
         : base;
     });
 
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / safeLimit);
+
     return {
       items,
       pagination: {
-        page,
-        limit,
+        page: safePage,
+        limit: safeLimit,
         total,
         totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
+        hasNext: safePage < totalPages,
+        hasPrev: safePage > 1,
       },
     };
   }
