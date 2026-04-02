@@ -846,64 +846,55 @@ export class CoursesService {
     }: { languageId?: number; instituteId?: number; programId?: number } = {},
     userId?: number,
   ) {
-    // الكورس + الترجمات
     const course = await this.courseRepository.findOne({
       where: { id: courseId },
       relations: ['translations', 'translations.language'],
     });
-    if (!course) throw new NotFoundException(`Course ${courseId} not found`);
+
+    if (!course) {
+      throw new NotFoundException(`Course ${courseId} not found`);
+    }
 
     const tr =
       course.translations?.find((t) => t.language?.id === languageId) ||
       course.translations?.[0] ||
       null;
 
-    // IDs للمحتويات التابعة للكورس (مع/بدون فلترة IPC)
-    let contentIdRows: { id: number }[];
-    if (!instituteId && !programId) {
-      contentIdRows = await this.courseRepository
-        .createQueryBuilder('course')
-        .leftJoin(
-          'course_content',
-          'cc',
-          'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
-        )
-        .leftJoin(
-          'content',
-          'c',
-          'c.id = cc.contentId AND c.deleted_at IS NULL',
-        )
-        .where('course.id = :courseId', { courseId })
-        .select('c.id', 'id')
-        .groupBy('c.id')
-        .getRawMany();
-    } else {
-      contentIdRows = await this.ipcRepository
-        .createQueryBuilder('ipc')
-        .innerJoin('ipc.course', 'course', 'course.id = :courseId', {
-          courseId,
-        })
-        .innerJoin(
-          'course_content',
-          'cc',
-          'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
-        )
-        .innerJoin(
-          'content',
-          'c',
-          'c.id = cc.contentId AND c.deleted_at IS NULL',
-        )
-        .select('c.id', 'id')
-        .groupBy('c.id')
-        .andWhere('ipc.instituteId = :instituteId', { instituteId })
-        .andWhere('ipc.programId = :programId', { programId })
-        .getRawMany();
+    const hasScope = instituteId !== undefined || programId !== undefined;
+
+    const contentCountQb = this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoin(
+        'course_content',
+        'cc',
+        'cc.courseId = course.id AND cc.deleted_at IS NULL AND cc.is_active != 0',
+      )
+      .leftJoin('content', 'c', 'c.id = cc.contentId AND c.deleted_at IS NULL')
+      .where('course.id = :courseId', { courseId });
+
+    if (hasScope) {
+      contentCountQb.leftJoin(
+        'course.instituteProgramCourses',
+        'ipc',
+        'ipc.deleted_at IS NULL AND ipc.is_active != 0',
+      );
+
+      if (instituteId !== undefined) {
+        contentCountQb.andWhere('ipc.instituteId = :instituteId', {
+          instituteId,
+        });
+      }
+
+      if (programId !== undefined) {
+        contentCountQb.andWhere('ipc.programId = :programId', { programId });
+      }
     }
 
-    const contentsCount = contentIdRows.length;
+    const contentCountRow = await contentCountQb
+      .select('COUNT(DISTINCT c.id)', 'contentsCount')
+      .getRawOne<{ contentsCount: string }>();
 
-    // إجمالي الديوراشن عبر كل المحتويات
-    const durRow = await this.courseRepository
+    const durationQb = this.courseRepository
       .createQueryBuilder('course')
       .leftJoin(
         'course_content',
@@ -921,28 +912,49 @@ export class CoursesService {
         'l',
         'l.topicId = t.id AND l.deleted_at IS NULL AND l.is_active != 0',
       )
+      .where('course.id = :courseId', { courseId });
+
+    if (hasScope) {
+      durationQb.leftJoin(
+        'course.instituteProgramCourses',
+        'ipc',
+        'ipc.deleted_at IS NULL AND ipc.is_active != 0',
+      );
+
+      if (instituteId !== undefined) {
+        durationQb.andWhere('ipc.instituteId = :instituteId', { instituteId });
+      }
+
+      if (programId !== undefined) {
+        durationQb.andWhere('ipc.programId = :programId', { programId });
+      }
+    }
+
+    const durRow = await durationQb
       .select('COALESCE(SUM(l.duration), 0)', 'totalDuration')
-      .where('course.id = :courseId', { courseId })
       .getRawOne<{ totalDuration: string }>();
+
     let isSaved = false;
+
     if (userId) {
-      // لو TypeORM >= 0.3 يدعم getExists()
       const exists = await this.savedCourse
         .createQueryBuilder('s')
         .leftJoin('s.user', 'u')
-        .leftJoin('s.content', 'c')
+        .leftJoin('s.course', 'c')
         .where('u.id = :uid', { uid: userId })
         .andWhere('c.id = :cid', { cid: course.id })
-        .getExists(); // إن لم تتوفر، استخدم getCount()>0
+        .getExists();
+
       isSaved = exists;
     }
+
     return {
       id: course.id,
       image: course.image,
       name: tr?.name ?? '',
       description: tr?.description ?? '',
       notes: course.notes,
-      contentsCount,
+      contentsCount: Number(contentCountRow?.contentsCount ?? 0),
       totalDuration: Number(durRow?.totalDuration ?? 0),
       isSaved,
     };
