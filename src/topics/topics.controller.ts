@@ -35,12 +35,16 @@ export class TopicsController {
    * POST /topics
    * إنشاء Topic داخل Content محدد
    */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @Post()
   create(
     @Body() createTopicDto: CreateTopicDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.topicsService.create(createTopicDto, req.user!.sub);
+    const userId = req.user?.sub;
+    if (!userId) throw new Error('User not authenticated');
+    return this.topicsService.create(createTopicDto, userId);
   }
 
   /**
