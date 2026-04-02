@@ -95,7 +95,7 @@ export class EducatorsController {
     return this.educatorsService.findOne(id);
   }
   @UseGuards(OptionalJwtAuthGuard)
-  @Get('educator/:id')
+  @Get(':id')
   findEducator(@Param('id', ParseIntPipe) id: number) {
     return this.educatorsService.findEducator(id);
   }
