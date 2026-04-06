@@ -70,7 +70,7 @@ export class EducatorsController {
     const oa = onlyActive !== undefined ? Number(onlyActive) : undefined;
     return this.educatorsService.findAllForAdmin(search, p, l, oa);
   }
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(OptionalJwtAuthGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('')
   findAll(
