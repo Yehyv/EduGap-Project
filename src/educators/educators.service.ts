@@ -72,6 +72,65 @@ export class EducatorsService {
   /**
    * Find all (search + pagination + include user full_name)
    */
+  async findAllForAdmin(
+    search?: string,
+    page: number = 1,
+    limit: number = 20,
+    onlyActive?: number,
+  ) {
+    const base: FindOptionsWhere<Educator> = {};
+    if (onlyActive === 1) base.is_active = 1;
+
+    const where: FindOptionsWhere<Educator>[] =
+      search && search.trim()
+        ? [
+            { ...base, title: ILike(`%${search}%`) },
+            { ...base, bio: ILike(`%${search}%`) },
+          ]
+        : [base];
+
+    const [items, total] = await this.educatorRepo.findAndCount({
+      where,
+      relations: ['user', 'createdBy'], // 👈 مهم: عشان نطلع full_name
+      order: { id: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    // ماب للـ DTO الناتج
+    const mapped = items.map((e) => ({
+      id: e.id,
+      title: e.title,
+      bio: e.bio,
+      image: e.image,
+      video_intro: e.video_intro,
+      is_active: e.is_active,
+      created_at: e.created_at,
+      updated_at: e.updated_at,
+      deleted_at: e.deleted_at,
+      user: {
+        id: e.user?.id ?? null,
+        full_name: e.user?.full_name ?? '', // 👈 الاسم
+        email: e.user?.email ?? '',
+      },
+      createdBy: {
+        id: e.createdBy?.id ?? null,
+        full_name: e.createdBy?.full_name ?? '',
+      },
+    }));
+
+    return {
+      items: mapped,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+      },
+    };
+  }
   async findAll(
     search?: string,
     page: number = 1,

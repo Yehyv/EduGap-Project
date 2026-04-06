@@ -53,7 +53,6 @@ export class PackageContentsController {
     const p = page ? Number(page) : 1;
     const l = limit ? Number(limit) : 8;
     const userId = req?.user?.sub;
-    if (!userId) throw new Error('User not authenticated');
     return this.packagesService.findPackagesPaginated(langId, p, l, userId);
   }
   @Patch(':packageId/contents/:contentId/assign')

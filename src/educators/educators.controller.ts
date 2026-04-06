@@ -59,6 +59,20 @@ export class EducatorsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/educators-list')
+  findAllForAdmin(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('onlyActive') onlyActive?: string,
+  ) {
+    const p = page ? Number(page) : 1;
+    const l = limit ? Number(limit) : 20;
+    const oa = onlyActive !== undefined ? Number(onlyActive) : undefined;
+    return this.educatorsService.findAllForAdmin(search, p, l, oa);
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Get('')
   findAll(
     @Query('search') search?: string,
     @Query('page') page?: string,
