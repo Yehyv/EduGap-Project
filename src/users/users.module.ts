@@ -15,6 +15,7 @@ import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 import { ActivationLog } from './entities/activation-log.entity';
 import { UsersBatchUpload } from 'src/users-batch-upload/entities/users-batch-upload.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
+import { ContactMessage } from 'src/contact-messages/entities/contact-message.entity';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SystemUser } from 'src/system-users/entities/system-user.entity';
       ActivationLog,
       UsersBatchUpload,
       SystemUser,
+      ContactMessage,
     ]),
     UsersOtpModule,
   ],

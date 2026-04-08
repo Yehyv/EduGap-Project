@@ -49,6 +49,7 @@ import { CourseCategoriesModule } from './course-categories/course-categories.mo
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PackageEnrollmentsModule } from './package-enrollments/package-enrollments.module';
 import { CertificatesModule } from './certificates/certificates.module';
+import { ContactMessagesModule } from './contact-messages/contact-messages.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -103,6 +104,7 @@ import { CertificatesModule } from './certificates/certificates.module';
     DashboardModule,
     PackageEnrollmentsModule,
     CertificatesModule,
+    ContactMessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuditSubscriber],

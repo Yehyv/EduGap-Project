@@ -29,6 +29,7 @@ import { SystemRole } from 'src/system-roles/entities/system-role.entity';
 import { ActivationLog } from './activation-log.entity';
 import { UsersBatchUpload } from 'src/users-batch-upload/entities/users-batch-upload.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
+import { ContactMessage } from 'src/contact-messages/entities/contact-message.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -164,4 +165,6 @@ export class User {
   })
   @JoinColumn({ name: 'created_by' })
   createdBy: SystemUser;
+  @OneToMany(() => ContactMessage, (contactMessage) => contactMessage.user)
+  contactMessages: ContactMessage[];
 }
