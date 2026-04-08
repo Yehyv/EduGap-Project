@@ -112,6 +112,9 @@ import EditSystemUser from "@/features/Dashboard/components/EditSystemUser";
 import DashboardRoute from "./DashboardRoute";
 import StudentInInstitute from "@/pages/dashboard/StudentInInstitute";
 import StudentsInInstitute from "@/features/Dashboard/components/StudentsInInstitute";
+import LatestCoursesPageForGuest from "@/pages/LatestCoursesPageForGuest";
+import ContactUsPage from "@/pages/ContactUsPage";
+import JoinUsPage from "@/pages/JoinUsPage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -166,7 +169,9 @@ export default function AppRoutes() {
           element={<InstituteCourseDetails />}
         />
         <Route path="/search-results" element={<SearchResults />} />
-        <Route path="/my-certificates" element={<MyCertificates />} />
+        <Route path="/latest-courses" element={<LatestCoursesPageForGuest />} />
+        <Route path="/contact-us" element={<ContactUsPage />} />
+        <Route path="/join-us" element={<JoinUsPage />} />
       </Route>
 
       {/* ══════════════════════════════════════════════════════════════════════
@@ -273,6 +278,7 @@ export default function AppRoutes() {
         <Route path="/saved-items" element={<SavedItems />} />
         <Route path="/my-courses" element={<MyCourses />} />
         <Route path="/my-settings" element={<ProfileSettings />} />
+        <Route path="/my-certificates" element={<MyCertificates />} />
       </Route>
 
       {/* ══════════════════════════════════════════════════════════════════════

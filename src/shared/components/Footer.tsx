@@ -14,8 +14,8 @@ const Footer = () => {
       { label: t("footer_about"), to: "/about-us" },
       { label: t("footer_services"), to: "/about-us#services" },
       // { label: t("footer_team"), to: "#" },
-      { label: t("footer_contact"), to: "/about-us#contact" },
       { label: t("footer_features"), to: "/about-us#features" },
+      { label: t("footer_contact"), to: "/contact-us" },
     ],
     discover: [
       { label: t("footer_discover_courses"), to: "/latest-courses" },

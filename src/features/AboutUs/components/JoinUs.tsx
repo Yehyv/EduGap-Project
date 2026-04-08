@@ -79,7 +79,7 @@ const JoinUs = () => {
 
             <motion.button
               onClick={() => {
-                navigate("#");
+                navigate("/join-us");
               }}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}

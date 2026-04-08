@@ -228,13 +228,17 @@ const StickyCourseSummaryCard = ({
               moreStyle="px-10 !py-1 mx-auto w-full !rounded-3xl max-w-[300px]"
             />
           )}
-          {courseId && (
-            <GetCertificateButton
-              className="mt-4 max-w-fit mx-auto"
-              courseId={courseId}
-              label={t("get_certificate") || "Get Certificate"}
-              fetchFunction={fetchCertificate}
-            />
+          {isLoggedIn && (
+            <>
+              {courseId && (
+                <GetCertificateButton
+                  className="mt-4 max-w-fit mx-auto"
+                  courseId={courseId}
+                  label={t("get_certificate") || "Get Certificate"}
+                  fetchFunction={fetchCertificate}
+                />
+              )}
+            </>
           )}
         </motion.div>
       )}

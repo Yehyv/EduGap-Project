@@ -58,7 +58,11 @@ const ContentsList = () => {
     {
       name: "Logo",
       selector: (row: Content) => (
-        <img src={row.logo} alt={row.name} className="w-12 h-12 rounded-full" />
+        <img
+          src={row.image}
+          alt={row.name}
+          className="w-12 h-12 rounded-full"
+        />
       ),
       sortable: false,
       minWidth: "80px",

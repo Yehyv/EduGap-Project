@@ -19,6 +19,7 @@ import { motion } from "framer-motion";
 import LearningPathEnrollButton from "@/features/UserHome/components/LearningPathEnrollButton";
 import GetCertificateButton from "@/features/ContentLesson/components/GetCertificateButton";
 import { fetchCertificateForLearningPath } from "@/features/ContentLesson/services/lessonsApis";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -34,6 +35,8 @@ const fadeUp = {
 const ProgramDetails = () => {
   const { t, lang } = useLanguage();
   const { programId } = useParams();
+  const { token } = useAuth();
+  const isLoggedIn = token;
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["getPackageDetails", programId],
     queryFn: () => getPackageDetails(programId ?? ""),
@@ -111,7 +114,7 @@ const ProgramDetails = () => {
                 queryKeyToReCall={["getPackageDetails"]}
               />
             </motion.div>
-            {programId && (
+            {programId && isLoggedIn && (
               <GetCertificateButton
                 className="mt-4 max-w-fit"
                 courseId={programId}

@@ -9,124 +9,136 @@ import type {
 } from "@/shared/types/sharedTypes";
 
 export async function getPopularCoursesForSlider(
-  programId?: number
+  programId?: number,
 ): Promise<CourseType[]> {
   const res = await api.get<ApiResponse<CourseType[]>>(
-    `/contents/trending/first-8?programId=${programId}`
+    `/contents/trending/first-8?programId=${programId}`,
   );
   return res.data.data;
 }
 export async function getLatestCoursesForSlider(
-  programId?: number
+  programId?: number,
 ): Promise<CourseType[]> {
   const res = await api.get<ApiResponse<CourseType[]>>(
-    `/contents/latest/first-8?programId=${programId}`
+    `/contents/latest/first-8?programId=${programId}`,
   );
   return res.data.data;
 }
 export async function getSavedCoursesForSlider(): Promise<CourseType[]> {
   const res = await api.get<ApiResponse<CourseType[]>>(
-    "/saved-contents/user/first-8"
+    "/saved-contents/user/first-8",
   );
   return res.data.data;
 }
 export async function getAllPopularCourses(
   page: string,
   limit: number,
-  programId?: number
+  programId?: number,
 ): Promise<CoursesResponse> {
   const res = await api.get<ApiResponse<CoursesResponse>>(
     `/contents/trending/paginated?programId=${programId}`,
     {
       params: { page, limit },
-    }
+    },
   );
   return res.data.data;
 }
 export async function getAllCoursesInProgram(
   programId: string,
   page: number,
-  limit: number
+  limit: number,
 ): Promise<CoursesResponse> {
   const res = await api.get<ApiResponse<CoursesResponse>>(
     `/packages/${programId}/contents`,
     {
       params: { page, limit },
-    }
+    },
   );
   return res.data.data;
 }
 export async function getAllCoursesInInstituteContent(
   InInstituteCourseId: string,
   page: number,
-  limit: number
+  limit: number,
 ): Promise<CoursesResponse> {
   const res = await api.get<ApiResponse<CoursesResponse>>(
     `/courses/${InInstituteCourseId}/contents`,
     {
       params: { page, limit },
-    }
+    },
   );
   return res.data.data;
 }
 export async function getAllExpertCourses(
   expertId: string,
   page: number,
-  limit: number
+  limit: number,
 ): Promise<CoursesResponse> {
   const res = await api.get<ApiResponse<CoursesResponse>>(
     `/educators/${expertId}/contents`,
     {
       params: { page, limit },
-    }
+    },
   );
   return res.data.data;
 }
 export async function getCoursePrerequisites(
-  courseId?: string
+  courseId?: string,
 ): Promise<CoursesResponse> {
   const res = await api.get<ApiResponse<CoursesResponse>>(
-    `/contents/${courseId}/prerequisites`
+    `/contents/${courseId}/prerequisites`,
   );
   return res.data.data;
 }
 export async function getLatestCoursesList(
   page: string,
   limit: number,
-  programId?: number
+  programId?: number,
 ): Promise<CoursesResponse> {
   const res = await api.get<ApiResponse<CoursesResponse>>(
     `/contents/latest/paginated?programId=${programId}`,
     {
       params: { page, limit },
-    }
+    },
+  );
+  return res.data.data;
+}
+export async function getLatestCoursesListForGuest(
+  page: string,
+  limit: number,
+): Promise<CoursesResponse> {
+  const res = await api.get<ApiResponse<CoursesResponse>>(
+    `/contents/latest/paginated`,
+    {
+      params: { page, limit },
+    },
   );
   return res.data.data;
 }
 
 export async function getEducationProgramsForSlider(): Promise<ProgramsType[]> {
   const res = await api.get<ApiResponse<ProgramsType[]>>(
-    "/packages-contents/first-8"
+    "/packages-contents/first-8",
   );
   return res.data.data;
 }
 
 export async function getAllEducationsList(
   page: string,
-  limit: number
+  limit: number,
 ): Promise<ProgramsResponse> {
   const res = await api.get<ApiResponse<ProgramsResponse>>(
     "/packages-contents/paginated",
     {
       params: { page, limit },
-    }
+    },
   );
   return res.data.data;
 }
 
 export async function getAllExpertsList(
   page: string,
-  limit: number
+  limit: number,
 ): Promise<ExpertsResponse> {
   const res = await api.get<ApiResponse<ExpertsResponse>>("/educators", {
     params: {

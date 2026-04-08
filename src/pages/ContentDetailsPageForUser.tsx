@@ -18,7 +18,11 @@ const CourseDetailsPageForUser = () => {
   if (isLoading) return <Loader />;
   if (error)
     return (
-      <ErrorMessage message={error?.message ?? "Error in content details"} />
+      <ErrorMessage
+        message={
+          error?.response?.data?.message?.[0] ?? "Error in content details"
+        }
+      />
     );
 
   return data && <CourseDetails data={data} isLoading={isLoading} />;
