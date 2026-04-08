@@ -27,8 +27,7 @@ const initialValues: ApplyFormValues = {
 };
 
 const ApplyJoinUs = () => {
-  const { t } = useLanguage(); // ترجمة النصوص
-
+  const { t } = useLanguage();
   const validationSchema = Yup.object({
     institute_name: Yup.string()
       .min(2, t("institute_name_min"))
@@ -84,7 +83,7 @@ const ApplyJoinUs = () => {
   };
 
   return (
-    <section className="py-10 px-4">
+    <section className="py-10 px-4" id="apply">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <motion.div

@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import Logo from "@/assets/imgs/LogoImage.png";
 import HowItWorks from "@/features/AboutUs/components/HowItWorks";
 import WhyEduGap from "@/features/AboutUs/components/WhyEduGap";
@@ -8,6 +9,11 @@ import ScrollToTop from "@/shared/utils/ScrollToTop";
 
 const JoinUsPage = () => {
   const { t, lang } = useLanguage();
+  const applyRef = useRef<HTMLDivElement>(null);
+
+  const scrollToApply = () => {
+    applyRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <>
@@ -22,7 +28,10 @@ const JoinUsPage = () => {
 
           <p className="text-[#575757]">{t("join_description")}</p>
 
-          <button className="bg-secondary px-8 py-2 text-white rounded-lg text-lg mt-6">
+          <button
+            onClick={scrollToApply}
+            className="bg-secondary px-8 py-2 text-white rounded-lg text-lg mt-6"
+          >
             <span>{t("apply_now")}</span>
             <ArrowRight
               className={`${lang == "ar" ? "rotate-180" : ""} inline-block ms-1`}
@@ -34,7 +43,10 @@ const JoinUsPage = () => {
       </div>
 
       <HowItWorks />
-      <ApplyJoinUs />
+
+      <div ref={applyRef}>
+        <ApplyJoinUs />
+      </div>
     </>
   );
 };
