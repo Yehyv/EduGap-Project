@@ -79,7 +79,6 @@ export class UsersController {
     const role_cat = roleCategory ? Number(roleCategory) : undefined;
     const instId = instituteId ? Number(instituteId) : undefined;
 
-
     return this.usersService.findAll(
       role_cat,
       langId,
@@ -142,16 +141,18 @@ export class UsersController {
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
-  @Get('super-admin/students/export')
-  async exportUsers(
+  exportUsersToExcel(
     @Res() res: express.Response,
-    @Query('roleCategory') roleCategory?: number,
-    @Headers('languageId') languageId?: number,
+    @Headers('languageId') languageId?: string,
+    @Query('roleCategory') roleCategory?: string,
+    @Query('instituteId') instituteId?: string,
   ) {
-    const role_cat =
-      roleCategory !== undefined ? Number(roleCategory) : undefined;
-    const langId = languageId !== undefined ? Number(languageId) : undefined;
-    return this.usersService.exportUsersToExcel(res, role_cat, langId);
+    return this.usersService.exportUsersToExcel(
+      res,
+      roleCategory ? Number(roleCategory) : undefined,
+      languageId ? Number(languageId) : undefined,
+      instituteId ? Number(instituteId) : undefined,
+    );
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
