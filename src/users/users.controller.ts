@@ -141,6 +141,7 @@ export class UsersController {
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
+  @Get('export-users')
   exportUsersToExcel(
     @Res() res: express.Response,
     @Headers('languageId') languageId?: string,
