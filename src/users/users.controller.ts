@@ -73,9 +73,12 @@ export class UsersController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
+    @Query('instituteId') instituteId?: string,
   ) {
     const langId = languageId ? Number(languageId) : undefined;
     const role_cat = roleCategory ? Number(roleCategory) : undefined;
+    const instId = instituteId ? Number(instituteId) : undefined;
+
 
     return this.usersService.findAll(
       role_cat,
@@ -83,6 +86,7 @@ export class UsersController {
       page ? Number(page) : 1,
       limit ? Number(limit) : 10,
       search,
+      instId,
     );
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -142,7 +146,7 @@ export class UsersController {
   async exportUsers(
     @Res() res: express.Response,
     @Query('roleCategory') roleCategory?: number,
-    @Query('languageId') languageId?: number,
+    @Headers('languageId') languageId?: number,
   ) {
     const role_cat =
       roleCategory !== undefined ? Number(roleCategory) : undefined;

@@ -39,6 +39,8 @@ interface userRow {
   role_role_category: number;
   created_by_id: number;
   created_by_name: string;
+  user_national_id: string;
+  user_student_id: string;
 }
 @Injectable()
 export class UsersService {
@@ -193,6 +195,7 @@ export class UsersService {
     page: number = 1,
     limit: number = 10,
     q?: string,
+    instituteId?: number,
   ) {
     const skip = (page - 1) * limit;
     const search = q?.trim();
@@ -200,6 +203,7 @@ export class UsersService {
     const baseQb = this.userRepositry
       .createQueryBuilder('user')
       .leftJoin('user.UserRole', 'role')
+      .leftJoin('user.institute', 'institute')
       .where('user.deletedAt IS NULL')
       .andWhere('user.is_active = 1');
 
@@ -207,11 +211,11 @@ export class UsersService {
       const term = `%${search.toLowerCase()}%`;
       baseQb.andWhere(
         `(
-      LOWER(user.full_name)   LIKE :term OR
-      LOWER(user.email)       LIKE :term OR
-      LOWER(user.phone)       LIKE :term OR
-      LOWER(user.national_id) LIKE :term
-    )`,
+        LOWER(user.full_name)   LIKE :term OR
+        LOWER(user.email)       LIKE :term OR
+        LOWER(user.phone)       LIKE :term OR
+        LOWER(user.national_id) LIKE :term
+      )`,
         { term },
       );
     }
@@ -220,7 +224,10 @@ export class UsersService {
       baseQb.andWhere('role.role_category = :roleCategory', { roleCategory });
     }
 
-    // ✅ 1️⃣ Count distinct users
+    if (instituteId !== undefined) {
+      baseQb.andWhere('institute.id = :instituteId', { instituteId });
+    }
+
     const totalRaw = await baseQb
       .clone()
       .select('COUNT(DISTINCT(user.id))', 'cnt')
@@ -228,7 +235,6 @@ export class UsersService {
 
     const total = Number(totalRaw?.cnt ?? 0);
 
-    // ✅ 2️⃣ Paginated IDs via groupBy (avoids DISTINCT syntax error)
     const idsRows = await baseQb
       .clone()
       .select('user.id', 'id')
@@ -257,7 +263,6 @@ export class UsersService {
       };
     }
 
-    // ✅ 3️⃣ Fetch full details for paginated IDs
     const rows = await this.userRepositry
       .createQueryBuilder('user')
       .leftJoin('user.institute', 'institute')
@@ -275,6 +280,8 @@ export class UsersService {
         'user.full_name         AS user_full_name',
         'user.phone_key         AS phone_key',
         'user.phone             AS user_phone',
+        'user.national_id       AS user_national_id',
+        'user.studentId         AS user_student_id', // أو user.student_id حسب اسم العمود الحقيقي عندك
         'user.createdAt         AS createdAt',
         'user.is_active         AS user_is_active',
         'user.user_image        AS user_user_image',
@@ -296,6 +303,8 @@ export class UsersService {
         name: u.user_full_name,
         phone: `${u.phone_key ?? ''}${u.user_phone ?? ''}`,
         phone_key: u.phone_key,
+        national_id: u.user_national_id,
+        studentId: u.user_student_id ?? null,
         institute: u.it_name,
         createdAt: u.createdAt,
         is_active: u.user_is_active,
@@ -323,18 +332,27 @@ export class UsersService {
     res: Response,
     roleCategory?: number,
     languageId?: number,
+    instituteId?: number,
   ) {
-    // 🔹 نفس الداتا اللي عندك
-    const data = await this.findAll(roleCategory, languageId);
+    const data = await this.findAll(
+      roleCategory,
+      languageId,
+      1,
+      1000000,
+      undefined,
+      instituteId,
+    );
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Users');
 
-    // 🔹 Header
     worksheet.columns = [
       { header: 'ID', key: 'id', width: 10 },
       { header: 'Name', key: 'name', width: 25 },
+      { header: 'Phone Key', key: 'phone_key', width: 12 },
       { header: 'Phone', key: 'phone', width: 20 },
+      { header: 'National ID', key: 'national_id', width: 20 },
+      { header: 'Student ID', key: 'studentId', width: 20 },
       { header: 'Institute', key: 'institute', width: 25 },
       { header: 'Role Title', key: 'role_title', width: 20 },
       { header: 'Role Category', key: 'role_category', width: 15 },
@@ -342,12 +360,14 @@ export class UsersService {
       { header: 'Created At', key: 'createdAt', width: 20 },
     ];
 
-    // 🔹 Rows
     data.users.forEach((u) => {
       worksheet.addRow({
         id: u.id,
         name: u.name,
+        phone_key: u.phone_key,
         phone: u.phone,
+        national_id: u.national_id,
+        studentId: u.studentId,
         institute: u.institute,
         role_title: u.role.role_title,
         role_category: u.role.role_category,
@@ -356,10 +376,8 @@ export class UsersService {
       });
     });
 
-    // 🔹 شكل الهيدر
     worksheet.getRow(1).font = { bold: true };
 
-    // 🔹 Response headers
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
