@@ -139,8 +139,8 @@ export class UsersController {
 
     return this.usersService.deactivateUser(userId, systemUserId, body.reason);
   }
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('export-users')
   exportUsersToExcel(
     @Res() res: express.Response,
