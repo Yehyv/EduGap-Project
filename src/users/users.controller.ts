@@ -141,18 +141,20 @@ export class UsersController {
   }
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @Roles('ADMIN', 'SUPER_ADMIN')
-  @Get('export-users')
-  exportUsersToExcel(
+  @Get('students/export')
+  async exportUsers(
     @Res() res: express.Response,
-    @Headers('languageId') languageId?: string,
-    @Query('roleCategory') roleCategory?: string,
     @Query('instituteId') instituteId?: string,
+    @Headers('languageId') languageId?: string,
   ) {
+    if (!instituteId) {
+      throw new BadRequestException('instituteId is required');
+    }
+
     return this.usersService.exportUsersToExcel(
       res,
-      roleCategory ? Number(roleCategory) : undefined,
+      Number(instituteId),
       languageId ? Number(languageId) : undefined,
-      instituteId ? Number(instituteId) : undefined,
     );
   }
   @UseGuards(JwtAuthGuard, RolesGuard)

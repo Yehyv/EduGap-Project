@@ -330,49 +330,47 @@ export class UsersService {
   }
   async exportUsersToExcel(
     res: Response,
-    roleCategory?: number,
+    instituteId: number,
     languageId?: number,
-    instituteId?: number,
   ) {
-    const data = await this.findAll(
-      roleCategory,
+    const data = await this.studentsForInst(
+      instituteId,
       languageId,
+      undefined,
+      undefined,
       1,
       1000000,
       undefined,
-      instituteId,
     );
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Users');
+    const worksheet = workbook.addWorksheet('Students');
 
     worksheet.columns = [
       { header: 'ID', key: 'id', width: 10 },
       { header: 'Name', key: 'name', width: 25 },
       { header: 'Phone Key', key: 'phone_key', width: 12 },
       { header: 'Phone', key: 'phone', width: 20 },
+      { header: 'Email', key: 'email', width: 30 },
       { header: 'National ID', key: 'national_id', width: 20 },
-      { header: 'Student ID', key: 'studentId', width: 20 },
-      { header: 'Institute', key: 'institute', width: 25 },
-      { header: 'Role Title', key: 'role_title', width: 20 },
-      { header: 'Role Category', key: 'role_category', width: 15 },
-      { header: 'Active', key: 'is_active', width: 10 },
+      { header: 'Student ID', key: 'studentId', width: 15 },
+      { header: 'Program', key: 'program', width: 25 },
+      { header: 'Active', key: 'isActive', width: 10 },
       { header: 'Created At', key: 'createdAt', width: 20 },
     ];
 
-    data.users.forEach((u) => {
+    data.items.forEach((s) => {
       worksheet.addRow({
-        id: u.id,
-        name: u.name,
-        phone_key: u.phone_key,
-        phone: u.phone,
-        national_id: u.national_id,
-        studentId: u.studentId,
-        institute: u.institute,
-        role_title: u.role.role_title,
-        role_category: u.role.role_category,
-        is_active: u.is_active ? 'Yes' : 'No',
-        createdAt: u.createdAt,
+        id: s.id,
+        name: s.name,
+        phone_key: s.phone_key,
+        phone: s.phone,
+        email: s.email,
+        national_id: s.national_id,
+        studentId: s.studentId,
+        program: s.program?.name ?? '',
+        isActive: s.isActive ? 'Yes' : 'No',
+        createdAt: s.createdAt,
       });
     });
 
@@ -382,7 +380,7 @@ export class UsersService {
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
-    res.setHeader('Content-Disposition', 'attachment; filename=users.xlsx');
+    res.setHeader('Content-Disposition', 'attachment; filename=students.xlsx');
 
     await workbook.xlsx.write(res);
     res.end();
@@ -830,7 +828,6 @@ export class UsersService {
     const skip = (page - 1) * limit;
     const search = q?.trim();
 
-    // ✅ Base filter query (no select, just filters)
     const baseQb = this.userRepositry
       .createQueryBuilder('user')
       .innerJoin('user.UserRole', 'role')
@@ -861,7 +858,6 @@ export class UsersService {
       baseQb.andWhere('user.is_active = :isActive', { isActive });
     }
 
-    // ✅ 1️⃣ Count distinct users
     const totalRaw = await baseQb
       .clone()
       .select('COUNT(DISTINCT(user.id))', 'cnt')
@@ -869,7 +865,6 @@ export class UsersService {
 
     const total = Number(totalRaw?.cnt ?? 0);
 
-    // ✅ 2️⃣ Paginated IDs
     const idsRows = await baseQb
       .clone()
       .select('user.id', 'id')
@@ -897,7 +892,6 @@ export class UsersService {
       };
     }
 
-    // ✅ 3️⃣ Full data fetch for those IDs only
     const rows = await this.userRepositry
       .createQueryBuilder('user')
       .leftJoin('user.program', 'program')
@@ -909,16 +903,18 @@ export class UsersService {
       )
       .where('user.id IN (:...ids)', { ids })
       .select([
-        'user.id          AS user_id',
-        'user.full_name   AS user_full_name',
-        'user.user_image  AS user_user_image',
-        'user.phone_key   AS phone_key',
-        'user.phone       AS user_phone',
-        'user.email       AS user_email',
-        'user.createdAt   AS createdAt',
-        'program.id       AS program_id',
-        'pt.name          AS program_name',
-        'user.is_active    AS user_is_active',
+        'user.id AS user_id',
+        'user.full_name AS user_full_name',
+        'user.user_image AS user_user_image',
+        'user.phone_key AS phone_key',
+        'user.phone AS user_phone',
+        'user.email AS user_email',
+        'user.national_id AS user_national_id',
+        'user.studentId AS user_student_id',
+        'user.createdAt AS createdAt',
+        'user.is_active AS user_is_active',
+        'program.id AS program_id',
+        'pt.name AS program_name',
       ])
       .orderBy('user.createdAt', 'DESC')
       .getRawMany<userRow>();
@@ -931,7 +927,10 @@ export class UsersService {
         name: s.user_full_name,
         image: s.user_user_image,
         phone: `${s.phone_key ?? ''}${s.user_phone ?? ''}`,
+        phone_key: s.phone_key,
         email: s.user_email,
+        national_id: s.user_national_id,
+        studentId: s.user_student_id,
         createdAt: s.createdAt,
         isActive: s.user_is_active,
         program: s.program_id
