@@ -14,7 +14,8 @@ import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
 import { User } from 'src/users/entities/user.entity';
 import { PackageContent } from 'src/packages/entities/package-content.entity';
 import { ContentTranslation } from 'src/contents/entities/content-translation.entity';
-
+import { TransactionsService } from 'src/transactions/transactions.service';
+import { TransactionType } from 'src/transactions/entities/transaction.entity';
 @Injectable()
 export class PackageEnrollmentsService {
   constructor(
@@ -30,6 +31,7 @@ export class PackageEnrollmentsService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(PackageContent)
     private readonly packageContentRepo: Repository<PackageContent>,
+    private readonly transactionsService: TransactionsService,
   ) {}
   async enrollUserToPackage(packageId: number, userId: number) {
     const user = await this.userRepo.findOne({ where: { id: userId } });
@@ -46,16 +48,15 @@ export class PackageEnrollmentsService {
     });
     if (existing) throw new BadRequestException('Already enrolled in package');
 
-    // 1️⃣ إنشاء PackageEnrollment
     const packageEnrollment = this.packageEnrollmentRepo.create({
       user,
       package: pkg,
       status: 0,
     });
+
     const savedPackageEnrollment =
       await this.packageEnrollmentRepo.save(packageEnrollment);
 
-    // 2️⃣ إنشاء Enrollments لكل محتوى في الباكدج
     const pkgContents = await this.contentRepo
       .createQueryBuilder('c')
       .innerJoin(
@@ -76,7 +77,19 @@ export class PackageEnrollmentsService {
       }),
     );
 
-    await this.enrollmentRepo.save(enrollments);
+    const savedEnrollments = await this.enrollmentRepo.save(enrollments);
+
+    await this.transactionsService.logAction({
+      tableName: 'package_enrollments',
+      type: TransactionType.ENROLL,
+      recordId: savedPackageEnrollment.id,
+      payload: {
+        entity: 'package_enrollment',
+        packageId,
+        userId,
+        enrollmentIds: savedEnrollments.map((item) => item.id),
+      },
+    });
 
     return savedPackageEnrollment;
   }
@@ -86,15 +99,32 @@ export class PackageEnrollmentsService {
     const packageEnrollment = await this.packageEnrollmentRepo.findOne({
       where: { user: { id: userId }, package: { id: packageId } },
     });
-    if (!packageEnrollment)
-      throw new NotFoundException('Package enrollment not found');
 
-    // إزالة كل enrollments المتعلقة بالمحتويات داخل الباكدج
+    if (!packageEnrollment) {
+      throw new NotFoundException('Package enrollment not found');
+    }
+
+    const relatedEnrollments = await this.enrollmentRepo.find({
+      where: { packageEnrollment: { id: packageEnrollment.id } },
+      select: ['id'],
+    });
+
+    await this.transactionsService.logAction({
+      tableName: 'package_enrollments',
+      type: TransactionType.UNENROLL,
+      recordId: packageEnrollment.id,
+      payload: {
+        entity: 'package_enrollment',
+        packageId,
+        userId,
+        relatedEnrollmentIds: relatedEnrollments.map((item) => item.id),
+      },
+    });
+
     await this.enrollmentRepo.delete({
       packageEnrollment: { id: packageEnrollment.id },
     });
 
-    // إزالة الـ PackageEnrollment نفسه
     await this.packageEnrollmentRepo.remove(packageEnrollment);
 
     return { message: 'Unenrolled successfully' };

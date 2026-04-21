@@ -11,7 +11,7 @@ import { CertificatePackage } from './entities/certificate-package.entity';
 import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 import { Package } from 'src/packages/entities/package.entity';
 import { PackageContent } from 'src/packages/entities/package-content.entity';
-
+import { TransactionsModule } from 'src/transactions/transactions.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -25,6 +25,7 @@ import { PackageContent } from 'src/packages/entities/package-content.entity';
       Package,
       PackageContent,
     ]),
+    TransactionsModule,
   ], // Add your entities here
   controllers: [CertificatesController],
   providers: [CertificatesService],

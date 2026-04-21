@@ -8,6 +8,7 @@ import { PackageContent } from 'src/packages/entities/package-content.entity';
 import { Content } from 'src/contents/entities/content.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Package } from 'src/packages/entities/package.entity';
+import { TransactionsModule } from 'src/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { Package } from 'src/packages/entities/package.entity';
       PackageContent,
       Package,
     ]),
+    TransactionsModule,
   ],
   controllers: [PackageEnrollmentsController],
   providers: [PackageEnrollmentsService],

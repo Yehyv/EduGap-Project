@@ -74,7 +74,7 @@ export class InstitutesController {
   ) {
     return this.institutesService.instituteNav(languageId, limit);
   }
-    @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('super-admin/count')
   countInstitutes() {

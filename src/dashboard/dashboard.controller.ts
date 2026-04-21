@@ -140,4 +140,8 @@ export class DashboardController {
     }
     return this.dashboardService.getInstituteOverview(instId);
   }
+  @Get('student-certificates/:userId')
+  async getStudentCertificates(@Param('userId', ParseIntPipe) userId: number) {
+    return this.dashboardService.getStudentCertificates(userId);
+  }
 }

@@ -4,89 +4,152 @@ import {
   InsertEvent,
   UpdateEvent,
   RemoveEvent,
+  SoftRemoveEvent,
+  RecoverEvent,
   ObjectLiteral,
+  DataSource,
 } from 'typeorm';
-import { DataSource } from 'typeorm';
 import {
   Transaction,
   TransactionType,
 } from 'src/transactions/entities/transaction.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
-import { asyncLocalStorage } from '../context/request-context.service';
+import { getRequestContext } from '../context/request-context.service';
+
+type AuditEvent =
+  | InsertEvent<ObjectLiteral>
+  | UpdateEvent<ObjectLiteral>
+  | RemoveEvent<ObjectLiteral>
+  | SoftRemoveEvent<ObjectLiteral>
+  | RecoverEvent<ObjectLiteral>;
 
 @EventSubscriber()
-export class AuditSubscriber
-  implements EntitySubscriberInterface<ObjectLiteral>
-{
+export class AuditSubscriber implements EntitySubscriberInterface {
   constructor(private readonly dataSource: DataSource) {
-    dataSource.subscribers.push(this);
+    this.dataSource.subscribers.push(this);
   }
 
-  async afterInsert(event: InsertEvent<ObjectLiteral>) {
-    await this.handleEvent(event, TransactionType.CREATE);
+  async afterInsert(event: InsertEvent<ObjectLiteral>): Promise<void> {
+    await this.handleEvent(event, TransactionType.CREATE, event.entity);
   }
 
-  async afterUpdate(event: UpdateEvent<ObjectLiteral>) {
-    await this.handleEvent(event, TransactionType.UPDATE);
+  async afterUpdate(event: UpdateEvent<ObjectLiteral>): Promise<void> {
+    await this.handleEvent(event, TransactionType.UPDATE, {
+      before: event.databaseEntity ?? null,
+      after: event.entity ?? null,
+      updatedColumns: event.updatedColumns.map((column) => column.propertyName),
+    });
   }
 
-  async afterRemove(event: RemoveEvent<ObjectLiteral>) {
-    await this.handleEvent(event, TransactionType.DELETE);
+  async afterRemove(event: RemoveEvent<ObjectLiteral>): Promise<void> {
+    await this.handleEvent(
+      event,
+      TransactionType.DELETE,
+      event.databaseEntity ?? event.entity,
+    );
+  }
+
+  async afterSoftRemove(event: SoftRemoveEvent<ObjectLiteral>): Promise<void> {
+    await this.handleEvent(
+      event,
+      TransactionType.SOFT_DELETE,
+      event.databaseEntity ?? event.entity,
+    );
+  }
+
+  async afterRecover(event: RecoverEvent<ObjectLiteral>): Promise<void> {
+    await this.handleEvent(
+      event,
+      TransactionType.RESTORE,
+      event.entity ?? event.databaseEntity,
+    );
   }
 
   private async handleEvent(
-    event:
-      | InsertEvent<ObjectLiteral>
-      | UpdateEvent<ObjectLiteral>
-      | RemoveEvent<ObjectLiteral>,
+    event: AuditEvent,
     type: TransactionType,
-  ) {
-    // منع تسجيل العمليات على جدول transactions نفسه
-    if (event.metadata.tableName === 'transactions') return;
+    payload: unknown,
+  ): Promise<void> {
+    const tableName = event.metadata.tableName;
 
-    // استخراج entity بطريقة آمنة
-    const entity =
-      event.entity ??
-      ('databaseEntity' in event ? event.databaseEntity : undefined);
-
-    if (!entity || typeof entity !== 'object') return;
-
-    const recordId =
-      'id' in entity && typeof entity.id === 'number' ? entity.id : undefined;
-
-    if (!recordId) return;
-
-    // 🟢 استخراج userId من AsyncLocalStorage
-    const store = asyncLocalStorage.getStore();
-    console.log('STORE:', store);
-    const userId = store?.userId;
-
-    let createdByUser: SystemUser | null = null;
-
-    if (userId) {
-      createdByUser = await event.manager
-        .getRepository(SystemUser)
-        .findOne({ where: { id: userId } });
+    if (tableName === 'transactions') {
+      return;
     }
 
-    // 🟢 تجهيز json حسب نوع العملية
-    let payload: unknown = entity;
-
-    if (type === TransactionType.UPDATE && 'databaseEntity' in event) {
-      payload = {
-        old: event.databaseEntity,
-        new: event.entity,
-      };
-    }
+    const recordId = this.extractRecordId(event);
+    const ctx = getRequestContext();
 
     const transactionRepo = event.manager.getRepository(Transaction);
+    const systemUserRepo = event.manager.getRepository(SystemUser);
 
-    await transactionRepo.save({
-      table_name: event.metadata.tableName,
+    const createdBy = ctx?.userId
+      ? await systemUserRepo.findOne({ where: { id: ctx.userId } })
+      : null;
+
+    const row = transactionRepo.create({
+      table_name: tableName,
       trans_type: type,
       record_id: recordId,
-      json_file: JSON.stringify(payload),
-      createdBy: createdByUser ?? undefined,
+      json_file: this.safeStringify({
+        request: ctx ?? null,
+        payload,
+      }),
+      createdBy: createdBy ?? null,
     });
+
+    await transactionRepo.save(row);
+  }
+
+  private getEventEntity(
+    event: AuditEvent,
+  ): Record<string, unknown> | undefined {
+    return event.entity as Record<string, unknown> | undefined;
+  }
+
+  private getEventDatabaseEntity(
+    event: AuditEvent,
+  ): Record<string, unknown> | undefined {
+    if ('databaseEntity' in event) {
+      return event.databaseEntity as Record<string, unknown> | undefined;
+    }
+
+    return undefined;
+  }
+
+  private extractRecordId(event: AuditEvent): number {
+    const entity =
+      this.getEventEntity(event) ?? this.getEventDatabaseEntity(event);
+
+    const rawId = entity?.id;
+
+    if (typeof rawId === 'number') {
+      return rawId;
+    }
+
+    if (
+      typeof rawId === 'string' &&
+      rawId.trim() !== '' &&
+      !Number.isNaN(Number(rawId))
+    ) {
+      return Number(rawId);
+    }
+
+    return 0;
+  }
+
+  private safeStringify(value: unknown): string | null {
+    if (value === undefined) {
+      return null;
+    }
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return JSON.stringify({
+        serializationError: true,
+        valueType: typeof value,
+        objectTag: Object.prototype.toString.call(value),
+      });
+    }
   }
 }

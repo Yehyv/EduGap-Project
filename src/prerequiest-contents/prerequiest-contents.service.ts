@@ -9,7 +9,8 @@ import { Content } from 'src/contents/entities/content.entity';
 import { PrerequisiteContent } from './entities/prerequiest-content.entity';
 import { AssignPrerequisitesDto } from './dto/assign-prerequisites.dto';
 import { UnassignPrerequisiteDto } from './dto/unassign-prerequisite.dto';
-
+import { TransactionsService } from 'src/transactions/transactions.service';
+import { TransactionType } from 'src/transactions/entities/transaction.entity';
 @Injectable()
 export class PrerequisitesService {
   constructor(
@@ -17,6 +18,7 @@ export class PrerequisitesService {
     private readonly contentRepo: Repository<Content>,
     @InjectRepository(PrerequisiteContent)
     private readonly prereqRepo: Repository<PrerequisiteContent>,
+    private readonly transactionsService: TransactionsService,
   ) {}
 
   async list(contentId: number) {
@@ -79,7 +81,20 @@ export class PrerequisitesService {
       }),
     );
 
-    await this.prereqRepo.save(toSave);
+    const savedRows = await this.prereqRepo.save(toSave);
+    for (const row of savedRows) {
+      await this.transactionsService.logAction({
+        tableName: 'prerequiest_contents',
+        type: TransactionType.ASSIGN,
+        recordId: row.id,
+        payload: {
+          entity: 'content_prerequisite',
+          contentId,
+          prerequisiteContentId: row.prerequisiteContentId,
+          type: row.type,
+        },
+      });
+    }
     return this.list(contentId);
   }
 
@@ -87,7 +102,10 @@ export class PrerequisitesService {
     const content = await this.contentRepo.findOne({
       where: { id: contentId },
     });
-    if (!content) throw new NotFoundException('Content not found');
+
+    if (!content) {
+      throw new NotFoundException('Content not found');
+    }
 
     const existing = await this.prereqRepo.findOne({
       where: {
@@ -95,9 +113,25 @@ export class PrerequisitesService {
         prerequisiteContentId: dto.prerequisiteContentId,
       },
     });
-    if (!existing) throw new NotFoundException('Prerequisite not found');
+
+    if (!existing) {
+      throw new NotFoundException('Prerequisite not found');
+    }
+
+    await this.transactionsService.logAction({
+      tableName: 'prerequiest_contents',
+      type: TransactionType.UNASSIGN,
+      recordId: existing.id,
+      payload: {
+        entity: 'content_prerequisite',
+        contentId,
+        prerequisiteContentId: existing.prerequisiteContentId,
+        type: existing.type,
+      },
+    });
 
     await this.prereqRepo.remove(existing);
+
     return { message: 'Unassigned successfully' };
   }
 }

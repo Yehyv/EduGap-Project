@@ -16,7 +16,7 @@ import { ActivationLog } from './entities/activation-log.entity';
 import { UsersBatchUpload } from 'src/users-batch-upload/entities/users-batch-upload.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import { ContactMessage } from 'src/contact-messages/entities/contact-message.entity';
-
+import { TransactionsModule } from 'src/transactions/transactions.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -35,6 +35,7 @@ import { ContactMessage } from 'src/contact-messages/entities/contact-message.en
       ContactMessage,
     ]),
     UsersOtpModule,
+    TransactionsModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

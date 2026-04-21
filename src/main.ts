@@ -6,16 +6,22 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import * as express from 'express';
 import { join } from 'path';
 import { ContextInterceptor } from './common/interceptors/context.interceptor';
-
+import { TransactionsService } from './transactions/transactions.service';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const transactionsService = app.get(TransactionsService);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
     }),
   );
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(
+    new ContextInterceptor(),
+    new LoggingInterceptor(transactionsService),
+    new ResponseInterceptor(),
+  );
   app.useGlobalInterceptors(new ContextInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
   app.enableCors({

@@ -11,7 +11,9 @@ describe('ContactMessagesController', () => {
       providers: [ContactMessagesService],
     }).compile();
 
-    controller = module.get<ContactMessagesController>(ContactMessagesController);
+    controller = module.get<ContactMessagesController>(
+      ContactMessagesController,
+    );
   });
 
   it('should be defined', () => {

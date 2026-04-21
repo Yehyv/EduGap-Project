@@ -19,6 +19,9 @@ import { CertificatePackage } from './entities/certificate-package.entity';
 import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 import { Package } from 'src/packages/entities/package.entity';
 import { PackageContent } from 'src/packages/entities/package-content.entity';
+import { TransactionsService } from 'src/transactions/transactions.service';
+import { TransactionType } from 'src/transactions/entities/transaction.entity';
+
 interface GenerateCertificateResult {
   serialNumber: string;
   certificateId: number;
@@ -31,6 +34,7 @@ interface GenerateCertificateResult {
   issueDate: Date;
   instituteLogo?: string;
 }
+
 interface GeneratePackageCertificateResult {
   serialNumber: string;
   certificateId: number;
@@ -42,12 +46,14 @@ interface GeneratePackageCertificateResult {
   createdAt: Date;
   issueDate: Date;
   instituteLogo?: string;
-  packageContent?: string; // JSON string of package contents
+  packageContent?: string;
 }
+
 interface UserCertificateInfo {
   title: string;
   issueDate: Date;
 }
+
 @Injectable()
 export class CertificatesService {
   constructor(
@@ -69,7 +75,9 @@ export class CertificatesService {
     private pkgRepo: Repository<Package>,
     @InjectRepository(PackageContent)
     private packageContentRepo: Repository<PackageContent>,
+    private readonly transactionsService: TransactionsService,
   ) {}
+
   private async generateCertificateSerialNumber(
     language: CertificateLanguage,
     instituteId: number | null,
@@ -99,6 +107,7 @@ export class CertificatesService {
 
     return `EG-${langPart}-${institutePart}-${datePart}-${sequencePart}`;
   }
+
   async generateContentCertificates(contentId: number, userId: number) {
     const enrollment = await this.enrollmentRepo.findOne({
       where: { content: { id: contentId }, user: { id: userId } },
@@ -189,9 +198,9 @@ export class CertificatesService {
       }),
     ];
 
-    await this.certificateRepo.save(certificates);
+    const savedCertificates = await this.certificateRepo.save(certificates);
 
-    const certificateContents = certificates.map((cert) =>
+    const certificateContents = savedCertificates.map((cert) =>
       this.certificateContentRepo.create({
         certificate: cert,
         content,
@@ -200,7 +209,27 @@ export class CertificatesService {
 
     await this.certificateContentRepo.save(certificateContents);
 
-    return certificates.map((c) => ({
+    for (const savedCertificate of savedCertificates) {
+      await this.transactionsService.logAction({
+        tableName: 'certificates',
+        type: TransactionType.ISSUE_CERTIFICATE,
+        recordId: savedCertificate.id,
+        payload: {
+          entity: 'content_certificate',
+          certificateId: savedCertificate.id,
+          certificateType: CertificateType.CONTENT,
+          serialNumber: savedCertificate.serialNumber,
+          userId: user.id,
+          contentId: content.id,
+          language: savedCertificate.language,
+          title: savedCertificate.title,
+          issueDate: savedCertificate.issueDate,
+          hours: savedCertificate.hours,
+        },
+      });
+    }
+
+    return savedCertificates.map((c) => ({
       serialNumber: c.serialNumber,
       language: c.language,
       title: c.title,
@@ -208,6 +237,7 @@ export class CertificatesService {
       hours: c.hours,
     }));
   }
+
   async generatePackageCertificates(packageId: number, userId: number) {
     const packageEnrollment = await this.packageEnrollmentRepo.findOne({
       where: {
@@ -354,40 +384,82 @@ export class CertificatesService {
       hours: totalHours,
     });
 
-    await this.certificateRepo.save([arCertificate, enCertificate]);
+    const savedCertificates = await this.certificateRepo.save([
+      arCertificate,
+      enCertificate,
+    ]);
+
+    const [savedArCertificate, savedEnCertificate] = savedCertificates;
 
     await this.certificatePackageRepo.save([
       this.certificatePackageRepo.create({
-        certificate: arCertificate,
+        certificate: savedArCertificate,
         package: pkg,
         packageContent: JSON.stringify(arPackageContentsList),
       }),
       this.certificatePackageRepo.create({
-        certificate: enCertificate,
+        certificate: savedEnCertificate,
         package: pkg,
         packageContent: JSON.stringify(enPackageContentsList),
       }),
     ]);
 
+    await this.transactionsService.logAction({
+      tableName: 'certificates',
+      type: TransactionType.ISSUE_CERTIFICATE,
+      recordId: savedArCertificate.id,
+      payload: {
+        entity: 'package_certificate',
+        certificateId: savedArCertificate.id,
+        certificateType: CertificateType.PACKAGE,
+        serialNumber: savedArCertificate.serialNumber,
+        userId: user.id,
+        packageId: pkg.id,
+        language: savedArCertificate.language,
+        title: savedArCertificate.title,
+        issueDate: savedArCertificate.issueDate,
+        hours: savedArCertificate.hours,
+      },
+    });
+
+    await this.transactionsService.logAction({
+      tableName: 'certificates',
+      type: TransactionType.ISSUE_CERTIFICATE,
+      recordId: savedEnCertificate.id,
+      payload: {
+        entity: 'package_certificate',
+        certificateId: savedEnCertificate.id,
+        certificateType: CertificateType.PACKAGE,
+        serialNumber: savedEnCertificate.serialNumber,
+        userId: user.id,
+        packageId: pkg.id,
+        language: savedEnCertificate.language,
+        title: savedEnCertificate.title,
+        issueDate: savedEnCertificate.issueDate,
+        hours: savedEnCertificate.hours,
+      },
+    });
+
     return [
       {
-        serialNumber: arCertificate.serialNumber,
-        language: arCertificate.language,
-        title: arCertificate.title,
-        userCertificateName: arCertificate.userCertificateName,
-        hours: arCertificate.hours,
+        serialNumber: savedArCertificate.serialNumber,
+        language: savedArCertificate.language,
+        title: savedArCertificate.title,
+        userCertificateName: savedArCertificate.userCertificateName,
+        hours: savedArCertificate.hours,
         packageContents: arPackageContentsList,
       },
       {
-        serialNumber: enCertificate.serialNumber,
-        language: enCertificate.language,
-        title: enCertificate.title,
-        userCertificateName: enCertificate.userCertificateName,
-        hours: enCertificate.hours,
+        serialNumber: savedEnCertificate.serialNumber,
+        language: savedEnCertificate.language,
+        title: savedEnCertificate.title,
+        userCertificateName: savedEnCertificate.userCertificateName,
+        hours: savedEnCertificate.hours,
         packageContents: enPackageContentsList,
       },
     ];
   }
+
   async getUserContentCertificates(
     userId: number,
     language?: CertificateLanguage,
@@ -418,6 +490,7 @@ export class CertificatesService {
     }
 
     qb.orderBy('c.createdAt', 'DESC');
+
     console.log(
       'Executing query to fetch user content certificates with params:',
       {
@@ -425,8 +498,11 @@ export class CertificatesService {
         language,
       },
     );
+
     const rows = await qb.getRawMany<GenerateCertificateResult>();
+
     console.log('Fetched certificates:', rows);
+
     return rows.map((item) => ({
       certificateId: item.certificateId,
       contentId: item.contentId,
@@ -440,6 +516,7 @@ export class CertificatesService {
       instituteLogo: item.instituteLogo,
     }));
   }
+
   async getUserPackageCertificates(
     userId: number,
     language?: CertificateLanguage,
@@ -486,10 +563,14 @@ export class CertificatesService {
       issueDate: item.issueDate,
       instituteLogo: item.instituteLogo,
       packageContent: item.packageContent
-        ? JSON.parse(item.packageContent)
+        ? (JSON.parse(item.packageContent) as Array<{
+            contentId: number;
+            name: string;
+          }>)
         : [],
     }));
   }
+
   async getUserCertificatesSummary(
     userId: number,
     language?: CertificateLanguage,

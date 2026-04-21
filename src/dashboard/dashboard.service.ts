@@ -9,7 +9,10 @@ import { InstituteProgramCourse } from 'src/institutes/entities/institute-progra
 import { User } from 'src/users/entities/user.entity';
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { LessonType } from 'src/lessons/entities/lesson.entity';
-import { Certificate } from 'src/certificates/entities/certificate.entity';
+import {
+  Certificate,
+  CertificateType,
+} from 'src/certificates/entities/certificate.entity';
 import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 
 type CountRow = {
@@ -762,15 +765,10 @@ export class DashboardService {
 
     const monthMap = new Map(rows.map((row) => [row.month, Number(row.count)]));
 
-    return {
-      categories: months,
-      series: [
-        {
-          name: 'Completed Packages',
-          data: months.map((month) => monthMap.get(month) ?? 0),
-        },
-      ],
-    };
+    return months.map((month) => ({
+      month,
+      count: monthMap.get(month) ?? 0,
+    }));
   }
   async getInstituteOverview(instituteId: number) {
     const [
@@ -859,6 +857,64 @@ export class DashboardService {
       contentsCount: Number(contentsRaw?.count ?? 0),
       certifiedStudentsCount: Number(certifiedStudentsRaw?.count ?? 0),
       completedStudentsCount: Number(completedStudentsRaw?.count ?? 0),
+    };
+  }
+  async getStudentCertificates(userId: number): Promise<{
+    count: number;
+    items: Array<{
+      certificateId: number;
+      serialNumber: string;
+      type: 'CONTENT' | 'PACKAGE';
+      language: string;
+      title: string;
+      userCertificateName: string | null;
+      issueDate: Date;
+      hours: number | null;
+      createdAt: Date;
+    }>;
+  }> {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: ['id'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    const certificates = await this.certificateRepo.find({
+      where: { user: { id: userId } },
+      select: [
+        'id',
+        'serialNumber',
+        'type',
+        'language',
+        'title',
+        'userCertificateName',
+        'issueDate',
+        'hours',
+        'createdAt',
+      ],
+      order: {
+        issueDate: 'DESC',
+        createdAt: 'DESC',
+      },
+    });
+
+    return {
+      count: certificates.length,
+      items: certificates.map((certificate) => ({
+        certificateId: certificate.id,
+        serialNumber: certificate.serialNumber,
+        type:
+          certificate.type === CertificateType.PACKAGE ? 'PACKAGE' : 'CONTENT',
+        language: certificate.language,
+        title: certificate.title,
+        userCertificateName: certificate.userCertificateName ?? null,
+        issueDate: certificate.issueDate,
+        hours: certificate.hours ?? null,
+        createdAt: certificate.createdAt,
+      })),
     };
   }
 }

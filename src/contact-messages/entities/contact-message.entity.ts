@@ -15,7 +15,7 @@ import {
 @Index(['user'])
 export class ContactMessage {
   @PrimaryGeneratedColumn()
-  id: number; 
+  id: number;
 
   @Column({ type: 'varchar', length: 150 })
   full_name: string;

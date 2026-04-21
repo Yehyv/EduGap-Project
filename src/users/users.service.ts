@@ -18,6 +18,8 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import * as ExcelJS from 'exceljs';
 import { Response } from 'express';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
+import { TransactionsService } from 'src/transactions/transactions.service';
+import { TransactionType } from 'src/transactions/entities/transaction.entity';
 interface userRow {
   user_id: number;
   user_full_name: string;
@@ -59,6 +61,7 @@ export class UsersService {
     private readonly activationLogRepo: Repository<ActivationLog>,
     @InjectRepository(SystemUser)
     private readonly systemUserRepo: Repository<SystemUser>,
+    private readonly transactionsService: TransactionsService,
   ) {}
 
   private async logPasswordAction(
@@ -689,7 +692,6 @@ export class UsersService {
       throw new NotFoundException(`Program with id ${programId} not found`);
     }
 
-    // ✔️ already assigned (idempotent)
     if (user.program?.id === programId) {
       return {
         message: 'User already assigned to this program',
@@ -698,9 +700,37 @@ export class UsersService {
       };
     }
 
-    // ✔️ assign / reassign
+    const oldProgramId = user.program?.id ?? null;
+
     user.program = program;
     await this.userRepositry.save(user);
+
+    if (oldProgramId && oldProgramId !== programId) {
+      await this.transactionsService.logAction({
+        tableName: 'users',
+        type: TransactionType.UNASSIGN,
+        recordId: user.id,
+        payload: {
+          entity: 'user_program',
+          userId: user.id,
+          instituteId,
+          oldProgramId,
+        },
+      });
+    }
+
+    await this.transactionsService.logAction({
+      tableName: 'users',
+      type: TransactionType.ASSIGN,
+      recordId: user.id,
+      payload: {
+        entity: 'user_program',
+        userId: user.id,
+        instituteId,
+        oldProgramId,
+        newProgramId: programId,
+      },
+    });
 
     return {
       message: 'User assigned to program successfully',
