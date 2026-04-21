@@ -456,8 +456,8 @@ export class UsersService {
       phone_key: row.phone_key,
       isActive: row.user_is_active,
       user_image: row.user_user_image,
-      national_id: row.user_national_id,
-      studentId: row.user_student_id,
+      national_id: row.user_national_id ?? null,
+      studentId: row.user_student_id ?? null,
       createdAt: row.createdAt,
       institute: {
         id: row.institute_id,
