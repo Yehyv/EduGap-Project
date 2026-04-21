@@ -131,4 +131,9 @@ export class DashboardController {
       req?.user?.role,
     );
   }
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute-overview')
+  getInstituteOverview(@Req() req: AuthenticatedRequest) {
+    return this.dashboardService.getInstituteOverview(req.user!.instituteId);
+  }
 }

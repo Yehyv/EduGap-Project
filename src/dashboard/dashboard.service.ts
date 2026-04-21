@@ -11,6 +11,10 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { LessonType } from 'src/lessons/entities/lesson.entity';
 import { Certificate } from 'src/certificates/entities/certificate.entity';
 import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
+
+type CountRow = {
+  count: string | number;
+};
 @Injectable()
 export class DashboardService {
   constructor(
@@ -31,6 +35,13 @@ export class DashboardService {
     @InjectRepository(PackageEnrollment)
     private readonly packageEnrollmentRepo: Repository<PackageEnrollment>,
   ) {}
+  private buildInstituteUsersQuery(instituteId: number) {
+    return this.userRepo
+      .createQueryBuilder('user')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin('user.UserRole', 'role')
+      .where('institute.id = :instituteId', { instituteId });
+  }
   async getOverallProgressPercentage(userId: number) {
     // 1) كل enrollments للمستخدم (in progress + completed)
     const enrollments = await this.enrollRepo.find({
@@ -759,6 +770,95 @@ export class DashboardService {
           data: months.map((month) => monthMap.get(month) ?? 0),
         },
       ],
+    };
+  }
+  async getInstituteOverview(instituteId: number) {
+    const [
+      programsRaw,
+      studentsRaw,
+      nonStudentsRaw,
+      coursesRaw,
+      contentsRaw,
+      certifiedStudentsRaw,
+      completedStudentsRaw,
+    ] = await Promise.all([
+      this.ipcRepo
+        .createQueryBuilder('ipc')
+        .innerJoin('ipc.institute', 'institute')
+        .innerJoin('ipc.program', 'program')
+        .where('institute.id = :instituteId', { instituteId })
+        .andWhere('ipc.is_active = :active', { active: 1 })
+        .select('COUNT(DISTINCT program.id)', 'count')
+        .getRawOne<CountRow>(),
+
+      this.buildInstituteUsersQuery(instituteId)
+        .andWhere('role.role_title = :studentRole', { studentRole: 'STUDENT' })
+        .select('COUNT(DISTINCT user.id)', 'count')
+        .getRawOne<CountRow>(),
+
+      this.buildInstituteUsersQuery(instituteId)
+        .andWhere('role.role_title <> :studentRole', { studentRole: 'STUDENT' })
+        .select('COUNT(DISTINCT user.id)', 'count')
+        .getRawOne<CountRow>(),
+
+      this.ipcRepo
+        .createQueryBuilder('ipc')
+        .innerJoin('ipc.institute', 'institute')
+        .innerJoin('ipc.course', 'course')
+        .where('institute.id = :instituteId', { instituteId })
+        .andWhere('ipc.is_active = :active', { active: 1 })
+        .select('COUNT(DISTINCT course.id)', 'count')
+        .getRawOne<CountRow>(),
+
+      this.contentRepo
+        .createQueryBuilder('content')
+        .innerJoin(
+          'content.courseContents',
+          'courseContent',
+          'courseContent.is_active = :active',
+          { active: 1 },
+        )
+        .innerJoin('courseContent.course', 'course')
+        .innerJoin(
+          'course.instituteProgramCourses',
+          'ipc',
+          'ipc.is_active = :active AND ipc.institute.id = :instituteId',
+          { active: 1, instituteId },
+        )
+        .andWhere('content.is_active = :contentActive', { contentActive: 1 })
+        .select('COUNT(DISTINCT content.id)', 'count')
+        .getRawOne<CountRow>(),
+
+      this.certificateRepo
+        .createQueryBuilder('certificate')
+        .innerJoin('certificate.user', 'user')
+        .innerJoin('user.institute', 'institute')
+        .innerJoin('user.UserRole', 'role')
+        .where('institute.id = :instituteId', { instituteId })
+        .andWhere('role.role_title = :studentRole', { studentRole: 'STUDENT' })
+        .select('COUNT(DISTINCT user.id)', 'count')
+        .getRawOne<CountRow>(),
+
+      this.enrollRepo
+        .createQueryBuilder('enrollment')
+        .innerJoin('enrollment.user', 'user')
+        .innerJoin('user.institute', 'institute')
+        .innerJoin('user.UserRole', 'role')
+        .where('institute.id = :instituteId', { instituteId })
+        .andWhere('role.role_title = :studentRole', { studentRole: 'STUDENT' })
+        .andWhere('enrollment.status = :completed', { completed: 1 })
+        .select('COUNT(DISTINCT user.id)', 'count')
+        .getRawOne<CountRow>(),
+    ]);
+
+    return {
+      programsCount: Number(programsRaw?.count ?? 0),
+      studentsCount: Number(studentsRaw?.count ?? 0),
+      nonStudentsCount: Number(nonStudentsRaw?.count ?? 0),
+      coursesCount: Number(coursesRaw?.count ?? 0),
+      contentsCount: Number(contentsRaw?.count ?? 0),
+      certifiedStudentsCount: Number(certifiedStudentsRaw?.count ?? 0),
+      completedStudentsCount: Number(completedStudentsRaw?.count ?? 0),
     };
   }
 }
