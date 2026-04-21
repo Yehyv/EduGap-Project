@@ -133,7 +133,11 @@ export class DashboardController {
   }
   @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
   @Get('institute-overview')
-  getInstituteOverview(@Req() req: AuthenticatedRequest) {
-    return this.dashboardService.getInstituteOverview(req.user!.instituteId);
+  getInstituteOverview(@Query('instituteId') instituteId: number) {
+    const instId = Number(instituteId);
+    if (Number.isNaN(instId) || instId <= 0) {
+      throw new BadRequestException('Invalid instituteId query parameter');
+    }
+    return this.dashboardService.getInstituteOverview(instId);
   }
 }
