@@ -464,7 +464,7 @@ export class ProgramsService {
       .where((qb) => {
         const subQuery = qb
           .subQuery()
-          .select('1')
+          .select('0')
           .from('institute_programs', 'ip')
           .where('ip.program_id = program.id')
           .andWhere('ip.institute_id = :instituteId')
