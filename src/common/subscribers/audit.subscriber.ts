@@ -83,7 +83,9 @@ export class AuditSubscriber implements EntitySubscriberInterface {
     const systemUserRepo = event.manager.getRepository(SystemUser);
 
     const createdBy = ctx?.userId
-      ? await systemUserRepo.findOne({ where: { id: ctx.userId } })
+      ? await systemUserRepo.findOne({
+          where: { id: ctx.userId },
+        })
       : null;
 
     const row = transactionRepo.create({
@@ -116,22 +118,80 @@ export class AuditSubscriber implements EntitySubscriberInterface {
     return undefined;
   }
 
-  private extractRecordId(event: AuditEvent): number {
-    const entity =
-      this.getEventEntity(event) ?? this.getEventDatabaseEntity(event);
-
-    const rawId = entity?.id;
-
-    if (typeof rawId === 'number') {
-      return rawId;
+  private normalizeNumericId(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
     }
 
     if (
-      typeof rawId === 'string' &&
-      rawId.trim() !== '' &&
-      !Number.isNaN(Number(rawId))
+      typeof value === 'string' &&
+      value.trim() !== '' &&
+      !Number.isNaN(Number(value))
     ) {
-      return Number(rawId);
+      return Number(value);
+    }
+
+    return null;
+  }
+
+  private extractPrimaryColumnId(
+    event: AuditEvent,
+    source?: Record<string, unknown>,
+  ): number | null {
+    if (!source) {
+      return null;
+    }
+
+    const primaryColumns = event.metadata.primaryColumns;
+
+    if (primaryColumns.length !== 1) {
+      return null;
+    }
+
+    const primaryColumnName = primaryColumns[0].propertyName;
+    const value = source[primaryColumnName];
+
+    return this.normalizeNumericId(value);
+  }
+
+  private extractRecordId(event: AuditEvent): number {
+    const entity = this.getEventEntity(event);
+    const databaseEntity = this.getEventDatabaseEntity(event);
+
+    const directCandidates: unknown[] = [entity?.id, databaseEntity?.id];
+
+    if ('entityId' in event) {
+      directCandidates.push(event.entityId);
+    }
+
+    for (const candidate of directCandidates) {
+      const parsed = this.normalizeNumericId(candidate);
+      if (parsed !== null) {
+        return parsed;
+      }
+
+      if (candidate && typeof candidate === 'object' && 'id' in candidate) {
+        const nestedId = this.normalizeNumericId(
+          (candidate as Record<string, unknown>).id,
+        );
+
+        if (nestedId !== null) {
+          return nestedId;
+        }
+      }
+    }
+
+    const primaryFromEntity = this.extractPrimaryColumnId(event, entity);
+    if (primaryFromEntity !== null) {
+      return primaryFromEntity;
+    }
+
+    const primaryFromDatabaseEntity = this.extractPrimaryColumnId(
+      event,
+      databaseEntity,
+    );
+    if (primaryFromDatabaseEntity !== null) {
+      return primaryFromDatabaseEntity;
     }
 
     return 0;

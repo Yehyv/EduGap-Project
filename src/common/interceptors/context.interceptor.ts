@@ -36,7 +36,9 @@ export class ContextInterceptor implements NestInterceptor {
       body: this.sanitizeBody(request.body),
     };
 
-    return asyncLocalStorage.run(store, () => next.handle());
+    asyncLocalStorage.enterWith(store);
+
+    return next.handle();
   }
 
   private sanitizeBody(body: unknown): unknown {

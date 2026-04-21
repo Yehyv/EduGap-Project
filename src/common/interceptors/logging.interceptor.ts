@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { finalize, tap } from 'rxjs/operators';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { TransactionsService } from 'src/transactions/transactions.service';
 import { TransactionType } from 'src/transactions/entities/transaction.entity';
 
@@ -17,7 +17,22 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const http = context.switchToHttp();
+    const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
+
+    const method = request.method.toUpperCase();
+    const url = request.originalUrl ?? '';
+
+    const shouldSkip =
+      !['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) ||
+      url.startsWith('/uploads') ||
+      url.startsWith('/docs') ||
+      url.startsWith('/swagger') ||
+      method === 'OPTIONS';
+
+    if (shouldSkip) {
+      return next.handle();
+    }
 
     let actionType:
       | TransactionType.REQUEST_SUCCESS
