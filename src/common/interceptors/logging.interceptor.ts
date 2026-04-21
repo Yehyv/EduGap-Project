@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { finalize, tap } from 'rxjs/operators';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { TransactionsService } from 'src/transactions/transactions.service';
 import { TransactionType } from 'src/transactions/entities/transaction.entity';
 
@@ -18,12 +18,12 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const http = context.switchToHttp();
     const request = http.getRequest<Request>();
-    const response = http.getResponse<Response>();
 
     const method = request.method.toUpperCase();
     const url = request.originalUrl ?? '';
 
     const shouldSkip =
+      !['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) ||
       method === 'OPTIONS' ||
       url.startsWith('/uploads') ||
       url.startsWith('/docs') ||
@@ -35,6 +35,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
     let shouldLogError = false;
     let errorMessage: string | null = null;
+    let statusCode = 500;
 
     return next.handle().pipe(
       tap({
@@ -42,14 +43,18 @@ export class LoggingInterceptor implements NestInterceptor {
           shouldLogError = true;
 
           if (error instanceof HttpException) {
+            statusCode = error.getStatus();
+
             const res = error.getResponse();
             errorMessage =
               typeof res === 'string'
                 ? res
                 : JSON.stringify(res ?? { message: error.message });
           } else if (error instanceof Error) {
+            statusCode = 500;
             errorMessage = error.message;
           } else {
+            statusCode = 500;
             errorMessage = 'Unknown error';
           }
         },
@@ -61,7 +66,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
         void this.transactionsService.logHttpRequest({
           type: TransactionType.REQUEST_ERROR,
-          statusCode: response?.statusCode ?? 500,
+          statusCode,
           errorMessage,
         });
       }),
