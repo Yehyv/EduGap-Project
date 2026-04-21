@@ -440,6 +440,8 @@ export class UsersService {
         'role.role_category AS role_role_category',
         'createdBy.id AS created_by_id',
         'createdBy.full_name AS created_by_name',
+        'user.national_id AS user_national_id',
+        'user.studentId AS user_student_id',
       ]);
     const row = await query.getRawOne<userRow>();
     if (!row) {
@@ -454,6 +456,8 @@ export class UsersService {
       phone_key: row.phone_key,
       isActive: row.user_is_active,
       user_image: row.user_user_image,
+      national_id: row.user_national_id,
+      studentId: row.user_student_id,
       createdAt: row.createdAt,
       institute: {
         id: row.institute_id,
@@ -474,7 +478,8 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const { programId, instituteId, roleId, ...rest } = updateUserDto;
+    const { programId, instituteId, roleId, studentId, ...rest } =
+      updateUserDto;
 
     const user = await this.userRepositry.findOne({
       where: { id },
@@ -485,42 +490,70 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    // ✔️ تحديث الحقول العادية
+    // تحديث الحقول العادية
     Object.assign(user, rest);
 
-    // ✔️ program
-    if (programId !== undefined) {
-      const program = await this.programRepository.findOne({
-        where: { id: programId },
-      });
-      if (!program) {
-        throw new NotFoundException(`Program with id ${programId} not found`);
-      }
-      user.program = program;
+    // studentId
+    if (studentId !== undefined) {
+      user.studentId = studentId;
     }
 
-    // ✔️ institute
+    // institute
     if (instituteId !== undefined) {
       const institute = await this.instituteRepositry.findOne({
         where: { id: instituteId },
       });
+
       if (!institute) {
         throw new NotFoundException(
           `Institute with id ${instituteId} not found`,
         );
       }
+
       user.institute = institute;
     }
 
-    // ✔️ role
+    // role
     if (roleId !== undefined) {
       const role = await this.systemRoleRepo.findOne({
         where: { id: roleId },
       });
+
       if (!role) {
         throw new NotFoundException(`Role with id ${roleId} not found`);
       }
+
       user.UserRole = role;
+    }
+
+    // program
+    if (programId !== undefined) {
+      const targetInstituteId = instituteId ?? user.institute?.id;
+
+      if (!targetInstituteId) {
+        throw new BadRequestException(
+          'User must be assigned to an institute before assigning a program',
+        );
+      }
+
+      const program = await this.programRepository
+        .createQueryBuilder('program')
+        .innerJoin(
+          'program.institutePrograms',
+          'ip',
+          'ip.institute_id = :instituteId AND ip.deleted_at IS NULL AND ip.is_active = 1',
+          { instituteId: targetInstituteId },
+        )
+        .where('program.id = :programId', { programId })
+        .getOne();
+
+      if (!program) {
+        throw new NotFoundException(
+          `Program with id ${programId} not found for institute ${targetInstituteId}`,
+        );
+      }
+
+      user.program = program;
     }
 
     return this.userRepositry.save(user);
