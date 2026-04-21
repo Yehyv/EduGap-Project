@@ -24,26 +24,22 @@ export class LoggingInterceptor implements NestInterceptor {
     const url = request.originalUrl ?? '';
 
     const shouldSkip =
-      !['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) ||
+      method === 'OPTIONS' ||
       url.startsWith('/uploads') ||
       url.startsWith('/docs') ||
-      url.startsWith('/swagger') ||
-      method === 'OPTIONS';
+      url.startsWith('/swagger');
 
     if (shouldSkip) {
       return next.handle();
     }
 
-    let actionType:
-      | TransactionType.REQUEST_SUCCESS
-      | TransactionType.REQUEST_ERROR = TransactionType.REQUEST_SUCCESS;
-
+    let shouldLogError = false;
     let errorMessage: string | null = null;
 
     return next.handle().pipe(
       tap({
         error: (error: unknown) => {
-          actionType = TransactionType.REQUEST_ERROR;
+          shouldLogError = true;
 
           if (error instanceof HttpException) {
             const res = error.getResponse();
@@ -59,8 +55,12 @@ export class LoggingInterceptor implements NestInterceptor {
         },
       }),
       finalize(() => {
+        if (!shouldLogError) {
+          return;
+        }
+
         void this.transactionsService.logHttpRequest({
-          type: actionType,
+          type: TransactionType.REQUEST_ERROR,
           statusCode: response?.statusCode ?? 500,
           errorMessage,
         });

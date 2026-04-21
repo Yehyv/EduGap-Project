@@ -72,7 +72,18 @@ export class AuditSubscriber implements EntitySubscriberInterface {
   ): Promise<void> {
     const tableName = event.metadata.tableName;
 
-    if (tableName === 'transactions') {
+    const ignoredTables = new Set([
+      'transactions',
+      'institute_program_course',
+      'institute_programs',
+      'prerequiest_contents',
+      'package_enrollments',
+      'certificates',
+      'certificate_content',
+      'certificate_package',
+    ]);
+
+    if (ignoredTables.has(tableName)) {
       return;
     }
 
