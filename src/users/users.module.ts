@@ -17,6 +17,8 @@ import { UsersBatchUpload } from 'src/users-batch-upload/entities/users-batch-up
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import { ContactMessage } from 'src/contact-messages/entities/contact-message.entity';
 import { TransactionsModule } from 'src/transactions/transactions.module';
+import { ActivationReason } from 'src/activation-reasons/entities/activation-reason.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -33,6 +35,7 @@ import { TransactionsModule } from 'src/transactions/transactions.module';
       UsersBatchUpload,
       SystemUser,
       ContactMessage,
+      ActivationReason,
     ]),
     UsersOtpModule,
     TransactionsModule,

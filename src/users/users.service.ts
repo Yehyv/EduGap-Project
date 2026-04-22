@@ -20,6 +20,13 @@ import { Response } from 'express';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import { TransactionsService } from 'src/transactions/transactions.service';
 import { TransactionType } from 'src/transactions/entities/transaction.entity';
+import { Enrollment } from 'src/enrollments/entities/enrollment.entity';
+import {
+  ActivationReason,
+  ActivationReasonType,
+} from 'src/activation-reasons/entities/activation-reason.entity';
+import { UserActivationDto } from './dto/user-activation.dto';
+
 interface userRow {
   user_id: number;
   user_full_name: string;
@@ -62,8 +69,54 @@ export class UsersService {
     @InjectRepository(SystemUser)
     private readonly systemUserRepo: Repository<SystemUser>,
     private readonly transactionsService: TransactionsService,
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepository: Repository<Enrollment>,
+    @InjectRepository(ActivationReason)
+    private readonly activationReasonRepo: Repository<ActivationReason>,
   ) {}
+  private async getStatusChangeContext(
+    userId: number,
+    sysUserId: number,
+    reasonId: number,
+    expectedReasonType: ActivationReasonType,
+  ) {
+    const [user, systemUser, activationReason] = await Promise.all([
+      this.userRepositry.findOne({
+        where: { id: userId },
+        relations: ['UserRole'],
+      }),
+      this.systemUserRepo.findOne({
+        where: { id: sysUserId },
+      }),
+      this.activationReasonRepo.findOne({
+        where: {
+          id: reasonId,
+          type: expectedReasonType,
+          is_active: 1,
+        },
+      }),
+    ]);
 
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    if (!systemUser) {
+      throw new NotFoundException(`System user with id ${sysUserId} not found`);
+    }
+
+    if (!activationReason) {
+      throw new NotFoundException(
+        `Activation reason with id ${reasonId} not found for type ${expectedReasonType}`,
+      );
+    }
+
+    return {
+      user,
+      systemUser,
+      activationReason,
+    };
+  }
   private async logPasswordAction(
     user: User,
     action: PasswordAction['action'],
@@ -563,10 +616,36 @@ export class UsersService {
   }
 
   async remove(id: number): Promise<{ message: string }> {
-    const user = await this.userRepositry.findOne({ where: { id } });
-    if (!user) throw new NotFoundException(`User with id ${id} not found`);
+    const user = await this.userRepositry.findOne({
+      where: { id },
+      relations: ['UserRole'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    const isStudent = user.UserRole?.role_title?.toLowerCase() === 'student';
+
+    if (isStudent) {
+      const enrollmentsCount = await this.enrollmentRepository
+        .createQueryBuilder('enrollment')
+        .innerJoin('enrollment.user', 'user')
+        .where('user.id = :userId', { userId: id })
+        .getCount();
+
+      if (enrollmentsCount > 0) {
+        throw new BadRequestException(
+          'Student cannot be deleted because they already enrolled in one or more courses',
+        );
+      }
+    }
+
     await this.userRepositry.softRemove(user);
-    return { message: 'user deleted successfully' };
+
+    return {
+      message: 'user deleted successfully',
+    };
   }
 
   // Password Logic
@@ -837,47 +916,91 @@ export class UsersService {
       user_image: user.user_image,
     };
   }
-  async activateUser(userId: number, sysUserId: number, reason: string) {
-    if (!reason?.trim()) {
-      throw new BadRequestException('Activation reason is required');
-    }
-    const user = await this.userRepositry.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException(` user with id ${userId} not found`);
+  async activateUser(
+    userId: number,
+    sysUserId: number,
+    dto: UserActivationDto,
+  ) {
+    const { user, systemUser, activationReason } =
+      await this.getStatusChangeContext(
+        userId,
+        sysUserId,
+        dto.reasonId,
+        ActivationReasonType.ACTIVE,
+      );
+
     if (user.is_active === 1) {
       throw new BadRequestException('User is already active');
     }
+
     user.is_active = 1;
     await this.userRepositry.save(user);
 
-    // Log the activation
     const activationLog = this.activationLogRepo.create({
-      reason,
+      reason: activationReason.reason,
+      activationReason,
       action: true,
-      user: { id: userId },
-      systemUser: { id: sysUserId },
+      note: dto.note?.trim() || null,
+      user,
+      systemUser,
     });
+
     await this.activationLogRepo.save(activationLog);
+
+    return {
+      message: 'User activated successfully',
+      userId: user.id,
+      is_active: user.is_active,
+      reason: {
+        id: activationReason.id,
+        reason: activationReason.reason,
+        type: activationReason.type,
+      },
+      note: activationLog.note,
+    };
   }
-  async deactivateUser(userId: number, sysUserId: number, reason: string) {
-    if (!reason?.trim()) {
-      throw new BadRequestException('Deactivation reason is required');
-    }
-    const user = await this.userRepositry.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException(` user with id ${userId} not found`);
+  async deactivateUser(
+    userId: number,
+    sysUserId: number,
+    dto: UserActivationDto,
+  ) {
+    const { user, systemUser, activationReason } =
+      await this.getStatusChangeContext(
+        userId,
+        sysUserId,
+        dto.reasonId,
+        ActivationReasonType.INACTIVE,
+      );
+
     if (user.is_active === 0) {
       throw new BadRequestException('User is already deactivated');
     }
+
     user.is_active = 0;
     await this.userRepositry.save(user);
 
-    // Log the deactivation
     const activationLog = this.activationLogRepo.create({
-      reason,
+      reason: activationReason.reason,
+      activationReason,
       action: false,
-      user: { id: userId },
-      systemUser: { id: sysUserId },
+      note: dto.note?.trim() || null,
+      user,
+      systemUser,
     });
+
     await this.activationLogRepo.save(activationLog);
+
+    return {
+      message: 'User deactivated successfully',
+      userId: user.id,
+      is_active: user.is_active,
+      reason: {
+        id: activationReason.id,
+        reason: activationReason.reason,
+        type: activationReason.type,
+      },
+      note: activationLog.note,
+    };
   }
   async studentsForInst(
     instituteId: number,

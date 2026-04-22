@@ -50,6 +50,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { PackageEnrollmentsModule } from './package-enrollments/package-enrollments.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { ContactMessagesModule } from './contact-messages/contact-messages.module';
+import { ActivationReasonsModule } from './activation-reasons/activation-reasons.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -105,6 +106,7 @@ import { ContactMessagesModule } from './contact-messages/contact-messages.modul
     PackageEnrollmentsModule,
     CertificatesModule,
     ContactMessagesModule,
+    ActivationReasonsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuditSubscriber],

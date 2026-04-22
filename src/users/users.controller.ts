@@ -121,9 +121,9 @@ export class UsersController {
     @Body() body: UserActivationDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const systemUserId = req.user.sub; // جاي من JWT / Guard
+    const systemUserId = req.user.sub;
 
-    return this.usersService.activateUser(userId, systemUserId, body.reason);
+    return this.usersService.activateUser(userId, systemUserId, body);
   }
 
   // 🔴 Deactivate User
@@ -137,7 +137,7 @@ export class UsersController {
   ) {
     const systemUserId = req.user.sub;
 
-    return this.usersService.deactivateUser(userId, systemUserId, body.reason);
+    return this.usersService.deactivateUser(userId, systemUserId, body);
   }
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @Roles('ADMIN', 'SUPER_ADMIN')
@@ -273,8 +273,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Delete('super-admin/:id')
-  remove(@Param('id') id: number) {
-    return this.usersService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.remove(id);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
