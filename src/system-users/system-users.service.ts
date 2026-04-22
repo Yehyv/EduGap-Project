@@ -150,6 +150,34 @@ export class SystemUsersService {
       ],
     });
   }
+  async getInstAdminMinimal(userId: number, languageId?: number) {
+    const user = await this.sysUserRepository.findOne({
+      where: { id: userId },
+      relations: [
+        'SysUserrole',
+        'institute',
+        'institute.translations',
+        'institute.translations.language',
+      ],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const instituteName =
+      user.institute?.translations?.find((t) => t.language?.id === languageId)
+        ?.name ??
+      user.institute?.translations?.[0]?.name ??
+      '';
+
+    return {
+      userName: user.full_name ?? user.username ?? '',
+      userImage: user.user_image ?? '',
+      instituteName,
+      logo: user.institute?.logo ?? '',
+    };
+  }
 
   async toggleActive(userId: number) {
     const user = await this.sysUserRepository.findOne({

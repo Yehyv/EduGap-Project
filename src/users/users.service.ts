@@ -399,7 +399,7 @@ export class UsersService {
       },
     };
   }
-  async exportUsersToExcel(
+  async exportStudentsToExcel(
     res: Response,
     instituteId: number,
     languageId?: number,
@@ -452,6 +452,61 @@ export class UsersService {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
     res.setHeader('Content-Disposition', 'attachment; filename=students.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+  async exportStuffToExcel(
+    res: Response,
+    instituteId: number,
+    languageId?: number,
+  ) {
+    const data = await this.stuffForInstitute(
+      instituteId,
+      languageId,
+      undefined,
+      undefined,
+      1,
+      1000000,
+      undefined,
+    );
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Staff');
+
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Name', key: 'name', width: 25 },
+      { header: 'Phone Key', key: 'phone_key', width: 12 },
+      { header: 'Phone', key: 'phone', width: 20 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'National ID', key: 'national_id', width: 20 },
+      { header: 'Program', key: 'program', width: 25 },
+      { header: 'Active', key: 'isActive', width: 10 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+    ];
+
+    data.items.forEach((s) => {
+      worksheet.addRow({
+        id: s.id,
+        name: s.name,
+        phone_key: s.phone_key,
+        phone: s.phone,
+        email: s.email,
+        national_id: s.national_id,
+        program: s.program?.name ?? '',
+        isActive: s.isActive ? 'Yes' : 'No',
+        createdAt: s.createdAt,
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename=staff.xlsx');
 
     await workbook.xlsx.write(res);
     res.end();
@@ -549,8 +604,24 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const { programId, instituteId, roleId, studentId, ...rest } =
-      updateUserDto;
+    const {
+      programId,
+      instituteId,
+      roleId,
+      studentId,
+      full_name,
+      email,
+      national_id,
+      phone_key,
+      phone,
+      user_image,
+      username,
+      refreshToken,
+      verified_method,
+      is_verified,
+      is_active,
+      added_type,
+    } = updateUserDto;
 
     const user = await this.userRepositry.findOne({
       where: { id },
@@ -561,12 +632,25 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    // تحديث الحقول العادية
-    Object.assign(user, rest);
+    // تحديث الحقول العادية بشكل صريح
+    if (full_name !== undefined) user.full_name = full_name;
+    if (email !== undefined) user.email = email;
+    if (national_id !== undefined) user.national_id = national_id;
+    if (phone_key !== undefined) user.phone_key = phone_key;
+    if (phone !== undefined) user.phone = phone;
+    if (user_image !== undefined) user.user_image = user_image;
+    if (username !== undefined) user.username = username;
+    if (refreshToken !== undefined) user.refreshToken = refreshToken;
+    if (verified_method !== undefined) user.verified_method = verified_method;
+    if (is_verified !== undefined) user.is_verified = is_verified;
+    if (is_active !== undefined) user.is_active = is_active;
+    if (added_type !== undefined) user.added_type = added_type;
 
-    // studentId
-    if (studentId !== undefined) {
-      user.studentId = studentId;
+    // studentId: لا نغيره إلا لو اتبعت صراحة
+    const hasStudentId = Object.hasOwn(updateUserDto, 'studentId');
+
+    if (hasStudentId && studentId !== undefined) {
+      user.studentId = Number(studentId);
     }
 
     // institute
@@ -609,18 +693,16 @@ export class UsersService {
 
       const program = await this.programRepository
         .createQueryBuilder('program')
-        .innerJoin(
-          'program.institutePrograms',
-          'ip',
-          'ip.institute_id = :instituteId AND ip.deleted_at IS NULL AND ip.is_active = 1',
-          { instituteId: targetInstituteId },
-        )
         .where('program.id = :programId', { programId })
+        .innerJoin('program.institutePrograms', 'ip')
+        .andWhere('ip.institute_id = :instituteId', {
+          instituteId: targetInstituteId,
+        })
         .getOne();
 
       if (!program) {
         throw new NotFoundException(
-          `Program with id ${programId} not found for institute ${targetInstituteId}`,
+          `Program with id ${programId} not found in institute with id ${targetInstituteId}`,
         );
       }
 
@@ -1153,7 +1235,7 @@ export class UsersService {
         id: s.user_id,
         name: s.user_full_name,
         image: s.user_user_image,
-        phone: `${s.phone_key ?? ''}${s.user_phone ?? ''}`,
+        phone: s.user_phone,
         phone_key: s.phone_key,
         email: s.user_email,
         national_id: s.user_national_id,
@@ -1270,6 +1352,7 @@ export class UsersService {
         'user.full_name   AS user_full_name',
         'user.user_image  AS user_user_image',
         'user.phone_key   AS phone_key',
+        'user.national_id AS user_national_id',
         'user.phone       AS user_phone',
         'user.email       AS user_email',
         'user.createdAt   AS createdAt',
@@ -1287,8 +1370,10 @@ export class UsersService {
         id: s.user_id,
         name: s.user_full_name,
         image: s.user_user_image,
-        phone: `${s.phone_key ?? ''}${s.user_phone ?? ''}`,
+        phone_key: s.phone_key,
+        phone: s.user_phone,
         email: s.user_email,
+        national_id: s.user_national_id,
         createdAt: s.createdAt,
         isActive: s.user_is_active,
         program: s.program_id

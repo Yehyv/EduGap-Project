@@ -15,7 +15,15 @@ import { UpdateSystemUserDto } from './dto/update-system-user.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
-
+import { Headers, Req } from '@nestjs/common';
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: number;
+    email: string;
+    instituteId?: number;
+    refreshToken?: string;
+  };
+}
 @Controller('system-users')
 export class SystemUsersController {
   constructor(private readonly systemUsersService: SystemUsersService) {}
@@ -58,5 +66,17 @@ export class SystemUsersController {
   @Patch('super-admin/system-user-status/:id')
   async changeSystemUserStatus(@Param('id', ParseIntPipe) id: number) {
     return this.systemUsersService.toggleActive(id);
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('INST_ADMIN')
+  @Get('me/minimal')
+  getInstAdminMinimal(
+    @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
+  ) {
+    return this.systemUsersService.getInstAdminMinimal(
+      req.user.sub,
+      languageId ? Number(languageId) : undefined,
+    );
   }
 }

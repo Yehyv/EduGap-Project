@@ -33,17 +33,18 @@ export class ContactMessage {
   message: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updated_at: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date | null;
+  deleted_at: Date | null;
 
   @ManyToOne(() => User, (user) => user.contactMessages, {
-    onDelete: 'CASCADE',
+    nullable: true,
+    onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user: User | null;
 }

@@ -15,13 +15,17 @@ export class ContactMessagesService {
     private readonly userRepo: Repository<User>,
   ) {}
 
-  async create(dto: CreateContactMessageDto, userId: number) {
-    const user = await this.userRepo.findOne({
-      where: { id: userId },
-    });
+  async create(dto: CreateContactMessageDto, userId?: number) {
+    let user: User | null = null;
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+    if (userId !== undefined) {
+      user = await this.userRepo.findOne({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
     }
 
     const contactMessage = this.contactMessageRepo.create({

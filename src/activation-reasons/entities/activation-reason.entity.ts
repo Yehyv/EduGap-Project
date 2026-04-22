@@ -46,6 +46,9 @@ export class ActivationReason {
   })
   translations: ActivationReasonTranslation[];
 
-  @OneToMany(() => ActivationLog, (activationLog) => activationLog.activationReason)
+  @OneToMany(
+    () => ActivationLog,
+    (activationLog) => activationLog.activationReason,
+  )
   activationLogs: ActivationLog[];
 }

@@ -113,7 +113,7 @@ export class UsersController {
       req?.user?.role,
     );
   }
-    @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Post(':id/activate')
   async activateUser(
@@ -133,7 +133,7 @@ export class UsersController {
   }
 
   // 🔴 Deactivate User
-    @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Post(':id/deactivate')
   async deactivateUser(
@@ -154,7 +154,7 @@ export class UsersController {
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @Roles('ADMIN', 'SUPER_ADMIN')
   @Get('students/export')
-  async exportUsers(
+  async exportStudents(
     @Res() res: express.Response,
     @Query('instituteId') instituteId?: string,
     @Headers('languageId') languageId?: string,
@@ -163,7 +163,23 @@ export class UsersController {
       throw new BadRequestException('instituteId is required');
     }
 
-    return this.usersService.exportUsersToExcel(
+    return this.usersService.exportStudentsToExcel(
+      res,
+      Number(instituteId),
+      languageId ? Number(languageId) : undefined,
+    );
+  }
+  @Get('stuff/export')
+  async exportStuff(
+    @Res() res: express.Response,
+    @Query('instituteId') instituteId?: string,
+    @Headers('languageId') languageId?: string,
+  ) {
+    if (!instituteId) {
+      throw new BadRequestException('instituteId is required');
+    }
+
+    return this.usersService.exportStuffToExcel(
       res,
       Number(instituteId),
       languageId ? Number(languageId) : undefined,

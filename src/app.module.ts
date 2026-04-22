@@ -51,6 +51,7 @@ import { PackageEnrollmentsModule } from './package-enrollments/package-enrollme
 import { CertificatesModule } from './certificates/certificates.module';
 import { ContactMessagesModule } from './contact-messages/contact-messages.module';
 import { ActivationReasonsModule } from './activation-reasons/activation-reasons.module';
+import { ApplyMessagesModule } from './apply-messages/apply-messages.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -107,6 +108,7 @@ import { ActivationReasonsModule } from './activation-reasons/activation-reasons
     CertificatesModule,
     ContactMessagesModule,
     ActivationReasonsModule,
+    ApplyMessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuditSubscriber],

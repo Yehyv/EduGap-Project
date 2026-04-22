@@ -8,6 +8,7 @@ import {
   Length,
   MinLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateUserDto {
   @IsString()
@@ -64,18 +65,22 @@ export class CreateUserDto {
   added_type?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   studentId?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   instituteId?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   programId?: number;
 
   @IsNotEmpty()
+  @Type(() => Number)
   @IsNumber()
   roleId: number;
 }
