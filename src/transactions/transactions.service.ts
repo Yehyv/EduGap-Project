@@ -74,6 +74,7 @@ export class TransactionsService {
     payload,
     createdById,
   }: LogActionInput): Promise<void> {
+    // Never log transactions table itself to avoid infinite loop
     if (tableName === 'transactions') {
       return;
     }
@@ -100,6 +101,14 @@ export class TransactionsService {
     errorMessage,
   }: LogHttpRequestInput): Promise<void> {
     const ctx = getRequestContext();
+
+    // Only log mutating methods — GET/HEAD are already filtered in the
+    // interceptor, but this is a safety guard in case logHttpRequest
+    // is called directly elsewhere
+    const method = ctx?.method?.toUpperCase();
+    if (method === 'GET' || method === 'HEAD') {
+      return;
+    }
 
     await this.logAction({
       tableName: 'http_requests',

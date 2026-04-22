@@ -39,6 +39,8 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true }, // "1" -> 1
     }),
   );
-  await app.listen(process.env.PORT ?? 3000);
+  const port = Number(process.env.PORT) || 3000;
+  await app.listen(port, '127.0.0.1');
+
 }
 void bootstrap();

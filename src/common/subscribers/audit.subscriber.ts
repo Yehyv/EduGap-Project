@@ -72,8 +72,10 @@ export class AuditSubscriber implements EntitySubscriberInterface {
   ): Promise<void> {
     const tableName = event.metadata.tableName;
 
+    // Tables managed manually via logAction — subscriber must not double-log them
     const ignoredTables = new Set([
       'transactions',
+      'http_requests',
       'institute_program_course',
       'institute_programs',
       'prerequiest_contents',
@@ -81,6 +83,9 @@ export class AuditSubscriber implements EntitySubscriberInterface {
       'certificates',
       'certificate_content',
       'certificate_package',
+      // Add any junction/pivot tables you log manually below:
+      // 'program_instructors',
+      // 'course_assignments',
     ]);
 
     if (ignoredTables.has(tableName)) {
