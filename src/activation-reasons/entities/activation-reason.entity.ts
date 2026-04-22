@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ActivationLog } from 'src/users/entities/activation-log.entity';
+import { ActivationReasonTranslation } from './activation-reason-translation.entity';
 
 export enum ActivationReasonType {
   ACTIVE = 'ACTIVE',
@@ -18,9 +19,6 @@ export enum ActivationReasonType {
 export class ActivationReason {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column({ type: 'varchar', length: 150 })
-  reason: string;
 
   @Column({
     type: 'enum',
@@ -43,9 +41,11 @@ export class ActivationReason {
   @DeleteDateColumn({ name: 'deleted_at' })
   deleted_at: Date;
 
-  @OneToMany(
-    () => ActivationLog,
-    (activationLog) => activationLog.activationReason,
-  )
+  @OneToMany(() => ActivationReasonTranslation, (tr) => tr.activationReason, {
+    cascade: true,
+  })
+  translations: ActivationReasonTranslation[];
+
+  @OneToMany(() => ActivationLog, (activationLog) => activationLog.activationReason)
   activationLogs: ActivationLog[];
 }

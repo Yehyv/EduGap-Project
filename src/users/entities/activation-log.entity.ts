@@ -9,18 +9,21 @@ import { User } from './user.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import { ActivationReason } from 'src/activation-reasons/entities/activation-reason.entity';
 
-@Entity()
+@Entity('activation_log')
 export class ActivationLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 150 })
+  @Column({ type: 'varchar', length: 255 })
   reason: string;
 
   @ManyToOne(
     () => ActivationReason,
     (activationReason) => activationReason.activationLogs,
-    { nullable: false },
+    {
+      nullable: false,
+      onDelete: 'NO ACTION',
+    },
   )
   @JoinColumn({ name: 'reason_id' })
   activationReason: ActivationReason;

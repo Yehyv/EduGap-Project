@@ -4,11 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 import {
   ActivationReason,
   ActivationReasonType,
 } from './entities/activation-reason.entity';
+import { ActivationReasonTranslation } from './entities/activation-reason-translation.entity';
+import { Language } from 'src/languages/entities/language.entity';
 import { CreateActivationReasonDto } from './dto/create-activation-reason.dto';
 import { UpdateActivationReasonDto } from './dto/update-activation-reason.dto';
 
@@ -17,6 +19,10 @@ export class ActivationReasonsService {
   constructor(
     @InjectRepository(ActivationReason)
     private readonly activationReasonRepo: Repository<ActivationReason>,
+    @InjectRepository(ActivationReasonTranslation)
+    private readonly activationReasonTranslationRepo: Repository<ActivationReasonTranslation>,
+    @InjectRepository(Language)
+    private readonly languageRepo: Repository<Language>,
   ) {}
 
   private normalizeType(type?: string): ActivationReasonType | undefined {
@@ -34,37 +40,69 @@ export class ActivationReasonsService {
     return normalized as ActivationReasonType;
   }
 
-  async create(dto: CreateActivationReasonDto) {
-    const cleanedReason = dto.reason.trim();
+  private normalizeOnlyActive(onlyActiveRaw?: string): boolean {
+    return onlyActiveRaw === undefined
+      ? true
+      : ['1', 'true', 'yes'].includes(onlyActiveRaw.toLowerCase());
+  }
 
-    const existing = await this.activationReasonRepo.findOne({
-      where: {
-        reason: cleanedReason,
-        type: dto.type,
-      },
-    });
+  private pickTranslation(
+    translations: ActivationReasonTranslation[] = [],
+    languageId?: number,
+  ) {
+    if (!translations.length) return undefined;
+    if (!languageId) return translations[0];
 
-    if (existing) {
-      throw new BadRequestException('Reason already exists for this type');
+    return (
+      translations.find((t) => t.language?.id === languageId) || translations[0]
+    );
+  }
+
+  private async validateLanguages(languageIds: number[]) {
+    const uniqueLanguageIds = [...new Set(languageIds)];
+
+    if (uniqueLanguageIds.length !== languageIds.length) {
+      throw new BadRequestException(
+        'Each translation must have a unique languageId',
+      );
     }
 
-    const reason = this.activationReasonRepo.create({
-      reason: cleanedReason,
+    const languages = await this.languageRepo.find({
+      where: { id: In(uniqueLanguageIds) },
+    });
+
+    if (languages.length !== uniqueLanguageIds.length) {
+      throw new NotFoundException('One or more languages were not found');
+    }
+
+    return new Map(languages.map((lang) => [lang.id, lang]));
+  }
+
+  async create(dto: CreateActivationReasonDto) {
+    const languageMap = await this.validateLanguages(
+      dto.translations.map((t) => t.languageId),
+    );
+
+    const activationReason = this.activationReasonRepo.create({
       type: dto.type,
       notes: dto.notes?.trim() || null,
       is_active: dto.is_active ?? 1,
+      translations: dto.translations.map((t) =>
+        this.activationReasonTranslationRepo.create({
+          reason: t.reason.trim(),
+          language: languageMap.get(t.languageId)!,
+        }),
+      ),
     });
 
-    return this.activationReasonRepo.save(reason);
+    const saved = await this.activationReasonRepo.save(activationReason);
+
+    return this.findOne(saved.id);
   }
 
-  async findAll(type?: string, onlyActiveRaw?: string) {
+  async findAll(languageId?: number, type?: string, onlyActiveRaw?: string) {
     const normalizedType = this.normalizeType(type);
-
-    const onlyActive =
-      onlyActiveRaw === undefined
-        ? true
-        : ['1', 'true', 'yes'].includes(onlyActiveRaw.toLowerCase());
+    const onlyActive = this.normalizeOnlyActive(onlyActiveRaw);
 
     const where: FindOptionsWhere<ActivationReason> = {};
 
@@ -76,15 +114,113 @@ export class ActivationReasonsService {
       where.is_active = 1;
     }
 
-    return this.activationReasonRepo.find({
+    const reasons = await this.activationReasonRepo.find({
       where,
+      relations: ['translations', 'translations.language'],
       order: {
         id: 'DESC',
       },
     });
+
+    return reasons.map((item) => {
+      const tr = this.pickTranslation(item.translations, languageId);
+
+      return {
+        id: item.id,
+        type: item.type,
+        notes: item.notes,
+        is_active: item.is_active,
+        reason: tr?.reason ?? null,
+        languageId: tr?.language?.id ?? null,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      };
+    });
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, languageId?: number) {
+    const reason = await this.activationReasonRepo.findOne({
+      where: { id },
+      relations: ['translations', 'translations.language'],
+    });
+
+    if (!reason) {
+      throw new NotFoundException(`Activation reason with id ${id} not found`);
+    }
+
+    const tr = this.pickTranslation(reason.translations, languageId);
+
+    return {
+      id: reason.id,
+      type: reason.type,
+      notes: reason.notes,
+      is_active: reason.is_active,
+      reason: tr?.reason ?? null,
+      languageId: tr?.language?.id ?? null,
+      created_at: reason.created_at,
+      updated_at: reason.updated_at,
+      translations: reason.translations.map((t) => ({
+        id: t.id,
+        reason: t.reason,
+        languageId: t.language.id,
+        languageName: t.language.name,
+      })),
+    };
+  }
+
+  async update(id: number, dto: UpdateActivationReasonDto) {
+    const reason = await this.activationReasonRepo.findOne({
+      where: { id },
+      relations: ['translations', 'translations.language'],
+    });
+
+    if (!reason) {
+      throw new NotFoundException(`Activation reason with id ${id} not found`);
+    }
+
+    if (dto.type !== undefined) {
+      reason.type = dto.type;
+    }
+
+    if (dto.notes !== undefined) {
+      reason.notes = dto.notes?.trim() || null;
+    }
+
+    if (dto.is_active !== undefined) {
+      reason.is_active = dto.is_active;
+    }
+
+    await this.activationReasonRepo.save(reason);
+
+    if (dto.translations?.length) {
+      const languageMap = await this.validateLanguages(
+        dto.translations.map((t) => t.languageId),
+      );
+
+      for (const t of dto.translations) {
+        const existing = reason.translations.find(
+          (tr) => tr.language.id === t.languageId,
+        );
+
+        if (existing) {
+          existing.reason = t.reason.trim();
+          await this.activationReasonTranslationRepo.save(existing);
+        } else {
+          const newTranslation = this.activationReasonTranslationRepo.create({
+            reason: t.reason.trim(),
+            language: languageMap.get(t.languageId)!,
+            activationReason: reason,
+          });
+
+          await this.activationReasonTranslationRepo.save(newTranslation);
+        }
+      }
+    }
+
+    return this.findOne(id);
+  }
+
+  async remove(id: number) {
     const reason = await this.activationReasonRepo.findOne({
       where: { id },
     });
@@ -93,42 +229,6 @@ export class ActivationReasonsService {
       throw new NotFoundException(`Activation reason with id ${id} not found`);
     }
 
-    return reason;
-  }
-
-  async update(id: number, dto: UpdateActivationReasonDto) {
-    const reasonEntity = await this.findOne(id);
-
-    const nextReason = dto.reason?.trim() ?? reasonEntity.reason;
-    const nextType = dto.type ?? reasonEntity.type;
-
-    const duplicate = await this.activationReasonRepo.findOne({
-      where: {
-        reason: nextReason,
-        type: nextType,
-      },
-    });
-
-    if (duplicate && duplicate.id !== id) {
-      throw new BadRequestException('Reason already exists for this type');
-    }
-
-    reasonEntity.reason = nextReason;
-    reasonEntity.type = nextType;
-
-    if (dto.notes !== undefined) {
-      reasonEntity.notes = dto.notes?.trim() || null;
-    }
-
-    if (dto.is_active !== undefined) {
-      reasonEntity.is_active = dto.is_active;
-    }
-
-    return this.activationReasonRepo.save(reasonEntity);
-  }
-
-  async remove(id: number) {
-    const reason = await this.findOne(id);
     await this.activationReasonRepo.softRemove(reason);
 
     return {

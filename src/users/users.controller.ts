@@ -47,7 +47,7 @@ export class UsersController {
     private readonly usersOtpService: UsersOtpService,
   ) {}
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Post()
   create(
     @Body() createUserDto: CreateUserDto,
@@ -56,7 +56,7 @@ export class UsersController {
     return this.usersService.create(createUserDto, req.user.sub);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Post('student')
   createStudent(
     @Body() CreateStudDto: CreateStudentDto,
@@ -113,31 +113,43 @@ export class UsersController {
       req?.user?.role,
     );
   }
-  @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Post(':id/activate')
   async activateUser(
     @Param('id', ParseIntPipe) userId: number,
     @Body() body: UserActivationDto,
     @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
   ) {
     const systemUserId = req.user.sub;
 
-    return this.usersService.activateUser(userId, systemUserId, body);
+    return this.usersService.activateUser(
+      userId,
+      systemUserId,
+      body,
+      languageId ? Number(languageId) : undefined,
+    );
   }
 
   // 🔴 Deactivate User
-  @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   @Post(':id/deactivate')
   async deactivateUser(
     @Param('id', ParseIntPipe) userId: number,
     @Body() body: UserActivationDto,
     @Req() req: AuthenticatedRequest,
+    @Headers('languageId') languageId?: string,
   ) {
     const systemUserId = req.user.sub;
 
-    return this.usersService.deactivateUser(userId, systemUserId, body);
+    return this.usersService.deactivateUser(
+      userId,
+      systemUserId,
+      body,
+      languageId ? Number(languageId) : undefined,
+    );
   }
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @Roles('ADMIN', 'SUPER_ADMIN')

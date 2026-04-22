@@ -25,6 +25,7 @@ import {
   ActivationReason,
   ActivationReasonType,
 } from 'src/activation-reasons/entities/activation-reason.entity';
+import { ActivationReasonTranslation } from 'src/activation-reasons/entities/activation-reason-translation.entity';
 import { UserActivationDto } from './dto/user-activation.dto';
 
 interface userRow {
@@ -74,6 +75,19 @@ export class UsersService {
     @InjectRepository(ActivationReason)
     private readonly activationReasonRepo: Repository<ActivationReason>,
   ) {}
+
+  private pickActivationReasonTranslation(
+    translations: ActivationReasonTranslation[] = [],
+    languageId?: number,
+  ) {
+    if (!translations.length) return undefined;
+    if (!languageId) return translations[0];
+
+    return (
+      translations.find((t) => t.language?.id === languageId) || translations[0]
+    );
+  }
+
   private async getStatusChangeContext(
     userId: number,
     sysUserId: number,
@@ -94,6 +108,7 @@ export class UsersService {
           type: expectedReasonType,
           is_active: 1,
         },
+        relations: ['translations', 'translations.language'],
       }),
     ]);
 
@@ -920,6 +935,7 @@ export class UsersService {
     userId: number,
     sysUserId: number,
     dto: UserActivationDto,
+    languageId?: number,
   ) {
     const { user, systemUser, activationReason } =
       await this.getStatusChangeContext(
@@ -933,11 +949,22 @@ export class UsersService {
       throw new BadRequestException('User is already active');
     }
 
+    const selectedTranslation = this.pickActivationReasonTranslation(
+      activationReason.translations,
+      languageId,
+    );
+
+    if (!selectedTranslation) {
+      throw new BadRequestException(
+        'Selected activation reason does not have any translations',
+      );
+    }
+
     user.is_active = 1;
     await this.userRepositry.save(user);
 
     const activationLog = this.activationLogRepo.create({
-      reason: activationReason.reason,
+      reason: selectedTranslation.reason,
       activationReason,
       action: true,
       note: dto.note?.trim() || null,
@@ -953,8 +980,9 @@ export class UsersService {
       is_active: user.is_active,
       reason: {
         id: activationReason.id,
-        reason: activationReason.reason,
         type: activationReason.type,
+        text: selectedTranslation.reason,
+        languageId: selectedTranslation.language.id,
       },
       note: activationLog.note,
     };
@@ -963,6 +991,7 @@ export class UsersService {
     userId: number,
     sysUserId: number,
     dto: UserActivationDto,
+    languageId?: number,
   ) {
     const { user, systemUser, activationReason } =
       await this.getStatusChangeContext(
@@ -976,11 +1005,22 @@ export class UsersService {
       throw new BadRequestException('User is already deactivated');
     }
 
+    const selectedTranslation = this.pickActivationReasonTranslation(
+      activationReason.translations,
+      languageId,
+    );
+
+    if (!selectedTranslation) {
+      throw new BadRequestException(
+        'Selected activation reason does not have any translations',
+      );
+    }
+
     user.is_active = 0;
     await this.userRepositry.save(user);
 
     const activationLog = this.activationLogRepo.create({
-      reason: activationReason.reason,
+      reason: selectedTranslation.reason,
       activationReason,
       action: false,
       note: dto.note?.trim() || null,
@@ -996,8 +1036,9 @@ export class UsersService {
       is_active: user.is_active,
       reason: {
         id: activationReason.id,
-        reason: activationReason.reason,
         type: activationReason.type,
+        text: selectedTranslation.reason,
+        languageId: selectedTranslation.language.id,
       },
       note: activationLog.note,
     };

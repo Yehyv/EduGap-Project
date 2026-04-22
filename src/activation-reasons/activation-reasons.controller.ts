@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   ParseIntPipe,
   Patch,
@@ -32,15 +33,26 @@ export class ActivationReasonsController {
 
   @Get()
   findAll(
+    @Headers('languageId') languageId?: string,
     @Query('type') type?: string,
     @Query('onlyActive') onlyActive?: string,
   ) {
-    return this.activationReasonsService.findAll(type, onlyActive);
+    return this.activationReasonsService.findAll(
+      languageId ? Number(languageId) : undefined,
+      type,
+      onlyActive,
+    );
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.activationReasonsService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('languageId') languageId?: string,
+  ) {
+    return this.activationReasonsService.findOne(
+      id,
+      languageId ? Number(languageId) : undefined,
+    );
   }
 
   @Patch(':id')
