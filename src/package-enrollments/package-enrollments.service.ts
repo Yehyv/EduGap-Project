@@ -203,50 +203,49 @@ export class PackageEnrollmentsService {
     userId: number,
     languageId?: number,
   ) {
-    // هات كل محتويات الباكيدج
     const pkgContents = await this.packageContentRepo.find({
       where: { package: { id: packageId }, is_active: 1 },
       relations: ['content'],
     });
 
-    // هات كل الـ enrollments للمستخدم
     const enrollments = await this.enrollmentRepo.find({
       where: {
         user: { id: userId },
         content: { id: In(pkgContents.map((pc) => pc.content.id)) },
       },
+      relations: ['content'],
     });
 
-    // احسب إذا كل المحتويات مكتملة
     const allCompleted = pkgContents.every((pc) =>
       enrollments.some((e) => e.content.id === pc.content.id && e.status === 1),
     );
 
-    // احسب عدد المحتويات المكتملة
     const completedContentsCount = enrollments.filter(
       (e) => e.status === 1,
     ).length;
 
-    // نسبة مئوية
     const percentage = pkgContents.length
       ? Math.round((completedContentsCount / pkgContents.length) * 100)
       : 0;
+
     const userPackageEnrollment = await this.packageEnrollmentRepo.findOne({
       where: {
         user: { id: userId },
         package: { id: packageId },
       },
     });
+
     const enrolledAtFormatted = userPackageEnrollment?.created_at
       ? userPackageEnrollment.created_at.toLocaleString()
       : null;
-    // هات اسم الباكيدج بالـ languageId إذا موجود
+
     const packageEntity = await this.pkgRepo.findOne({
       where: { id: packageId },
       relations: ['translations', 'translations.language'],
     });
 
     let packageName: string | { title: string }[] = 'Package Name Not Found';
+
     if (packageEntity) {
       if (languageId) {
         const translation = packageEntity.translations.find(
@@ -257,7 +256,6 @@ export class PackageEnrollmentsService {
           packageEntity.translations[0]?.title ??
           packageName;
       } else {
-        // لو مفيش languageId، رجع كل الترجمات كـ array
         packageName = packageEntity.translations.map((t) => ({
           languageId: t.language.id,
           languageName: t.language.name,

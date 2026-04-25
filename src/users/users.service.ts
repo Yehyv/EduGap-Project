@@ -359,6 +359,7 @@ export class UsersService {
         'createdBy.id           AS created_by_id',
         'createdBy.full_name    AS created_by_name',
         'it.name                AS it_name',
+        'institute.id           AS institute_id',
         'role.role_title        AS role_role_title',
         'role.role_category     AS role_role_category',
       ])
@@ -377,6 +378,7 @@ export class UsersService {
         national_id: u.user_national_id,
         studentId: u.user_student_id ?? null,
         institute: u.it_name,
+        instituteId: u.institute_id,
         createdAt: u.createdAt,
         is_active: u.user_is_active,
         user_image: u.user_user_image,
@@ -561,6 +563,7 @@ export class UsersService {
         'institute.logo AS institute_logo',
         'it.name AS it_name',
         'pt.name AS pt_name',
+        'program.id AS program_id',
         'role.role_title AS role_role_title',
         'role.id AS role_id',
         'role.role_category AS role_role_category',
@@ -596,6 +599,7 @@ export class UsersService {
         role_category: row.role_role_category,
       },
       program: row.pt_name,
+      program_id: row.program_id,
       createdBy: {
         id: row.created_by_id,
         full_name: row.created_by_name,

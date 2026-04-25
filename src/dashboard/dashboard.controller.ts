@@ -27,7 +27,7 @@ interface AuthenticatedRequest extends Request {
   };
 }
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
+@Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
@@ -80,7 +80,6 @@ export class DashboardController {
 
     return this.dashboardService.getPassedExamResults(userId, languageId);
   }
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN', 'INST_ADMIN')
   @Get('student-engagement')
   getStudentEngagementTrend(
     @Query('programId') programIdRaw?: string,
@@ -97,7 +96,6 @@ export class DashboardController {
       req?.user?.role,
     );
   }
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN', 'INST_ADMIN')
   @Get('certificates-issued')
   getCertificatesIssuedTrend(
     @Query('programId') programIdRaw?: string,
@@ -114,7 +112,6 @@ export class DashboardController {
       req?.user?.role,
     );
   }
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN', 'INST_ADMIN')
   @Get('packages-completed')
   getPackagesCompletedTrend(
     @Query('programId') programIdRaw?: string,
@@ -131,7 +128,6 @@ export class DashboardController {
       req?.user?.role,
     );
   }
-  @Roles('ADMIN', 'SUPER_ADMIN', 'INSTITUTE_ADMIN')
   @Get('institute-overview')
   getInstituteOverview(@Query('instituteId') instituteId: number) {
     const instId = Number(instituteId);
