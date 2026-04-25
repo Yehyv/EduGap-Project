@@ -114,7 +114,7 @@ export class UsersController {
     );
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Post(':id/activate')
   async activateUser(
     @Param('id', ParseIntPipe) userId: number,
@@ -134,7 +134,7 @@ export class UsersController {
 
   // 🔴 Deactivate User
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
   @Post(':id/deactivate')
   async deactivateUser(
     @Param('id', ParseIntPipe) userId: number,
