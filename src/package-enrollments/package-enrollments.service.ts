@@ -203,78 +203,149 @@ export class PackageEnrollmentsService {
     userId: number,
     languageId?: number,
   ) {
-    const pkgContents = await this.packageContentRepo.find({
-      where: { package: { id: packageId }, is_active: 1 },
-      relations: ['content'],
+    // 1) تحقق من وجود المستخدم
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
     });
 
-    const enrollments = await this.enrollmentRepo.find({
-      where: {
-        user: { id: userId },
-        content: { id: In(pkgContents.map((pc) => pc.content.id)) },
-      },
-      relations: ['content'],
-    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-    const allCompleted = pkgContents.every((pc) =>
-      enrollments.some((e) => e.content.id === pc.content.id && e.status === 1),
-    );
-
-    const completedContentsCount = enrollments.filter(
-      (e) => e.status === 1,
-    ).length;
-
-    const percentage = pkgContents.length
-      ? Math.round((completedContentsCount / pkgContents.length) * 100)
-      : 0;
-
-    const userPackageEnrollment = await this.packageEnrollmentRepo.findOne({
-      where: {
-        user: { id: userId },
-        package: { id: packageId },
-      },
-    });
-
-    const enrolledAtFormatted = userPackageEnrollment?.created_at
-      ? userPackageEnrollment.created_at.toLocaleString()
-      : null;
-
+    // 2) تحقق من وجود الباكيدج
     const packageEntity = await this.pkgRepo.findOne({
       where: { id: packageId },
       relations: ['translations', 'translations.language'],
     });
 
-    let packageName: string | { title: string }[] = 'Package Name Not Found';
+    if (!packageEntity) {
+      throw new NotFoundException('Package not found');
+    }
 
-    if (packageEntity) {
+    // 3) تحقق أن المستخدم مشترك فعلًا في الباكيدج
+    const userPackageEnrollment = await this.packageEnrollmentRepo.findOne({
+      where: {
+        user: { id: userId },
+        package: { id: packageId },
+      },
+      relations: ['user', 'package'],
+    });
+
+    if (!userPackageEnrollment) {
+      return [];
+    }
+
+    // 4) هات كل محتويات الباكيدج
+    const pkgContents = await this.packageContentRepo.find({
+      where: { package: { id: packageId }, is_active: 1 },
+      relations: ['content'],
+    });
+
+    // لو الباكيدج مفيهاش محتويات، فهي ليست مكتملة
+    if (!pkgContents.length) {
+      let emptyPackageName:
+        | string
+        | { languageId: number; languageName: string; title: string }[] =
+        'Package Name Not Found';
+
       if (languageId) {
         const translation = packageEntity.translations.find(
           (t) => t.language.id === languageId,
         );
-        packageName =
+
+        emptyPackageName =
           translation?.title ??
           packageEntity.translations[0]?.title ??
-          packageName;
+          emptyPackageName;
       } else {
-        packageName = packageEntity.translations.map((t) => ({
+        emptyPackageName = packageEntity.translations.map((t) => ({
           languageId: t.language.id,
           languageName: t.language.name,
           title: t.title,
         }));
       }
+
+      return [
+        {
+          packageId,
+          userId,
+          packageName: emptyPackageName,
+          totalContents: 0,
+          completedContents: 0,
+          allCompleted: false,
+          percentage: 0,
+          enrolledAt: userPackageEnrollment.created_at
+            ? userPackageEnrollment.created_at.toLocaleString()
+            : null,
+        },
+      ];
     }
 
-    return [ {
-      packageId,
-      userId,
-      packageName,
-      totalContents: pkgContents.length,
-      completedContents: completedContentsCount,
-      allCompleted,
-      percentage,
-      enrolledAt: enrolledAtFormatted,
-    },
-  ]
+    // 5) هات enrollments الخاصة بمحتويات الباكيدج للمستخدم
+    const contentIds = pkgContents.map((pc) => pc.content.id);
+
+    const enrollments = await this.enrollmentRepo.find({
+      where: {
+        user: { id: userId },
+        content: { id: In(contentIds) },
+      },
+      relations: ['content'],
+    });
+
+    // 6) احسب المكتمل بدون تكرار
+    const completedContentIds = new Set(
+      enrollments
+        .filter((e) => e.status === 1 && e.content)
+        .map((e) => e.content.id),
+    );
+
+    const completedContentsCount = completedContentIds.size;
+
+    const allCompleted =
+      pkgContents.length > 0 &&
+      pkgContents.every((pc) => completedContentIds.has(pc.content.id));
+
+    const percentage = Math.round(
+      (completedContentsCount / pkgContents.length) * 100,
+    );
+
+    // 7) package name
+    let packageName:
+      | string
+      | { languageId: number; languageName: string; title: string }[] =
+      'Package Name Not Found';
+
+    if (languageId) {
+      const translation = packageEntity.translations.find(
+        (t) => t.language.id === languageId,
+      );
+
+      packageName =
+        translation?.title ??
+        packageEntity.translations[0]?.title ??
+        packageName;
+    } else {
+      packageName = packageEntity.translations.map((t) => ({
+        languageId: t.language.id,
+        languageName: t.language.name,
+        title: t.title,
+      }));
+    }
+
+    return [
+      {
+        packageId,
+        userId,
+        packageName,
+        totalContents: pkgContents.length,
+        completedContents: completedContentsCount,
+        allCompleted,
+        percentage,
+        enrolledAt: userPackageEnrollment.created_at
+          ? userPackageEnrollment.created_at.toLocaleString()
+          : null,
+      },
+    ];
   }
   async checkAllUserPackagesCompletion(userId: number, languageId?: number) {
     // هات كل اشتراكات الباكدجات للمستخدم

@@ -1157,7 +1157,8 @@ export class UsersService {
         LOWER(user.full_name)   LIKE :term OR
         LOWER(user.email)       LIKE :term OR
         LOWER(user.phone)       LIKE :term OR
-        LOWER(user.national_id) LIKE :term
+        LOWER(user.national_id) LIKE :term OR
+        CAST(user.studentId AS CHAR) LIKE :term
       )`,
         { term },
       );
