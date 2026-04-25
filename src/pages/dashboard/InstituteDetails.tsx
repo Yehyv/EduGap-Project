@@ -12,8 +12,8 @@ import StudentsInInstitute from "@/features/Dashboard/components/StudentsInInsti
 import InstituteStaffList from "@/features/Dashboard/components/InstituteStaffList";
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { jwtDecode } from "jwt-decode";
 import { ROLES } from "@/shared/utils/globals";
+import InstituteOverview from "@/features/Dashboard/components/Instituteoverview";
 
 const VALID_TABS = ["informations", "students", "programs", "staff"] as const;
 type Tab = (typeof VALID_TABS)[number];
@@ -22,8 +22,7 @@ const InstituteDetails = () => {
   const { instituteId } = useParams();
   const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { dashboardToken } = useAuth();
-  const userRole = jwtDecode(dashboardToken)?.role;
+  const { role: userRole } = useAuth();
 
   // Read tab from searchParams, fallback to "informations"
   const tabParam = searchParams.get("tab") as Tab | null;
@@ -125,6 +124,9 @@ const InstituteDetails = () => {
       {/* ── TAB CONTENT ────────────────────────────────────────────────────── */}
       {activeTab === "informations" && (
         <>
+          {/* Overview */}
+          <InstituteOverview instituteId={instituteId ?? ""} />
+
           {/* Arabic Information */}
           <div className="bg-white p-5 rounded-lg">
             <h5 className="text-secondary font-bold mb-3">

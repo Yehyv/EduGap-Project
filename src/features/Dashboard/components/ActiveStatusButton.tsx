@@ -6,12 +6,19 @@ import StudentStatusModal from "@/features/Dashboard/components/StudentStatusMod
 interface ActiveStatusButtonProps {
   isActive: boolean;
   itemId: string;
-  itemName?: string; // e.g., "Student", "Teacher", "Course"
-  activateApi: (id: string, data: { reason: string }) => Promise<any>;
-  deactivateApi: (id: string, data: { reason: string }) => Promise<any>;
-  refetchKey: string | string[]; // Query key to refetch after mutation
+  itemName?: string;
+  activateApi: (
+    id: string,
+    data: { note: string; reasonId: number },
+  ) => Promise<any>;
+  deactivateApi: (
+    id: string,
+    data: { note: string; reasonId: number },
+  ) => Promise<any>;
+  refetchKey: string | string[];
   className?: string;
-  showModal?: boolean; // Whether to show reason modal or just confirm
+  showModal?: boolean;
+  withReasons?: boolean;
   onSuccess?: (isActivating: boolean) => void;
   onError?: (error: any, isActivating: boolean) => void;
 }
@@ -25,6 +32,7 @@ const ActiveStatusButton = ({
   refetchKey,
   className = "",
   showModal = true,
+  withReasons = false,
   onSuccess,
   onError,
 }: ActiveStatusButtonProps) => {
@@ -32,29 +40,31 @@ const ActiveStatusButton = ({
   const [isActivating, setIsActivating] = useState(false);
   const queryClient = useQueryClient();
 
+  const invalidate = () => {
+    if (Array.isArray(refetchKey)) {
+      queryClient.invalidateQueries({ queryKey: refetchKey });
+    } else {
+      queryClient.invalidateQueries({ queryKey: [refetchKey] });
+    }
+  };
+
   /* ================= MUTATIONS ================= */
   const activateMutation = useMutation({
-    mutationFn: (reason: string) => activateApi(itemId, { reason }),
+    mutationFn: (data: { note: string; reasonId: number }) =>
+      activateApi(itemId, data),
     onSuccess: () => {
-      // Refetch based on the key type
-      if (Array.isArray(refetchKey)) {
-        queryClient.invalidateQueries({ queryKey: refetchKey });
-      } else {
-        queryClient.invalidateQueries({ queryKey: [refetchKey] });
-      }
-
+      invalidate();
       setStatusModalOpen(false);
-
       Swal.fire({
         icon: "success",
         title: "Success!",
         text: `${itemName} activated successfully`,
         confirmButtonColor: "#10b981",
       });
-
       onSuccess?.(true);
     },
     onError: (error: any) => {
+      setStatusModalOpen(false);
       Swal.fire({
         icon: "error",
         title: "Error!",
@@ -64,33 +74,26 @@ const ActiveStatusButton = ({
           `Failed to activate ${itemName.toLowerCase()}`,
         confirmButtonColor: "#ef4444",
       });
-
       onError?.(error, true);
     },
   });
 
   const deactivateMutation = useMutation({
-    mutationFn: (reason: string) => deactivateApi(itemId, { reason }),
+    mutationFn: (data: { note: string; reasonId: number }) =>
+      deactivateApi(itemId, data),
     onSuccess: () => {
-      // Refetch based on the key type
-      if (Array.isArray(refetchKey)) {
-        queryClient.invalidateQueries({ queryKey: refetchKey });
-      } else {
-        queryClient.invalidateQueries({ queryKey: [refetchKey] });
-      }
-
+      invalidate();
       setStatusModalOpen(false);
-
       Swal.fire({
         icon: "success",
         title: "Success!",
         text: `${itemName} deactivated successfully`,
         confirmButtonColor: "#10b981",
       });
-
       onSuccess?.(false);
     },
     onError: (error: any) => {
+      setStatusModalOpen(false);
       Swal.fire({
         icon: "error",
         title: "Error!",
@@ -100,7 +103,6 @@ const ActiveStatusButton = ({
           `Failed to deactivate ${itemName.toLowerCase()}`,
         confirmButtonColor: "#ef4444",
       });
-
       onError?.(error, false);
     },
   });
@@ -108,18 +110,15 @@ const ActiveStatusButton = ({
   /* ================= HANDLERS ================= */
   const handleToggleStatus = () => {
     if (showModal) {
-      // Show modal for reason input
       setIsActivating(!isActive);
       setStatusModalOpen(true);
     } else {
-      // Show confirmation dialog without modal
       handleConfirmation();
     }
   };
 
   const handleConfirmation = () => {
     const action = isActive ? "deactivate" : "activate";
-
     Swal.fire({
       title: "Are you sure?",
       text: `Do you want to ${action} this ${itemName.toLowerCase()}?`,
@@ -131,21 +130,22 @@ const ActiveStatusButton = ({
       cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
-        // Use empty string as reason when not using modal
+        const fallback = { note: "", reasonId: 0 };
         if (isActive) {
-          deactivateMutation.mutate("");
+          deactivateMutation.mutate(fallback);
         } else {
-          activateMutation.mutate("");
+          activateMutation.mutate(fallback);
         }
       }
     });
   };
 
-  const handleStatusChange = (reason: string) => {
+  // Receives { note, reasonId } directly from StudentStatusModal
+  const handleStatusChange = (data: { note: string; reasonId: number }) => {
     if (isActivating) {
-      activateMutation.mutate(reason);
+      activateMutation.mutate(data);
     } else {
-      deactivateMutation.mutate(reason);
+      deactivateMutation.mutate(data);
     }
   };
 
@@ -186,6 +186,7 @@ const ActiveStatusButton = ({
           onSubmit={handleStatusChange}
           isLoading={isLoading}
           isActivating={isActivating}
+          withReasons={withReasons}
         />
       )}
     </>

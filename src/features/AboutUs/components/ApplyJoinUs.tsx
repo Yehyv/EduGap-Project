@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send, CheckCircle2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import { createApplyMessage } from "@/features/Dashboard/services/dashboardApis";
+import { toast } from "react-toastify";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface ApplyFormValues {
@@ -40,27 +42,14 @@ const ApplyJoinUs = () => {
       .matches(/^[+\d\s\-()]{7,20}$/, t("phone_invalid"))
       .required(t("phone_required")),
     message: Yup.string()
-      .min(30, t("message_min"))
-      .required(t("message_required")),
+      .min(6, t("min_6_chars"))
+      .required(t("required_message")),
   });
 
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
-
-  const submitApplication = async (values: ApplyFormValues) => {
-    const API_URL = "/api/institutes/apply";
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error?.message ?? t("something_wrong"));
-    }
-  };
 
   const handleSubmit = async (
     values: ApplyFormValues,
@@ -70,8 +59,15 @@ const ApplyJoinUs = () => {
     setErrorMessage("");
 
     try {
-      await submitApplication(values);
+      await createApplyMessage({
+        institute_name: values.institute_name,
+        contact_person: values.contact_person,
+        email_address: values.email, // form: email → API: email_address
+        phone_number: values.phone, // form: phone → API: phone_number
+        about_your_institute: values.message, // form: message → API: about_your_institute
+      });
       setSubmitStatus("success");
+      toast.success(t("message_sent_successfully"));
       helpers.resetForm();
     } catch (err) {
       const message = err instanceof Error ? err.message : t("something_wrong");

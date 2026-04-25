@@ -6,11 +6,11 @@ import {
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
-import AddOrEditStudent from "@/features/Dashboard/components/AddOrEditStudent";
+import AddOrEditStudent from "@/features/Dashboard/components/AddOrEditUser";
 import { useParams } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 
-const EditStudentData = () => {
+const EditUserData = () => {
   const { studentId } = useParams();
   const { data: getStudentData, isLoading } = useQuery({
     queryKey: ["studentDetails", studentId],
@@ -24,9 +24,7 @@ const EditStudentData = () => {
     national_id: currentUserData?.username,
     phone_key: currentUserData?.phone_key,
     phone: currentUserData?.phone,
-    instituteId: currentUserData?.institute?.id,
     studentId: +studentId,
-    roleId: currentUserData?.role?.id,
   };
   /* ================= MUTATION ================= */
   const { mutate, isPending } = useMutation({
@@ -66,4 +64,4 @@ const EditStudentData = () => {
   );
 };
 
-export default EditStudentData;
+export default EditUserData;

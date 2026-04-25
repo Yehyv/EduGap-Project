@@ -143,23 +143,38 @@ const StickyCourseSummaryCard = ({
   };
   const handleShare = async () => {
     const url = window.location.href;
+    const title = contentDetailsCardData?.title || document.title;
 
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: document.title,
-          url,
-        });
-      } catch (err) {
-        console.error(err);
-      }
-    } else {
+    const copyToClipboard = async () => {
       try {
         await navigator.clipboard.writeText(url);
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to copy link");
+        toast.success(t("link_copied") || "Link copied to clipboard!");
+      } catch {
+        // Final fallback for older browsers
+        const el = document.createElement("input");
+        el.value = url;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        toast.success(t("link_copied") || "Link copied to clipboard!");
       }
+    };
+
+    if (navigator.share && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+      // Only use native share on mobile where it's reliable
+      try {
+        await navigator.share({ title, url });
+      } catch (err) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          // User didn't just close the sheet — fall back to clipboard
+          await copyToClipboard();
+        }
+        // AbortError = user dismissed the sheet intentionally, do nothing
+      }
+    } else {
+      // Desktop or unsupported: always copy to clipboard
+      await copyToClipboard();
     }
   };
 

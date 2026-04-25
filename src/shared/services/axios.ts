@@ -20,7 +20,7 @@ const refreshAccessToken = async () => {
         headers: {
           Authorization: `Bearer ${refreshToken}`,
         },
-      }
+      },
     );
 
     const newAccessToken = response.data?.data?.accessToken;
@@ -59,7 +59,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // 🔹 Response interceptor with refresh flow
@@ -114,7 +114,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

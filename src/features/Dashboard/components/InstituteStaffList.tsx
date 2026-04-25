@@ -17,6 +17,7 @@ import { Link, useParams } from "react-router-dom";
 import type { User } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ActiveStatusButton from "./ActiveStatusButton";
+import ExportStaffButton from "./ExportStaffButton";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -109,6 +110,7 @@ const columns = [
           isActive={isActive ?? false}
           refetchKey={"getInstituteStaff"}
           showModal={true}
+          withReasons
         />
       );
     },
@@ -379,6 +381,7 @@ const InstituteStaffList = () => {
           }
         />
       </div>
+      <ExportStaffButton />
     </>
   );
 };

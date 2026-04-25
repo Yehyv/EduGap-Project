@@ -1,14 +1,17 @@
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { useQuery } from "@tanstack/react-query";
 import MyModal from "@/shared/components/ui/MyModal";
 import { AlertTriangle, CheckCircle } from "lucide-react";
+import { fetchActivationReasons } from "../services/dashboardApis";
 
 interface StudentStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (reason: string) => void;
+  onSubmit: (data: { note: string; reasonId: number }) => void; // ← matches API exactly
   isLoading?: boolean;
   isActivating: boolean;
+  withReasons?: boolean;
 }
 
 const StudentStatusModal = ({
@@ -17,18 +20,47 @@ const StudentStatusModal = ({
   onSubmit,
   isLoading = false,
   isActivating,
+  withReasons = false,
 }: StudentStatusModalProps) => {
-  const formik = useFormik({
+  const reasonType = isActivating ? "ACTIVE" : "INACTIVE";
+
+  const { data: reasons = [], isLoading: isLoadingReasons } = useQuery({
+    queryKey: ["activation-reasons", reasonType],
+    queryFn: () => fetchActivationReasons(reasonType),
+    enabled: isOpen && withReasons,
+  });
+
+  const validationSchema = withReasons
+    ? Yup.object({
+        reasonId: Yup.number()
+          .required("Reason is required")
+          .typeError("Reason is required"),
+        note: Yup.string()
+          .optional()
+          .test(
+            "min-if-filled",
+            "Notes must be at least 10 characters",
+            (value) => !value || value.length >= 10,
+          ),
+      })
+    : Yup.object({
+        note: Yup.string()
+          .required("Notes is required")
+          .min(10, "Notes must be at least 10 characters"),
+      });
+
+  const formik = useFormik<{ reasonId: number | ""; note: string }>({
     initialValues: {
-      reason: "",
+      reasonId: "",
+      note: "",
     },
-    validationSchema: Yup.object({
-      reason: Yup.string()
-        .required("Reason is required")
-        .min(10, "Reason must be at least 10 characters"),
-    }),
+    validationSchema,
     onSubmit: (values) => {
-      onSubmit(values.reason);
+      // Send exactly what the API expects — no transformation needed
+      onSubmit({
+        note: values.note,
+        reasonId: values.reasonId !== "" ? Number(values.reasonId) : 0,
+      });
       formik.resetForm();
     },
   });
@@ -52,6 +84,7 @@ const StudentStatusModal = ({
         buttonHover: "hover:bg-green-600",
         buttonActive: "active:bg-green-700",
         focusRing: "focus:ring-green-200",
+        selectFocus: "focus:ring-green-200 focus:border-green-400",
         message:
           "This action will activate the User's account. They will be able to access the system.",
         action: "Activate",
@@ -68,6 +101,7 @@ const StudentStatusModal = ({
         buttonHover: "hover:bg-red-600",
         buttonActive: "active:bg-red-700",
         focusRing: "focus:ring-red-200",
+        selectFocus: "focus:ring-red-200 focus:border-red-400",
         message:
           "This action will deactivate the User's account. They will not be able to access the system until reactivated.",
         action: "Deactivate",
@@ -82,7 +116,6 @@ const StudentStatusModal = ({
       headerBgColor={config.bgColor}
       headerTextColor="text-white"
     >
-      {/* Warning/Info Message */}
       <div
         className={`${config.bgLight} border ${config.borderColor} rounded-lg p-3 mb-4 flex items-start gap-2`}
       >
@@ -92,53 +125,106 @@ const StudentStatusModal = ({
         <p className={`text-sm ${config.textColor}`}>{config.message}</p>
       </div>
 
-      {/* Form */}
       <form onSubmit={formik.handleSubmit}>
+        {/* Reason Dropdown — only when withReasons=true */}
+        {withReasons && (
+          <div className="mb-4">
+            <label
+              htmlFor="reasonId"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Reason <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="reasonId"
+              name="reasonId"
+              value={formik.values.reasonId}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={isLoading || isLoadingReasons}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${config.selectFocus} transition-all bg-white text-gray-700 disabled:bg-gray-50 disabled:text-gray-400 ${
+                formik.touched.reasonId && formik.errors.reasonId
+                  ? "border-red-500"
+                  : "border-gray-300"
+              }`}
+            >
+              <option value="">
+                {isLoadingReasons ? "Loading reasons..." : "Select a reason"}
+              </option>
+              {reasons.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.reason}
+                </option>
+              ))}
+            </select>
+            {formik.touched.reasonId && formik.errors.reasonId && (
+              <p className="text-red-500 text-xs flex items-center gap-1 mt-1">
+                <AlertTriangle className="h-3 w-3" />
+                {formik.errors.reasonId}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Note Textarea */}
         <div className="mb-6">
           <label
-            htmlFor="reason"
+            htmlFor="note"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
-            Reason for {isActivating ? "Activation" : "Deactivation"}{" "}
-            <span className="text-red-500">*</span>
+            {withReasons
+              ? "Additional Notes"
+              : `Reason for ${isActivating ? "Activation" : "Deactivation"}`}{" "}
+            {withReasons ? (
+              <span className="text-gray-400 text-xs font-normal">
+                (Optional)
+              </span>
+            ) : (
+              <span className="text-red-500">*</span>
+            )}
           </label>
           <textarea
-            id="reason"
-            name="reason"
+            id="note"
+            name="note"
             rows={4}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${config.focusRing} transition-all resize-none ${
-              formik.touched.reason && formik.errors.reason
+              formik.touched.note && formik.errors.note
                 ? "border-red-500"
                 : "border-gray-300"
             }`}
-            placeholder="Please provide a detailed reason (minimum 10 characters)..."
-            value={formik.values.reason}
+            placeholder={
+              withReasons
+                ? "Add any additional notes (optional)..."
+                : "Please provide a detailed reason (minimum 10 characters)..."
+            }
+            value={formik.values.note}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             disabled={isLoading}
           />
           <div className="flex items-start justify-between mt-1">
             <div className="flex-1">
-              {formik.touched.reason && formik.errors.reason && (
+              {formik.touched.note && formik.errors.note && (
                 <p className="text-red-500 text-xs flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
-                  {formik.errors.reason}
+                  {formik.errors.note}
                 </p>
               )}
             </div>
-            <span
-              className={`text-xs ml-2 ${
-                formik.values.reason.length >= 10
-                  ? "text-green-600"
-                  : "text-gray-500"
-              }`}
-            >
-              {formik.values.reason.length}/10
-            </span>
+            {(!withReasons || formik.values.note.length > 0) && (
+              <span
+                className={`text-xs ml-2 ${
+                  formik.values.note.length >= 10
+                    ? "text-green-600"
+                    : "text-gray-500"
+                }`}
+              >
+                {formik.values.note.length}/10
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex justify-end gap-3">
           <button
             type="button"

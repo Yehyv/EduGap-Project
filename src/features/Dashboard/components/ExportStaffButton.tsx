@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import { useLanguage } from "@/shared/localization/useLanguage";
 
-const ExportStudentsButton = () => {
+const ExportStaffButton = () => {
   const [isExporting, setIsExporting] = useState(false);
   const { instituteId } = useParams();
   const [searchParams] = useSearchParams();
@@ -23,7 +23,7 @@ const ExportStudentsButton = () => {
       if (isActive) params.append("isActive", isActive);
 
       const queryString = params.toString();
-      const url = `/users/students/export${queryString ? `?${queryString}` : ""}`;
+      const url = `/users/stuff/export${queryString ? `?${queryString}` : ""}`;
 
       const response = await dashboardApi.get(url, {
         responseType: "blob",
@@ -45,7 +45,7 @@ const ExportStudentsButton = () => {
       link.href = blobUrl;
 
       const currentDate = new Date().toISOString().split("T")[0];
-      let filename = `students_export_${currentDate}`;
+      let filename = `staff_export_${currentDate}`;
       if (programId) filename += `_program${programId}`;
       if (isActive) filename += `_${isActive === "1" ? "active" : "inactive"}`;
       link.download = `${filename}.xlsx`;
@@ -59,7 +59,7 @@ const ExportStudentsButton = () => {
       Swal.fire({
         icon: "success",
         title: "Success",
-        text: "Students data exported successfully",
+        text: "Staff data exported successfully",
         confirmButtonColor: "#0d6efd",
         timer: 2000,
         showConfirmButton: false,
@@ -115,4 +115,4 @@ const ExportStudentsButton = () => {
   );
 };
 
-export default ExportStudentsButton;
+export default ExportStaffButton;

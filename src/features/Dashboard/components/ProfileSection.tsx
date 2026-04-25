@@ -50,7 +50,7 @@ const ProfileSection = ({
         className="bg-[#F5F5F5] mx-2 px-2 py-1 rounded-lg flex items-center gap-3 text-sm cursor-pointer shadow-sm hover:shadow-md transition-shadow"
       >
         <img
-          src={PersonIcon}
+          src={userImage ? userImage : PersonIcon}
           alt={userName}
           className="h-10 w-10 rounded-lg object-cover flex-shrink-0"
           loading="lazy"

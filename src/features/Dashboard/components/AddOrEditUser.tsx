@@ -3,7 +3,6 @@ import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { phoneKeys } from "@/shared/utils/globals";
 import { useQuery } from "@tanstack/react-query";
 import {
-  getAllProgramsForStudent,
   getAllRoles,
   getInstitutesForDropdownList,
 } from "../services/dashboardApis";
@@ -12,24 +11,14 @@ import * as Yup from "yup";
 import ButtonLoader from "@/shared/components/ButtonLoader";
 import Swal from "sweetalert2";
 import { useLanguage } from "@/shared/localization/useLanguage";
-import { useParams } from "react-router-dom";
 
-const AddOrEditStudent = ({
+const AddOrEditUser = ({
   initialValues,
   mutate,
   isPending,
   isForEdit = false,
 }) => {
   const { t } = useLanguage();
-  const { instituteId } = useParams();
-  const { data: studentProgramsData } = useQuery({
-    queryKey: ["getAllProgramsForStudent", instituteId],
-    queryFn: () => getAllProgramsForStudent(instituteId ?? ""),
-  });
-  const handleProgramsData = studentProgramsData?.data.map((d) => ({
-    label: d.name,
-    value: d.id,
-  }));
 
   /* ================= QUERIES ================= */
   // Only fetch when the dropdowns are actually rendered (add mode)
@@ -58,13 +47,11 @@ const AddOrEditStudent = ({
   /* ================= VALIDATION ================= */
   const addStudentSchema = Yup.object({
     full_name: Yup.string().required("Full name is required"),
-    student_id: Yup.string().required("Student Id is required"),
     national_id: Yup.string()
       .required("National ID is required")
       .length(14, "National ID must be 14 digits"),
     email: Yup.string().email("Invalid email").required("Email is required"),
     phone_key: Yup.string().required("Phone key is required"),
-    programId: Yup.string().required("Program is required"),
     phone: Yup.string().required("Phone is required"),
     instituteId: isForEdit
       ? Yup.number().nullable()
@@ -106,13 +93,6 @@ const AddOrEditStudent = ({
               placeholder="Full Name"
             />
             <TextField
-              moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
-              label="Student Id"
-              name="studentId"
-              type="text"
-              placeholder="Student Id"
-            />
-            <TextField
               onlyNumbers
               moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
               label="National Id:"
@@ -127,11 +107,6 @@ const AddOrEditStudent = ({
                 name="email"
                 type="email"
                 placeholder="Email"
-              />
-              <DropdownMenu
-                label="Program"
-                name="programId"
-                options={handleProgramsData}
               />
               <div className="flex gap-3">
                 <div className="w-[120px] max-sm:w-full">
@@ -184,4 +159,4 @@ const AddOrEditStudent = ({
   );
 };
 
-export default AddOrEditStudent;
+export default AddOrEditUser;

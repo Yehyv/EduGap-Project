@@ -22,6 +22,8 @@ import AddBulkOfStudents from "./AddBulkOfStudents";
 import DownloadExcelTemplate from "./DownloadExcelTemplate";
 import ExportStudentsButton from "./ExportStudentExcel";
 import ActiveStatusButton from "./ActiveStatusButton";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { ROLES, SUPER_ONLY } from "@/shared/utils/globals";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -47,106 +49,6 @@ const customStyles = {
   },
 };
 
-const columns = [
-  {
-    name: "Num",
-    selector: (_: unknown, index: number) => index + 1,
-    width: "60px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Image",
-    cell: (row: Student) => (
-      <img
-        src={row?.image || "/default-avatar.png"}
-        alt={row?.name}
-        className="w-12 h-12 rounded-full object-cover"
-      />
-    ),
-    minWidth: "80px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Name",
-    cell: (row: Student) => (
-      <Link
-        className="underline text-sm hover:text-secondary"
-        to={`/dashboard/institutes/student/${row.id}`}
-      >
-        {row.name}
-      </Link>
-    ),
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Email",
-    selector: (row: Student) => row?.email || "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Phone",
-    selector: (row: Student) => row?.phone || "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Program",
-    selector: (row: Student) => row?.program?.name ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Is Active",
-    style: { justifyContent: "center" },
-    cell: (row: Student) => {
-      const isActive = row?.isActive;
-      return (
-        <ActiveStatusButton
-          itemId={row?.id}
-          activateApi={activateStudent}
-          deactivateApi={deactivateStudent}
-          isActive={isActive ?? false}
-          refetchKey={"getStudentsInInstitute"}
-          showModal={true}
-        />
-      );
-    },
-    sortable: true,
-  },
-  {
-    name: "Edit",
-    style: { justifyContent: "center" },
-    cell: (row: Student) => (
-      <Link
-        to={`/dashboard/users/edit/${row.id}`}
-        className="cursor-pointer hover:opacity-70"
-      >
-        <EditIcon />
-      </Link>
-    ),
-    ignoreRowClick: true,
-    button: true,
-    minWidth: "50px",
-  },
-  {
-    name: "Delete",
-    style: { justifyContent: "center" },
-    cell: (row: Student) => (
-      <DeleteButton
-        deleteApi={() => deleteStudent(row?.id)}
-        successMessage="Student deleted successfully!"
-        errorMessage="Error while deleting student!"
-        refetchFunction="getStudentsInInstitute"
-      />
-    ),
-    ignoreRowClick: true,
-    button: true,
-    minWidth: "60px",
-  },
-];
-
 const StudentsInInstitute = ({
   openAddModal = false,
 }: {
@@ -166,6 +68,9 @@ const StudentsInInstitute = ({
   const [studentIsActive, setStudentIsActive] = useState("");
   const [tempProgramId, setTempProgramId] = useState("");
   const [tempIsActive, setTempIsActive] = useState("");
+
+  const { role: userRole } = useAuth();
+  const isSuperAdmin = userRole === ROLES.SUPER_ADMIN;
 
   const { data: allProgramsInInstitute } = useQuery({
     queryKey: ["getAllPrograms", instituteId],
@@ -223,9 +128,7 @@ const StudentsInInstitute = ({
 
   const totalRows = data?.data?.pagination?.totalPages ?? 0;
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+  const handlePageChange = (page: number) => setCurrentPage(page);
 
   const handleRowsPerPageChange = (newLimit: number) => {
     setRowsPerPage(newLimit);
@@ -248,6 +151,131 @@ const StudentsInInstitute = ({
   };
 
   const hasActiveFilters = studentProgramId || studentIsActive;
+
+  const columns = useMemo(() => {
+    const cols = [
+      {
+        name: "Num",
+        selector: (_: unknown, index: number) => index + 1,
+        width: "60px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: "Image",
+        cell: (row: Student) => (
+          <img
+            src={row?.image || "/default-avatar.png"}
+            alt={row?.name}
+            className="w-12 h-12 rounded-full object-cover"
+          />
+        ),
+        minWidth: "80px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: "Name",
+        cell: (row: Student) => (
+          <Link
+            className="underline text-sm hover:text-secondary"
+            to={`/dashboard/institutes/${instituteId}/student/${row.id}`}
+          >
+            {row.name}
+          </Link>
+        ),
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: "National Id",
+        selector: (row: Student) => row?.national_id || "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: "Student Id",
+        selector: (row: Student) => row?.studentId || "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: "Email",
+        selector: (row: Student) => row?.email || "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: "Phone Key",
+        selector: (row: Student) => `+${row?.phone_key}` || "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: "Phone",
+        selector: (row: Student) => row?.phone || "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: "Program",
+        selector: (row: Student) => row?.program?.name ?? "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: "Is Active",
+        style: { justifyContent: "center" },
+        cell: (row: Student) => (
+          <ActiveStatusButton
+            itemId={row?.id}
+            activateApi={activateStudent}
+            deactivateApi={deactivateStudent}
+            isActive={row?.isActive ?? false}
+            refetchKey="getStudentsInInstitute"
+            showModal={true}
+            withReasons={true}
+          />
+        ),
+        sortable: true,
+      },
+      // ── Edit — only for SUPER_ADMIN, placed BEFORE Delete ──
+      ...(isSuperAdmin
+        ? [
+            {
+              name: "Edit",
+              style: { justifyContent: "center" },
+              cell: (row: Student) => (
+                <Link
+                  to={`/dashboard/institutes/${instituteId}/student/edit/${row.id}`}
+                  className="cursor-pointer hover:opacity-70"
+                >
+                  <EditIcon />
+                </Link>
+              ),
+              ignoreRowClick: true,
+              button: true,
+              minWidth: "50px",
+            },
+          ]
+        : []),
+      {
+        name: "Delete",
+        style: { justifyContent: "center" },
+        cell: (row: Student) => (
+          <DeleteButton
+            deleteApi={() => deleteStudent(row?.id)}
+            successMessage="Student deleted successfully!"
+            errorMessage="Error while deleting student!"
+            refetchFunction="getStudentsInInstitute"
+          />
+        ),
+        ignoreRowClick: true,
+        button: true,
+        minWidth: "100px",
+      },
+    ];
+
+    return cols;
+  }, [isSuperAdmin, instituteId]);
 
   const subHeaderComponent = useMemo(() => {
     return (

@@ -1,6 +1,5 @@
 import { TextField } from "@/shared/components";
 import TextareaField from "@/shared/components/forms/TextareaField";
-import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { Formik, Form } from "formik";
 import type { FormikHelpers } from "formik";
 import * as Yup from "yup";
@@ -16,56 +15,40 @@ import {
 import contactBgImage from "@/assets/imgs/contactUsImage.jpg";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
+import { useMutation } from "@tanstack/react-query";
+import { contactMessage } from "@/features/GuestHome/services/GuestHomeApi";
+import { toast } from "react-toastify";
 
 interface ContactFormValues {
-  user_type: string;
   full_name: string;
   email: string;
-  phone: string;
+  phone_number: string;
   subject: string;
   message: string;
 }
 
 const initialValues: ContactFormValues = {
-  user_type: "",
   full_name: "",
   email: "",
-  phone: "",
+  phone_number: "",
   subject: "",
   message: "",
 };
 
 const validationSchema = Yup.object({
-  user_type: Yup.string().required("Please select a user type"),
   full_name: Yup.string().required("Full name is required"),
   email: Yup.string()
     .email("Invalid email address")
     .required("Email is required"),
-  phone: Yup.string().optional(),
+  phone_number: Yup.string().optional(),
   subject: Yup.string().required("Subject is required"),
   message: Yup.string()
     .min(10, "Message must be at least 10 characters")
     .required("Message is required"),
 });
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, delay: i * 0.1, ease: "easeOut" },
-  }),
-};
-
 const ContactUsPage = () => {
   const { t } = useLanguage();
-
-  const userTypeOptions = [
-    { label: t("student"), value: "student" },
-    { label: t("partner_institute"), value: "partner" },
-    { label: t("employer"), value: "employer" },
-    { label: t("other"), value: "other" },
-  ];
 
   const contactInfo = [
     {
@@ -88,15 +71,26 @@ const ContactUsPage = () => {
     },
   ];
 
+  const { mutateAsync } = useMutation({
+    mutationKey: ["sendMessage"],
+    mutationFn: contactMessage,
+  });
+
   const handleSubmit = (
     values: ContactFormValues,
     helpers: FormikHelpers<ContactFormValues>,
   ): void => {
-    console.log(values);
-    setTimeout(() => {
-      helpers.setSubmitting(false);
-      helpers.resetForm();
-    }, 1500);
+    mutateAsync(values)
+      .then(() => {
+        toast.success(t("message_sent_successfully"));
+        helpers.resetForm();
+      })
+      .catch(() => {
+        toast.error(t("message_send_failed"));
+      })
+      .finally(() => {
+        helpers.setSubmitting(false);
+      });
   };
 
   return (
@@ -165,13 +159,6 @@ const ContactUsPage = () => {
             >
               {({ isSubmitting }) => (
                 <Form className="flex flex-col gap-5">
-                  <DropdownMenu
-                    label={t("select_user_type")}
-                    name="user_type"
-                    options={userTypeOptions}
-                    required
-                  />
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <TextField
                       label={t("full_name")}
@@ -193,7 +180,7 @@ const ContactUsPage = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <TextField
                       label={t("phone_number")}
-                      name="phone"
+                      name="phone_number"
                       type="tel"
                       placeholder={t("enter_phone")}
                     />

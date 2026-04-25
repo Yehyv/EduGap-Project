@@ -68,7 +68,7 @@ import BatchResults from "@/pages/dashboard/BatchResults";
 import InstituteCoursesDashboard from "@/pages/dashboard/InstituteCoursesDashboard";
 import StudentsPage from "@/pages/dashboard/StudentsPage";
 import AddNewStudent from "@/pages/dashboard/AddNewStudent";
-import EditStudentData from "@/pages/dashboard/EditStudentData";
+import EditUserData from "@/pages/dashboard/EditUserData";
 import StudentDetails from "@/pages/dashboard/StudentDetails";
 import AdminProgramsList from "@/pages/dashboard/AdminProgramsList";
 import AdminProgramDetails from "@/pages/dashboard/AdminProgramDetails";
@@ -115,6 +115,7 @@ import StudentsInInstitute from "@/features/Dashboard/components/StudentsInInsti
 import LatestCoursesPageForGuest from "@/pages/LatestCoursesPageForGuest";
 import ContactUsPage from "@/pages/ContactUsPage";
 import JoinUsPage from "@/pages/JoinUsPage";
+import EditStudentInInstitute from "@/pages/dashboard/EditStudentInInstitute";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -321,10 +322,18 @@ export default function AppRoutes() {
             }
           />
           <Route
-            path="/dashboard/institutes/student/:studentId"
+            path="/dashboard/institutes/:instituteId/student/:studentId"
             element={
               <DashboardRoute allowed={ALL_ROLES}>
                 <StudentInInstitute />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/institutes/:instituteId/student/edit/:studentId"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <EditStudentInInstitute />
               </DashboardRoute>
             }
           />
@@ -403,8 +412,8 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/users/edit/:studentId"
             element={
-              <DashboardRoute allowed={ALL_ROLES}>
-                <EditStudentData />
+              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+                <EditUserData />
               </DashboardRoute>
             }
           />
@@ -565,7 +574,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents/add"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <AddNewContent />
               </DashboardRoute>
             }
@@ -573,7 +582,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents/:contentId"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <ContentDetails />
               </DashboardRoute>
             }
@@ -581,7 +590,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents/edit/:contentId"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <EditContent />
               </DashboardRoute>
             }
@@ -589,7 +598,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents/:contentId/add-new-topic"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <AddNewTopic />
               </DashboardRoute>
             }
@@ -597,7 +606,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents/:contentId/edit-topic/:topicId"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <EditTopic />
               </DashboardRoute>
             }
@@ -605,7 +614,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents/:contentId/topic/:topicId/add-new-lesson"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <AddNewLesson />
               </DashboardRoute>
             }
@@ -613,7 +622,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents/:contentId/topic/:topicId/edit-lesson/:lessonId"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <EditLessonData />
               </DashboardRoute>
             }
@@ -621,7 +630,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/contents/:contentId/topics/:topicId/lessons/:lessonId"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <LessonDetailsDashboard />
               </DashboardRoute>
             }

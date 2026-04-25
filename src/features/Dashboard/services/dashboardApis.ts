@@ -215,7 +215,7 @@ export async function createStudentToInstitute(data): Promise<void> {
 
 export async function editStudent(data): Promise<void> {
   const res = await dashboardApi.patch<void>(
-    `/users/super-admin/${data.studentId}`,
+    `/users/super-admin/${data.student_id}`,
     data,
   );
   return res.data;
@@ -232,6 +232,12 @@ export async function instituteDetails(
 ): Promise<instituteResponse> {
   const res = await dashboardApi.get<instituteResponse>(
     `/institutes/super-admin/institute/${instituteId}`,
+  );
+  return res.data;
+}
+export async function instituteOverview(instituteId: string) {
+  const res = await dashboardApi.get(
+    `/dashboard/institute-overview?instituteId=${instituteId}`,
   );
   return res.data;
 }
@@ -643,6 +649,14 @@ export async function getAllProgramsForDropdown(
   );
   return res.data;
 }
+export async function getAllProgramsForStudent(
+  instituteId: number | string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi(
+    `/programs/super-admin/dropdown/user/list?instituteId=${instituteId}`,
+  );
+  return res.data;
+}
 export async function getExpertCourses(): Promise<CitiesResponse> {
   const res = await dashboardApi.get<CitiesResponse>(
     `/contents/super-admin/educators/contents/dropdown`,
@@ -1002,7 +1016,7 @@ export async function unassignTraningCourseToCourse(
 
 export const activateStudent = async (
   studentId: string,
-  data: { reason: string },
+  data: { note: string; reasonId: number },
 ) => {
   const response = await dashboardApi.post(
     `/users/${studentId}/activate`,
@@ -1013,7 +1027,7 @@ export const activateStudent = async (
 
 export const deactivateStudent = async (
   studentId: string,
-  data: { reason: string },
+  data: { note: string; reasonId: number },
 ) => {
   const response = await dashboardApi.post(
     `/users/${studentId}/deactivate`,
@@ -1217,3 +1231,23 @@ export const fetchPackagesCompleted = async (
   );
   return data.data;
 };
+
+export const fetchActivationReasons = async (type?: string) => {
+  const { data } = await dashboardApi.get(`/activation-reasons?type=${type}`);
+  return data.data;
+};
+
+interface ApplyMessageData {
+  institute_name: string;
+  contact_person: string;
+  email_address: string;
+  phone_number: string;
+  about_your_institute: string;
+}
+
+export async function createApplyMessage(
+  data: ApplyMessageData,
+): Promise<void> {
+  const res = await dashboardApi.post<void>(`/apply-messages`, data);
+  return res.data;
+}

@@ -30,10 +30,6 @@ const ROLES = {
   INST_ADMIN: "INST_ADMIN",
 };
 
-const ALL_ROLES = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INST_ADMIN];
-const SUPER_AND_ADMIN = [ROLES.SUPER_ADMIN, ROLES.ADMIN];
-const SUPER_ONLY = [ROLES.SUPER_ADMIN];
-
 // ─────────────────────────────────────────────────────────────────────────────
 // NAV LINK CLASS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +38,7 @@ const navLinkClass = ({ isActive }) =>
   ${
     isActive
       ? "text-secondary font-bold bg-[#ECF8FF]"
-      : "text-[#ACACAC] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+      : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
   }`;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,10 +47,9 @@ const navLinkClass = ({ isActive }) =>
 const DashboardLayout = () => {
   const [open, setOpen] = useState(false);
   const { lang, setLang, t } = useLanguage();
-  const { dashboardToken, dashboardLogout } = useAuth();
+  const { dashboardToken, dashboardLogout, instAdminInfo } = useAuth();
   const navigate = useNavigate();
 
-  // Decode token safely
   const decoded = (() => {
     try {
       return dashboardToken ? jwtDecode(dashboardToken) : null;
@@ -106,18 +101,42 @@ const DashboardLayout = () => {
           >
             <CloseIcon className="w-3 h-3" />
           </button>
-
           {/* Logo */}
-          <div className="h-16 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center py-4 gap-3">
             <NavLink to="/userHome">
               <LogoSm className="cursor-pointer" />
             </NavLink>
+
+            {role === ROLES.INST_ADMIN && instAdminInfo && (
+              <div className="flex flex-col items-center gap-2 w-full px-3">
+                {/* Divider */}
+                <div className="w-full h-px bg-gray-200" />
+
+                {/* Institute logo */}
+                <div className="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center bg-white flex-shrink-0">
+                  <img
+                    src={instAdminInfo.logo}
+                    alt={instAdminInfo.instituteName}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+
+                {/* Institute name */}
+                <p
+                  className="font-medium text-center text-gray-600 leading-tight line-clamp-2 w-full"
+                  title={instAdminInfo.instituteName}
+                  dir="auto"
+                >
+                  {instAdminInfo.instituteName}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="py-2 px-3 flex flex-col gap-1 overflow-y-auto flex-1">
-          <h5 className="text-[#ACACAC] mb-2 mx-2">{t("menu")}</h5>
+          <h5 className="text-[#575757] mb-2 mx-2">{t("menu")}</h5>
 
           {/* ── ALL roles ─────────────────────────────────────────────────── */}
           <NavLink
@@ -281,9 +300,9 @@ const DashboardLayout = () => {
           <SearchBar placeholder={t("search")} lang={lang} />
 
           <ProfileSection
-            userName={""}
+            userName={instAdminInfo?.userName}
             userRole={role}
-            userImage={""}
+            userImage={instAdminInfo?.userImage}
             currentLang={lang}
             onLanguageChange={setLang}
           />

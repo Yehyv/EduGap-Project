@@ -148,3 +148,7 @@ export async function getAllExpertsList(
   });
   return res.data.data;
 }
+export async function contactMessage(data): Promise<ExpertsResponse> {
+  const res = await api.post("/contact-messages", data);
+  return res.data.data;
+}

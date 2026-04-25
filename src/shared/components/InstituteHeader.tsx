@@ -2,7 +2,7 @@ import { useUser } from "@/features/auth/context/UserContext";
 const InstituteHeader = () => {
   const { user } = useUser();
   return (
-    <div className="p-4 bg-gradient-to-r from-header-gradient-start to-header-gradient-end">
+    <div className="p-4 bg-gradient-to-r from-header-gradient-start to-header-gradient-end z-40">
       <div className="relative container">
         <img
           src={user?.logo}

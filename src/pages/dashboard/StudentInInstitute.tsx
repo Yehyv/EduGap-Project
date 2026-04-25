@@ -15,12 +15,12 @@ import {
   getStudentLearningPaths,
 } from "@/features/Dashboard/services/dashboardApis";
 import LineChartIcon from "@/assets/svgs/LineChart.svg?react";
-import PerformanceIcon from "@/assets/svgs/PerformanceIcon.svg?react";
-import WarningIcon from "@/assets/svgs/WarningIcon.svg?react";
 import CheckGreenIcon from "@/assets/svgs/CheckGreenIcon.svg?react";
 import StatCard from "@/features/Dashboard/components/StatCard";
 import { DownloadIcon, EyeIcon, Share2Icon, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { ROLES } from "@/shared/utils/globals";
 
 // ── Animation Variants ────────────────────────────────────────────────────────
 const pageVariants = {
@@ -73,6 +73,13 @@ const rowVariants = {
     transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
   },
 };
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface InfoField {
+  label: string;
+  value?: string | number | null;
+  breakAll?: boolean;
+}
 
 // ── Gradient Section Header ───────────────────────────────────────────────────
 const SectionHeader = ({
@@ -319,99 +326,6 @@ const ProgressRow = ({ title, subtitle, percentage }: ProgressRowProps) => {
   );
 };
 
-// ── Activity Log Table ────────────────────────────────────────────────────────
-const activityLogs = [
-  { date: "Feb 20, 2026", activity: "Logged In", details: "10:30 AM" },
-  {
-    date: "Feb 19, 2026",
-    activity: "Completed Lesson",
-    details: "Python Advanced Functions",
-  },
-  {
-    date: "Feb 15, 2026",
-    activity: "Exam Attempt",
-    details: "Data Science Quiz - Score: 87%",
-  },
-  {
-    date: "Feb 11, 2026",
-    activity: "Certificate Downloaded",
-    details: "Web Development Certificate",
-  },
-];
-
-const activityBadgeColor: Record<string, string> = {
-  Login: "bg-blue-100 text-blue-700",
-  Logout: "bg-gray-100 text-gray-600",
-  "Logged In": "bg-purple-100 text-purple-700",
-  "Certificate Downloaded": "bg-yellow-100 text-yellow-700",
-  "Completed Lesson": "bg-green-100 text-green-700",
-  "Exam Attempted": "bg-orange-100 text-orange-700",
-  "Exam Attempt": "bg-teal-100 text-teal-700",
-};
-
-const ActivityLogTable = () => {
-  const tableRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(tableRef as React.RefObject<Element>, {
-    once: true,
-    margin: "-40px",
-  });
-
-  return (
-    <div ref={tableRef} className="overflow-x-auto">
-      <table className="w-full text-sm min-w-[480px]">
-        <thead>
-          <tr
-            className="text-left"
-            style={{
-              background: "linear-gradient(135deg, #f0f6fb 0%, #e8f2f9 100%)",
-            }}
-          >
-            <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 w-36 sm:w-48">
-              Date
-            </th>
-            <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 w-40 sm:w-44">
-              Activity
-            </th>
-            <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-              Details
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {activityLogs.map((log, i) => (
-            <motion.tr
-              key={i}
-              variants={rowVariants}
-              initial="hidden"
-              animate={isInView ? "visible" : "hidden"}
-              custom={i}
-              transition={{ delay: i * 0.06 }}
-              className={`border-t border-gray-100 transition-colors duration-150 hover:bg-blue-50/40 ${
-                i % 2 === 0 ? "bg-white" : "bg-gray-50/60"
-              }`}
-            >
-              <td className="px-4 py-3 text-gray-500 whitespace-nowrap font-mono text-xs">
-                {log.date}
-              </td>
-              <td className="px-4 py-3">
-                <span
-                  className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${
-                    activityBadgeColor[log.activity] ??
-                    "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {log.activity}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-gray-700">{log.details}</td>
-            </motion.tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
 // ── Exam Result Card ──────────────────────────────────────────────────────────
 const ExamCard = ({
   title,
@@ -443,109 +357,112 @@ const ExamCard = ({
         <span className="inline-block ms-2">Date: {date}</span>
       </div>
       <span className="font-semibold text-gray-700">
-        total Questions : {totalQuestions}
+        Total Questions: {totalQuestions}
       </span>
     </div>
   </div>
 );
 
-// ── Certificate Card ──────────────────────────────────────────────────────────
-const CertificateCard = ({
-  title,
-  issued,
-}: {
-  title: string;
-  issued: string;
-}) => (
-  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-    <h5 className="font-bold text-gray-800 text-sm mb-1.5 leading-snug">
-      {title}
-    </h5>
-    <div className="flex justify-between items-center gap-2 flex-wrap">
-      <p className="text-xs text-gray-500">Issued: {issued}</p>
-      <div className="flex gap-1.5">
-        {[EyeIcon, DownloadIcon, Share2Icon].map((Icon, i) => (
-          <motion.button
-            key={i}
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.9 }}
-            className="p-1 rounded-lg hover:bg-white transition-colors duration-150"
-          >
-            <Icon className="text-secondary w-4 h-4" />
-          </motion.button>
-        ))}
-      </div>
-    </div>
-  </div>
+// ── Info Field Item ───────────────────────────────────────────────────────────
+const InfoFieldItem = ({ label, value, breakAll }: InfoField) => (
+  <motion.div variants={infoItemVariants} className="flex flex-col gap-0.5">
+    <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
+      {label}
+    </span>
+    <p
+      className={`font-medium text-gray-800 text-sm sm:text-base ${breakAll ? "break-all" : ""}`}
+    >
+      {value ?? "-"}
+    </p>
+  </motion.div>
 );
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const StudentInInstitute = () => {
-  const { studentId } = useParams();
-  const isActive = false;
+  const { studentId, instituteId } = useParams();
+  const { role } = useAuth();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
   const { data: overallProgressData } = useQuery({
-    queryKey: ["getOverallProgress"],
+    queryKey: ["getOverallProgress", studentId],
     queryFn: () => getOverallProgress(studentId ?? ""),
-  });
-  const { data: passedExamData } = useQuery({
-    queryKey: ["getPassedExamsAverage"],
-    queryFn: () => getPassedExamsAverage(studentId ?? ""),
-  });
-  const { data: studentContentsProgressData } = useQuery({
-    queryKey: ["getStudentContentsProgress"],
-    queryFn: () => getStudentContentsProgress(studentId ?? ""),
-  });
-  const { data: studentCoursesProgressSummary } = useQuery({
-    queryKey: ["studentCoursesProgressSummary"],
-    queryFn: () => getStudentCoursesProgressSummary(studentId ?? ""),
-  });
-  const { data: studentLearningPathsData } = useQuery({
-    queryKey: ["studentLearningPaths"],
-    queryFn: () => getStudentLearningPaths(studentId ?? ""),
-  });
-  const { data: examResultsData } = useQuery({
-    queryKey: ["examResults"],
-    queryFn: () => getExamResults(studentId ?? ""),
+    enabled: !!studentId,
   });
 
-  const {
-    data: userDataResponse,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
+  const { data: passedExamData } = useQuery({
+    queryKey: ["getPassedExamsAverage", studentId],
+    queryFn: () => getPassedExamsAverage(studentId ?? ""),
+    enabled: !!studentId,
+  });
+
+  const { data: studentContentsProgressData } = useQuery({
+    queryKey: ["getStudentContentsProgress", studentId],
+    queryFn: () => getStudentContentsProgress(studentId ?? ""),
+    enabled: !!studentId,
+  });
+
+  const { data: studentCoursesProgressSummary } = useQuery({
+    queryKey: ["studentCoursesProgressSummary", studentId],
+    queryFn: () => getStudentCoursesProgressSummary(studentId ?? ""),
+    enabled: !!studentId,
+  });
+
+  const { data: studentLearningPathsData } = useQuery({
+    queryKey: ["studentLearningPaths", studentId],
+    queryFn: () => getStudentLearningPaths(studentId ?? ""),
+    enabled: !!studentId,
+  });
+
+  const { data: examResultsData } = useQuery({
+    queryKey: ["examResults", studentId],
+    queryFn: () => getExamResults(studentId ?? ""),
+    enabled: !!studentId,
+  });
+
+  const { data: userDataResponse } = useQuery({
     queryKey: ["userDetails", studentId],
     queryFn: () => getStudentDetails(studentId ?? ""),
     enabled: !!studentId,
   });
+
   const userData = userDataResponse?.data;
+  const isUserStudent =
+    !!userData && userData?.role?.role_title === ROLES.STUDENT;
+  const editUserPage = isUserStudent
+    ? `/dashboard/institutes/${instituteId}/student/edit/${studentId}`
+    : `/dashboard/users/edit/${studentId}`;
 
-  const overallProgress = overallProgressData?.data?.percentage;
+  const isActive = userData?.isActive;
+  const overallProgress = overallProgressData?.data?.percentage ?? 0;
   const passedExam = passedExamData?.data?.passedExams;
-  console.log(studentLearningPathsData);
 
-  const infoFields = [
-    { label: "User Name", value: userData?.full_name, col: 1, row: 1 },
-    { label: "User ID", value: userData?.id, col: 2, row: 1 },
-    {
-      label: "E-mail",
-      value: userData?.email,
-      col: 1,
-      row: 2,
-      breakAll: true,
-    },
-    { label: "Institute", value: userData?.institute?.name, col: 2, row: 2 },
-    { label: "Phone Number", value: userData?.phone, col: 1, row: 3 },
-    { label: "Program", value: userData?.program, col: 2, row: 3 },
-    { label: "Created at", value: userData?.createdAt, col: 1, row: 4 },
-    {
-      label: "Created by",
-      value: userData?.createdBy?.full_name,
-      col: 2,
-      row: 4,
-    },
+  // ── Info fields — always shown ────────────────────────────────────────────
+  const commonFields: InfoField[] = [
+    { label: "User Name", value: userData?.full_name },
+    { label: "E-mail", value: userData?.email, breakAll: true },
+    { label: "User Role", value: userData?.role?.role_title },
+    { label: "National ID", value: userData?.national_id },
+    { label: "Institute", value: userData?.institute?.name },
+    { label: "Phone Key", value: `+${userData?.phone_key ?? ""}` },
+    { label: "Phone Number", value: userData?.phone },
+    { label: "Created at", value: userData?.createdAt },
+    { label: "Created by", value: userData?.createdBy?.full_name },
   ];
+
+  // ── Info fields — only shown when user IS a student ───────────────────────
+  const studentOnlyFields: InfoField[] = [
+    { label: "Student ID", value: userData?.studentId },
+    { label: "Program", value: userData?.program },
+  ];
+  console.log("program:", userData?.program, "studentId:", userData?.studentId);
+  const infoFields: InfoField[] = isUserStudent
+    ? [
+        commonFields[0],
+        studentOnlyFields[0],
+        ...commonFields.slice(1),
+        studentOnlyFields[1],
+      ]
+    : commonFields;
 
   return (
     <motion.div initial="hidden" animate="visible" variants={pageVariants}>
@@ -559,102 +476,80 @@ const StudentInInstitute = () => {
       )}
 
       {/* Page Title */}
-      <motion.h2 variants={slideDown}>User</motion.h2>
+      <motion.h2 variants={slideDown}>
+        {isUserStudent ? "Student" : "User"}
+      </motion.h2>
 
-      {/* Stats Grid */}
-      <motion.div
-        variants={gridVariants}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6"
-      >
-        <StatCard
-          title="Overall Progress"
-          value={overallProgress}
-          subLabel="Enrolled Courses"
-          borderColor="border-secondary"
-          textColor="text-secondary"
-          bgColor="bg-primary"
-          icon={<LineChartIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
-        />
-        {/* <StatCard
-          title="Average Grade"
-          value={68}
-          subLabel="Batch avg: 0%"
-          borderColor="border-[#9F00BF]"
-          textColor="text-[#9F00BF]"
-          bgColor="bg-[#F9DDFF]"
-          icon={<PerformanceIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
-        /> */}
-        <StatCard
-          title="Passed Exams"
-          value={passedExam}
-          subLabel="of 0 total"
-          borderColor="border-green-600"
-          textColor="text-green-600"
-          bgColor="bg-green-100"
-          icon={<CheckGreenIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
-        />
-        {/* <StatCard
-          title="Failed Exams"
-          value={68}
-          subLabel="of 0 total"
-          borderColor="border-[#DB6600]"
-          textColor="text-[#DB6600]"
-          bgColor="bg-[#FFF2E7]"
-          icon={<WarningIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
-        /> */}
-      </motion.div>
+      {/* Stats Grid — only meaningful for students */}
+      {isUserStudent && (
+        <motion.div
+          variants={gridVariants}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6"
+        >
+          <StatCard
+            title="Overall Progress"
+            value={overallProgress}
+            subLabel="Enrolled Courses"
+            borderColor="border-secondary"
+            textColor="text-secondary"
+            bgColor="bg-primary"
+            icon={<LineChartIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
+          />
+          <StatCard
+            title="Passed Exams"
+            value={passedExam}
+            subLabel="of 0 total"
+            borderColor="border-green-600"
+            textColor="text-green-600"
+            bgColor="bg-green-100"
+            icon={<CheckGreenIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
+          />
+        </motion.div>
+      )}
 
-      {/* Student Information */}
+      {/* Student / User Information */}
       <motion.div
         variants={fadeUp}
         className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
       >
         <SectionHeader
-          title="Student Information"
+          title={isUserStudent ? "Student Information" : "User Information"}
           action={
-            <motion.div
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 380, damping: 20 }}
-            >
-              <Link
-                to={`/dashboard/users/edit/${studentId}`}
-                className="flex bg-white items-center gap-2 px-3 py-1 rounded-xl shadow-md transition-colors duration-200"
+            role === ROLES.SUPER_ADMIN ? (
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 380, damping: 20 }}
               >
-                <EditIcon className="h-6 w-5 rotate-270 flex-shrink-0" />
-                <span className="text-secondary font-bold text-sm whitespace-nowrap">
-                  Edit Student Information
-                </span>
-              </Link>
-            </motion.div>
+                <Link
+                  to={editUserPage}
+                  className="flex bg-white items-center gap-2 px-3 py-1 rounded-xl shadow-md transition-colors duration-200"
+                >
+                  <EditIcon className="h-6 w-5 rotate-270 flex-shrink-0" />
+                  <span className="text-secondary font-bold text-sm whitespace-nowrap">
+                    {isUserStudent
+                      ? "Edit Student Information"
+                      : "Edit User Information"}
+                  </span>
+                </Link>
+              </motion.div>
+            ) : null
           }
         />
         <div className="p-4">
           <motion.div
+            key={`info-grid-${isUserStudent}`}
             variants={infoGridVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-40px" }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5"
           >
-            {infoFields.map(({ label, value, col, row, breakAll }) => (
-              <motion.div
-                key={label}
-                variants={infoItemVariants}
-                className={`flex flex-col gap-0.5 lg:col-start-${col} lg:row-start-${row}`}
-              >
-                <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
-                  {label}
-                </span>
-                <p
-                  className={`font-medium text-gray-800 text-sm sm:text-base ${breakAll ? "break-all" : ""}`}
-                >
-                  {value}
-                </p>
-              </motion.div>
+            {infoFields.map((field, index) => (
+              <InfoFieldItem key={`${index}-${field.label}`} {...field} />
             ))}
 
-            {/* Col 3 — Account Status + Photo */}
+            {/* Col 3 — Account Status + Photo (always shown) */}
             <motion.div
               variants={infoItemVariants}
               className="lg:col-start-3 lg:row-start-1 lg:row-span-4 flex flex-col gap-3"
@@ -669,8 +564,9 @@ const StudentInInstitute = () => {
                     activateApi={activateStudent}
                     deactivateApi={deactivateStudent}
                     isActive={isActive}
-                    refetchKey="getStudentInInstitute"
+                    refetchKey="userDetails"
                     showModal
+                    withReasons
                   />
                 </div>
               </div>
@@ -682,15 +578,13 @@ const StudentInInstitute = () => {
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 300, damping: 22 }}
-                  className="flex-1 rounded-xl overflow-hidden border border-gray-100 shadow-sm min-h-[160px] sm:min-h-[180px] cursor-pointer relative group"
-                  onClick={() => {
-                    setIsImageModalOpen(true);
-                  }}
+                  className="flex justify-center rounded-xl overflow-hidden border border-gray-100 shadow-sm cursor-pointer relative group"
+                  onClick={() => setIsImageModalOpen(true)}
                 >
                   <img
                     src={userData?.user_image}
                     alt="User Image"
-                    className="w-full h-full max-h-[250px] object-cover"
+                    className="w-30 object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all duration-200 flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 bg-white/90 rounded-full p-2 transition-all duration-200">
@@ -704,176 +598,225 @@ const StudentInInstitute = () => {
         </div>
       </motion.div>
 
-      {/* Student Courses */}
-      <motion.div
-        variants={fadeUp}
-        className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
-      >
-        <SectionHeader
-          title={`Student Courses (${studentContentsProgressData?.data?.count ?? 0})`}
-          action={
-            <motion.div
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 380, damping: 20 }}
-            >
-              <Link
-                to=""
-                className="underline text-white px-2 font-bold text-base sm:text-lg"
-              >
-                view all
-              </Link>
-            </motion.div>
-          }
-        />
-        <div className="p-4">
-          {studentContentsProgressData?.data?.items?.length == 0 && (
-            <p className="text-gray-400 text-center">No Data Available</p>
-          )}
+      {/* Below sections — only shown for students */}
+      {isUserStudent && (
+        <>
+          {/* Student Courses */}
           <motion.div
-            variants={infoGridVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-40px" }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+            variants={fadeUp}
+            className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
           >
-            {studentContentsProgressData?.data?.items.map((item) => (
-              <ProgressRow
-                title={item?.name}
-                subtitle={`Start: ${item?.startDate ?? "-"}`}
-                percentage={item?.percentage}
-              />
-            ))}
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Learning Paths */}
-      <motion.div
-        variants={fadeUp}
-        className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
-      >
-        <SectionHeader
-          title="Learning Paths (2)"
-          action={
-            <motion.div
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 380, damping: 20 }}
-            >
-              <Link
-                to=""
-                className="underline text-white px-2 font-bold text-base sm:text-lg"
-              >
-                view all
-              </Link>
-            </motion.div>
-          }
-        />
-        <div className="p-4">
-          <motion.div
-            variants={infoGridVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-40px" }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-          >
-            {studentLearningPathsData?.data?.data?.map(() => {
-              <ProgressRow
-                title="Data Science Track"
-                subtitle="Start: Feb 1, 2024"
-                percentage={68}
-              />;
-            })}
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Chart Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
-        <ChartCard
-          title="Student's Courses Out of Total Program Courses"
-          percentage={studentCoursesProgressSummary?.data?.percentage}
-          color="var(--color-tertiary, #0ea5e9)"
-          trackColor="#E5E7EB"
-          legends={[
-            {
-              color: "var(--color-tertiary, #0ea5e9)",
-              label: `Student Courses: ${studentCoursesProgressSummary?.data?.studentCourses}`,
-            },
-            {
-              color: "#D1D5DB",
-              label: `Program Courses: ${studentCoursesProgressSummary?.data?.totalProgramCourses}`,
-            },
-          ]}
-        />
-        <ChartCard
-          title="Progress Distribution"
-          percentage={overallProgressData?.data?.percentage}
-          color="#16a34a"
-          trackColor="#E5E7EB"
-          legends={[
-            {
-              color: "#16a34a",
-              label: `Completed: ${overallProgressData?.data?.percentage}%`,
-            },
-            {
-              color: "#D1D5DB",
-              label: `Remaining: ${100 - overallProgressData?.data?.percentage}%`,
-            },
-          ]}
-        />
-      </div>
-
-      {/* Exam Results & Certificates */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
-        <motion.div
-          variants={fadeUp}
-          className="rounded-xl bg-white shadow-custom overflow-hidden"
-        >
-          <SectionHeader title="Exam Results" />
-          <div className="p-4 flex flex-col gap-2  max-h-[200px] overflow-auto">
-            {examResultsData?.data?.items.map((exam) => (
-              <ExamCard
-                title={exam?.examName}
-                passPercent={exam?.passPercent}
-                passed={exam?.result == "Passed"}
-                date={exam?.passedAt}
-                totalQuestions={exam?.totalQuestions}
-              />
-            ))}
-            {examResultsData?.data?.items?.length == 0 && (
-              <p className="text-gray-400 text-center">No Data Available</p>
-            )}
-          </div>
-        </motion.div>
-
-        {/* <motion.div
-          variants={fadeUp}
-          className="rounded-xl bg-white overflow-hidden shadow-custom"
-        >
-          <SectionHeader title="Certificates" />
-          <div className="p-4 flex flex-col gap-2">
-            <CertificateCard
-              title="Python Programming Certificate"
-              issued="Feb 15, 2024"
+            <SectionHeader
+              title={`Student Courses (${studentContentsProgressData?.data?.count ?? 0})`}
+              action={
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 20 }}
+                >
+                  <Link
+                    to=""
+                    className="underline text-white px-2 font-bold text-base sm:text-lg"
+                  >
+                    view all
+                  </Link>
+                </motion.div>
+              }
             />
-            <CertificateCard
-              title="Data Science Fundamentals"
-              issued="Apr 3, 2024"
+            <div className="p-4">
+              {studentContentsProgressData?.data?.items?.length === 0 && (
+                <p className="text-gray-400 text-center">No Data Available</p>
+              )}
+              <motion.div
+                variants={infoGridVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-40px" }}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+              >
+                {studentContentsProgressData?.data?.items?.map((item) => (
+                  <ProgressRow
+                    key={item?.name}
+                    title={item?.name}
+                    subtitle={`Start: ${item?.startDate ?? "-"}`}
+                    percentage={item?.percentage}
+                  />
+                ))}
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Learning Paths */}
+          <motion.div
+            variants={fadeUp}
+            className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
+          >
+            <SectionHeader
+              title={`Learning Paths (${studentLearningPathsData?.data?.count ?? 0})`}
+              action={
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 20 }}
+                >
+                  <Link
+                    to=""
+                    className="underline text-white px-2 font-bold text-base sm:text-lg"
+                  >
+                    view all
+                  </Link>
+                </motion.div>
+              }
+            />
+            <div className="p-4">
+              {studentLearningPathsData?.data?.data?.length === 0 && (
+                <p className="text-gray-400 text-center">No Data Available</p>
+              )}
+              <motion.div
+                variants={infoGridVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-40px" }}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+              >
+                {studentLearningPathsData?.data?.data?.map((item, index) => (
+                  <ProgressRow
+                    key={index}
+                    title={item?.name ?? "Learning Path"}
+                    subtitle={`Start: ${item?.startDate ?? "-"}`}
+                    percentage={item?.percentage ?? 0}
+                  />
+                ))}
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Chart Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+            <ChartCard
+              title="Student's Courses Out of Total Program Courses"
+              percentage={studentCoursesProgressSummary?.data?.percentage ?? 0}
+              color="var(--color-tertiary, #0ea5e9)"
+              trackColor="#E5E7EB"
+              legends={[
+                {
+                  color: "var(--color-tertiary, #0ea5e9)",
+                  label: `Student Courses: ${studentCoursesProgressSummary?.data?.studentCourses ?? 0}`,
+                },
+                {
+                  color: "#D1D5DB",
+                  label: `Program Courses: ${studentCoursesProgressSummary?.data?.totalProgramCourses ?? 0}`,
+                },
+              ]}
+            />
+            <ChartCard
+              title="Progress Distribution"
+              percentage={overallProgress}
+              color="#16a34a"
+              trackColor="#E5E7EB"
+              legends={[
+                {
+                  color: "#16a34a",
+                  label: `Completed: ${overallProgress}%`,
+                },
+                {
+                  color: "#D1D5DB",
+                  label: `Remaining: ${100 - overallProgress}%`,
+                },
+              ]}
             />
           </div>
-        </motion.div> */}
-      </div>
 
-      {/* Activity Log */}
-      {/* <motion.div
-        variants={fadeUp}
-        className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
-      >
-        <SectionHeader title="Activity Log" />
-        <ActivityLogTable />
-      </motion.div> */}
+          {/* Exam Results */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+            <motion.div
+              variants={fadeUp}
+              className="rounded-xl bg-white shadow-custom overflow-hidden"
+            >
+              <SectionHeader title="Exam Results" />
+              <div className="p-4 flex flex-col gap-2 max-h-[200px] overflow-auto">
+                {examResultsData?.data?.items?.length === 0 && (
+                  <p className="text-gray-400 text-center">No Data Available</p>
+                )}
+                {examResultsData?.data?.items?.map((exam) => (
+                  <ExamCard
+                    key={exam?.examName}
+                    title={exam?.examName}
+                    passPercent={exam?.passPercent}
+                    passed={exam?.result === "Passed"}
+                    date={exam?.passedAt}
+                    totalQuestions={exam?.totalQuestions}
+                  />
+                ))}
+              </div>
+            </motion.div>
+            {/* Certificates */}
+            <motion.div
+              variants={fadeUp}
+              className="rounded-xl bg-white shadow-custom overflow-hidden"
+            >
+              <SectionHeader title="Certificates" />
+              <div className="p-4 flex flex-col gap-2 max-h-[250px] overflow-auto">
+                {[
+                  {
+                    title: "Python Programming Certificate",
+                    issued: "Feb 15, 2024",
+                    grade: "Excellent",
+                  },
+                  {
+                    title: "Data Science Fundamentals",
+                    issued: "Apr 3, 2024",
+                    grade: "Very Good",
+                  },
+                  {
+                    title: "Web Development Certificate",
+                    issued: "Jun 10, 2024",
+                    grade: "Good",
+                  },
+                ].map((cert) => (
+                  <div
+                    key={cert.title}
+                    className="bg-gray-50 border border-gray-200 rounded-xl p-3"
+                  >
+                    <div className="flex justify-between items-start mb-1.5 gap-2">
+                      <h5 className="font-bold text-gray-800 text-sm leading-snug">
+                        {cert.title}
+                      </h5>
+                      <span className="text-white text-xs font-semibold px-3 py-0.5 rounded-full flex-shrink-0 bg-secondary">
+                        {cert.grade}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2 flex-wrap mt-1">
+                      <p className="text-xs text-gray-500">
+                        Issued: {cert.issued}
+                      </p>
+                      <div className="flex gap-1.5">
+                        {(
+                          [
+                            { Icon: EyeIcon, label: "View" },
+                            { Icon: DownloadIcon, label: "Download" },
+                            { Icon: Share2Icon, label: "Share" },
+                          ] as const
+                        ).map(({ Icon, label }) => (
+                          <motion.button
+                            key={label}
+                            whileHover={{ scale: 1.15 }}
+                            whileTap={{ scale: 0.9 }}
+                            title={label}
+                            className="p-1.5 rounded-lg hover:bg-white transition-colors duration-150 border border-transparent hover:border-gray-200"
+                          >
+                            <Icon className="text-secondary w-4 h-4" />
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
     </motion.div>
   );
 };

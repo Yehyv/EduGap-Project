@@ -3,14 +3,14 @@ import { createStudent } from "@/features/Dashboard/services/dashboardApis";
 
 import { useMutation } from "@tanstack/react-query";
 import Swal from "sweetalert2";
-import AddOrEditStudent from "@/features/Dashboard/components/AddOrEditStudent";
+import AddOrEditStudent from "@/features/Dashboard/components/AddOrEditUser";
 
 const AddNewStudent = () => {
   const initialValues = {
     full_name: "",
     email: "",
     national_id: "",
-    phone_key: "",
+    phone_key: "20",
     phone: "",
     instituteId: "",
     roleId: "",
@@ -23,7 +23,7 @@ const AddNewStudent = () => {
       Swal.fire({
         icon: "success",
         title: "Success",
-        text: "Student added successfully",
+        text: "Data Submited successfully",
       });
     },
 

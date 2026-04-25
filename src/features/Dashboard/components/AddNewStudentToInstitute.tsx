@@ -10,7 +10,7 @@ import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { phoneKeys } from "@/shared/utils/globals";
 import {
   createStudentToInstitute,
-  getAllProgramsForDropdown,
+  getAllProgramsForStudent,
 } from "../services/dashboardApis";
 import ButtonLoader from "@/shared/components/ButtonLoader";
 
@@ -48,8 +48,8 @@ const AddNewStudentToInstitute = ({
   const queryClient = useQueryClient();
 
   const { data } = useQuery({
-    queryKey: ["getAllProgramsForDropdown", instituteId],
-    queryFn: () => getAllProgramsForDropdown(instituteId ?? ""),
+    queryKey: ["getAllProgramsForStudent", instituteId],
+    queryFn: () => getAllProgramsForStudent(instituteId ?? ""),
   });
   const handleProgramsData = data?.data.map((d) => ({
     label: d.name,
@@ -71,8 +71,8 @@ const AddNewStudentToInstitute = ({
       });
     },
     onError: (err: any) => {
+      handleCloseModal();
       const message = err?.response?.data?.message;
-
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -88,11 +88,12 @@ const AddNewStudentToInstitute = ({
     full_name: "",
     email: "",
     national_id: "",
-    phone_key: "+20",
+    phone_key: "20",
     phone: "",
     user_image: "",
     instituteId: instituteId || "",
     programId: "",
+    studentId: "",
   };
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -128,6 +129,7 @@ const AddNewStudentToInstitute = ({
             user_image: values.user_image,
             instituteId: Number(instituteId),
             programId: values.programId,
+            studentId: +values?.studentId,
           };
 
           mutate(body, {
@@ -142,7 +144,7 @@ const AddNewStudentToInstitute = ({
             className="flex flex-col h-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto overflow-x-hidden px-2 py-2">
+            <div className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto overflow-x-hidden px-2">
               {/* Full Name */}
               <div>
                 <TextField
@@ -151,6 +153,15 @@ const AddNewStudentToInstitute = ({
                   name="full_name"
                   placeholder="Enter full name"
                   autoComplete="name"
+                />
+              </div>
+              <div>
+                <TextField
+                  label="Student Id"
+                  moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
+                  name="studentId"
+                  placeholder="Enter Student Id"
+                  onlyNumbers
                 />
               </div>
 

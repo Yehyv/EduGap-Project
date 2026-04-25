@@ -742,18 +742,17 @@ const translations = {
     whatToLearn: "What You Will Learn",
 
     courseImage: "Course Image",
-
     imageRequired: "Course image is required",
     descriptionRequired: "Description is required",
     durationRequired: "Course duration is required",
     whatToLearnRequired: "At least one learning outcome is required",
+    courseBasicData: "Course Basic Data",
+    courseDetailsArabic: "Course Details in Arabic",
+    courseDetailsEnglish: "Course Details in English",
+    courseDataEnglish: "Course Data in English",
+    get_certificate: "Get Crtificate",
 
-    courseBasicData: "البيانات الأساسية للمقرر",
-
-    courseDetailsArabic: "تفاصيل المقرر باللغة العربية",
-    courseDetailsEnglish: "تفاصيل المقرر باللغة الإنجليزية",
-
-    courseDataEnglish: "بيانات المقرر باللغة الإنجليزية",
+    link_copied: "Link copied to clipboard!",
 
     tabs_students: "Students",
     tabs_data: "Data",
@@ -905,7 +904,8 @@ const translations = {
       "Our team will review your application and get back to you within 48 hours.",
     submission_failed: "Submission failed",
     submitting: "Submitting…",
-
+    message_sent_successfully: "Message sent successfully",
+    message_send_failed: "Message send failed",
     ...dashboardMenuTranslations.en,
     ...homeTranslations.en,
   },
@@ -1811,6 +1811,8 @@ const translations = {
     submit_application: "تقديم الطلب",
     submit_application_desc:
       "قم بملء نموذج التقديم البسيط ببيانات مؤسستك والمعلومات المطلوبة.",
+    get_certificate: "الحصول علي الشهادة",
+
     review_verification: "المراجعة والتحقق",
     review_verification_desc:
       "يقوم فريقنا بمراجعة طلبك والتحقق من بياناتك خلال 48 ساعة.",
@@ -1859,6 +1861,9 @@ const translations = {
     team_review_48h: "سوف يراجع فريقنا طلبك ويتواصل معك خلال ٤٨ ساعة.",
     submission_failed: "فشل الإرسال",
     submitting: "جارٍ الإرسال…",
+    message_sent_successfully: "تم ارسال الرسالة بنجاح",
+    message_send_failed: "لم يتم ارسال الرسالة",
+    link_copied: "تم نسخ الرابط بنجاح",
     ...dashboardMenuTranslations.ar,
     ...homeTranslations.ar,
   },

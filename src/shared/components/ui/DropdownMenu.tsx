@@ -42,7 +42,6 @@ export default function DropdownMenu({
           }),
         }}
       />
-
       {meta.touched && meta.error && (
         <span className="text-red-500 text-[14px]">{meta.error}</span>
       )}

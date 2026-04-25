@@ -1,11 +1,11 @@
 import { useRef } from "react";
 import Logo from "@/assets/imgs/LogoImage.png";
 import HowItWorks from "@/features/AboutUs/components/HowItWorks";
-import WhyEduGap from "@/features/AboutUs/components/WhyEduGap";
 import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ApplyJoinUs from "@/features/AboutUs/components/ApplyJoinUs";
 import ScrollToTop from "@/shared/utils/ScrollToTop";
+import WhyEduGap from "@/features/AboutUs/components/WhyEduGap";
 
 const JoinUsPage = () => {
   const { t, lang } = useLanguage();
