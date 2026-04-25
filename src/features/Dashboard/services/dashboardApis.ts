@@ -530,11 +530,13 @@ export async function getStudentsInInstitute(
   isActive?: string,
   page?: number,
   limit?: number,
+  filterText?: string,
 ): Promise<InstituteStudentsResponse> {
   const params = new URLSearchParams();
 
   if (programId) params.append("programId", programId);
   if (isActive) params.append("isActive", isActive);
+  if (filterText) params.append("search", filterText);
 
   const queryString = params.toString();
   const url = `/users/super-admin/institute/${instituteId}/students${queryString ? `?${queryString}` : ""}`;
@@ -1096,6 +1098,9 @@ export const getInstituteStaff = async (
   if (params.isActive) {
     queryParams.append("isActive", params.isActive);
   }
+  if (params.search) {
+    queryParams.append("search", params.search);
+  }
 
   const queryString = queryParams.toString();
   const url = `/users/super-admin/institute/${instituteId}/stuff${queryString ? `?${queryString}` : ""}`;
@@ -1251,3 +1256,10 @@ export async function createApplyMessage(
   const res = await dashboardApi.post<void>(`/apply-messages`, data);
   return res.data;
 }
+
+export const getStudentCertificates = async (studentId: string) => {
+  const response = await dashboardApi.get(
+    `/dashboard/student-certificates/${studentId}`,
+  );
+  return response.data;
+};

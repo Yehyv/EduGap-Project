@@ -23,7 +23,7 @@ const EditStudentInInstitute = () => {
     email: currentUserData?.email,
     national_id: currentUserData?.username,
     phone_key: currentUserData?.phone_key,
-    program_id: currentUserData?.program_id,
+    programId: currentUserData?.program_id,
     phone: currentUserData?.phone,
     studentId: currentUserData?.studentId, // the created student id by user
     student_id: +studentId, // user Id to update

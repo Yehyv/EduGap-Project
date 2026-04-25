@@ -30,6 +30,7 @@ const AddCourseToInstituteProgram = ({
   const { data: allCourses, isLoading: allCoursesLoading } = useQuery({
     queryKey: ["getAllCoursesToAssign", instituteId, programId],
     queryFn: () => getAllCoursesForDropdown(instituteId, programId),
+    enabled: !instituteId,
   });
 
   const queryClient = useQueryClient();

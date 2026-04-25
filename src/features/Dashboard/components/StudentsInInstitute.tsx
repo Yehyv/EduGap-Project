@@ -86,6 +86,7 @@ const StudentsInInstitute = ({
       studentIsActive,
       currentPage,
       rowsPerPage,
+      filterText,
     ],
     queryFn: () =>
       getStudentsInInstitute(
@@ -94,6 +95,7 @@ const StudentsInInstitute = ({
         studentIsActive,
         currentPage,
         rowsPerPage,
+        filterText,
       ),
     enabled: !!instituteId,
   });
@@ -119,12 +121,7 @@ const StudentsInInstitute = ({
     };
   }, [showFilterDropdown, studentProgramId, studentIsActive]);
 
-  const filteredItems = useMemo(() => {
-    if (!data?.data?.items) return [];
-    return data.data.items.filter((item: Student) =>
-      item?.name?.toLowerCase().includes(filterText.toLowerCase()),
-    );
-  }, [filterText, data?.data?.items]);
+  const filteredItems = data?.data?.items;
 
   const totalRows = data?.data?.pagination?.totalPages ?? 0;
 
@@ -177,7 +174,7 @@ const StudentsInInstitute = ({
         cell: (row: Student) => (
           <Link
             className="underline text-sm hover:text-secondary"
-            to={`/dashboard/institutes/${instituteId}/student/${row.id}`}
+            to={`/dashboard/users/${row.id}/institutes/${instituteId}`}
           >
             {row.name}
           </Link>

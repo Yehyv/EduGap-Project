@@ -9,6 +9,7 @@ import {
   getExamResults,
   getOverallProgress,
   getPassedExamsAverage,
+  getStudentCertificates,
   getStudentContentsProgress,
   getStudentCoursesProgressSummary,
   getStudentDetails,
@@ -20,7 +21,7 @@ import StatCard from "@/features/Dashboard/components/StatCard";
 import { DownloadIcon, EyeIcon, Share2Icon, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { ROLES } from "@/shared/utils/globals";
+import { formatDate, ROLES } from "@/shared/utils/globals";
 
 // ── Animation Variants ────────────────────────────────────────────────────────
 const pageVariants = {
@@ -380,12 +381,19 @@ const InfoFieldItem = ({ label, value, breakAll }: InfoField) => (
 // ── Main Component ────────────────────────────────────────────────────────────
 const StudentInInstitute = () => {
   const { studentId, instituteId } = useParams();
+
   const { role } = useAuth();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const { data: overallProgressData } = useQuery({
     queryKey: ["getOverallProgress", studentId],
     queryFn: () => getOverallProgress(studentId ?? ""),
+    enabled: !!studentId,
+  });
+
+  const { data: certificatesData } = useQuery({
+    queryKey: ["studentCertificates", studentId],
+    queryFn: () => getStudentCertificates(studentId ?? ""),
     enabled: !!studentId,
   });
 
@@ -425,6 +433,8 @@ const StudentInInstitute = () => {
     enabled: !!studentId,
   });
 
+  console.log(studentLearningPathsData?.data?.length);
+
   const userData = userDataResponse?.data;
   const isUserStudent =
     !!userData && userData?.role?.role_title === ROLES.STUDENT;
@@ -454,7 +464,6 @@ const StudentInInstitute = () => {
     { label: "Student ID", value: userData?.studentId },
     { label: "Program", value: userData?.program },
   ];
-  console.log("program:", userData?.program, "studentId:", userData?.studentId);
   const infoFields: InfoField[] = isUserStudent
     ? [
         commonFields[0],
@@ -599,224 +608,193 @@ const StudentInInstitute = () => {
       </motion.div>
 
       {/* Below sections — only shown for students */}
-      {isUserStudent && (
-        <>
-          {/* Student Courses */}
-          <motion.div
-            variants={fadeUp}
-            className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
-          >
-            <SectionHeader
-              title={`Student Courses (${studentContentsProgressData?.data?.count ?? 0})`}
-              action={
-                <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ type: "spring", stiffness: 380, damping: 20 }}
-                >
-                  <Link
-                    to=""
-                    className="underline text-white px-2 font-bold text-base sm:text-lg"
-                  >
-                    view all
-                  </Link>
-                </motion.div>
-              }
-            />
-            <div className="p-4">
-              {studentContentsProgressData?.data?.items?.length === 0 && (
-                <p className="text-gray-400 text-center">No Data Available</p>
-              )}
-              <motion.div
-                variants={infoGridVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-40px" }}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-              >
-                {studentContentsProgressData?.data?.items?.map((item) => (
-                  <ProgressRow
-                    key={item?.name}
-                    title={item?.name}
-                    subtitle={`Start: ${item?.startDate ?? "-"}`}
-                    percentage={item?.percentage}
-                  />
-                ))}
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Learning Paths */}
-          <motion.div
-            variants={fadeUp}
-            className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
-          >
-            <SectionHeader
-              title={`Learning Paths (${studentLearningPathsData?.data?.count ?? 0})`}
-              action={
-                <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ type: "spring", stiffness: 380, damping: 20 }}
-                >
-                  <Link
-                    to=""
-                    className="underline text-white px-2 font-bold text-base sm:text-lg"
-                  >
-                    view all
-                  </Link>
-                </motion.div>
-              }
-            />
-            <div className="p-4">
-              {studentLearningPathsData?.data?.data?.length === 0 && (
-                <p className="text-gray-400 text-center">No Data Available</p>
-              )}
-              <motion.div
-                variants={infoGridVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-40px" }}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-              >
-                {studentLearningPathsData?.data?.data?.map((item, index) => (
-                  <ProgressRow
-                    key={index}
-                    title={item?.name ?? "Learning Path"}
-                    subtitle={`Start: ${item?.startDate ?? "-"}`}
-                    percentage={item?.percentage ?? 0}
-                  />
-                ))}
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Chart Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
-            <ChartCard
-              title="Student's Courses Out of Total Program Courses"
-              percentage={studentCoursesProgressSummary?.data?.percentage ?? 0}
-              color="var(--color-tertiary, #0ea5e9)"
-              trackColor="#E5E7EB"
-              legends={[
-                {
-                  color: "var(--color-tertiary, #0ea5e9)",
-                  label: `Student Courses: ${studentCoursesProgressSummary?.data?.studentCourses ?? 0}`,
-                },
-                {
-                  color: "#D1D5DB",
-                  label: `Program Courses: ${studentCoursesProgressSummary?.data?.totalProgramCourses ?? 0}`,
-                },
-              ]}
-            />
-            <ChartCard
-              title="Progress Distribution"
-              percentage={overallProgress}
-              color="#16a34a"
-              trackColor="#E5E7EB"
-              legends={[
-                {
-                  color: "#16a34a",
-                  label: `Completed: ${overallProgress}%`,
-                },
-                {
-                  color: "#D1D5DB",
-                  label: `Remaining: ${100 - overallProgress}%`,
-                },
-              ]}
-            />
-          </div>
-
-          {/* Exam Results */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+      <>
+        {/* Student Courses */}
+        <motion.div
+          variants={fadeUp}
+          className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
+        >
+          <SectionHeader
+            title={`Student Courses (${studentContentsProgressData?.data?.count ?? 0})`}
+          />
+          <div className="p-4">
+            {studentContentsProgressData?.data?.items?.length === 0 && (
+              <p className="text-gray-400 text-center">No Data Available</p>
+            )}
             <motion.div
-              variants={fadeUp}
-              className="rounded-xl bg-white shadow-custom overflow-hidden"
+              variants={infoGridVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-40px" }}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-2"
             >
-              <SectionHeader title="Exam Results" />
-              <div className="p-4 flex flex-col gap-2 max-h-[200px] overflow-auto">
-                {examResultsData?.data?.items?.length === 0 && (
-                  <p className="text-gray-400 text-center">No Data Available</p>
-                )}
-                {examResultsData?.data?.items?.map((exam) => (
-                  <ExamCard
-                    key={exam?.examName}
-                    title={exam?.examName}
-                    passPercent={exam?.passPercent}
-                    passed={exam?.result === "Passed"}
-                    date={exam?.passedAt}
-                    totalQuestions={exam?.totalQuestions}
-                  />
-                ))}
-              </div>
+              {studentContentsProgressData?.data?.items?.map((item) => (
+                <ProgressRow
+                  key={item?.name}
+                  title={item?.name}
+                  subtitle={`Start: ${formatDate(item?.startDate) ?? "-"}`}
+                  percentage={item?.percentage}
+                />
+              ))}
             </motion.div>
-            {/* Certificates */}
+          </div>
+        </motion.div>
+
+        {/* Learning Paths */}
+        <motion.div
+          variants={fadeUp}
+          className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
+        >
+          <SectionHeader
+            title={`Learning Paths (${studentLearningPathsData?.data?.length ?? 0})`}
+          />
+          <div className="p-4">
+            {studentLearningPathsData?.data?.length === 0 && (
+              <p className="text-gray-400 text-center">No Data Available</p>
+            )}
             <motion.div
-              variants={fadeUp}
-              className="rounded-xl bg-white shadow-custom overflow-hidden"
+              variants={infoGridVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-40px" }}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-2"
             >
-              <SectionHeader title="Certificates" />
-              <div className="p-4 flex flex-col gap-2 max-h-[250px] overflow-auto">
-                {[
-                  {
-                    title: "Python Programming Certificate",
-                    issued: "Feb 15, 2024",
-                    grade: "Excellent",
-                  },
-                  {
-                    title: "Data Science Fundamentals",
-                    issued: "Apr 3, 2024",
-                    grade: "Very Good",
-                  },
-                  {
-                    title: "Web Development Certificate",
-                    issued: "Jun 10, 2024",
-                    grade: "Good",
-                  },
-                ].map((cert) => (
-                  <div
-                    key={cert.title}
-                    className="bg-gray-50 border border-gray-200 rounded-xl p-3"
-                  >
-                    <div className="flex justify-between items-start mb-1.5 gap-2">
-                      <h5 className="font-bold text-gray-800 text-sm leading-snug">
-                        {cert.title}
-                      </h5>
-                      <span className="text-white text-xs font-semibold px-3 py-0.5 rounded-full flex-shrink-0 bg-secondary">
-                        {cert.grade}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center gap-2 flex-wrap mt-1">
+              {studentLearningPathsData?.data?.map((item, index) => (
+                <ProgressRow
+                  key={index}
+                  title={item?.name ?? "Learning Path"}
+                  subtitle={`Start: ${item?.startDate ?? "-"}`}
+                  percentage={item?.percentage ?? 0}
+                />
+              ))}
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Chart Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+          <ChartCard
+            title="Student's Courses Out of Total Program Courses"
+            percentage={studentCoursesProgressSummary?.data?.percentage ?? 0}
+            color="var(--color-tertiary, #0ea5e9)"
+            trackColor="#E5E7EB"
+            legends={[
+              {
+                color: "var(--color-tertiary, #0ea5e9)",
+                label: `Student Courses: ${studentCoursesProgressSummary?.data?.studentCourses ?? 0}`,
+              },
+              {
+                color: "#D1D5DB",
+                label: `Program Courses: ${studentCoursesProgressSummary?.data?.totalProgramCourses ?? 0}`,
+              },
+            ]}
+          />
+          <ChartCard
+            title="Progress Distribution"
+            percentage={overallProgress}
+            color="#16a34a"
+            trackColor="#E5E7EB"
+            legends={[
+              {
+                color: "#16a34a",
+                label: `Completed: ${overallProgress}%`,
+              },
+              {
+                color: "#D1D5DB",
+                label: `Remaining: ${100 - overallProgress}%`,
+              },
+            ]}
+          />
+        </div>
+
+        {/* Exam Results */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+          <motion.div
+            variants={fadeUp}
+            className="rounded-xl bg-white shadow-custom overflow-hidden"
+          >
+            <SectionHeader title="Exam Results" />
+            <div className="p-4 flex flex-col gap-2 max-h-[200px] overflow-auto">
+              {examResultsData?.data?.items?.length === 0 && (
+                <p className="text-gray-400 text-center">No Data Available</p>
+              )}
+              {examResultsData?.data?.items?.map((exam) => (
+                <ExamCard
+                  key={exam?.examName}
+                  title={exam?.examName}
+                  passPercent={exam?.passPercent}
+                  passed={exam?.result === "Passed"}
+                  date={exam?.passedAt}
+                  totalQuestions={exam?.totalQuestions}
+                />
+              ))}
+            </div>
+          </motion.div>
+          {/* Certificates */}
+          <motion.div
+            variants={fadeUp}
+            className="rounded-xl bg-white shadow-custom overflow-hidden"
+          >
+            <SectionHeader
+              title={`Certificates (${certificatesData?.data?.count ?? 0})`}
+            />
+            <div className="p-4 flex flex-col gap-2 max-h-[250px] overflow-auto">
+              {certificatesData?.data?.items?.length === 0 && (
+                <p className="text-gray-400 text-center">No Data Available</p>
+              )}
+              {certificatesData?.data?.items?.map((cert) => (
+                <div
+                  key={cert.certificateId}
+                  className="bg-gray-50 border border-gray-200 rounded-xl p-3"
+                >
+                  <div className="flex justify-between items-start mb-1.5 gap-2">
+                    <h5 className="font-bold text-gray-800 text-sm leading-snug">
+                      {cert.title}
+                    </h5>
+                    <span className="text-white text-xs font-semibold px-3 py-0.5 rounded-full flex-shrink-0 bg-secondary uppercase">
+                      {cert.language}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center gap-2 flex-wrap mt-1">
+                    <div className="flex flex-col gap-0.5">
                       <p className="text-xs text-gray-500">
-                        Issued: {cert.issued}
+                        Issued:{" "}
+                        {new Date(cert.issueDate).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
                       </p>
-                      <div className="flex gap-1.5">
-                        {(
-                          [
-                            { Icon: EyeIcon, label: "View" },
-                            { Icon: DownloadIcon, label: "Download" },
-                            { Icon: Share2Icon, label: "Share" },
-                          ] as const
-                        ).map(({ Icon, label }) => (
-                          <motion.button
-                            key={label}
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.9 }}
-                            title={label}
-                            className="p-1.5 rounded-lg hover:bg-white transition-colors duration-150 border border-transparent hover:border-gray-200"
-                          >
-                            <Icon className="text-secondary w-4 h-4" />
-                          </motion.button>
-                        ))}
-                      </div>
+                      <p className="text-xs text-gray-400 font-mono">
+                        {cert.serialNumber}
+                      </p>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {(
+                        [
+                          { Icon: EyeIcon, label: "View" },
+                          { Icon: DownloadIcon, label: "Download" },
+                          { Icon: Share2Icon, label: "Share" },
+                        ] as const
+                      ).map(({ Icon, label }) => (
+                        <motion.button
+                          key={label}
+                          whileHover={{ scale: 1.15 }}
+                          whileTap={{ scale: 0.9 }}
+                          title={label}
+                          className="p-1.5 rounded-lg hover:bg-white transition-colors duration-150 border border-transparent hover:border-gray-200"
+                        >
+                          <Icon className="text-secondary w-4 h-4" />
+                        </motion.button>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </>
-      )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </>
     </motion.div>
   );
 };

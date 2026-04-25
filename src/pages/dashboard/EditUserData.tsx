@@ -24,7 +24,7 @@ const EditUserData = () => {
     national_id: currentUserData?.username,
     phone_key: currentUserData?.phone_key,
     phone: currentUserData?.phone,
-    studentId: +studentId,
+    student_id: +studentId,
   };
   /* ================= MUTATION ================= */
   const { mutate, isPending } = useMutation({

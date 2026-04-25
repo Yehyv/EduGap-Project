@@ -418,9 +418,9 @@ export default function AppRoutes() {
             }
           />
           <Route
-            path="/dashboard/users/:studentId"
+            path="/dashboard/users/:studentId/institutes/:instituteId"
             element={
-              <DashboardRoute allowed={SUPER_AND_ADMIN}>
+              <DashboardRoute allowed={ALL_ROLES}>
                 <StudentInInstitute />
               </DashboardRoute>
             }

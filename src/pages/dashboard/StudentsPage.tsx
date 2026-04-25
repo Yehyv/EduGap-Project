@@ -66,7 +66,10 @@ const columns = [
   {
     name: "Name",
     selector: (row: User) => (
-      <Link className="underline text-sm" to={`/dashboard/users/${row.id}`}>
+      <Link
+        className="underline text-sm"
+        to={`/dashboard/users/${row?.id}/institutes/${row?.instituteId}`}
+      >
         {row?.name}
       </Link>
     ),

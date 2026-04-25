@@ -43,113 +43,6 @@ const customStyles = {
   },
 };
 
-const columns = [
-  {
-    name: "Num",
-    selector: (_: User, index: number) => index + 1,
-    sortable: false,
-    width: "60px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Photo",
-    cell: (row: User) => (
-      <img
-        src={row.image || "/default-avatar.png"}
-        alt={row.full_name}
-        className="w-12 h-12 rounded-full object-cover"
-      />
-    ),
-    sortable: false,
-    minWidth: "80px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Name",
-    cell: (row: User) => (
-      <Link
-        className="underline text-sm hover:text-secondary"
-        to={`/dashboard/users/${row.id}`}
-      >
-        {row?.name || "-"}
-      </Link>
-    ),
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-
-  {
-    name: "Phone",
-    selector: (row: User) => row?.phone ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Role",
-    selector: (row: User) => row?.role ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Created At",
-    selector: (row: User) =>
-      row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Is Active",
-    style: { justifyContent: "center" },
-    cell: (row: User) => {
-      const isActive = row?.isActive;
-      return (
-        <ActiveStatusButton
-          itemId={row?.id}
-          activateApi={activateStudent}
-          deactivateApi={deactivateStudent}
-          isActive={isActive ?? false}
-          refetchKey={"getInstituteStaff"}
-          showModal={true}
-          withReasons
-        />
-      );
-    },
-    sortable: true,
-  },
-  {
-    name: "Edit",
-    style: { justifyContent: "center" },
-    cell: (row: User) => (
-      <Link
-        to={`/dashboard/users/edit/${row.id}`}
-        className="cursor-pointer hover:opacity-70"
-      >
-        <EditIcon />
-      </Link>
-    ),
-    ignoreRowClick: true,
-    allowOverflow: true,
-    button: true,
-    minWidth: "50px",
-  },
-  {
-    name: "Delete",
-    style: { justifyContent: "center" },
-    cell: (row: User) => (
-      <DeleteButton
-        deleteApi={() => deleteStudent(row.id)}
-        successMessage="Staff member deleted successfully"
-        errorMessage="Error occurred during deletion"
-        refetchFunction="getInstituteStaff"
-      />
-    ),
-    ignoreRowClick: true,
-    allowOverflow: true,
-    button: true,
-    minWidth: "60px",
-  },
-];
-
 const InstituteStaffList = () => {
   const [filterText, setFilterText] = useState("");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -172,6 +65,113 @@ const InstituteStaffList = () => {
     },
   );
 
+  const columns = [
+    {
+      name: "Num",
+      selector: (_: User, index: number) => index + 1,
+      sortable: false,
+      width: "60px",
+      style: { justifyContent: "center" },
+    },
+    {
+      name: "Photo",
+      cell: (row: User) => (
+        <img
+          src={row.image || "/default-avatar.png"}
+          alt={row.full_name}
+          className="w-12 h-12 rounded-full object-cover"
+        />
+      ),
+      sortable: false,
+      minWidth: "80px",
+      style: { justifyContent: "center" },
+    },
+    {
+      name: "Name",
+      cell: (row: User) => (
+        <Link
+          className="underline text-sm hover:text-secondary"
+          to={`/dashboard/users/${row.id}/institutes/${instituteId}`}
+        >
+          {row?.name || "-"}
+        </Link>
+      ),
+      sortable: true,
+      style: { justifyContent: "center" },
+    },
+
+    {
+      name: "Phone",
+      selector: (row: User) => row?.phone ?? "-",
+      sortable: true,
+      style: { justifyContent: "center" },
+    },
+    {
+      name: "Role",
+      selector: (row: User) => row?.role ?? "-",
+      sortable: true,
+      style: { justifyContent: "center" },
+    },
+    {
+      name: "Created At",
+      selector: (row: User) =>
+        row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-",
+      sortable: true,
+      style: { justifyContent: "center" },
+    },
+    {
+      name: "Is Active",
+      style: { justifyContent: "center" },
+      cell: (row: User) => {
+        const isActive = row?.isActive;
+        return (
+          <ActiveStatusButton
+            itemId={row?.id}
+            activateApi={activateStudent}
+            deactivateApi={deactivateStudent}
+            isActive={isActive ?? false}
+            refetchKey={"getInstituteStaff"}
+            showModal={true}
+            withReasons
+          />
+        );
+      },
+      sortable: true,
+    },
+    {
+      name: "Edit",
+      style: { justifyContent: "center" },
+      cell: (row: User) => (
+        <Link
+          to={`/dashboard/users/edit/${row.id}`}
+          className="cursor-pointer hover:opacity-70"
+        >
+          <EditIcon />
+        </Link>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+      minWidth: "50px",
+    },
+    {
+      name: "Delete",
+      style: { justifyContent: "center" },
+      cell: (row: User) => (
+        <DeleteButton
+          deleteApi={() => deleteStudent(row.id)}
+          successMessage="Staff member deleted successfully"
+          errorMessage="Error occurred during deletion"
+          refetchFunction="getInstituteStaff"
+        />
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+      minWidth: "60px",
+    },
+  ];
+
   const { data: instituteStaffData, isLoading: staffLoading } = useQuery({
     queryKey: [
       "getInstituteStaff",
@@ -180,6 +180,7 @@ const InstituteStaffList = () => {
       staffIsActive,
       currentPage,
       rowsPerPage,
+      filterText,
     ],
     queryFn: () =>
       getInstituteStaff(instituteId ?? "", {
@@ -187,6 +188,7 @@ const InstituteStaffList = () => {
         isActive: staffIsActive,
         page: currentPage,
         limit: rowsPerPage,
+        search: filterText,
       }),
     enabled: !!instituteId,
   });
@@ -212,12 +214,7 @@ const InstituteStaffList = () => {
     };
   }, [showFilterDropdown, staffProgramId, staffIsActive]);
 
-  const filteredItems = useMemo(() => {
-    if (!instituteStaffData?.data?.data?.items) return [];
-    return instituteStaffData.data.data.items.filter((item: User) =>
-      item?.name?.toLowerCase().includes(filterText?.toLowerCase()),
-    );
-  }, [filterText, instituteStaffData?.data?.data?.items]);
+  const filteredItems = instituteStaffData?.data?.data?.items;
 
   const totalRows = instituteStaffData?.data?.data?.pagination?.total ?? 0;
 
