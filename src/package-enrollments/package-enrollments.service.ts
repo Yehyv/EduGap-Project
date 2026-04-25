@@ -264,7 +264,7 @@ export class PackageEnrollmentsService {
       }
     }
 
-    return {
+    return [ {
       packageId,
       userId,
       packageName,
@@ -273,7 +273,8 @@ export class PackageEnrollmentsService {
       allCompleted,
       percentage,
       enrolledAt: enrolledAtFormatted,
-    };
+    },
+  ]
   }
   async checkAllUserPackagesCompletion(userId: number, languageId?: number) {
     // هات كل اشتراكات الباكدجات للمستخدم
