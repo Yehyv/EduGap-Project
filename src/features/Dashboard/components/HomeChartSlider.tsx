@@ -6,20 +6,39 @@ import {
   fetchCertificatesIssued,
   fetchPackagesCompleted,
 } from "../services/dashboardApis";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { ROLES } from "@/shared/utils/globals";
 
 interface HomeChartSliderProps {
   programId?: number;
   isSuperAdmin?: boolean;
 }
 
-// label1 / label2 must exactly match the `name` field in the API series response
-// so that transformChartData can find the right series by name.
-const slides = [
+const GROWTH_DUMMY_DATA = {
+  categories: ["Nov", "Dec", "Jan", "Feb", "Mar", "Apr"],
+  series: [
+    { name: "Institutions", data: [12, 18, 15, 24, 21, 30] },
+    { name: "Students", data: [140, 210, 195, 310, 275, 420] },
+  ],
+};
+
+const STUDENT_ACTIVITY_DUMMY_DATA = {
+  categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  series: [
+    {
+      name: "Weekly Active Students",
+      data: [210, 185, 240, 198, 267, 143, 89],
+    },
+    { name: "Content Interactions", data: [540, 420, 610, 480, 700, 310, 190] },
+  ],
+};
+
+const superAdminSlides = [
   {
     heading: "Student Performance",
     subHeading: "Subscriptions and active engagement rate",
-    label1: "Students", // matches series[n].name === "Students"
-    label2: "Active Students", // matches series[n].name === "Active Students"
+    label1: "Students",
+    label2: "Active Students",
     dataSource: "students" as const,
     dataKey1: "students",
     dataKey2: "activeStudents",
@@ -27,16 +46,61 @@ const slides = [
   {
     heading: "Learning Paths",
     subHeading: "Subscriptions and active engagement rate",
-    label1: "Completed Packages", // matches series[0].name === "Completed Packages"
+    label1: "Completed Packages",
     dataSource: "learningPaths" as const,
     dataKey1: "completedPackages",
   },
   {
     heading: "Certificates",
     subHeading: "Number of issued certificates",
-    label1: "Certificates", // matches series[0].name === "Certificates"
+    label1: "Certificates",
     dataSource: "certificates" as const,
     dataKey1: "certificates",
+  },
+  {
+    heading: "Growth Overview",
+    subHeading:
+      "Institutions, students, and revenue growth over the last 6 months.",
+    label1: "Institutions",
+    label2: "Students",
+    dataSource: "students" as const,
+    dataKey1: "institutions",
+    dataKey2: "students",
+  },
+];
+
+const otherRoleSlides = [
+  {
+    heading: "Student Performance",
+    subHeading: "Subscriptions and active engagement rate",
+    label1: "Students",
+    label2: "Active Students",
+    dataSource: "students" as const,
+    dataKey1: "students",
+    dataKey2: "activeStudents",
+  },
+  {
+    heading: "Learning Paths",
+    subHeading: "Subscriptions and active engagement rate",
+    label1: "Completed Packages",
+    dataSource: "learningPaths" as const,
+    dataKey1: "completedPackages",
+  },
+  {
+    heading: "Certificates",
+    subHeading: "Number of issued certificates",
+    label1: "Certificates",
+    dataSource: "certificates" as const,
+    dataKey1: "certificates",
+  },
+  {
+    heading: "Student Activity",
+    subHeading: "Weekly active students and content interactions trend.",
+    label1: "Weekly Active Students",
+    label2: "Content Interactions",
+    dataSource: "students" as const,
+    dataKey1: "weeklyActiveStudents",
+    dataKey2: "contentInteractions",
   },
 ];
 
@@ -67,6 +131,10 @@ export default function HomeChartSlider({
   isSuperAdmin = false,
 }: HomeChartSliderProps) {
   const [current, setCurrent] = useState(0);
+  const { role } = useAuth();
+
+  const isSuperAdminRole = role === ROLES.SUPER_ADMIN;
+  const slides = isSuperAdminRole ? superAdminSlides : otherRoleSlides;
 
   const resolvedId = isSuperAdmin ? undefined : programId;
 
@@ -88,7 +156,22 @@ export default function HomeChartSlider({
     enabled: current === 2,
   });
 
-  const queryBySlide = [studentQuery, packagesQuery, certificatesQuery];
+  // Slide 3: Growth for super admin, Student Activity (dummy) for others
+  const slide3Query = useQuery({
+    queryKey: isSuperAdminRole ? ["growth-overview"] : ["student-activity"],
+    queryFn: () =>
+      Promise.resolve(
+        isSuperAdminRole ? GROWTH_DUMMY_DATA : STUDENT_ACTIVITY_DUMMY_DATA,
+      ),
+    enabled: current === 3,
+  });
+
+  const queryBySlide = [
+    studentQuery,
+    packagesQuery,
+    certificatesQuery,
+    slide3Query,
+  ];
   const activeQuery = queryBySlide[current];
 
   return (

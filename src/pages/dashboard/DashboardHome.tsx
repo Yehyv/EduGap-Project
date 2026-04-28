@@ -9,6 +9,11 @@ import usePrograms from "@/shared/hooks/usePrograms";
 import QuickActionsPanel from "@/features/Dashboard/components/QuickActionsPanel";
 import useDashboardCounts from "@/shared/hooks/useDashboardCounts";
 import { motion } from "framer-motion";
+import CriticalAlerts from "@/features/Dashboard/components/CriticalAlerts";
+import TopInstitutions from "@/features/Dashboard/components/TopInstitutions";
+import TopContentCategories from "@/features/Dashboard/components/TopContentCategories";
+import CourseCompletion from "@/features/Dashboard/components/CourseCompletion";
+import TopFacultyMembers from "@/features/Dashboard/components/TopFacultyMembers";
 
 const fadeIn = {
   hidden: { opacity: 0 },
@@ -97,6 +102,32 @@ const DashboardHome = () => {
               />
             </div>
           </motion.div>
+
+          {isSuperAdmin && (
+            <>
+              {/* Alerts */}
+              <motion.div
+                className="bg-white shadow-sm rounded-2xl border border-gray-100 hover:shadow-lg transition-shadow duration-300"
+                variants={slideUp}
+                initial="hidden"
+                animate="visible"
+              >
+                <div className="w-full">
+                  <CriticalAlerts />
+                </div>
+              </motion.div>
+              {/* Top Institutions */}
+              <TopInstitutions />
+              {/* TopContentCategories */}
+              <TopContentCategories />
+            </>
+          )}
+          {!isSuperAdmin && (
+            <>
+              <CourseCompletion />
+              <TopFacultyMembers />
+            </>
+          )}
         </div>
 
         {/* Right: Quick Actions */}

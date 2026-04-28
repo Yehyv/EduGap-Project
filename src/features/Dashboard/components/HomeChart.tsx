@@ -29,12 +29,12 @@ function transformChartData(
   dataKey2?: string,
 ): Record<string, string | number>[] {
   // Find series by the label names that match what the API returns
-  const series1 = chartData.series.find((s) => s.name === label1);
+  const series1 = chartData?.series?.find((s) => s.name === label1);
   const series2 = label2
-    ? chartData.series.find((s) => s.name === label2)
+    ? chartData?.series?.find((s) => s.name === label2)
     : undefined;
 
-  return chartData.categories.map((category, index) => {
+  return chartData?.categories?.map((category, index) => {
     const entry: Record<string, string | number> = { month: category };
 
     if (series1 && dataKey1) {
