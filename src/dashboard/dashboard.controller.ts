@@ -140,4 +140,16 @@ export class DashboardController {
   async getStudentCertificates(@Param('userId', ParseIntPipe) userId: number) {
     return this.dashboardService.getStudentCertificates(userId);
   }
+  @Get('total-institutes')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  getTotalInstitutes() {
+    return this.dashboardService.getTotalInstitutes();
+  }
+  @Get('active-students')
+  getActiveStudents(@Req() req?: AuthenticatedRequest) {
+    return this.dashboardService.getActiveStudents(
+      req?.user?.instituteId,
+      req?.user?.role,
+    );
+  }
 }

@@ -14,6 +14,7 @@ import {
   CertificateType,
 } from 'src/certificates/entities/certificate.entity';
 import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
+import { Institute } from 'src/institutes/entities/institute.entity';
 
 type CountRow = {
   count: string | number;
@@ -37,6 +38,8 @@ export class DashboardService {
     private readonly certificateRepo: Repository<Certificate>,
     @InjectRepository(PackageEnrollment)
     private readonly packageEnrollmentRepo: Repository<PackageEnrollment>,
+    @InjectRepository(Institute)
+    private readonly instituteRepo: Repository<Institute>,
   ) {}
   private buildInstituteUsersQuery(instituteId: number) {
     return this.userRepo
@@ -915,6 +918,43 @@ export class DashboardService {
         hours: certificate.hours ?? null,
         createdAt: certificate.createdAt,
       })),
+    };
+  }
+  async getTotalInstitutes() {
+    const totalInstitutes = await this.instituteRepo
+      .createQueryBuilder('institute')
+      .where('institute.deletedAt IS NULL')
+      .getCount();
+
+    return {
+      totalInstitutes,
+    };
+  }
+
+  async getActiveStudents(currentUserInstituteId?: number, role?: string) {
+    const isInstituteAdmin =
+      role === 'INST_ADMIN' || role === 'INSTITUTE_ADMIN';
+
+    const qb = this.userRepo
+      .createQueryBuilder('user')
+      .innerJoin('user.UserRole', 'role')
+      .leftJoin('user.institute', 'institute')
+      .where('user.deletedAt IS NULL')
+      .andWhere('user.is_active = :active', { active: 1 })
+      .andWhere('LOWER(role.role_title) = :roleTitle', {
+        roleTitle: 'student',
+      });
+
+    if (isInstituteAdmin && currentUserInstituteId) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: currentUserInstituteId,
+      });
+    }
+
+    const activeStudents = await qb.getCount();
+
+    return {
+      activeStudents,
     };
   }
 }

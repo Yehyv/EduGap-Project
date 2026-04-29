@@ -10,6 +10,7 @@ import { InstituteProgramCourse } from 'src/institutes/entities/institute-progra
 import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { Certificate } from 'src/certificates/entities/certificate.entity';
 import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
+import { Institute } from 'src/institutes/entities/institute.entity';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PackageEnrollment } from 'src/package-enrollments/entities/package-enro
       Lesson,
       Certificate,
       PackageEnrollment,
+      Institute,
     ]),
   ],
   controllers: [DashboardController],
