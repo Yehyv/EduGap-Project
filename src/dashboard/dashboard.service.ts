@@ -1670,8 +1670,8 @@ export class DashboardService {
       .leftJoin('user.enrollments', 'enrollment')
       .where('user.deletedAt IS NULL')
       .andWhere('user.is_active = :active', { active: 1 })
-      .andWhere('LOWER(staffRole.role_title) != :studentRole', {
-        studentRole: 'student',
+      .andWhere('staffRole.role_category = :staffCategory', {
+        staffCategory: 0,
       });
 
     if (scopedInstituteId) {
