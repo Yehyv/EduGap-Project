@@ -1672,6 +1672,9 @@ export class DashboardService {
       .andWhere('user.is_active = :active', { active: 1 })
       .andWhere('staffRole.role_category = :staffCategory', {
         staffCategory: 0,
+      })
+      .andWhere('LOWER(staffRole.role_title) NOT IN (:...excludedRoles)', {
+        excludedRoles: ['student'],
       });
 
     if (scopedInstituteId) {
