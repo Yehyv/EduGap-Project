@@ -62,7 +62,199 @@ export class DashboardController {
   ) {
     return this.dashboardService.getStudentCoursesOutOfProgramCourses(userId);
   }
+  @Get('ai-contents/count')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  getAiContentsCount() {
+    return this.dashboardService.getAiContentsCount();
+  }
+  @Get('institutes-expiring-within-month')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  institutesExpiringWithinMonth() {
+    return this.dashboardService.institutesExpiringWithinMonth();
+  }
+  @Get('students-without-course-after-3-months')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
+  getStudentsWithoutCourseAfterThreeMonths(
+    @Req() req?: AuthenticatedRequest,
+    @Query('instituteId') instituteIdRaw?: string,
+  ) {
+    const instituteId =
+      instituteIdRaw && !Number.isNaN(Number(instituteIdRaw))
+        ? Number(instituteIdRaw)
+        : undefined;
 
+    return this.dashboardService.getStudentsWithoutCourseAfterThreeMonths(
+      req?.user?.instituteId,
+      req?.user?.role,
+      instituteId,
+    );
+  }
+  @Get('institutes-with-high-no-course-students')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  getInstitutesWithHighNoCourseStudents(
+    @Query('threshold') thresholdRaw?: string,
+  ) {
+    const threshold =
+      thresholdRaw && !Number.isNaN(Number(thresholdRaw))
+        ? Number(thresholdRaw)
+        : 70;
+
+    return this.dashboardService.getInstitutesWithHighNoCourseStudents(
+      threshold,
+    );
+  }
+  @Get('top-content-categories-enrollments')
+  getTopContentCategoriesEnrollments(
+    @Req() req?: AuthenticatedRequest,
+    @Headers('languageid') languageIdHeader?: string,
+    @Query('limit') limitRaw?: string,
+    @Query('instituteId') instituteIdRaw?: string,
+  ) {
+    let languageId: number | undefined;
+
+    if (languageIdHeader !== undefined) {
+      const parsed = Number(languageIdHeader);
+      if (Number.isNaN(parsed) || parsed <= 0) {
+        throw new BadRequestException('Invalid languageId header');
+      }
+      languageId = parsed;
+    }
+
+    const limit =
+      limitRaw && !Number.isNaN(Number(limitRaw)) ? Number(limitRaw) : 5;
+
+    const instituteId =
+      instituteIdRaw && !Number.isNaN(Number(instituteIdRaw))
+        ? Number(instituteIdRaw)
+        : undefined;
+
+    return this.dashboardService.getTopContentCategoriesEnrollments(
+      req?.user?.instituteId,
+      req?.user?.role,
+      languageId,
+      limit,
+      instituteId,
+    );
+  }
+  @Get('students-activity-trend')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN')
+  getEnrollmentActivityTrend(
+    @Req() req?: AuthenticatedRequest,
+    @Query('year') yearRaw?: string,
+    @Query('instituteId') instituteIdRaw?: string,
+  ) {
+    const currentYear = new Date().getFullYear();
+
+    const year =
+      yearRaw && !Number.isNaN(Number(yearRaw)) ? Number(yearRaw) : currentYear;
+
+    if (year < 2000 || year > currentYear + 1) {
+      throw new BadRequestException('Invalid year query parameter');
+    }
+
+    const instituteId =
+      instituteIdRaw && !Number.isNaN(Number(instituteIdRaw))
+        ? Number(instituteIdRaw)
+        : undefined;
+
+    return this.dashboardService.getEnrollmentActivityTrend(
+      req?.user?.instituteId,
+      req?.user?.role,
+      year,
+      instituteId,
+    );
+  }
+
+  @Get('program-course-completion')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
+  getProgramCourseCompletion(
+    @Req() req?: AuthenticatedRequest,
+    @Headers('languageId') languageIdRaw?: string,
+    @Query('limit') limitRaw?: string,
+    @Query('instituteId') instituteIdRaw?: string,
+  ) {
+    let languageId: number | undefined;
+
+    if (languageIdRaw !== undefined) {
+      const parsedLanguageId = Number(languageIdRaw);
+
+      if (Number.isNaN(parsedLanguageId) || parsedLanguageId <= 0) {
+        throw new BadRequestException('Invalid languageId header');
+      }
+
+      languageId = parsedLanguageId;
+    }
+
+    const limit =
+      limitRaw && !Number.isNaN(Number(limitRaw)) ? Number(limitRaw) : 5;
+
+    const instituteId =
+      instituteIdRaw && !Number.isNaN(Number(instituteIdRaw))
+        ? Number(instituteIdRaw)
+        : undefined;
+
+    return this.dashboardService.getProgramCourseCompletion(
+      req?.user?.instituteId,
+      req?.user?.role,
+      languageId,
+      limit,
+      instituteId,
+    );
+  }
+
+  @Get('content-completion')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
+  getTopContentCompletion(
+    @Req() req?: AuthenticatedRequest,
+    @Headers('languageId') languageIdRaw?: string,
+    @Query('limit') limitRaw?: string,
+    @Query('instituteId') instituteIdRaw?: string,
+  ) {
+    let languageId: number | undefined;
+
+    if (languageIdRaw !== undefined) {
+      const parsedLanguageId = Number(languageIdRaw);
+
+      if (Number.isNaN(parsedLanguageId) || parsedLanguageId <= 0) {
+        throw new BadRequestException('Invalid languageId header');
+      }
+
+      languageId = parsedLanguageId;
+    }
+
+    const limit =
+      limitRaw && !Number.isNaN(Number(limitRaw)) ? Number(limitRaw) : 10;
+
+    const instituteId =
+      instituteIdRaw && !Number.isNaN(Number(instituteIdRaw))
+        ? Number(instituteIdRaw)
+        : undefined;
+
+    return this.dashboardService.getTopContentCompletion(
+      req?.user?.instituteId,
+      req?.user?.role,
+      languageId,
+      limit,
+      instituteId,
+    );
+  }
+  @Get('top-faculty-members')
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
+  getTopFacultyMembersEngagement(
+    @Req() req?: AuthenticatedRequest,
+    @Query('instituteId') instituteIdRaw?: string,
+  ) {
+    const instituteId =
+      instituteIdRaw && !Number.isNaN(Number(instituteIdRaw))
+        ? Number(instituteIdRaw)
+        : undefined;
+
+    return this.dashboardService.getTopFacultyMembersEngagement(
+      req?.user?.instituteId,
+      req?.user?.role,
+      instituteId,
+    );
+  }
   @Get('exam-results/:userId')
   async getPassedExamResults(
     @Param('userId', ParseIntPipe) userId: number,

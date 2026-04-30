@@ -60,6 +60,14 @@ export class Content {
   @Column({ name: 'adVideo', type: 'text', nullable: true })
   adVideo: string;
 
+  @Column({
+  name: 'is_ai_content',
+  type: 'tinyint',
+  width: 1,
+  default: 0,
+})
+is_ai_content: number;
+
   @Column({ type: 'float', default: 0 })
   rate: number;
   @OneToMany(() => ContentTranslation, (translation) => translation.content, {

@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsEnum,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -48,4 +49,9 @@ export class UpdateContentDto {
   @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
   @IsOptional()
   level?: 'Beginner' | 'Intermediate' | 'Advanced';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsIn([0, 1])
+  is_ai_content?: number;
 }

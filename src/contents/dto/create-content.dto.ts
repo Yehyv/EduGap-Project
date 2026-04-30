@@ -92,6 +92,11 @@ export class CreateContentDto {
   @IsNotEmpty()
   categoryId: number;
 
+  @IsOptional()
+  @Type(() => Number)
+  @IsIn([0, 1])
+  is_ai_content?: number;
+
   // ترجمات المحتوى
   @IsArray()
   @ArrayNotEmpty()

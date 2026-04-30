@@ -15,7 +15,9 @@ import {
 } from 'src/certificates/entities/certificate.entity';
 import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
-
+import { ContentCategory } from 'src/content-categories/entities/content-category.entity';
+import { Program } from 'src/programs/entities/program.entity';
+import { Course } from 'src/courses/entities/course.entity';
 type CountRow = {
   count: string | number;
 };
@@ -40,7 +42,17 @@ export class DashboardService {
     private readonly packageEnrollmentRepo: Repository<PackageEnrollment>,
     @InjectRepository(Institute)
     private readonly instituteRepo: Repository<Institute>,
+    @InjectRepository(ContentCategory)
+    private readonly contentCategoryRepo: Repository<ContentCategory>,
+    @InjectRepository(Program)
+    private readonly programRepo: Repository<Program>,
+
+    @InjectRepository(Course)
+    private readonly courseRepo: Repository<Course>,
   ) {}
+  private isInstituteAdminRole(role?: string) {
+    return role === 'INST_ADMIN' || role === 'INSTITUTE_ADMIN';
+  }
   private buildInstituteUsersQuery(instituteId: number) {
     return this.userRepo
       .createQueryBuilder('user')
@@ -172,6 +184,20 @@ export class DashboardService {
           t?.language?.id === languageId || t?.languageId === languageId,
       ) ?? list[0]
     );
+  }
+  private pickTranslationName(
+    translations?: { name?: string; language?: { id: number } }[],
+    languageId?: number,
+  ) {
+    if (!translations?.length) return null;
+
+    const selectedTranslation = languageId
+      ? translations.find(
+          (translation) => translation.language?.id === languageId,
+        )
+      : translations[0];
+
+    return selectedTranslation?.name ?? translations[0]?.name ?? null;
   }
 
   async getStudentContentsProgress(
@@ -955,6 +981,762 @@ export class DashboardService {
 
     return {
       activeStudents,
+    };
+  }
+  async getAiContentsCount() {
+    const aiContentsCount = await this.contentRepo
+      .createQueryBuilder('content')
+      .where('content.deleted_at IS NULL')
+      .andWhere('content.is_ai_content = :isAiContent', { isAiContent: 1 })
+      .getCount();
+
+    return {
+      aiContentsCount,
+    };
+  }
+  async institutesExpiringWithinMonth() {
+    const institutesExpiringWithinMonth = await this.instituteRepo
+      .createQueryBuilder('institute')
+      .where('institute.deletedAt IS NULL')
+      .andWhere('institute.expiredate IS NOT NULL')
+      .andWhere(
+        'institute.expiredate BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 1 MONTH)',
+      )
+      .getCount();
+
+    return {
+      institutesExpiringWithinMonth,
+    };
+  }
+  async getStudentsWithoutCourseAfterThreeMonths(
+    currentUserInstituteId?: number,
+    role?: string,
+    selectedInstituteId?: number,
+  ) {
+    const isInstituteAdmin = this.isInstituteAdminRole(role);
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : selectedInstituteId;
+
+    const buildStudentsQb = () => {
+      const qb = this.userRepo
+        .createQueryBuilder('user')
+        .innerJoin('user.UserRole', 'role')
+        .leftJoin('user.institute', 'institute')
+        .where('user.deletedAt IS NULL')
+        .andWhere('user.is_active = :active', { active: 1 })
+        .andWhere('LOWER(role.role_title) = :studentRole', {
+          studentRole: 'student',
+        });
+
+      if (scopedInstituteId !== undefined && scopedInstituteId !== null) {
+        qb.andWhere('institute.id = :instituteId', {
+          instituteId: scopedInstituteId,
+        });
+      }
+
+      return qb;
+    };
+
+    const totalStudents = await buildStudentsQb()
+      .select('COUNT(DISTINCT user.id)', 'count')
+      .getRawOne<CountRow>()
+      .then((row) => Number(row?.count ?? 0));
+
+    const eligibleStudentsAfterThreeMonths = await buildStudentsQb()
+      .andWhere('user.createdAt <= DATE_SUB(NOW(), INTERVAL 3 MONTH)')
+      .select('COUNT(DISTINCT user.id)', 'count')
+      .getRawOne<CountRow>()
+      .then((row) => Number(row?.count ?? 0));
+
+    const studentsWithoutCourseAfterThreeMonths = await buildStudentsQb()
+      .andWhere('user.createdAt <= DATE_SUB(NOW(), INTERVAL 3 MONTH)')
+      .andWhere(
+        `NOT EXISTS (
+        SELECT 1
+        FROM enrollment enrollment_check
+        WHERE enrollment_check.userId = user.id
+      )`,
+      )
+      .select('COUNT(DISTINCT user.id)', 'count')
+      .getRawOne<CountRow>()
+      .then((row) => Number(row?.count ?? 0));
+
+    const percentage =
+      totalStudents > 0
+        ? Number(
+            (
+              (studentsWithoutCourseAfterThreeMonths / totalStudents) *
+              100
+            ).toFixed(2),
+          )
+        : 0;
+
+    return {
+      instituteId: scopedInstituteId ?? null,
+      totalStudents,
+      eligibleStudentsAfterThreeMonths,
+      studentsWithoutCourseAfterThreeMonths,
+      percentage,
+    };
+  }
+  async getInstitutesWithHighNoCourseStudents(thresholdPercentage = 70) {
+    const rows = await this.instituteRepo
+      .createQueryBuilder('institute')
+      .innerJoin(
+        'institute.users',
+        'user',
+        'user.deletedAt IS NULL AND user.is_active = 1',
+      )
+      .innerJoin(
+        'user.UserRole',
+        'role',
+        'LOWER(role.role_title) = :studentRole',
+        { studentRole: 'student' },
+      )
+      .where('institute.deletedAt IS NULL')
+      .select('institute.id', 'instituteId')
+      .addSelect('COUNT(DISTINCT user.id)', 'totalStudents')
+      .addSelect(
+        `
+      COUNT(DISTINCT CASE
+        WHEN user.createdAt <= DATE_SUB(NOW(), INTERVAL 3 MONTH)
+        AND NOT EXISTS (
+          SELECT 1
+          FROM enrollment enrollment_check
+          WHERE enrollment_check.userId = user.id
+        )
+        THEN user.id
+      END)
+      `,
+        'studentsWithoutCourseAfterThreeMonths',
+      )
+      .groupBy('institute.id')
+      .getRawMany<{
+        instituteId: string;
+        totalStudents: string;
+        studentsWithoutCourseAfterThreeMonths: string;
+      }>();
+
+    const institutes = rows
+      .map((row) => {
+        const totalStudents = Number(row.totalStudents ?? 0);
+        const studentsWithoutCourseAfterThreeMonths = Number(
+          row.studentsWithoutCourseAfterThreeMonths ?? 0,
+        );
+
+        const percentage =
+          totalStudents > 0
+            ? Number(
+                (
+                  (studentsWithoutCourseAfterThreeMonths / totalStudents) *
+                  100
+                ).toFixed(2),
+              )
+            : 0;
+
+        return {
+          instituteId: Number(row.instituteId),
+          totalStudents,
+          studentsWithoutCourseAfterThreeMonths,
+          percentage,
+        };
+      })
+      .filter((item) => item.totalStudents > 0)
+      .filter((item) => item.percentage >= thresholdPercentage);
+
+    return {
+      thresholdPercentage,
+      institutesCount: institutes.length,
+      institutes,
+    };
+  }
+  async getTopContentCategoriesEnrollments(
+    currentUserInstituteId?: number,
+    role?: string,
+    languageId?: number,
+    limit = 5,
+    selectedInstituteId?: number,
+  ) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 5, 1), 20);
+
+    const isInstituteAdmin = this.isInstituteAdminRole(role);
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : selectedInstituteId;
+
+    const qb = this.contentCategoryRepo
+      .createQueryBuilder('category')
+      .innerJoin(
+        'category.contents',
+        'content',
+        'content.deleted_at IS NULL AND content.is_active = 1',
+      )
+      .innerJoin('content.enrollments', 'enrollment')
+      .innerJoin('enrollment.user', 'user', 'user.deletedAt IS NULL')
+      .innerJoin(
+        'user.UserRole',
+        'role',
+        'LOWER(role.role_title) = :studentRole',
+        { studentRole: 'student' },
+      )
+      .leftJoin('user.institute', 'institute')
+      .where('category.deletedAt IS NULL')
+      .andWhere('category.is_active = :active', { active: 1 });
+
+    if (scopedInstituteId) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    const rows = await qb
+      .select('category.id', 'categoryId')
+      .addSelect('COUNT(DISTINCT user.id)', 'studentsCount')
+      .addSelect('COUNT(DISTINCT enrollment.id)', 'enrollmentsCount')
+      .addSelect('COUNT(DISTINCT content.id)', 'contentsCount')
+      .groupBy('category.id')
+      .orderBy('studentsCount', 'DESC')
+      .limit(safeLimit)
+      .getRawMany<{
+        categoryId: string;
+        studentsCount: string;
+        enrollmentsCount: string;
+        contentsCount: string;
+      }>();
+
+    const categoryIds = rows.map((row) => Number(row.categoryId));
+
+    if (!categoryIds.length) {
+      return {
+        categories: [],
+      };
+    }
+
+    const categories = await this.contentCategoryRepo.find({
+      where: {
+        id: In(categoryIds),
+      },
+      relations: ['translations', 'translations.language'],
+    });
+
+    const categoryNameMap = new Map<number, string>();
+
+    for (const category of categories) {
+      const selectedTranslation =
+        category.translations?.find(
+          (translation) => translation.language?.id === languageId,
+        ) || category.translations?.[0];
+
+      categoryNameMap.set(
+        category.id,
+        selectedTranslation?.name || `Category #${category.id}`,
+      );
+    }
+
+    return {
+      categories: rows.map((row) => ({
+        categoryId: Number(row.categoryId),
+        categoryName: categoryNameMap.get(Number(row.categoryId)) || null,
+        studentsCount: Number(row.studentsCount ?? 0),
+        enrollmentsCount: Number(row.enrollmentsCount ?? 0),
+        contentsCount: Number(row.contentsCount ?? 0),
+      })),
+    };
+  }
+  async getEnrollmentActivityTrend(
+    currentUserInstituteId?: number,
+    role?: string,
+    year?: number,
+    selectedInstituteId?: number,
+  ) {
+    const selectedYear = year ?? new Date().getFullYear();
+
+    const isInstituteAdmin = this.isInstituteAdminRole(role);
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : selectedInstituteId;
+
+    const monthLabels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    const qb = this.enrollRepo
+      .createQueryBuilder('enrollment')
+      .innerJoin('enrollment.user', 'user')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin('user.UserRole', 'role')
+      .where('YEAR(enrollment.created_at) = :year', { year: selectedYear })
+      .andWhere('user.deletedAt IS NULL')
+      .andWhere('LOWER(role.role_title) = :studentRole', {
+        studentRole: 'student',
+      });
+
+    if (scopedInstituteId) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    const rows = await qb
+      .select('MONTH(enrollment.created_at)', 'monthNumber')
+      .addSelect('COUNT(enrollment.id)', 'enrollmentsCount')
+      .groupBy('MONTH(enrollment.created_at)')
+      .orderBy('MONTH(enrollment.created_at)', 'ASC')
+      .getRawMany<{
+        monthNumber: string;
+        enrollmentsCount: string;
+      }>();
+
+    const rowsMap = new Map(
+      rows.map((row) => [
+        Number(row.monthNumber),
+        Number(row.enrollmentsCount ?? 0),
+      ]),
+    );
+
+    const months = monthLabels.map((month, index) => {
+      const monthNumber = index + 1;
+
+      return {
+        month,
+        monthNumber,
+        enrollmentsCount: rowsMap.get(monthNumber) ?? 0,
+      };
+    });
+
+    return {
+      year: selectedYear,
+      instituteId: scopedInstituteId ?? null,
+      months,
+    };
+  }
+  async getProgramCourseCompletion(
+    currentUserInstituteId?: number,
+    role?: string,
+    languageId?: number,
+    limit = 5,
+    selectedInstituteId?: number,
+  ) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 5, 1), 50);
+
+    const isInstituteAdmin = this.isInstituteAdminRole(role);
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : selectedInstituteId;
+
+    const qb = this.enrollRepo
+      .createQueryBuilder('enrollment')
+      .innerJoin('enrollment.content', 'content')
+      .innerJoin(
+        'content.courseContents',
+        'courseContent',
+        'courseContent.deleted_at IS NULL AND courseContent.is_active = 1',
+      )
+      .innerJoin(
+        'courseContent.course',
+        'course',
+        'course.deletedAt IS NULL AND course.isActive = 1',
+      )
+      .innerJoin(
+        'course.programCourses',
+        'programCourse',
+        'programCourse.deleted_at IS NULL AND programCourse.isActive = 1',
+      )
+      .innerJoin(
+        'programCourse.program',
+        'program',
+        'program.deletedAt IS NULL AND program.isActive = 1',
+      )
+      .innerJoin('enrollment.user', 'user', 'user.deletedAt IS NULL')
+      .innerJoin(
+        'user.UserRole',
+        'userRole',
+        'LOWER(userRole.role_title) = :studentRole',
+        { studentRole: 'student' },
+      )
+      .leftJoin('user.institute', 'institute')
+      .where('content.deleted_at IS NULL')
+      .andWhere('content.is_active = :active', { active: 1 });
+
+    if (scopedInstituteId) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    const rows = await qb
+      .select('program.id', 'programId')
+      .addSelect('course.id', 'courseId')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN enrollment.status = 1 THEN user.id END)',
+        'completedStudentsCount',
+      )
+      .addSelect('COUNT(DISTINCT user.id)', 'totalStudentsCount')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN enrollment.status = 1 THEN enrollment.id END)',
+        'completedEnrollmentsCount',
+      )
+      .addSelect('COUNT(DISTINCT enrollment.id)', 'totalEnrollmentsCount')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN enrollment.status = 1 THEN content.id END)',
+        'completedContentsCount',
+      )
+      .groupBy('program.id')
+      .addGroupBy('course.id')
+      .getRawMany<{
+        programId: string;
+        courseId: string;
+        completedStudentsCount: string;
+        totalStudentsCount: string;
+        completedEnrollmentsCount: string;
+        totalEnrollmentsCount: string;
+        completedContentsCount: string;
+      }>();
+
+    const programIds = [...new Set(rows.map((row) => Number(row.programId)))];
+    const courseIds = [...new Set(rows.map((row) => Number(row.courseId)))];
+
+    if (!programIds.length || !courseIds.length) {
+      return {
+        instituteId: scopedInstituteId ?? null,
+        limitPerProgram: safeLimit,
+        programs: [],
+      };
+    }
+
+    const [programs, courses] = await Promise.all([
+      this.programRepo.find({
+        where: { id: In(programIds) },
+        relations: ['translations', 'translations.language'],
+      }),
+      this.courseRepo.find({
+        where: { id: In(courseIds) },
+        relations: ['translations', 'translations.language'],
+      }),
+    ]);
+
+    const programNameMap = new Map(
+      programs.map((program) => [
+        program.id,
+        this.pickTranslationName(program.translations, languageId),
+      ]),
+    );
+
+    const courseNameMap = new Map(
+      courses.map((course) => [
+        course.id,
+        this.pickTranslationName(course.translations, languageId),
+      ]),
+    );
+
+    const grouped = new Map<
+      number,
+      {
+        programId: number;
+        programName: string | null;
+        courses: {
+          courseId: number;
+          courseName: string | null;
+          completionPercentage: number;
+          completedStudentsCount: number;
+          totalStudentsCount: number;
+          completedEnrollmentsCount: number;
+          totalEnrollmentsCount: number;
+          completedContentsCount: number;
+        }[];
+      }
+    >();
+
+    for (const row of rows) {
+      const programId = Number(row.programId);
+      const courseId = Number(row.courseId);
+
+      const completedEnrollmentsCount = Number(
+        row.completedEnrollmentsCount ?? 0,
+      );
+      const totalEnrollmentsCount = Number(row.totalEnrollmentsCount ?? 0);
+
+      const completionPercentage =
+        totalEnrollmentsCount > 0
+          ? Number(
+              (
+                (completedEnrollmentsCount / totalEnrollmentsCount) *
+                100
+              ).toFixed(2),
+            )
+          : 0;
+
+      if (!grouped.has(programId)) {
+        grouped.set(programId, {
+          programId,
+          programName: programNameMap.get(programId) ?? null,
+          courses: [],
+        });
+      }
+
+      grouped.get(programId)!.courses.push({
+        courseId,
+        courseName: courseNameMap.get(courseId) ?? null,
+        completionPercentage,
+        completedStudentsCount: Number(row.completedStudentsCount ?? 0),
+        totalStudentsCount: Number(row.totalStudentsCount ?? 0),
+        completedEnrollmentsCount,
+        totalEnrollmentsCount,
+        completedContentsCount: Number(row.completedContentsCount ?? 0),
+      });
+    }
+
+    const programsResult = Array.from(grouped.values()).map((program) => ({
+      ...program,
+      courses: program.courses
+        .sort((a, b) => {
+          if (b.completionPercentage !== a.completionPercentage) {
+            return b.completionPercentage - a.completionPercentage;
+          }
+
+          return b.completedEnrollmentsCount - a.completedEnrollmentsCount;
+        })
+        .slice(0, safeLimit),
+    }));
+
+    return {
+      instituteId: scopedInstituteId ?? null,
+      limitPerProgram: safeLimit,
+      programs: programsResult,
+    };
+  }
+  async getTopContentCompletion(
+    currentUserInstituteId?: number,
+    role?: string,
+    languageId?: number,
+    limit = 10,
+    selectedInstituteId?: number,
+  ) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
+
+    const isInstituteAdmin = this.isInstituteAdminRole(role);
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : selectedInstituteId;
+
+    const qb = this.contentRepo
+      .createQueryBuilder('content')
+      .innerJoin('content.enrollments', 'enrollment')
+      .innerJoin('enrollment.user', 'user', 'user.deletedAt IS NULL')
+      .innerJoin(
+        'user.UserRole',
+        'userRole',
+        'LOWER(userRole.role_title) = :studentRole',
+        { studentRole: 'student' },
+      )
+      .leftJoin('user.institute', 'institute')
+      .where('content.deleted_at IS NULL')
+      .andWhere('content.is_active = :active', { active: 1 });
+
+    if (scopedInstituteId) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    const rows = await qb
+      .select('content.id', 'contentId')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN enrollment.status = 1 THEN user.id END)',
+        'completedStudentsCount',
+      )
+      .addSelect('COUNT(DISTINCT user.id)', 'totalStudentsCount')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN enrollment.status = 1 THEN enrollment.id END)',
+        'completedEnrollmentsCount',
+      )
+      .addSelect('COUNT(DISTINCT enrollment.id)', 'totalEnrollmentsCount')
+      .groupBy('content.id')
+      .getRawMany<{
+        contentId: string;
+        completedStudentsCount: string;
+        totalStudentsCount: string;
+        completedEnrollmentsCount: string;
+        totalEnrollmentsCount: string;
+      }>();
+
+    const rowsWithPercentage = rows
+      .map((row) => {
+        const completedEnrollmentsCount = Number(
+          row.completedEnrollmentsCount ?? 0,
+        );
+        const totalEnrollmentsCount = Number(row.totalEnrollmentsCount ?? 0);
+
+        const completionPercentage =
+          totalEnrollmentsCount > 0
+            ? Number(
+                (
+                  (completedEnrollmentsCount / totalEnrollmentsCount) *
+                  100
+                ).toFixed(2),
+              )
+            : 0;
+
+        return {
+          ...row,
+          completionPercentage,
+          completedStudentsCount: Number(row.completedStudentsCount ?? 0),
+          totalStudentsCount: Number(row.totalStudentsCount ?? 0),
+          completedEnrollmentsCount,
+          totalEnrollmentsCount,
+        };
+      })
+      .sort((a, b) => {
+        if (b.completionPercentage !== a.completionPercentage) {
+          return b.completionPercentage - a.completionPercentage;
+        }
+
+        return b.completedEnrollmentsCount - a.completedEnrollmentsCount;
+      })
+      .slice(0, safeLimit);
+
+    const contentIds = rowsWithPercentage.map((row) => Number(row.contentId));
+
+    if (!contentIds.length) {
+      return {
+        instituteId: scopedInstituteId ?? null,
+        limit: safeLimit,
+        contents: [],
+      };
+    }
+
+    const contents = await this.contentRepo.find({
+      where: { id: In(contentIds) },
+      relations: ['translations', 'translations.language'],
+    });
+
+    const contentNameMap = new Map(
+      contents.map((content) => [
+        content.id,
+        this.pickTranslationName(content.translations, languageId),
+      ]),
+    );
+
+    return {
+      instituteId: scopedInstituteId ?? null,
+      limit: safeLimit,
+      contents: rowsWithPercentage.map((row) => {
+        const contentId = Number(row.contentId);
+
+        return {
+          contentId,
+          contentName: contentNameMap.get(contentId) ?? null,
+          completionPercentage: row.completionPercentage,
+          completedStudentsCount: row.completedStudentsCount,
+          totalStudentsCount: row.totalStudentsCount,
+          completedEnrollmentsCount: row.completedEnrollmentsCount,
+          totalEnrollmentsCount: row.totalEnrollmentsCount,
+        };
+      }),
+    };
+  }
+  async getTopFacultyMembersEngagement(
+    currentUserInstituteId?: number,
+    role?: string,
+    selectedInstituteId?: number,
+  ) {
+    const isInstituteAdmin = this.isInstituteAdminRole(role);
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : selectedInstituteId;
+
+    const qb = this.userRepo
+      .createQueryBuilder('user')
+      .innerJoin('user.UserRole', 'staffRole')
+      .leftJoin('user.institute', 'institute')
+      .leftJoin('user.enrollments', 'enrollment')
+      .where('user.deletedAt IS NULL')
+      .andWhere('user.is_active = :active', { active: 1 })
+      .andWhere('LOWER(staffRole.role_title) != :studentRole', {
+        studentRole: 'student',
+      });
+
+    if (scopedInstituteId) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: scopedInstituteId,
+      });
+    }
+
+    const rows = await qb
+      .select('staffRole.role_title', 'roleTitle')
+      .addSelect('COUNT(DISTINCT user.id)', 'totalStaff')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN enrollment.id IS NOT NULL THEN user.id END)',
+        'enrolledStaffCount',
+      )
+      .groupBy('staffRole.id')
+      .addGroupBy('staffRole.role_title')
+      .getRawMany<{
+        roleTitle: string;
+        totalStaff: string;
+        enrolledStaffCount: string;
+      }>();
+
+    const roles = rows.map((row) => {
+      const totalStaff = Number(row.totalStaff ?? 0);
+      const enrolledStaffCount = Number(row.enrolledStaffCount ?? 0);
+      const notEnrolledStaffCount = totalStaff - enrolledStaffCount;
+
+      const engagementPercentage =
+        totalStaff > 0
+          ? Number(((enrolledStaffCount / totalStaff) * 100).toFixed(2))
+          : 0;
+
+      return {
+        roleTitle: row.roleTitle,
+        totalStaff,
+        enrolledStaffCount,
+        notEnrolledStaffCount,
+        engagementPercentage,
+      };
+    });
+
+    const totalStaff = roles.reduce((sum, item) => sum + item.totalStaff, 0);
+
+    const enrolledStaffCount = roles.reduce(
+      (sum, item) => sum + item.enrolledStaffCount,
+      0,
+    );
+
+    const notEnrolledStaffCount = totalStaff - enrolledStaffCount;
+
+    const engagementPercentage =
+      totalStaff > 0
+        ? Number(((enrolledStaffCount / totalStaff) * 100).toFixed(2))
+        : 0;
+
+    return {
+      instituteId: scopedInstituteId ?? null,
+      totalStaff,
+      enrolledStaffCount,
+      notEnrolledStaffCount,
+      engagementPercentage,
+      roles: roles.sort(
+        (a, b) => b.engagementPercentage - a.engagementPercentage,
+      ),
     };
   }
 }

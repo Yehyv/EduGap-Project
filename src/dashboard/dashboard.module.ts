@@ -11,6 +11,9 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { Certificate } from 'src/certificates/entities/certificate.entity';
 import { PackageEnrollment } from 'src/package-enrollments/entities/package-enrollment.entity';
 import { Institute } from 'src/institutes/entities/institute.entity';
+import { ContentCategory } from 'src/content-categories/entities/content-category.entity';
+import { Program } from 'src/programs/entities/program.entity';
+import { Course } from 'src/courses/entities/course.entity';
 
 @Module({
   imports: [
@@ -25,6 +28,9 @@ import { Institute } from 'src/institutes/entities/institute.entity';
       Certificate,
       PackageEnrollment,
       Institute,
+      ContentCategory,
+      Program,
+      Course,
     ]),
   ],
   controllers: [DashboardController],

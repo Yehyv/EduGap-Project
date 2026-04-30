@@ -11,6 +11,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  BeforeInsert,
 } from 'typeorm';
 import { instituteTranslation } from './institute-translation.entity';
 import { User } from 'src/users/entities/user.entity';
@@ -38,6 +39,15 @@ export class Institute {
 
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   is_active: number;
+  @Column({ name: 'expiredate', type: 'datetime', nullable: true })
+  expiredate: Date | null;
+
+  @BeforeInsert()
+  setExpireDate() {
+    const baseDate = this.createdAt ? new Date(this.createdAt) : new Date();
+    baseDate.setFullYear(baseDate.getFullYear() + 1);
+    this.expiredate = baseDate;
+  }
 
   @CreateDateColumn()
   createdAt: Date;

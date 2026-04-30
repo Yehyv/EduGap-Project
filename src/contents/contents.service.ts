@@ -122,6 +122,7 @@ export class ContentsService {
       adVideo: dto.adVideo ?? '',
       contentCategory: category,
       hasPrerequiest: dto.hasPrerequiest ?? 0,
+      is_ai_content: dto.is_ai_content ?? 0,
       createdBy: user,
     });
 
@@ -275,6 +276,9 @@ export class ContentsService {
     if (image) {
       const imageUrl = `${baseUrl}/uploads/content-images/${image.filename}`;
       content.image = imageUrl;
+    }
+    if (dto.is_ai_content !== undefined) {
+      content.is_ai_content = dto.is_ai_content;
     }
     Object.assign(content, {
       rate: dto.rate ?? content.rate,
