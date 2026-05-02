@@ -46,7 +46,7 @@ const ProgressBar = ({ label, value }: { label: string; value: number }) => (
     </div>
     <div className="w-36 h-3 rounded-full bg-gray-100 overflow-hidden">
       <div
-        className="h-full rounded-full bg-[#1a1a2e]"
+        className="h-full rounded-full bg-secondary"
         style={{ width: `${value}%` }}
       />
     </div>

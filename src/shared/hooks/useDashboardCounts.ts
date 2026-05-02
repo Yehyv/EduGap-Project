@@ -1,5 +1,8 @@
 import {
+  getTotalActiveStudents,
+  getTotalAiContentGenrated,
   getTotalCoursesCount,
+  getTotalInstitutes,
   getTotalStudentsCountData,
   getTotalTrainingCoursesCount,
 } from "@/features/Dashboard/services/dashboardApis";
@@ -26,16 +29,34 @@ const useDashboardCounts = ({ userRole, selectedProgram }) => {
     enabled,
   });
 
+  const { data: totalActiveStudents } = useQuery({
+    queryKey: ["getTotalActiveStudents", programId],
+    queryFn: () => getTotalActiveStudents(programId ?? ""),
+    enabled,
+  });
   const { data: coursesData } = useQuery({
     queryKey: ["getTotalCoursesCountData", programId],
     queryFn: () => getTotalCoursesCount(programId ?? ""),
     enabled,
+  });
+  const { data: totalInstitutes } = useQuery({
+    queryKey: ["getTotalInstitutions", programId],
+    queryFn: () => getTotalInstitutes(programId ?? ""),
+    enabled: isSuperAdmin,
+  });
+  const { data: aiContentCount } = useQuery({
+    queryKey: ["getAiContentCount", programId],
+    queryFn: () => getTotalAiContentGenrated(programId ?? ""),
+    enabled: isSuperAdmin,
   });
 
   return {
     totalTrainingCourses: trainingCoursesData?.data?.totalContents,
     totalStudents: studentsData?.data?.totalStudents,
     totalCourses: coursesData?.data?.totalCourses,
+    totalActiveStudents: totalActiveStudents?.data?.activeStudents,
+    totalInstitutes: totalInstitutes?.data?.totalInstitutes,
+    aiContent: aiContentCount?.data?.aiContentsCount,
   };
 };
 

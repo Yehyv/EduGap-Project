@@ -10,6 +10,7 @@ import {
   GraduationCap,
   TrendingUp,
   BookOpen,
+  Brain,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ROLES } from "@/shared/utils/globals";
@@ -45,13 +46,13 @@ const StatsCards = ({ counts }) => {
   const superAdminStats = [
     {
       title: "Total Institutions",
-      value: 29,
+      value: counts?.totalInstitutes,
       icon: <AllPartnersIcon />,
       gradient: "from-indigo-500 to-blue-500",
     },
     {
       title: "Active Students",
-      value: "5,229",
+      value: counts?.totalActiveStudents,
       icon: <Users2 />,
       gradient: "from-sky-500 to-cyan-500",
     },
@@ -85,18 +86,24 @@ const StatsCards = ({ counts }) => {
       icon: <Book />,
       gradient: "from-amber-500 to-orange-600",
     },
+    {
+      title: t("ai_content"),
+      value: counts?.aiContent,
+      icon: <Brain />,
+      gradient: "from-fuchsia-500 to-pink-500",
+    },
   ];
 
   const otherRoleStats = [
     {
       title: "Total Students",
-      value: "1,284",
+      value: counts?.totalStudents,
       icon: <TotalStudentsIcon />,
       gradient: "from-indigo-500 to-blue-500",
     },
     {
       title: "Active Students",
-      value: "976",
+      value: counts?.totalActiveStudents,
       icon: <Users2 />,
       gradient: "from-sky-500 to-cyan-500",
     },

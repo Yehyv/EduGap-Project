@@ -28,26 +28,36 @@ function transformChartData(
   dataKey1?: string,
   dataKey2?: string,
 ): Record<string, string | number>[] {
-  // Find series by the label names that match what the API returns
-  const series1 = chartData?.series?.find((s) => s.name === label1);
+  // Normalize flat-array shape → { categories, series }
+  const normalized: ChartData = Array.isArray(chartData)
+    ? {
+        categories: chartData.map((item) => item.month),
+        series: [
+          { name: label1, data: chartData.map((item) => item.count ?? 0) },
+        ],
+      }
+    : chartData;
+
+  const series1 = normalized?.series?.find((s) => s.name === label1);
   const series2 = label2
-    ? chartData?.series?.find((s) => s.name === label2)
+    ? normalized?.series?.find((s) => s.name === label2)
     : undefined;
 
-  return chartData?.categories?.map((category, index) => {
-    const entry: Record<string, string | number> = { month: category };
+  return (
+    normalized?.categories?.map((category, index) => {
+      const entry: Record<string, string | number> = { month: category };
 
-    if (series1 && dataKey1) {
-      entry[dataKey1] = series1.data[index] ?? 0;
-    }
-    if (series2 && dataKey2) {
-      entry[dataKey2] = series2.data[index] ?? 0;
-    }
+      if (series1 && dataKey1) {
+        entry[dataKey1] = series1.data[index] ?? 0;
+      }
+      if (series2 && dataKey2) {
+        entry[dataKey2] = series2.data[index] ?? 0;
+      }
 
-    return entry;
-  });
+      return entry;
+    }) ?? []
+  );
 }
-
 export default function HomeChart({
   dataKey1,
   dataKey2,

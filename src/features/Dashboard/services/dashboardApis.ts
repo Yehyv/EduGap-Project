@@ -1187,6 +1187,36 @@ export async function getTotalCoursesCount(
   });
   return res.data;
 }
+export async function getTotalInstitutes(
+  programId: number | string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get(`/dashboard/total-institutes`, {
+    params: {
+      programId,
+    },
+  });
+  return res.data;
+}
+export async function getTotalAiContentGenrated(
+  programId: number | string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get(`/dashboard/ai-contents/count`, {
+    params: {
+      programId,
+    },
+  });
+  return res.data;
+}
+export async function getTotalActiveStudents(
+  programId: number | string,
+): Promise<CitiesResponse> {
+  const res = await dashboardApi.get(`/dashboard/active-students`, {
+    params: {
+      programId,
+    },
+  });
+  return res.data;
+}
 
 export interface ChartSeries {
   name: string;
@@ -1215,6 +1245,33 @@ export const fetchStudentEngagement = async (
     { params: buildParams(programId) },
   );
   return data.data;
+};
+export const fetchStudentActivityTrend = async (
+  programId?: number,
+): Promise<ChartData> => {
+  const { data } = await dashboardApi.get<{
+    status: number;
+    message: string;
+    data: {
+      year: number;
+      instituteId: number;
+      months: {
+        month: string;
+        monthNumber: number;
+        enrollmentsCount: number;
+      }[];
+    };
+  }>("/dashboard/students-activity-trend", { params: buildParams(programId) });
+
+  return {
+    categories: data.data.months.map((m) => m.month),
+    series: [
+      {
+        name: "Weekly Active Students",
+        data: data.data.months.map((m) => m.enrollmentsCount),
+      },
+    ],
+  };
 };
 
 export const fetchCertificatesIssued = async (
@@ -1260,6 +1317,47 @@ export async function createApplyMessage(
 export const getStudentCertificates = async (studentId: string) => {
   const response = await dashboardApi.get(
     `/dashboard/student-certificates/${studentId}`,
+  );
+  return response.data;
+};
+export const fetchTopFaculty = async () => {
+  const response = await dashboardApi.get(`/dashboard/top-faculty-members`);
+  return response.data;
+};
+export const fetchProgramCourse = async () => {
+  const response = await dashboardApi.get(
+    `/dashboard/program-course-completion?limit=5`,
+  );
+  return response.data;
+};
+export const fetchContentCompletion = async () => {
+  const response = await dashboardApi.get(
+    `/dashboard/content-completion?limit=10`,
+  );
+  return response.data;
+};
+export const fetchStudentsWithoutCourse = async () => {
+  const response = await dashboardApi.get(
+    `/dashboard/students-without-course-after-3-months`,
+  );
+  return response.data;
+};
+export const fetchInstitutesExpiringWithinMonth = async () => {
+  const response = await dashboardApi.get(
+    `/dashboard/institutes-expiring-within-month`,
+  );
+  return response.data;
+};
+export const fetchInstitutesWithHighNoCourseStudents = async () => {
+  const response = await dashboardApi.get(
+    `/dashboard/institutes-with-high-no-course-students?threshold=1`,
+  );
+  return response.data;
+};
+
+export const fetchTopContentCategories = async () => {
+  const response = await dashboardApi.get(
+    `/dashboard/top-content-categories-enrollments`,
   );
   return response.data;
 };

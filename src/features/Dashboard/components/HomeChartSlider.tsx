@@ -5,6 +5,7 @@ import {
   fetchStudentEngagement,
   fetchCertificatesIssued,
   fetchPackagesCompleted,
+  fetchStudentActivityTrend,
 } from "../services/dashboardApis";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ROLES } from "@/shared/utils/globals";
@@ -158,11 +159,13 @@ export default function HomeChartSlider({
 
   // Slide 3: Growth for super admin, Student Activity (dummy) for others
   const slide3Query = useQuery({
-    queryKey: isSuperAdminRole ? ["growth-overview"] : ["student-activity"],
+    queryKey: isSuperAdminRole
+      ? ["growth-overview"]
+      : ["student-activity-trend", resolvedId],
     queryFn: () =>
-      Promise.resolve(
-        isSuperAdminRole ? GROWTH_DUMMY_DATA : STUDENT_ACTIVITY_DUMMY_DATA,
-      ),
+      isSuperAdminRole
+        ? Promise.resolve(GROWTH_DUMMY_DATA)
+        : fetchStudentActivityTrend(resolvedId),
     enabled: current === 3,
   });
 

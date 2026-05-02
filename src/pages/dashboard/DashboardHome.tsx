@@ -135,6 +135,7 @@ const DashboardHome = () => {
           variants={slideInFromRight(lang)}
           initial="hidden"
           animate="visible"
+          className="xl:sticky top-6 self-start"
         >
           <QuickActionsPanel
             userRole={userRole}

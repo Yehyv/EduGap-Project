@@ -1,3 +1,12 @@
+import { useQuery } from "@tanstack/react-query";
+import {
+  fetchStudentsWithoutCourse,
+  fetchInstitutesExpiringWithinMonth,
+  fetchInstitutesWithHighNoCourseStudents,
+} from "../services/dashboardApis";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface Alert {
   id: number;
   title: string;
@@ -5,22 +14,44 @@ interface Alert {
   tag: string;
 }
 
-const DUMMY_ALERTS: Alert[] = [
-  {
-    id: 1,
-    title: "Institutions expiring soon",
-    description:
-      "3 institutions have subscriptions expiring within the next 14 days.",
-    tag: "Expires in 14 days",
-  },
-  {
-    id: 2,
-    title: "Students at risk",
-    description:
-      "124 students flagged for low activity and may need intervention.",
-    tag: "Low activity",
-  },
-];
+interface StudentsWithoutCourseData {
+  instituteId: number | null;
+  totalStudents: number;
+  eligibleStudentsAfterThreeMonths: number;
+  studentsWithoutCourseAfterThreeMonths: number;
+  percentage: number;
+}
+
+interface StudentsWithoutCourseResponse {
+  status: number;
+  message: string;
+  data: StudentsWithoutCourseData;
+}
+
+interface InstitutesExpiringResponse {
+  status: number;
+  message: string;
+  data: {
+    institutesExpiringWithinMonth: number;
+  };
+}
+
+interface InstitutesHighNoCourseResponse {
+  status: number;
+  message: string;
+  data: {
+    thresholdPercentage: number;
+    institutesCount: number;
+    institutes: {
+      instituteId: number;
+      totalStudents: number;
+      studentsWithoutCourseAfterThreeMonths: number;
+      percentage: number;
+    }[];
+  };
+}
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 const WarningIcon = ({ size = 16 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
@@ -36,7 +67,89 @@ const WarningIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
+// ─── Alert Row ────────────────────────────────────────────────────────────────
+
+const AlertRow = ({ description }: { description: string }) => (
+  <div className="flex gap-3 px-4 py-2 items-center bg-yellow-50 rounded-2xl border border-yellow-200">
+    <WarningIcon size={16} />
+    <p className="text text-gray-500 leading-relaxed">{description}</p>
+  </div>
+);
+
+const AlertRowSkeleton = () => (
+  <div className="flex gap-3 px-4 py-2 items-center bg-yellow-50 rounded-2xl border border-yellow-200 animate-pulse">
+    <div className="w-4 h-4 rounded bg-amber-200 flex-shrink-0" />
+    <div className="h-3.5 rounded bg-amber-100 w-3/4" />
+  </div>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 const CriticalAlerts = () => {
+  const { data: studentsData, isLoading: studentsLoading } = useQuery<
+    StudentsWithoutCourseResponse,
+    Error
+  >({
+    queryKey: ["students-without-course"],
+    queryFn: fetchStudentsWithoutCourse,
+  });
+
+  const { data: institutesData, isLoading: institutesLoading } = useQuery<
+    InstitutesExpiringResponse,
+    Error
+  >({
+    queryKey: ["institutes-expiring-within-month"],
+    queryFn: fetchInstitutesExpiringWithinMonth,
+  });
+
+  const { data: highNoCourseData, isLoading: highNoCourseLoading } = useQuery<
+    InstitutesHighNoCourseResponse,
+    Error
+  >({
+    queryKey: ["institutes-with-high-no-course-students"],
+    queryFn: fetchInstitutesWithHighNoCourseStudents,
+  });
+
+  const institutesAlert: Alert | null = institutesData?.data
+    ? {
+        id: 1,
+        title: "Institutions expiring soon",
+        description: `${institutesData.data.institutesExpiringWithinMonth} institution${
+          institutesData.data.institutesExpiringWithinMonth !== 1 ? "s" : ""
+        } have subscriptions expiring within the next month.`,
+        tag: "Expires in 30 days",
+      }
+    : null;
+
+  const studentsAlert: Alert | null = studentsData?.data
+    ? {
+        id: 2,
+        title: "Students at risk",
+        description: `${studentsData.data.studentsWithoutCourseAfterThreeMonths} students of ${studentsData.data.totalStudents} (${studentsData.data.percentage.toFixed(1)}%) haven't enrolled in a course within 3 months.`,
+        tag: "Low activity",
+      }
+    : null;
+
+  const highNoCourseAlert: Alert | null =
+    (highNoCourseData?.data?.institutesCount ?? 0) > 0
+      ? {
+          id: 3,
+          title: "Institutions with high inactive students",
+          description: `${highNoCourseData!.data.institutesCount} institution${
+            highNoCourseData!.data.institutesCount !== 1 ? "s" : ""
+          } have more than ${highNoCourseData!.data.thresholdPercentage}% of students without a course after 3 months.`,
+          tag: "High inactivity",
+        }
+      : null;
+
+  const allAlerts: Alert[] = [
+    ...(institutesAlert ? [institutesAlert] : []),
+    ...(studentsAlert ? [studentsAlert] : []),
+    ...(highNoCourseAlert ? [highNoCourseAlert] : []),
+  ];
+
+  const isLoading = institutesLoading || studentsLoading || highNoCourseLoading;
+
   return (
     <div className="rounded-xl bg-white border border-gray-100 shadow-custom overflow-hidden">
       {/* Header */}
@@ -48,23 +161,33 @@ const CriticalAlerts = () => {
           <p className="text-gray-400">Items requiring immediate attention</p>
         </div>
         <span className="ml-auto text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700">
-          {DUMMY_ALERTS.length} alerts
+          {isLoading ? "..." : allAlerts.length} alerts
         </span>
       </div>
 
       {/* Alert list */}
       <div className="flex gap-2 p-3 flex-col divide-y divide-gray-100">
-        {DUMMY_ALERTS.map((alert, index) => (
-          <div
-            key={alert.id}
-            className="flex gap-3 px-4 py-2 items-center bg-yellow-50 rounded-2xl border border-yellow-200"
-          >
-            <WarningIcon size={16} />
-            <p className="text text-gray-500 leading-relaxed">
-              {alert.description}
-            </p>
-          </div>
-        ))}
+        {institutesLoading ? (
+          <AlertRowSkeleton />
+        ) : (
+          institutesAlert && (
+            <AlertRow description={institutesAlert.description} />
+          )
+        )}
+
+        {studentsLoading ? (
+          <AlertRowSkeleton />
+        ) : (
+          studentsAlert && <AlertRow description={studentsAlert.description} />
+        )}
+
+        {highNoCourseLoading ? (
+          <AlertRowSkeleton />
+        ) : (
+          highNoCourseAlert && (
+            <AlertRow description={highNoCourseAlert.description} />
+          )
+        )}
       </div>
     </div>
   );
