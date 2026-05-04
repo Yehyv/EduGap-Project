@@ -179,7 +179,7 @@ const ContentsList = () => {
   const filteredItems = useMemo(() => {
     if (!contentsData?.data) return [];
     return contentsData.data.filter((item: Content) =>
-      item.name.toLowerCase().includes(filterText.toLowerCase()),
+      item?.name?.toLowerCase().includes(filterText.toLowerCase()),
     );
   }, [filterText, contentsData]);
 

@@ -168,7 +168,9 @@ const InstitutesPage = () => {
   const filteredItems = useMemo(() => {
     if (!InstitutesData?.data) return [];
     return InstitutesData.data.filter((item: Institute) =>
-      item.translation.name.toLowerCase().includes(filterText.toLowerCase()),
+      item?.translation?.name
+        ?.toLowerCase()
+        .includes(filterText?.toLowerCase()),
     );
   }, [filterText, InstitutesData]);
 

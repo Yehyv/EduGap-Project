@@ -138,7 +138,7 @@ const CoursesDashboardPage = () => {
   const filteredItems = useMemo(() => {
     if (!InstitutesData?.data) return [];
     return InstitutesData.data.filter((item: CoursesForDashboard) =>
-      item.name.toLowerCase().includes(filterText.toLowerCase()),
+      item?.name?.toLowerCase().includes(filterText?.toLowerCase()),
     );
   }, [filterText, InstitutesData]);
 
