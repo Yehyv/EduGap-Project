@@ -1153,108 +1153,106 @@ export class DashboardService {
     };
   }
   async getTopContentCategoriesEnrollments(
-  currentUserInstituteId?: number,
-  role?: string,
-  languageId?: number,
-  limit = 5,
-  selectedInstituteId?: number,
-) {
-  const safeLimit = Math.min(Math.max(Number(limit) || 5, 1), 20);
+    currentUserInstituteId?: number,
+    role?: string,
+    languageId?: number,
+    limit = 5,
+    selectedInstituteId?: number,
+  ) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 5, 1), 20);
 
-  const isInstituteAdmin = this.isInstituteAdminRole(role);
+    const isInstituteAdmin = this.isInstituteAdminRole(role);
 
-  const scopedInstituteId = isInstituteAdmin
-    ? currentUserInstituteId
-    : selectedInstituteId;
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : selectedInstituteId;
 
-  const qb = this.contentCategoryRepo
-    .createQueryBuilder('category')
-    .innerJoin(
-      'content',
-      'content',
-      `content.contentCategoryId = category.id
-       AND content.deleted_at IS NULL
-       AND content.is_active = 1`,
-    )
-    .innerJoin(
-      'enrollment',
-      'enrollment',
-      'enrollment.content_id = content.id',  // ← snake_case
-    )
-    .innerJoin(
-      'user',
-      'student',
-      `student.id = enrollment.user_id        
-       AND student.deleted_at IS NULL`,       // ← snake_case
-    )
-    .innerJoin(
-      'system_role',
-      'role',
-      `role.id = student.UserRoleId
-       AND TRIM(UPPER(role.role_title)) = :studentRole`,
-      { studentRole: 'STUDENT' },
-    )
-    .where('category.deletedAt IS NULL')
-    .andWhere('category.is_active = :active', { active: 1 });
+    const qb = this.contentCategoryRepo
+      .createQueryBuilder('category')
+      .innerJoin(
+        'category.contents',
+        'content',
+        `
+        content.deleted_at IS NULL
+        AND content.is_active = :contentActive
+      `,
+        { contentActive: 1 },
+      )
+      .innerJoin('content.enrollments', 'enrollment')
+      .innerJoin('enrollment.user', 'student', 'student.deletedAt IS NULL')
+      .innerJoin(
+        'student.UserRole',
+        'studentRole',
+        `
+        TRIM(UPPER(studentRole.role_title)) = :studentRoleTitle
+      `,
+        { studentRoleTitle: 'STUDENT' },
+      )
+      .where('category.deletedAt IS NULL')
+      .andWhere('category.is_active = :categoryActive', {
+        categoryActive: 1,
+      });
 
-  if (scopedInstituteId && Number(scopedInstituteId) > 0) {
-    qb.andWhere('student.institute_id = :instituteId', {
-      instituteId: Number(scopedInstituteId),
+    if (scopedInstituteId && Number(scopedInstituteId) > 0) {
+      qb.andWhere('student.institute_id = :instituteId', {
+        instituteId: Number(scopedInstituteId),
+      });
+    }
+
+    const rows = await qb
+      .select('category.id', 'categoryId')
+      .addSelect('COUNT(DISTINCT student.id)', 'studentsCount')
+      .addSelect('COUNT(DISTINCT enrollment.id)', 'enrollmentsCount')
+      .addSelect('COUNT(DISTINCT content.id)', 'contentsCount')
+      .groupBy('category.id')
+      .orderBy('COUNT(DISTINCT student.id)', 'DESC')
+      .limit(safeLimit)
+      .getRawMany<{
+        categoryId: string;
+        studentsCount: string;
+        enrollmentsCount: string;
+        contentsCount: string;
+      }>();
+
+    const categoryIds = rows.map((row) => Number(row.categoryId));
+
+    if (!categoryIds.length) {
+      return {
+        categories: [],
+      };
+    }
+
+    const categories = await this.contentCategoryRepo.find({
+      where: {
+        id: In(categoryIds),
+      },
+      relations: ['translations', 'translations.language'],
     });
+
+    const categoryNameMap = new Map<number, string>();
+
+    for (const category of categories) {
+      const selectedTranslation =
+        category.translations?.find(
+          (translation) => translation.language?.id === languageId,
+        ) || category.translations?.[0];
+
+      categoryNameMap.set(
+        category.id,
+        selectedTranslation?.name || `Category #${category.id}`,
+      );
+    }
+
+    return {
+      categories: rows.map((row) => ({
+        categoryId: Number(row.categoryId),
+        categoryName: categoryNameMap.get(Number(row.categoryId)) || null,
+        studentsCount: Number(row.studentsCount ?? 0),
+        enrollmentsCount: Number(row.enrollmentsCount ?? 0),
+        contentsCount: Number(row.contentsCount ?? 0),
+      })),
+    };
   }
-
-  const rows = await qb
-    .select('category.id', 'categoryId')
-    .addSelect('COUNT(DISTINCT student.id)', 'studentsCount')
-    .addSelect('COUNT(DISTINCT enrollment.id)', 'enrollmentsCount')
-    .addSelect('COUNT(DISTINCT content.id)', 'contentsCount')
-    .groupBy('category.id')
-    .orderBy('COUNT(DISTINCT student.id)', 'DESC')
-    .limit(safeLimit)
-    .getRawMany<{
-      categoryId: string;
-      studentsCount: string;
-      enrollmentsCount: string;
-      contentsCount: string;
-    }>();
-
-  const categoryIds = rows.map((row) => Number(row.categoryId));
-
-  if (!categoryIds.length) {
-    return { categories: [] };
-  }
-
-  const categories = await this.contentCategoryRepo.find({
-    where: {
-      id: In(categoryIds),
-    },
-    relations: ['translations', 'translations.language'],
-  });
-
-  const categoryNameMap = new Map<number, string>();
-
-  for (const category of categories) {
-    const selectedTranslation =
-      category.translations?.find(
-        (t) => t.language?.id === languageId,
-      ) ?? category.translations?.[0];
-
-    categoryNameMap.set(
-      category.id,
-      selectedTranslation?.name ?? `Category #${category.id}`,
-    );
-  }
-
-  return {
-    categories: rows.map((row) => ({
-      categoryId: Number(row.categoryId),
-      categoryName: categoryNameMap.get(Number(row.categoryId)) ?? null,
-      studentsCount: Number(row.studentsCount ?? 0),
-      enrollmentsCount: Number(row.enrollmentsCount ?? 0),
-      contentsCount: Number(row.contentsCount ?? 0),
-    })),
-  };
-}
   async getEnrollmentActivityTrend(
     currentUserInstituteId?: number,
     role?: string,
