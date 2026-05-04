@@ -15,6 +15,7 @@ import { LessonProgress } from 'src/progress/entities/lesson-progress.entity';
 import { SavedCourse } from 'src/saved-courses/entities/saved-course.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import { CourseCategory } from 'src/course-categories/entities/course-category.entity';
+import { CourseCategoriesList } from './entities/course-categories-list.entity';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { CourseCategory } from 'src/course-categories/entities/course-category.e
       SavedCourse,
       SystemUser,
       CourseCategory,
+      CourseCategoriesList,
     ]),
   ],
   controllers: [CoursesController],
