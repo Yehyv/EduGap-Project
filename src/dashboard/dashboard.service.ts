@@ -1170,35 +1170,53 @@ export class DashboardService {
     const qb = this.contentCategoryRepo
       .createQueryBuilder('category')
       .innerJoin(
-        'category.contents',
         'content',
-        'content.deleted_at IS NULL AND content.is_active = 1',
+        'content',
+        `
+        content.contentCategoryId = category.id
+        AND content.deleted_at IS NULL
+        AND content.is_active = 1
+      `,
       )
-      .innerJoin('content.enrollments', 'enrollment')
-      .innerJoin('enrollment.user', 'user', 'user.deletedAt IS NULL')
       .innerJoin(
-        'user.UserRole',
+        'enrollment',
+        'enrollment',
+        'enrollment.contentId = content.id',
+      )
+      .innerJoin(
+        '`user`',
+        'student',
+        `
+        student.id = enrollment.userId
+        AND student.deletedAt IS NULL
+        AND student.is_active = 1
+      `,
+      )
+      .innerJoin(
+        'system_role',
         'role',
-        'TRIM(UPPER(role.role_title)) = :studentRole',
+        `
+        role.id = student.UserRoleId
+        AND TRIM(UPPER(role.role_title)) = :studentRole
+      `,
         { studentRole: 'STUDENT' },
       )
-      .leftJoin('user.institute', 'institute')
       .where('category.deletedAt IS NULL')
       .andWhere('category.is_active = :active', { active: 1 });
 
-    if (scopedInstituteId) {
-      qb.andWhere('institute.id = :instituteId', {
+    if (scopedInstituteId && Number(scopedInstituteId) > 0) {
+      qb.andWhere('student.institute_id = :instituteId', {
         instituteId: scopedInstituteId,
       });
     }
 
     const rows = await qb
       .select('category.id', 'categoryId')
-      .addSelect('COUNT(DISTINCT user.id)', 'studentsCount')
+      .addSelect('COUNT(DISTINCT student.id)', 'studentsCount')
       .addSelect('COUNT(DISTINCT enrollment.id)', 'enrollmentsCount')
       .addSelect('COUNT(DISTINCT content.id)', 'contentsCount')
       .groupBy('category.id')
-      .orderBy('studentsCount', 'DESC')
+      .orderBy('COUNT(DISTINCT student.id)', 'DESC')
       .limit(safeLimit)
       .getRawMany<{
         categoryId: string;
@@ -1218,6 +1236,7 @@ export class DashboardService {
           selectedInstituteId,
           scopedInstituteId,
           safeLimit,
+          note: 'No rows returned from direct table joins',
         },
         categories: [],
       };
@@ -1245,14 +1264,6 @@ export class DashboardService {
     }
 
     return {
-      debug: {
-        currentUserInstituteId,
-        role,
-        isInstituteAdmin,
-        selectedInstituteId,
-        scopedInstituteId,
-        safeLimit,
-      },
       categories: rows.map((row) => ({
         categoryId: Number(row.categoryId),
         categoryName: categoryNameMap.get(Number(row.categoryId)) || null,
