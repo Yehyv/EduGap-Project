@@ -37,7 +37,7 @@ export class Course {
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
 
-  @Column({ type: 'enum', enum: [0, 1], default: 1 })
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   isActive: number;
 
   @OneToMany(() => CourseTranslation, (translation) => translation.course, {
