@@ -1749,4 +1749,153 @@ export class DashboardService {
       ),
     };
   }
+  async getTopInstitutesEngagement(
+    currentUserInstituteId?: number,
+    role?: string,
+    languageId?: number,
+    limit = 5,
+    selectedInstituteId?: number,
+  ) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 5, 1), 50);
+
+    const isInstituteAdmin = this.isInstituteAdminRole(role);
+
+    const scopedInstituteId = isInstituteAdmin
+      ? currentUserInstituteId
+      : selectedInstituteId;
+
+    const studentRoleCondition =
+      "TRIM(UPPER(studentRole.role_title)) = 'STUDENT'";
+
+    const totalStudentsExpr = `
+    COUNT(DISTINCT CASE
+      WHEN ${studentRoleCondition}
+      THEN student.id
+    END)
+  `;
+
+    const engagedStudentsExpr = `
+    COUNT(DISTINCT CASE
+      WHEN ${studentRoleCondition}
+        AND content.id IS NOT NULL
+      THEN student.id
+    END)
+  `;
+
+    const completedStudentsExpr = `
+    COUNT(DISTINCT CASE
+      WHEN ${studentRoleCondition}
+        AND content.id IS NOT NULL
+        AND enrollment.status = 1
+      THEN student.id
+    END)
+  `;
+
+    const engagementPercentageExpr = `
+    CASE
+      WHEN ${totalStudentsExpr} = 0 THEN 0
+      ELSE ROUND((${engagedStudentsExpr} / ${totalStudentsExpr}) * 100, 2)
+    END
+  `;
+
+    const completionPercentageExpr = `
+    CASE
+      WHEN ${totalStudentsExpr} = 0 THEN 0
+      ELSE ROUND((${completedStudentsExpr} / ${totalStudentsExpr}) * 100, 2)
+    END
+  `;
+
+    const qb = this.instituteRepo
+      .createQueryBuilder('institute')
+      .leftJoin('institute.users', 'student', 'student.deletedAt IS NULL')
+      .leftJoin('student.UserRole', 'studentRole')
+      .leftJoin('student.enrollments', 'enrollment')
+      .leftJoin(
+        'enrollment.content',
+        'content',
+        `
+        content.deleted_at IS NULL
+        AND content.is_active = 1
+      `,
+      )
+      .where('institute.deletedAt IS NULL')
+      .andWhere('institute.is_active = :active', { active: 1 });
+
+    if (scopedInstituteId && Number(scopedInstituteId) > 0) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: Number(scopedInstituteId),
+      });
+    }
+
+    const rows = await qb
+      .select('institute.id', 'instituteId')
+      .addSelect(totalStudentsExpr, 'studentsCount')
+      .addSelect(engagedStudentsExpr, 'engagedStudentsCount')
+      .addSelect(engagementPercentageExpr, 'engagementPercentage')
+      .addSelect(completedStudentsExpr, 'completedStudentsCount')
+      .addSelect(completionPercentageExpr, 'completionPercentage')
+      .groupBy('institute.id')
+      .orderBy(engagementPercentageExpr, 'DESC')
+      .addOrderBy(engagedStudentsExpr, 'DESC')
+      .addOrderBy(totalStudentsExpr, 'DESC')
+      .limit(safeLimit)
+      .getRawMany<{
+        instituteId: string;
+        studentsCount: string;
+        engagedStudentsCount: string;
+        engagementPercentage: string;
+        completedStudentsCount: string;
+        completionPercentage: string;
+      }>();
+
+    const instituteIds = rows.map((row) => Number(row.instituteId));
+
+    if (!instituteIds.length) {
+      return {
+        instituteId: scopedInstituteId ?? null,
+        limit: safeLimit,
+        institutes: [],
+      };
+    }
+
+    const institutes = await this.instituteRepo.find({
+      where: {
+        id: In(instituteIds),
+      },
+      relations: ['translations', 'translations.language'],
+    });
+
+    const instituteNameMap = new Map<number, string>();
+
+    for (const institute of institutes) {
+      const selectedTranslation =
+        institute.translations?.find(
+          (translation) => translation.language?.id === languageId,
+        ) || institute.translations?.[0];
+
+      instituteNameMap.set(
+        institute.id,
+        selectedTranslation?.name || `Institute #${institute.id}`,
+      );
+    }
+
+    return {
+      instituteId: scopedInstituteId ?? null,
+      limit: safeLimit,
+      institutes: rows.map((row) => ({
+        instituteId: Number(row.instituteId),
+        instituteName:
+          instituteNameMap.get(Number(row.instituteId)) ||
+          `Institute #${row.instituteId}`,
+
+        studentsCount: Number(row.studentsCount ?? 0),
+
+        engagedStudentsCount: Number(row.engagedStudentsCount ?? 0),
+        engagementPercentage: Number(row.engagementPercentage ?? 0),
+
+        completedStudentsCount: Number(row.completedStudentsCount ?? 0),
+        completionPercentage: Number(row.completionPercentage ?? 0),
+      })),
+    };
+  }
 }

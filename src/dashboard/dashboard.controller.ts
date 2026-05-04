@@ -201,6 +201,42 @@ export class DashboardController {
       instituteId,
     );
   }
+  @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('top-institutes-engagement')
+  getTopInstitutesEngagement(
+    @Headers('languageid') languageIdHeader?: string,
+    @Query('limit') limitRaw?: string,
+    @Query('instituteId') instituteIdRaw?: string,
+    @Req() req?: AuthenticatedRequest,
+  ) {
+    let languageId: number | undefined;
+
+    if (languageIdHeader !== undefined) {
+      const parsed = Number(languageIdHeader);
+
+      if (Number.isNaN(parsed) || parsed <= 0) {
+        throw new BadRequestException('Invalid languageId header');
+      }
+
+      languageId = parsed;
+    }
+
+    const limit =
+      limitRaw && !Number.isNaN(Number(limitRaw)) ? Number(limitRaw) : 5;
+
+    const selectedInstituteId =
+      instituteIdRaw && !Number.isNaN(Number(instituteIdRaw))
+        ? Number(instituteIdRaw)
+        : undefined;
+
+    return this.dashboardService.getTopInstitutesEngagement(
+      req?.user?.instituteId,
+      req?.user?.role,
+      languageId,
+      limit,
+      selectedInstituteId,
+    );
+  }
 
   @Get('content-completion')
   @Roles('ADMIN', 'SUPER_ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
