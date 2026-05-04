@@ -1179,8 +1179,8 @@ export class DashboardService {
       .innerJoin(
         'user.UserRole',
         'role',
-        'LOWER(role.role_title) = :studentRole',
-        { studentRole: 'student' },
+        'TRIM(UPPER(role.role_title)) = :studentRole',
+        { studentRole: 'STUDENT' },
       )
       .leftJoin('user.institute', 'institute')
       .where('category.deletedAt IS NULL')
@@ -1211,6 +1211,14 @@ export class DashboardService {
 
     if (!categoryIds.length) {
       return {
+        debug: {
+          currentUserInstituteId,
+          role,
+          isInstituteAdmin,
+          selectedInstituteId,
+          scopedInstituteId,
+          safeLimit,
+        },
         categories: [],
       };
     }
@@ -1237,6 +1245,14 @@ export class DashboardService {
     }
 
     return {
+      debug: {
+        currentUserInstituteId,
+        role,
+        isInstituteAdmin,
+        selectedInstituteId,
+        scopedInstituteId,
+        safeLimit,
+      },
       categories: rows.map((row) => ({
         categoryId: Number(row.categoryId),
         categoryName: categoryNameMap.get(Number(row.categoryId)) || null,
