@@ -1184,12 +1184,11 @@ export class DashboardService {
         'enrollment.contentId = content.id',
       )
       .innerJoin(
-        '`user`',
+        'user',
         'student',
         `
         student.id = enrollment.userId
         AND student.deletedAt IS NULL
-        AND student.is_active = 1
       `,
       )
       .innerJoin(
@@ -1206,7 +1205,7 @@ export class DashboardService {
 
     if (scopedInstituteId && Number(scopedInstituteId) > 0) {
       qb.andWhere('student.institute_id = :instituteId', {
-        instituteId: scopedInstituteId,
+        instituteId: Number(scopedInstituteId),
       });
     }
 
@@ -1229,15 +1228,6 @@ export class DashboardService {
 
     if (!categoryIds.length) {
       return {
-        debug: {
-          currentUserInstituteId,
-          role,
-          isInstituteAdmin,
-          selectedInstituteId,
-          scopedInstituteId,
-          safeLimit,
-          note: 'No rows returned from direct table joins',
-        },
         categories: [],
       };
     }
