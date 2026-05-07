@@ -28,6 +28,9 @@ interface SubscriptionPlanListRow {
 interface PlanInstitutesCountRow {
   institutesCount: number | string | null;
 }
+interface TotalInstitutesUsingPlansRow {
+  total: number | string | null;
+}
 @Injectable()
 export class SubscriptionPlansService {
   constructor(
@@ -302,6 +305,60 @@ export class SubscriptionPlansService {
     return {
       planId: id,
       institutes: Array.from(institutes.values()),
+    };
+  }
+  async getTotalPlans() {
+    const total = await this.planRepo.count({
+      where: {
+        deleted_at: IsNull(),
+      },
+    });
+
+    return {
+      totalPlans: total,
+    };
+  }
+
+  async getTotalActivePlans() {
+    const total = await this.planRepo.count({
+      where: {
+        is_active: 1,
+        deleted_at: IsNull(),
+      },
+    });
+
+    return {
+      totalActivePlans: total,
+    };
+  }
+
+  async getTotalInactivePlans() {
+    const total = await this.planRepo.count({
+      where: {
+        is_active: 0,
+        deleted_at: IsNull(),
+      },
+    });
+
+    return {
+      totalInactivePlans: total,
+    };
+  }
+  async getTotalInstitutesUsingPlans() {
+    const row = await this.contractRepo
+      .createQueryBuilder('contract')
+      .innerJoin('contract.institute', 'institute')
+      .innerJoin('contract.plan', 'plan')
+      .where('contract.deleted_at IS NULL')
+      .andWhere('contract.status <> :cancelledStatus', {
+        cancelledStatus: 'CANCELLED',
+      })
+      .andWhere('plan.deleted_at IS NULL')
+      .select('COUNT(DISTINCT institute.id)', 'total')
+      .getRawOne<TotalInstitutesUsingPlansRow>();
+
+    return {
+      totalInstitutesUsingPlans: Number(row?.total ?? 0),
     };
   }
 }

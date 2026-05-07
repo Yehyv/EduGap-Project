@@ -79,4 +79,26 @@ export class SubscriptionPlansController {
       languageId ? Number(languageId) : undefined,
     );
   }
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Get('stats/total')
+  getTotalPlans() {
+    return this.service.getTotalPlans();
+  }
+
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Get('stats/active')
+  getTotalActivePlans() {
+    return this.service.getTotalActivePlans();
+  }
+
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Get('stats/inactive')
+  getTotalInactivePlans() {
+    return this.service.getTotalInactivePlans();
+  }
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Get('stats/institutes-using-plans')
+  getTotalInstitutesUsingPlans() {
+    return this.service.getTotalInstitutesUsingPlans();
+  }
 }
