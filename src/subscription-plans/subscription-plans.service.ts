@@ -25,6 +25,9 @@ interface SubscriptionPlanListRow {
   updated_at: Date;
   deleted_at: Date | null;
 }
+interface PlanInstitutesCountRow {
+  institutesCount: number | string | null;
+}
 @Injectable()
 export class SubscriptionPlansService {
   constructor(
@@ -165,10 +168,27 @@ export class SubscriptionPlansService {
       throw new NotFoundException(`Subscription plan with id ${id} not found`);
     }
 
+    const countRow = await this.planRepo
+      .createQueryBuilder('plan')
+      .leftJoin(
+        'plan.contracts',
+        'contract',
+        `
+      contract.deleted_at IS NULL
+      AND contract.status <> :cancelledStatus
+      `,
+        { cancelledStatus: 'CANCELLED' },
+      )
+      .leftJoin('contract.institute', 'institute')
+      .where('plan.id = :id', { id })
+      .select('COUNT(DISTINCT institute.id)', 'institutesCount')
+      .getRawOne<PlanInstitutesCountRow>();
+
     const { createdBy, ...planData } = plan;
 
     return {
       ...planData,
+      institutesCount: Number(countRow?.institutesCount ?? 0),
       createdBy: createdBy
         ? {
             id: createdBy.id,
@@ -250,7 +270,12 @@ export class SubscriptionPlansService {
 
     const contracts = await this.contractRepo.find({
       where: { plan: { id } },
-      relations: ['institute', 'institute.translations', 'plan'],
+      relations: [
+        'institute',
+        'institute.translations',
+        'institute.translations.language',
+        'plan',
+      ],
       order: { id: 'DESC' },
     });
 

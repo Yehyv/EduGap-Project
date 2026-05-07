@@ -72,7 +72,7 @@ export class SubscriptionPlansController {
   @Get(':id/institutes')
   institutes(
     @Param('id', ParseIntPipe) id: number,
-    @Headers('languageid') languageId?: string,
+    @Headers('languageId') languageId?: string,
   ) {
     return this.service.getInstitutesUsingPlan(
       id,
