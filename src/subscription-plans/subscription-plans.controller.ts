@@ -63,15 +63,9 @@ export class SubscriptionPlansController {
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN')
-  @Patch(':id/activate')
-  activate(@Param('id', ParseIntPipe) id: number) {
-    return this.service.setActive(id, 1);
-  }
-
-  @Roles('SUPER_ADMIN', 'ADMIN')
-  @Patch(':id/deactivate')
-  deactivate(@Param('id', ParseIntPipe) id: number) {
-    return this.service.setActive(id, 0);
+  @Patch(':id/toggle-status')
+  toggleStatus(@Param('id', ParseIntPipe) id: number) {
+    return this.service.toggleStatus(id);
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN')
