@@ -42,6 +42,7 @@ export class SubscriptionPlansService {
       description: dto.description?.trim() || null,
       createdBy,
       is_active: 1,
+      administrative_fees: dto.administrative_fees,
     });
 
     return this.planRepo.save(plan);
@@ -96,6 +97,9 @@ export class SubscriptionPlansService {
     }
     if (dto.description !== undefined) {
       plan.description = dto.description?.trim() || null;
+    }
+    if (dto.administrative_fees !== undefined) {
+      plan.administrative_fees = dto.administrative_fees;
     }
     if (dto.is_active !== undefined) plan.is_active = dto.is_active;
 

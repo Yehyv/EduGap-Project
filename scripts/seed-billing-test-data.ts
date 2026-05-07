@@ -53,18 +53,27 @@ async function main() {
       const institutes = await instituteRepo.find({ take: 10 });
 
       if (!institutes.length) {
-        throw new Error('No institutes found. Run the main project seed first.');
+        throw new Error(
+          'No institutes found. Run the main project seed first.',
+        );
       }
 
       const planData = [
-        ['Starter', 1, 100, 200, 4],
-        ['Growth', 101, 1000, 180, 4],
-        ['Enterprise', 1001, 5000, 150, 6],
+        ['Starter', 1, 100, 200, 4, 10],
+        ['Growth', 101, 1000, 180, 4, 20],
+        ['Enterprise', 1001, 5000, 150, 6, 30],
       ] as const;
 
       const plans: SubscriptionPlan[] = [];
 
-      for (const [name, min, max, price, installments] of planData) {
+      for (const [
+        name,
+        min,
+        max,
+        price,
+        installments,
+        administrativeFees,
+      ] of planData) {
         let plan = await planRepo.findOne({ where: { plan_name: name } });
 
         if (!plan) {
@@ -78,6 +87,7 @@ async function main() {
               description: `${name} billing seed plan`,
               is_active: 1,
               createdBy: admin ?? null,
+              administrative_fees: administrativeFees,
             }),
           );
         }
@@ -159,7 +169,8 @@ async function main() {
                 installment_amount: amount,
                 paid_amount: i === 1 ? amount : 0,
                 remaining_amount: i === 1 ? 0 : amount,
-                status: i === 1 ? InstallmentStatus.PAID : InstallmentStatus.PENDING,
+                status:
+                  i === 1 ? InstallmentStatus.PAID : InstallmentStatus.PENDING,
               }),
             );
           }

@@ -38,4 +38,8 @@ export class CreateSubscriptionPlanDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsNumber()
+  @Min(0)
+  administrative_fees: number;
 }

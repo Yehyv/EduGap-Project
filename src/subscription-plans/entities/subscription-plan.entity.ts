@@ -40,6 +40,9 @@ export class SubscriptionPlan {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
+  @Column()
+  administrative_fees: number;
+
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   is_active: number;
 
