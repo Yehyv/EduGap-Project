@@ -205,7 +205,7 @@ export class DashboardController {
   @Get('top-institutes-engagement')
   getTopInstitutesEngagement(
     @Headers('languageid') languageIdHeader?: string,
-    @Query('limit') limitRaw?: string,
+    @Query('lim it') limitRaw?: string,
     @Query('instituteId') instituteIdRaw?: string,
     @Req() req?: AuthenticatedRequest,
   ) {

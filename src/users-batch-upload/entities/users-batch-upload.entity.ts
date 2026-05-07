@@ -8,6 +8,8 @@ import {
 } from 'typeorm';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import { UsersBatchUploadError } from './users_batch_upload_errors.entity';
+import { Institute } from 'src/institutes/entities/institute.entity';
+import { InstituteAnnualContract } from 'src/institute-annual-contracts/entities/institute-annual-contract.entity';
 @Entity('users_batch_upload')
 export class UsersBatchUpload {
   @PrimaryGeneratedColumn()
@@ -40,4 +42,18 @@ export class UsersBatchUpload {
 
   @OneToMany(() => UsersBatchUploadError, (error) => error.batchUpload)
   errors: UsersBatchUploadError[];
+  @ManyToOne(() => InstituteAnnualContract, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  contract: InstituteAnnualContract | null;
+
+  @ManyToOne(() => Institute, { nullable: true, onDelete: 'SET NULL' })
+  institute: Institute | null;
+
+  @Column({ name: 'academic_year', type: 'int', nullable: true })
+  academic_year: number | null;
+
+  @Column({ name: 'batch_name', type: 'varchar', length: 150, nullable: true })
+  batch_name: string | null;
 }

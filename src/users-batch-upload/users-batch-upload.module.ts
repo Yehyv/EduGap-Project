@@ -6,6 +6,7 @@ import { UsersBatchUploadError } from './entities/users_batch_upload_errors.enti
 import { User } from 'src/users/entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SystemRole } from 'src/system-roles/entities/system-role.entity';
+import { BillingStudentLimitsModule } from 'src/billing-student-limits/billing-student-limits.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { SystemRole } from 'src/system-roles/entities/system-role.entity';
       UsersBatchUploadError,
       User,
       SystemRole,
+      BillingStudentLimitsModule,
     ]),
   ],
   controllers: [UsersBatchUploadController],

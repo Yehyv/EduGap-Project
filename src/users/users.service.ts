@@ -27,6 +27,7 @@ import {
 } from 'src/activation-reasons/entities/activation-reason.entity';
 import { ActivationReasonTranslation } from 'src/activation-reasons/entities/activation-reason-translation.entity';
 import { UserActivationDto } from './dto/user-activation.dto';
+import { BillingStudentLimitsService } from 'src/billing-student-limits/billing-student-limits.service';
 
 interface userRow {
   user_id: number;
@@ -74,6 +75,7 @@ export class UsersService {
     private readonly enrollmentRepository: Repository<Enrollment>,
     @InjectRepository(ActivationReason)
     private readonly activationReasonRepo: Repository<ActivationReason>,
+    private readonly billingStudentLimitsService: BillingStudentLimitsService,
   ) {}
 
   private pickActivationReasonTranslation(
@@ -225,20 +227,60 @@ export class UsersService {
     const sysUser = await this.systemUserRepo.findOne({
       where: { id: userId },
     });
+
     if (!sysUser) {
       throw new NotFoundException(`System user with ID ${userId} not found`);
     }
+
     const { instituteId, programId, phone, national_id, ...rest } =
       createUserDto;
+
+    if (!instituteId) {
+      throw new BadRequestException(
+        'instituteId is required to create a student',
+      );
+    }
+
+    const institute = await this.instituteRepositry.findOne({
+      where: { id: instituteId },
+    });
+
+    if (!institute) {
+      throw new NotFoundException(`Institute with ID ${instituteId} not found`);
+    }
+
+    let program: Program | null = null;
+    if (programId) {
+      program = await this.programRepository.findOne({
+        where: { id: programId },
+      });
+
+      if (!program) {
+        throw new NotFoundException(`Program with ID ${programId} not found`);
+      }
+    }
+
+    const { contract } =
+      await this.billingStudentLimitsService.assertCanAddStudents(
+        institute.id,
+        1,
+        new Date().getFullYear(),
+      );
+
     const username = national_id;
     const hashedPassword = await this.hashPassword(phone);
     const baseUrl = process.env.APP_URL || '';
     const profileImage = `${baseUrl}/uploads/defaults/default-user.png`;
-    const user_role = await this.systemRoleRepo.findOne({
-      where: { role_title: 'student' },
-    });
-    if (!user_role) {
-      throw new NotFoundException(`Role with title student not found`);
+
+    const userRole = await this.systemRoleRepo
+      .createQueryBuilder('role')
+      .where('TRIM(UPPER(role.role_title)) = :roleTitle', {
+        roleTitle: 'STUDENT',
+      })
+      .getOne();
+
+    if (!userRole) {
+      throw new NotFoundException('Role with title STUDENT not found');
     }
 
     const user = this.userRepositry.create({
@@ -247,14 +289,18 @@ export class UsersService {
       national_id,
       phone,
       password: hashedPassword,
-      institute: instituteId ? { id: instituteId } : undefined,
-      program: programId ? { id: programId } : undefined,
+      institute,
+      program: program ?? undefined,
       added_type: createUserDto.added_type || 0,
       is_verified: 0,
       is_active: 1,
       user_image: profileImage,
-      UserRole: { id: user_role.id },
+      UserRole: userRole,
       createdBy: sysUser,
+      annualContract: contract,
+      academic_year: contract.academic_year,
+      added_to_contract_at: new Date(),
+      addedToContractBy: sysUser,
     });
 
     return this.userRepositry.save(user);

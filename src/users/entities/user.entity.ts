@@ -30,6 +30,7 @@ import { ActivationLog } from './activation-log.entity';
 import { UsersBatchUpload } from 'src/users-batch-upload/entities/users-batch-upload.entity';
 import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import { ContactMessage } from 'src/contact-messages/entities/contact-message.entity';
+import { InstituteAnnualContract } from 'src/institute-annual-contracts/entities/institute-annual-contract.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -167,4 +168,20 @@ export class User {
   createdBy: SystemUser;
   @OneToMany(() => ContactMessage, (contactMessage) => contactMessage.user)
   contactMessages: ContactMessage[];
+  @ManyToOne(() => InstituteAnnualContract, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'annual_contract_id' })
+  annualContract: InstituteAnnualContract | null;
+
+  @Column({ name: 'academic_year', type: 'int', nullable: true })
+  academic_year: number | null;
+
+  @Column({ name: 'added_to_contract_at', type: 'datetime', nullable: true })
+  added_to_contract_at: Date | null;
+
+  @ManyToOne(() => SystemUser, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'added_to_contract_by' })
+  addedToContractBy: SystemUser | null;
 }

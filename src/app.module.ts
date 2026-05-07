@@ -52,6 +52,14 @@ import { CertificatesModule } from './certificates/certificates.module';
 import { ContactMessagesModule } from './contact-messages/contact-messages.module';
 import { ActivationReasonsModule } from './activation-reasons/activation-reasons.module';
 import { ApplyMessagesModule } from './apply-messages/apply-messages.module';
+import { SubscriptionPlansModule } from './subscription-plans/subscription-plans.module';
+import { InstituteAnnualContractsModule } from './institute-annual-contracts/institute-annual-contracts.module';
+import { ContractInstallmentsModule } from './contract-installments/contract-installments.module';
+import { ContractPaymentsModule } from './contract-payments/contract-payments.module';
+import { AnnualSettlementsModule } from './annual-settlements/annual-settlements.module';
+import { BillingDashboardModule } from './billing-dashboard/billing-dashboard.module';
+import { BillingReportsModule } from './billing-reports/billing-reports.module';
+import { BillingStudentLimitsModule } from './billing-student-limits/billing-student-limits.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -109,6 +117,14 @@ import { ApplyMessagesModule } from './apply-messages/apply-messages.module';
     ContactMessagesModule,
     ActivationReasonsModule,
     ApplyMessagesModule,
+    SubscriptionPlansModule,
+    InstituteAnnualContractsModule,
+    ContractInstallmentsModule,
+    ContractPaymentsModule,
+    AnnualSettlementsModule,
+    BillingDashboardModule,
+    BillingReportsModule,
+    BillingStudentLimitsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuditSubscriber],

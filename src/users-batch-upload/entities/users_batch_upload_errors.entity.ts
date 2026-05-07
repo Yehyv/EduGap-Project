@@ -6,6 +6,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { UsersBatchUpload } from './users-batch-upload.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Entity('users_batch_upload_errors')
 export class UsersBatchUploadError {
@@ -40,4 +41,13 @@ export class UsersBatchUploadError {
   createdAt: Date;
   @Column({ type: 'json', nullable: true })
   rowData: any;
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  studentUser: User | null;
+
+  @Column({
+    type: 'enum',
+    enum: ['ACCEPTED', 'REJECTED', 'DUPLICATE', 'EXCEEDED_LIMIT'],
+    default: 'REJECTED',
+  })
+  status: 'ACCEPTED' | 'REJECTED' | 'DUPLICATE' | 'EXCEEDED_LIMIT';
 }

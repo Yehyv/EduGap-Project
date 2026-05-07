@@ -19,7 +19,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:test": "ts-node -r tsconfig-paths/register scripts/seed-test-records.ts",
-    "seed:test:bulk": "ts-node -r tsconfig-paths/register scripts/seed-test-records-bulk.ts"
+    "seed:test:bulk": "ts-node -r tsconfig-paths/register scripts/seed-test-records-bulk.ts",
+    "seed:billing": "ts-node -r tsconfig-paths/register scripts/seed-billing-test-data.ts"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

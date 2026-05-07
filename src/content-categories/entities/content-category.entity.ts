@@ -23,7 +23,7 @@ export class ContentCategory {
   @DeleteDateColumn()
   deletedAt: Date;
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
-is_active: number;
+  is_active: number;
   @OneToMany(
     () => ContentCategoryTranslation,
     (translation) => translation.contentCategory,

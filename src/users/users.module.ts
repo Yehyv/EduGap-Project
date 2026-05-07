@@ -18,6 +18,7 @@ import { SystemUser } from 'src/system-users/entities/system-user.entity';
 import { ContactMessage } from 'src/contact-messages/entities/contact-message.entity';
 import { TransactionsModule } from 'src/transactions/transactions.module';
 import { ActivationReason } from 'src/activation-reasons/entities/activation-reason.entity';
+import { BillingStudentLimitsModule } from 'src/billing-student-limits/billing-student-limits.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ActivationReason } from 'src/activation-reasons/entities/activation-rea
     ]),
     UsersOtpModule,
     TransactionsModule,
+    BillingStudentLimitsModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],
