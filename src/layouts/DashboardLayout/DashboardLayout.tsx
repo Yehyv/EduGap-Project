@@ -20,6 +20,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { logoutDashboardUser } from "@/features/Dashboard/services/dashboardApis";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ProfileSection from "@/features/Dashboard/components/ProfileSection";
+import { PackageCheck } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROLES
@@ -261,6 +262,15 @@ const DashboardLayout = () => {
               >
                 <SystemUsersIcon />
                 <span>{t("systemUsers")}</span>
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/subscription-plans"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <PackageCheck className="text-[#ACACAC] " />
+                <span>{t("Subscription_plans")}</span>
               </NavLink>
             </>
           )}

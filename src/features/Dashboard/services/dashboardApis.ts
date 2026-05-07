@@ -1361,3 +1361,9 @@ export const fetchTopContentCategories = async () => {
   );
   return response.data;
 };
+export const fetchTopInstitutesEngagement = async () => {
+  const response = await dashboardApi.get(
+    `/dashboard/top-institutes-engagement`,
+  );
+  return response.data;
+};

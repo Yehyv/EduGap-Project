@@ -116,6 +116,10 @@ import LatestCoursesPageForGuest from "@/pages/LatestCoursesPageForGuest";
 import ContactUsPage from "@/pages/ContactUsPage";
 import JoinUsPage from "@/pages/JoinUsPage";
 import EditStudentInInstitute from "@/pages/dashboard/EditStudentInInstitute";
+import SubscriptionPlans from "@/pages/dashboard/SubscriptionPlans";
+import AddNewPlan from "@/pages/dashboard/AddNewPlan";
+import EditPlan from "@/pages/dashboard/EditPlan";
+import PlanDetails from "@/pages/dashboard/PlanDetails";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -750,6 +754,38 @@ export default function AppRoutes() {
             element={
               <DashboardRoute allowed={SUPER_ONLY}>
                 <EditSystemUser />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/subscription-plans"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <SubscriptionPlans />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/subscription-plans/:planId"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <PlanDetails />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/subscription-plans/add-new-plan"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <AddNewPlan />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/subscription-plans/edit/:planId"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <EditPlan />
               </DashboardRoute>
             }
           />
