@@ -8,10 +8,10 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
 import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
+import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import SearchIcon from "@/assets/svgs/SearchIconDashboard.svg?react";
 import FilterIcon from "@/assets/svgs/FilterIcon.svg?react";
 import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
-import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { Institute } from "@/features/Dashboard/types/dashboardTypes";

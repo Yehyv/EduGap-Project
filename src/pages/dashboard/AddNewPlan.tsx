@@ -1,235 +1,408 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ChevronRight,
+  Tag,
+  Users,
+  DollarSign,
+  Receipt,
+  CalendarDays,
+  AlignLeft,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Save,
+  X,
+} from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { createSubscriptionPlan } from "@/features/Dashboard/services/dashboardApis";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PlanFormData {
-  name: string;
-  badge: string;
-  minStudents: string;
-  maxStudents: string;
-  pricePerStudent: string;
-  installments: string;
-  status: boolean;
+  plan_name: string;
+  min_students: string;
+  max_students: string;
+  default_price_per_student: string;
+  administrative_fees: string;
+  default_installments_count: string;
+  is_active: boolean;
   description: string;
+}
+
+interface FormErrors {
+  plan_name?: string;
+  min_students?: string;
+  max_students?: string;
+  default_price_per_student?: string;
+  administrative_fees?: string;
+  default_installments_count?: string;
 }
 
 const INSTALLMENT_OPTIONS = ["1", "2", "3", "4", "6", "12"];
 
-// ─── Toggle ───────────────────────────────────────────────────────────────────
+const INITIAL_FORM: PlanFormData = {
+  plan_name: "",
+  min_students: "",
+  max_students: "",
+  default_price_per_student: "",
+  administrative_fees: "",
+  default_installments_count: "",
+  is_active: true,
+  description: "",
+};
 
-const Toggle = ({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (val: boolean) => void;
-}) => (
-  <button
-    type="button"
-    onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-      checked ? "bg-secondary" : "bg-gray-300"
-    }`}
-  >
-    <span
-      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ${
-        checked ? "translate-x-6" : "translate-x-1"
-      }`}
-    />
-  </button>
-);
+// ─── Validate ─────────────────────────────────────────────────────────────────
 
-// ─── Field wrapper ────────────────────────────────────────────────────────────
+const validate = (form: PlanFormData): FormErrors => {
+  const errors: FormErrors = {};
+  if (!form.plan_name.trim()) errors.plan_name = "Plan name is required";
+  if (!form.min_students) errors.min_students = "Min students is required";
+  if (!form.max_students) errors.max_students = "Max students is required";
+  if (Number(form.min_students) >= Number(form.max_students))
+    errors.max_students = "Max must be greater than min";
+  if (!form.default_price_per_student)
+    errors.default_price_per_student = "Price is required";
+  if (!form.administrative_fees)
+    errors.administrative_fees = "Administrative fees is required";
+  if (!form.default_installments_count)
+    errors.default_installments_count = "Installments is required";
+  return errors;
+};
+
+// ─── Field ────────────────────────────────────────────────────────────────────
 
 const Field = ({
   label,
   required,
+  error,
+  icon,
   children,
 }: {
   label: string;
   required?: boolean;
+  error?: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }) => (
-  <div className="flex flex-col gap-1.5">
-    <label className="text-sm font-medium text-gray-700">
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="flex flex-col gap-1.5"
+  >
+    <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+      {icon && <span className="text-gray-400">{icon}</span>}
       {label}
       {required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
     {children}
-  </div>
+    <AnimatePresence>
+      {error && (
+        <motion.p
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="text-xs text-red-500 flex items-center gap-1"
+        >
+          <AlertCircle size={11} />
+          {error}
+        </motion.p>
+      )}
+    </AnimatePresence>
+  </motion.div>
 );
 
-const inputClass =
-  "w-full h-10 px-3 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors bg-white";
+const inputClass = (hasError?: boolean) =>
+  `w-full h-10 px-3 rounded-lg border text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-colors bg-white ${
+    hasError
+      ? "border-red-300 focus:ring-red-100 focus:border-red-400"
+      : "border-gray-200 focus:ring-blue-100 focus:border-blue-400"
+  }`;
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+
+const Toast = ({
+  type,
+  message,
+}: {
+  type: "success" | "error";
+  message: string;
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: -16, scale: 0.96 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: -12, scale: 0.96 }}
+    transition={{ duration: 0.25, ease: "easeOut" }}
+    className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${
+      type === "success"
+        ? "bg-green-50 border-green-200 text-green-700"
+        : "bg-red-50 border-red-200 text-red-700"
+    }`}
+  >
+    {type === "success" ? (
+      <CheckCircle2 size={17} className="text-green-500 flex-shrink-0" />
+    ) : (
+      <AlertCircle size={17} className="text-red-500 flex-shrink-0" />
+    )}
+    {message}
+  </motion.div>
+);
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const AddSubscriptionPlan = () => {
-  const [form, setForm] = useState<PlanFormData>({
-    name: "",
-    badge: "",
-    minStudents: "0",
-    maxStudents: "",
-    pricePerStudent: "",
-    installments: "",
-    status: true,
-    description: "",
-  });
+  const navigate = useNavigate();
+  const [form, setForm] = useState<PlanFormData>(INITIAL_FORM);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
-  const set = (key: keyof PlanFormData, value: string | boolean) =>
+  const set = (key: keyof PlanFormData, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    // Clear error on change
+    if (errors[key as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [key]: undefined }));
+    }
+  };
+
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: createSubscriptionPlan,
+    onSuccess: () => {
+      showToast("success", "Subscription plan created successfully!");
+      setTimeout(() => navigate("/dashboard/subscription-plans"), 1500);
+    },
+    onError: () => {
+      showToast("error", "Failed to create plan. Please try again.");
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: replace with API call
-    console.log("Submit:", form);
+    const validationErrors = validate(form);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    mutate({
+      plan_name: form.plan_name.trim(),
+      min_students: Number(form.min_students),
+      max_students: Number(form.max_students),
+      default_price_per_student: Number(form.default_price_per_student),
+      administrative_fees: Number(form.administrative_fees),
+      default_installments_count: Number(form.default_installments_count),
+      is_active: form.is_active,
+      description: form.description.trim(),
+    });
   };
 
   return (
-    <div className="flex flex-col gap-5">
-      <DashboardPageTitle text="Add Subscription Plan" />
+    <>
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && <Toast type={toast.type} message={toast.message} />}
+      </AnimatePresence>
 
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-gray-400 -mt-3">
-        <Link
-          to="/dashboard/home"
-          className="hover:text-gray-600 transition-colors"
+      <div className="flex flex-col gap-5">
+        <DashboardPageTitle text="Add Subscription Plan" />
+
+        {/* Breadcrumb */}
+        <motion.nav
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center gap-1 text-sm text-gray-400 -mt-3"
         >
-          Dashboard
-        </Link>
-        <span>›</span>
-        <Link
-          to="/dashboard/subscription-plans"
-          className="hover:text-gray-600 transition-colors"
+          <Link
+            to="/dashboard/home"
+            className="hover:text-gray-600 transition-colors"
+          >
+            Dashboard
+          </Link>
+          <ChevronRight size={14} />
+          <Link
+            to="/dashboard/subscription-plans"
+            className="hover:text-gray-600 transition-colors"
+          >
+            Subscription Plans
+          </Link>
+          <ChevronRight size={14} />
+          <span className="text-gray-600">Add New Plan</span>
+        </motion.nav>
+
+        {/* Form Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="bg-white rounded-xl border border-gray-100 shadow-sm p-6"
         >
-          Subscription Plans
-        </Link>
-        <span>›</span>
-        <span className="text-gray-600">Add New Plan</span>
-      </nav>
-
-      {/* Form Card */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          {/* Row 1 — Name + Badge */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Plan Name" required>
-              <input
-                type="text"
-                placeholder="Enter plan name"
-                className={inputClass}
-                value={form.name}
-                onChange={(e) => set("name", e.target.value)}
-              />
-            </Field>
-            <Field label="Plan Badge / Tag">
-              <input
-                type="text"
-                placeholder="e.g. Popular, Basic, etc."
-                className={inputClass}
-                value={form.badge}
-                onChange={(e) => set("badge", e.target.value)}
-              />
-            </Field>
-          </div>
-
-          {/* Row 2 — Min + Max + Price */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Min Students" required>
-              <input
-                type="number"
-                placeholder="0"
-                className={inputClass}
-                value={form.minStudents}
-                onChange={(e) => set("minStudents", e.target.value)}
-                min={0}
-              />
-            </Field>
-            <Field label="Max Students" required>
-              <input
-                type="number"
-                placeholder="Enter max students"
-                className={inputClass}
-                value={form.maxStudents}
-                onChange={(e) => set("maxStudents", e.target.value)}
-                min={0}
-              />
-            </Field>
-            <Field label="Price Per Student (EGP)" required>
-              <input
-                type="number"
-                placeholder="Enter price per student"
-                className={inputClass}
-                value={form.pricePerStudent}
-                onChange={(e) => set("pricePerStudent", e.target.value)}
-                min={0}
-              />
-            </Field>
-          </div>
-
-          {/* Row 3 — Installments + Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-            <Field label="Default Installments" required>
-              <select
-                className={`${inputClass} cursor-pointer`}
-                value={form.installments}
-                onChange={(e) => set("installments", e.target.value)}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {/* Row 1 — Plan Name */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field
+                label="Plan Name"
+                required
+                error={errors.plan_name}
+                icon={<Tag size={14} />}
               >
-                <option value="" disabled>
-                  Select Installments
-                </option>
-                {INSTALLMENT_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Status">
-              <div className="flex items-center gap-3 h-10">
-                <Toggle
-                  checked={form.status}
-                  onChange={(val) => set("status", val)}
+                <input
+                  type="text"
+                  placeholder="Enter plan name"
+                  className={inputClass(!!errors.plan_name)}
+                  value={form.plan_name}
+                  onChange={(e) => set("plan_name", e.target.value)}
                 />
-                <span className="text-sm text-gray-700 font-medium">
-                  {form.status ? "Active" : "Inactive"}
-                </span>
-              </div>
+              </Field>
+            </div>
+
+            {/* Row 2 — Students + Price */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Field
+                label="Min Students"
+                required
+                error={errors.min_students}
+                icon={<Users size={14} />}
+              >
+                <input
+                  type="number"
+                  placeholder="e.g. 0"
+                  className={inputClass(!!errors.min_students)}
+                  value={form.min_students}
+                  onChange={(e) => set("min_students", e.target.value)}
+                  min={0}
+                />
+              </Field>
+
+              <Field
+                label="Max Students"
+                required
+                error={errors.max_students}
+                icon={<Users size={14} />}
+              >
+                <input
+                  type="number"
+                  placeholder="e.g. 1000"
+                  className={inputClass(!!errors.max_students)}
+                  value={form.max_students}
+                  onChange={(e) => set("max_students", e.target.value)}
+                  min={0}
+                />
+              </Field>
+
+              <Field
+                label="Price Per Student (EGP)"
+                required
+                error={errors.default_price_per_student}
+                icon={<DollarSign size={14} />}
+              >
+                <input
+                  type="number"
+                  placeholder="e.g. 200"
+                  className={inputClass(!!errors.default_price_per_student)}
+                  value={form.default_price_per_student}
+                  onChange={(e) =>
+                    set("default_price_per_student", e.target.value)
+                  }
+                  min={0}
+                />
+              </Field>
+            </div>
+
+            {/* Row 3 — Fees + Installments */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field
+                label="Administrative Fees"
+                required
+                error={errors.administrative_fees}
+                icon={<Receipt size={14} />}
+              >
+                <input
+                  type="number"
+                  placeholder="e.g. 500"
+                  className={inputClass(!!errors.administrative_fees)}
+                  value={form.administrative_fees}
+                  onChange={(e) => set("administrative_fees", e.target.value)}
+                  min={0}
+                />
+              </Field>
+
+              <Field
+                label="Default Installments"
+                required
+                error={errors.default_installments_count}
+                icon={<CalendarDays size={14} />}
+              >
+                <select
+                  className={`${inputClass(!!errors.default_installments_count)} cursor-pointer`}
+                  value={form.default_installments_count}
+                  onChange={(e) =>
+                    set("default_installments_count", e.target.value)
+                  }
+                >
+                  <option value="" disabled>
+                    Select installments
+                  </option>
+                  {INSTALLMENT_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+
+            {/* Row 4 — Description */}
+            <Field label="Description" icon={<AlignLeft size={14} />}>
+              <textarea
+                placeholder="Enter plan description..."
+                rows={4}
+                className={`${inputClass()} h-auto py-2.5 resize-none`}
+                value={form.description}
+                onChange={(e) => set("description", e.target.value)}
+              />
             </Field>
-          </div>
 
-          {/* Row 4 — Description */}
-          <Field label="Description">
-            <textarea
-              placeholder="Enter plan description..."
-              rows={4}
-              className={`${inputClass} h-auto py-2.5 resize-none`}
-              value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-            />
-          </Field>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-            <Link
-              to="/dashboard/subscription-plans"
-              className="h-10 px-6 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              className="h-10 px-6 rounded-lg bg-secondary text-white text-sm font-semibold hover:bg-secondary/80 transition-colors"
-            >
-              Save Plan
-            </button>
-          </div>
-        </form>
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+              <Link
+                to="/dashboard/subscription-plans"
+                className="h-10 px-5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
+              >
+                <X size={15} />
+                Cancel
+              </Link>
+              <motion.button
+                type="submit"
+                disabled={isPending}
+                whileTap={{ scale: isPending ? 1 : 0.97 }}
+                className="h-10 px-6 rounded-lg bg-secondary text-white text-sm font-semibold hover:bg-secondary/80 transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={15} />
+                    Save Plan
+                  </>
+                )}
+              </motion.button>
+            </div>
+          </form>
+        </motion.div>
       </div>
-    </div>
+    </>
   );
 };
 

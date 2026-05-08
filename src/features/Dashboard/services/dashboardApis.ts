@@ -1367,3 +1367,71 @@ export const fetchTopInstitutesEngagement = async () => {
   );
   return response.data;
 };
+export const fetchPlans = async (onlyActive: boolean) => {
+  const url = onlyActive
+    ? "/subscription-plans?onlyActive=1"
+    : "/subscription-plans";
+  const response = await dashboardApi.get(url);
+  return response.data;
+};
+export const fetchPlansCount = async () => {
+  const response = await dashboardApi.get("/subscription-plans/stats/total");
+  return response.data;
+};
+export const totalActivePlans = async () => {
+  const response = await dashboardApi.get("/subscription-plans/stats/active");
+  return response.data;
+};
+export const totalInActivePlans = async () => {
+  const response = await dashboardApi.get("/subscription-plans/stats/inactive");
+  return response.data;
+};
+export const totalInstitutesUsingPlans = async () => {
+  const response = await dashboardApi.get(
+    "/subscription-plans/stats/institutes-using-plans",
+  );
+  return response.data;
+};
+export const fetchPlanById = async (planId: string | number) => {
+  const response = await dashboardApi.get(`/subscription-plans/${planId}`);
+  return response.data;
+};
+export const fetchPlanInstitutes = async (planId: string | number) => {
+  const response = await dashboardApi.get(
+    `/subscription-plans/${planId}/institutes`,
+  );
+  return response.data;
+};
+export async function planActivateToggle(
+  planId: number | string,
+): Promise<void> {
+  const res = await dashboardApi.patch<void>(
+    `/subscription-plans/${planId}/toggle-status`,
+  );
+  return res.data;
+}
+export async function deletePlan(planId: number): Promise<void> {
+  const res = await dashboardApi.delete<void>(`/subscription-plans/${planId}`);
+  return res.data;
+}
+type PlanData = {
+  plan_name: string;
+  min_students: number;
+  max_students: number;
+  default_price_per_student: number;
+  administrative_fees: number;
+  default_installments_count: number;
+  is_active: boolean;
+  description: string;
+};
+export async function createSubscriptionPlan(data: PlanData) {
+  const res = await dashboardApi.post(`/subscription-plans`, data);
+  return res.data;
+}
+export async function updateSubscriptionPlan(
+  id: string,
+  data: PlanData,
+): Promise<void> {
+  const res = await dashboardApi.patch<void>(`/subscription-plans/${id}`, data);
+  return res.data;
+}

@@ -1,159 +1,56 @@
-import { useState, useMemo } from "react";
-import DataTable from "react-data-table-component";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Link } from "react-router-dom";
+import DataTable from "react-data-table-component";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  LayoutGrid,
+  CheckCircle2,
+  XCircle,
+  Building2,
+  Search,
+  SlidersHorizontal,
+  Eye,
+  Pencil,
+  Loader2,
+  Check,
+} from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
-import SearchIcon from "@/assets/svgs/SearchIconDashboard.svg?react";
-import FilterIcon from "@/assets/svgs/FilterIcon.svg?react";
+import {
+  deleteInstitute,
+  deletePlan,
+  fetchPlans,
+  fetchPlansCount,
+  planActivateToggle,
+  totalActivePlans,
+  totalInActivePlans,
+  totalInstitutesUsingPlans,
+} from "@/features/Dashboard/services/dashboardApis";
+import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
+import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SubscriptionPlan {
   id: number;
-  name: string;
-  badge: string;
-  badgeColor: string;
-  minStudents: number;
-  maxStudents: number | string;
-  pricePerStudent: number | string;
-  installments: number | string;
-  status: "Active" | "Inactive";
-  institutes: number;
+  plan_name: string;
+  min_students: number;
+  max_students: number;
+  default_price_per_student: number;
+  default_installments_count: number;
+  description: string;
+  administrative_fees: number;
+  is_active: 0 | 1;
+  institutesCount: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 }
 
-// ─── Dummy Data ───────────────────────────────────────────────────────────────
-
-const DUMMY_PLANS: SubscriptionPlan[] = [
-  {
-    id: 1,
-    name: "Starter Plan",
-    badge: "Basic",
-    badgeColor: "bg-blue-100 text-blue-600",
-    minStudents: 0,
-    maxStudents: 500,
-    pricePerStudent: "200.00",
-    installments: 4,
-    status: "Active",
-    institutes: 3,
-  },
-  {
-    id: 2,
-    name: "Growth Plan",
-    badge: "Popular",
-    badgeColor: "bg-green-100 text-green-600",
-    minStudents: 501,
-    maxStudents: 2000,
-    pricePerStudent: "180.00",
-    installments: 4,
-    status: "Active",
-    institutes: 6,
-  },
-  {
-    id: 3,
-    name: "Enterprise Plan",
-    badge: "Enterprise",
-    badgeColor: "bg-orange-100 text-orange-600",
-    minStudents: 2001,
-    maxStudents: 10000,
-    pricePerStudent: "150.00",
-    installments: 4,
-    status: "Active",
-    institutes: 2,
-  },
-  {
-    id: 4,
-    name: "Custom Plan",
-    badge: "Custom",
-    badgeColor: "bg-purple-100 text-purple-600",
-    minStudents: 10001,
-    maxStudents: "Unlimited",
-    pricePerStudent: "Custom",
-    installments: "Custom",
-    status: "Active",
-    institutes: 1,
-  },
-];
-
-// ─── Summary stats ────────────────────────────────────────────────────────────
-
-const STATS = [
-  {
-    label: "Total Plans",
-    value: 4,
-    bg: "bg-blue-50",
-    iconBg: "bg-blue-500",
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-        <rect x="3" y="3" width="8" height="8" rx="2" fill="white" />
-        <rect x="13" y="3" width="8" height="8" rx="2" fill="white" />
-        <rect x="3" y="13" width="8" height="8" rx="2" fill="white" />
-        <rect x="13" y="13" width="8" height="8" rx="2" fill="white" />
-      </svg>
-    ),
-  },
-  {
-    label: "Active Plans",
-    value: 4,
-    bg: "bg-green-50",
-    iconBg: "bg-green-500",
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-        <path
-          d="M8 12l3 3 5-5"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "Inactive Plans",
-    value: 0,
-    bg: "bg-orange-50",
-    iconBg: "bg-orange-400",
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-        <path
-          d="M12 8v4m0 4h.01"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "Institutes Using Plans",
-    value: 12,
-    bg: "bg-violet-50",
-    iconBg: "bg-violet-500",
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-        <path
-          d="M3 21h18M5 21V9l7-6 7 6v12"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <rect
-          x="9"
-          y="14"
-          width="6"
-          height="7"
-          rx="1"
-          stroke="white"
-          strokeWidth="2"
-        />
-      </svg>
-    ),
-  },
-];
+type ActiveFilter = "all" | "active" | "inactive";
 
 // ─── Custom Styles ────────────────────────────────────────────────────────────
 
@@ -187,9 +84,29 @@ const customStyles = {
   },
 };
 
+// ─── Badge helper ─────────────────────────────────────────────────────────────
+
+const getBadge = (plan: SubscriptionPlan) => {
+  if (plan.max_students <= 100)
+    return { label: "Basic", color: "bg-blue-100 text-blue-600" };
+  if (plan.max_students <= 1000)
+    return { label: "Popular", color: "bg-green-100 text-green-600" };
+  if (plan.max_students <= 5000)
+    return { label: "Enterprise", color: "bg-orange-100 text-orange-600" };
+  return { label: "Custom", color: "bg-purple-100 text-purple-600" };
+};
+
+// ─── Filter options ───────────────────────────────────────────────────────────
+
+const FILTER_OPTIONS: { value: ActiveFilter; label: string; dot: string }[] = [
+  { value: "all", label: "All Plans", dot: "bg-gray-400" },
+  { value: "active", label: "Active", dot: "bg-green-500" },
+  { value: "inactive", label: "Inactive", dot: "bg-gray-400" },
+];
+
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
-const columns = [
+const buildColumns = () => [
   {
     name: "#",
     selector: (_: unknown, index: number) => index + 1,
@@ -198,111 +115,123 @@ const columns = [
   },
   {
     name: "Plan Name",
-    cell: (row: SubscriptionPlan) => (
-      <div className="flex flex-col gap-0.5 py-1">
-        <span className="font-semibold text-gray-800 text-sm">{row.name}</span>
-        <span
-          className={`text-[11px] font-medium px-2 py-0.5 rounded-full w-fit ${row.badgeColor}`}
-        >
-          {row.badge}
-        </span>
-      </div>
-    ),
-    sortable: true,
+    cell: (row: SubscriptionPlan) => {
+      const badge = getBadge(row);
+      return (
+        <div className="flex flex-col items-center gap-0.5 py-1">
+          <span className="font-semibold text-gray-800 text-sm">
+            {row.plan_name}
+          </span>
+          <span
+            className={`text-[11px] font-medium px-2 py-0.5 rounded-full w-fit ${badge.color}`}
+          >
+            {badge.label}
+          </span>
+        </div>
+      );
+    },
+    sortable: false,
     minWidth: "160px",
+    ignoreRowClick: true,
   },
   {
     name: "Min Students",
-    selector: (row: SubscriptionPlan) => row.minStudents,
+    selector: (row: SubscriptionPlan) => row.min_students,
     sortable: true,
     center: true,
   },
   {
     name: "Max Students",
-    selector: (row: SubscriptionPlan) => row.maxStudents,
+    selector: (row: SubscriptionPlan) => row.max_students,
     sortable: true,
     center: true,
   },
   {
     name: "Price Per Student (EGP)",
-    selector: (row: SubscriptionPlan) => row.pricePerStudent,
+    selector: (row: SubscriptionPlan) => row.default_price_per_student,
+    sortable: true,
+    center: true,
+    minWidth: "180px",
+  },
+  {
+    name: "Administrative Fees",
+    selector: (row: SubscriptionPlan) => row.administrative_fees,
     sortable: true,
     center: true,
     minWidth: "180px",
   },
   {
     name: "Installments",
-    selector: (row: SubscriptionPlan) => row.installments,
+    selector: (row: SubscriptionPlan) => row.default_installments_count,
+    sortable: true,
+    center: true,
+  },
+
+  {
+    name: "Institutes",
+    selector: (row: SubscriptionPlan) => row.institutesCount,
     sortable: true,
     center: true,
   },
   {
     name: "Status",
     cell: (row: SubscriptionPlan) => (
-      <span
-        className={`text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 ${
-          row.status === "Active"
-            ? "bg-green-50 text-green-600"
-            : "bg-gray-100 text-gray-500"
-        }`}
-      >
-        <span
-          className={`w-1.5 h-1.5 rounded-full ${
-            row.status === "Active" ? "bg-green-500" : "bg-gray-400"
-          }`}
-        />
-        {row.status}
-      </span>
+      <ActiveStatusButton
+        itemId={row.id ?? ""}
+        activateApi={() => planActivateToggle(row.id ?? "")}
+        deactivateApi={() => planActivateToggle(row.id ?? "")}
+        isActive={row.is_active ?? false}
+        refetchKey={"subscription-plans"}
+        showModal={false}
+      />
     ),
-    sortable: true,
+    sortable: false,
+    ignoreRowClick: true,
     center: true,
   },
   {
-    name: "Institutes",
-    selector: (row: SubscriptionPlan) => row.institutes,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Actions",
+    name: "Edit",
     cell: (row: SubscriptionPlan) => (
-      <div className="flex items-center gap-2">
-        <Link
-          to={`/dashboard/subscription-plans/${row.id}`}
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          title="View"
-        >
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-            <path
-              d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-              stroke="#6b7280"
-              strokeWidth="2"
-            />
-            <circle cx="12" cy="12" r="3" stroke="#6b7280" strokeWidth="2" />
-          </svg>
-        </Link>
-        <Link
-          to={`/dashboard/subscription-plans/edit/${row.id}`}
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          title="Edit"
-        >
-          <EditIcon />
-        </Link>
-        <button
-          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          title="More"
-        >
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-            <circle cx="12" cy="5" r="1.5" fill="#6b7280" />
-            <circle cx="12" cy="12" r="1.5" fill="#6b7280" />
-            <circle cx="12" cy="19" r="1.5" fill="#6b7280" />
-          </svg>
-        </button>
-      </div>
+      <Link
+        to={`/dashboard/subscription-plans/edit/${row.id}`}
+        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+        title="Edit"
+      >
+        <EditIcon />
+      </Link>
     ),
     ignoreRowClick: true,
     center: true,
-    minWidth: "120px",
+    minWidth: "50px",
+  },
+  {
+    name: "Delete",
+    cell: (row: SubscriptionPlan) => (
+      <DeleteButton
+        deleteApi={() => deletePlan(row.id)}
+        successMessage="Plan has been deleted successfully"
+        errorMessage="An error occurred while deleting the plan"
+        refetchFunction="subscription-plans"
+      />
+    ),
+    ignoreRowClick: true,
+    center: true,
+    minWidth: "50px",
+  },
+  {
+    name: "View",
+    cell: (row: SubscriptionPlan) => (
+      <Link
+        to={`/dashboard/subscription-plans/${row.id}`}
+        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+        title="View"
+      >
+        <Eye size={25} className="text-gray-500" />
+      </Link>
+    ),
+    ignoreRowClick: true,
+    center: true,
+    minWidth: "50px",
   },
 ];
 
@@ -310,17 +239,127 @@ const columns = [
 
 const SubscriptionPlans = () => {
   const [filterText, setFilterText] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read active filter from search params: "all" | "active" | "inactive"
+  const activeFilter = (searchParams.get("status") as ActiveFilter) ?? "all";
+
+  // Only pass onlyActive=1 to API when filter is "active"
+  const onlyActive = activeFilter === "active";
+
+  const setActiveFilter = (value: ActiveFilter) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === "all") {
+      next.delete("status");
+    } else {
+      next.set("status", value);
+    }
+    setSearchParams(next);
+    setDropdownOpen(false);
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const {
+    data: plansData = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["subscription-plans", onlyActive],
+    queryFn: () => fetchPlans(onlyActive),
+  });
+
+  const { data: totalPlansCount = [] } = useQuery({
+    queryKey: ["totalPlansCount"],
+    queryFn: () => fetchPlansCount(),
+  });
+  const { data: totalActivePlansCount = [] } = useQuery({
+    queryKey: ["totalActivePlans"],
+    queryFn: () => totalActivePlans(),
+  });
+  const { data: totalInActivePlansCount = [] } = useQuery({
+    queryKey: ["totalInActivePlans"],
+    queryFn: () => totalInActivePlans(),
+  });
+  const { data: totalInstitutesUsingPlansCount = [] } = useQuery({
+    queryKey: ["totalInstitutesUsingPlans"],
+    queryFn: () => totalInstitutesUsingPlans(),
+  });
+
+  const plans = plansData?.data ?? [];
+
+  // Client-side inactive filter (API has no onlyInactive param)
+  const statusFilteredPlans = useMemo(() => {
+    if (activeFilter === "inactive") return plans.filter((p) => !p.is_active);
+    return plans;
+  }, [plans, activeFilter]);
+
+  // Derived stats always from full unfiltered data
+  const totalPlans = totalPlansCount?.data?.totalPlans;
+  const activePlans = totalActivePlansCount?.data?.totalActivePlans;
+  const inactivePlans = totalInActivePlansCount?.data?.totalInactivePlans;
+  const totalInstitutes =
+    totalInstitutesUsingPlansCount?.data?.totalInstitutesUsingPlans;
+
+  const STATS = [
+    {
+      label: "Total Plans",
+      value: totalPlans,
+      bg: "bg-blue-50",
+      iconBg: "bg-blue-500",
+      icon: <LayoutGrid size={20} color="white" />,
+    },
+    {
+      label: "Active Plans",
+      value: activePlans,
+      bg: "bg-green-50",
+      iconBg: "bg-green-500",
+      icon: <CheckCircle2 size={20} color="white" />,
+    },
+    {
+      label: "Inactive Plans",
+      value: inactivePlans,
+      bg: "bg-orange-50",
+      iconBg: "bg-orange-400",
+      icon: <XCircle size={20} color="white" />,
+    },
+    {
+      label: "Institutes Using Plans",
+      value: totalInstitutes,
+      bg: "bg-violet-50",
+      iconBg: "bg-violet-500",
+      icon: <Building2 size={20} color="white" />,
+    },
+  ];
 
   const filteredItems = useMemo(
     () =>
-      DUMMY_PLANS.filter((plan) =>
-        plan.name.toLowerCase().includes(filterText.toLowerCase()),
+      statusFilteredPlans?.filter((plan) =>
+        plan.plan_name.toLowerCase().includes(filterText.toLowerCase()),
       ),
-    [filterText],
+    [statusFilteredPlans, filterText],
   );
+
+  const currentOption = FILTER_OPTIONS.find((o) => o.value === activeFilter)!;
+  const isFiltered = activeFilter !== "all";
 
   const subHeaderComponent = (
     <div className="flex gap-2 w-full justify-between items-center px-1 py-2">
+      {/* Search */}
       <div className="relative">
         <input
           type="text"
@@ -330,12 +369,69 @@ const SubscriptionPlans = () => {
           onChange={(e) => setFilterText(e.target.value)}
         />
         <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400">
-          <SearchIcon />
+          <Search size={16} />
         </span>
       </div>
-      <div className="border border-gray-200 h-9 px-4 rounded-2xl flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
-        <FilterIcon />
-        Filter
+
+      {/* Filter Dropdown */}
+      <div className="relative" ref={dropdownRef}>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setDropdownOpen((prev) => !prev)}
+          className={`border h-9 px-4 rounded-2xl flex items-center gap-2 text-sm cursor-pointer transition-colors select-none ${
+            isFiltered
+              ? "bg-blue-500 text-white border-blue-500"
+              : "border-gray-200 text-gray-500 hover:bg-gray-50"
+          }`}
+        >
+          <SlidersHorizontal size={15} />
+          <span>{isFiltered ? currentOption.label : "Filter"}</span>
+          {/* Animated chevron */}
+          <motion.svg
+            animate={{ rotate: dropdownOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </motion.svg>
+        </motion.button>
+
+        <AnimatePresence>
+          {dropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="absolute end-0 mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden"
+            >
+              <div className="py-1.5">
+                {FILTER_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setActiveFilter(option.value)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${option.dot}`} />
+                      {option.label}
+                    </div>
+                    {activeFilter === option.value && (
+                      <Check size={14} className="text-blue-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -358,38 +454,67 @@ const SubscriptionPlans = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {STATS.map((stat) => (
-          <div
-            key={stat.label}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl ${stat.bg} border border-white`}
-          >
-            <div
-              className={`w-10 h-10 rounded-xl ${stat.iconBg} flex items-center justify-center flex-shrink-0`}
+        <AnimatePresence>
+          {STATS.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07, duration: 0.35, ease: "easeOut" }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl ${stat.bg} border border-white`}
             >
-              {stat.icon}
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
-              <p className="text-xs text-gray-500 leading-tight">
-                {stat.label}
-              </p>
-            </div>
-          </div>
-        ))}
+              <div
+                className={`w-10 h-10 rounded-xl ${stat.iconBg} flex items-center justify-center flex-shrink-0`}
+              >
+                {stat.icon}
+              </div>
+              <div>
+                <motion.p
+                  key={stat.value}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-2xl font-bold text-gray-800"
+                >
+                  {stat.value}
+                </motion.p>
+                <p className="text-xs text-gray-500 leading-tight">
+                  {stat.label}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden bg-white">
-        <DataTable
-          columns={columns}
-          data={filteredItems}
-          customStyles={customStyles}
-          highlightOnHover
-          pagination
-          subHeader
-          subHeaderComponent={subHeaderComponent}
-        />
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+        className="rounded-xl border border-gray-100 shadow-sm overflow-hidden bg-white"
+      >
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16 text-gray-400 gap-2">
+            <Loader2 size={20} className="animate-spin" />
+            <span className="text-sm">Loading plans...</span>
+          </div>
+        ) : isError ? (
+          <div className="flex items-center justify-center py-16 text-red-400 gap-2">
+            <XCircle size={20} />
+            <span className="text-sm">Failed to load plans. Try again.</span>
+          </div>
+        ) : (
+          <DataTable
+            columns={buildColumns()}
+            data={filteredItems}
+            customStyles={customStyles}
+            highlightOnHover
+            pagination
+            subHeader
+            subHeaderComponent={subHeaderComponent}
+          />
+        )}
+      </motion.div>
     </div>
   );
 };
