@@ -20,7 +20,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { logoutDashboardUser } from "@/features/Dashboard/services/dashboardApis";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import ProfileSection from "@/features/Dashboard/components/ProfileSection";
-import { PackageCheck } from "lucide-react";
+import { FileSignature, FileText, PackageCheck } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROLES
@@ -271,6 +271,14 @@ const DashboardLayout = () => {
               >
                 <PackageCheck className="text-[#ACACAC] " />
                 <span>{t("Subscription_plans")}</span>
+              </NavLink>
+              <NavLink
+                to="/dashboard/institutions-contracts"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+              >
+                <FileSignature className="text-[#ACACAC] " />
+                <span>{t("institutions_contracts")}</span>
               </NavLink>
             </>
           )}

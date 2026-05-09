@@ -120,6 +120,10 @@ import SubscriptionPlans from "@/pages/dashboard/SubscriptionPlans";
 import AddNewPlan from "@/pages/dashboard/AddNewPlan";
 import EditPlan from "@/pages/dashboard/EditPlan";
 import PlanDetails from "@/pages/dashboard/PlanDetails";
+import InstitutionsContractsList from "@/pages/dashboard/InstitutionsContractsList";
+import CreateAnnualContract from "@/pages/dashboard/CreateAnnualContract";
+import EditAnnualContract from "@/pages/dashboard/EditAnnualContract";
+import AnnualContractDetails from "@/pages/dashboard/AnnualContractDetails";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -786,6 +790,39 @@ export default function AppRoutes() {
             element={
               <DashboardRoute allowed={SUPER_ONLY}>
                 <EditPlan />
+              </DashboardRoute>
+            }
+          />
+          {/* Institutions Contracts */}
+          <Route
+            path="/dashboard/institutions-contracts"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <InstitutionsContractsList />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/institutions-contracts/create"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <CreateAnnualContract />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/institutions-contracts/edit/:contractId"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <EditAnnualContract />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/institutions-contracts/:contractId"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <AnnualContractDetails />
               </DashboardRoute>
             }
           />
