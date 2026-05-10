@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
@@ -7,183 +8,189 @@ import {
   ChevronDown,
   Building2,
   CalendarDays,
-  FileText,
-  Users,
   UserCircle,
   Clock,
   DollarSign,
-  Receipt,
-  Percent,
-  BadgeCheck,
   FileCheck2,
   CreditCard,
   GraduationCap,
   FolderOpen,
+  AlertCircle,
+  Users,
+  Receipt,
+  CheckCircle2,
+  AlarmClock,
+
 } from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { fetchContractById } from "@/features/Dashboard/services/dashboardApis";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ContractDetails {
+interface ContractDetailResponse {
   id: number;
-  contractNumber: string;
-  institute: string;
-  status: "Active" | "Closed" | "Pending";
-  year: number;
-  plan: string;
+  contractNo: string;
+  instituteName: string;
+  academicYear: number;
+  planName: string;
   maxStudents: number;
-  pricePerStudent: number;
-  packageAmount: number;
-  discountPct: number;
+  status: string;
+  paidAmount: number;
+  totalRemaining: number;
+  header: {
+    contractNo: string;
+    institute: { id: number; name: string };
+    status: string;
+    academicYear: number;
+    plan: { id: number; name: string };
+    maxStudents: number;
+  };
+  tabs: {
+    contractInfo: boolean;
+    installments: number;
+    payments: number;
+    students: number;
+    documents: number;
+  };
+  contractInfo: {
+    pricePerStudent: number;
+    packageAmount: number;
+    discountType: string;
+    discountValue: number;
+    discountAmount: number;
+    amountAfterDiscount: number;
+    administrativeFees: number;
+    taxPercentage: number;
+    taxAmount: number;
+    totalAmount: number;
+    installmentsCount: number;
+    startDate: string;
+    endDate: string;
+    notes: string;
+    createdBy: { id: number; fullName: string; role: string | null };
+    createdAt: string;
+  };
+  studentsUsage: {
+    maxStudentsAllowed: number;
+    addedStudents: number;
+    remainingStudents: number;
+  };
+  settlement: {
+    totalAmount: number;
+    totalPaid: number;
+    totalRemaining: number;
+    paymentPercentage: number;
+    overdueInstallments: number;
+  };
+  installments: {
+    id: number;
+    installmentNo: number;
+    dueDate: string;
+    installmentPercentage: number;
+    installmentAmount: number;
+    paidAmount: number;
+    remainingAmount: number;
+    status: string;
+    notes: string | null;
+  }[];
+  payments: {
+    id: number;
+    installmentId: number;
+    paymentDate: string;
+    paidAmount: number;
+    paymentMethod: string;
+    receiptNo: string;
+    receiptFile: string | null;
+    status: string;
+    notes: string | null;
+    createdBy: { id: number; fullName: string };
+    createdAt: string;
+  }[];
+  notes: string;
+  discountType: string;
+  discountValue: number;
   discountAmount: number;
   amountAfterDiscount: number;
   administrativeFees: number;
-  taxPct: number;
+  taxPercentage: number;
   taxAmount: number;
-  totalAmount: number;
-  installments: number;
-  startDate: string;
-  endDate: string;
-  createdBy: string;
-  createdAt: string;
+  contractStartDate: string;
+  contractEndDate: string;
+  createdBy: { id: number; fullName: string; role: string | null };
 }
 
-// ─── Dummy Data ───────────────────────────────────────────────────────────────
+// ─── Status config ────────────────────────────────────────────────────────────
 
-const DUMMY_CONTRACTS: Record<string, ContractDetails> = {
-  "1": {
-    id: 1,
-    contractNumber: "CON-2025-0001",
-    institute: "Almarefa Institute",
-    status: "Active",
-    year: 2025,
-    plan: "Growth Plan",
-    maxStudents: 2000,
-    pricePerStudent: 180,
-    packageAmount: 360000,
-    discountPct: 10,
-    discountAmount: 36000,
-    amountAfterDiscount: 324000,
-    administrativeFees: 5000,
-    taxPct: 14,
-    taxAmount: 46000,
-    totalAmount: 375060,
-    installments: 4,
-    startDate: "2025-01-10",
-    endDate: "2025-12-31",
-    createdBy: "SUPER_ADMIN",
-    createdAt: "2025-01-10 11:30 AM",
-  },
-  "2": {
-    id: 2,
-    contractNumber: "CON-2025-0002",
-    institute: "Attamia Institute",
-    status: "Active",
-    year: 2025,
-    plan: "Starter Plan",
-    maxStudents: 500,
-    pricePerStudent: 200,
-    packageAmount: 100000,
-    discountPct: 0,
-    discountAmount: 0,
-    amountAfterDiscount: 100000,
-    administrativeFees: 0,
-    taxPct: 14,
-    taxAmount: 14000,
-    totalAmount: 114000,
-    installments: 4,
-    startDate: "2025-02-01",
-    endDate: "2025-12-31",
-    createdBy: "SUPER_ADMIN",
-    createdAt: "2025-02-01 09:00 AM",
-  },
-  "3": {
-    id: 3,
-    contractNumber: "CON-2025-0003",
-    institute: "Future Academy",
-    status: "Active",
-    year: 2025,
-    plan: "Enterprise Plan",
-    maxStudents: 5000,
-    pricePerStudent: 150,
-    packageAmount: 750000,
-    discountPct: 10,
-    discountAmount: 75000,
-    amountAfterDiscount: 675000,
-    administrativeFees: 0,
-    taxPct: 14,
-    taxAmount: 94500,
-    totalAmount: 769500,
-    installments: 6,
-    startDate: "2025-01-15",
-    endDate: "2025-12-31",
-    createdBy: "SUPER_ADMIN",
-    createdAt: "2025-01-15 10:15 AM",
-  },
-  "4": {
-    id: 4,
-    contractNumber: "CON-2024-0004",
-    institute: "Smart Learning Institute",
-    status: "Closed",
-    year: 2024,
-    plan: "Growth Plan",
-    maxStudents: 1500,
-    pricePerStudent: 180,
-    packageAmount: 270000,
-    discountPct: 0,
-    discountAmount: 0,
-    amountAfterDiscount: 270000,
-    administrativeFees: 0,
-    taxPct: 14,
-    taxAmount: 37800,
-    totalAmount: 307800,
-    installments: 4,
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    createdBy: "SUPER_ADMIN",
-    createdAt: "2024-01-01 08:00 AM",
-  },
-};
-
-const TABS = [
-  { key: "info", label: "Contract Info", icon: <FileCheck2 size={14} /> },
-  {
-    key: "installments",
-    label: "Installments",
-    count: 4,
-    icon: <CreditCard size={14} />,
-  },
-  {
-    key: "payments",
-    label: "Payments",
-    count: 3,
-    icon: <DollarSign size={14} />,
-  },
-  {
-    key: "students",
-    label: "Students",
-    count: 450,
-    icon: <GraduationCap size={14} />,
-  },
-  { key: "documents", label: "Documents", icon: <FolderOpen size={14} /> },
-];
-
-const statusConfig = {
-  Active: {
+const statusConfig: Record<
+  string,
+  { class: string; dot: string; label: string }
+> = {
+  ACTIVE: {
     class: "bg-green-50 text-green-600 border-green-200",
     dot: "bg-green-500",
+    label: "Active",
   },
-  Closed: {
+  DRAFT: {
+    class: "bg-blue-50 text-blue-500 border-blue-200",
+    dot: "bg-blue-400",
+    label: "Draft",
+  },
+  CLOSED: {
     class: "bg-gray-100 text-gray-500 border-gray-200",
     dot: "bg-gray-400",
+    label: "Closed",
   },
-  Pending: {
+  PENDING: {
     class: "bg-amber-50 text-amber-600 border-amber-200",
     dot: "bg-amber-400",
+    label: "Pending",
+  },
+  PAID: {
+    class: "bg-green-50 text-green-600 border-green-200",
+    dot: "bg-green-500",
+    label: "Paid",
+  },
+  OVERDUE: {
+    class: "bg-red-50 text-red-500 border-red-200",
+    dot: "bg-red-500",
+    label: "Overdue",
+  },
+  CONFIRMED: {
+    class: "bg-green-50 text-green-600 border-green-200",
+    dot: "bg-green-500",
+    label: "Confirmed",
   },
 };
 
-// ─── Info Grid Row ────────────────────────────────────────────────────────────
+const getStatusCfg = (status: string) =>
+  statusConfig[status] ?? {
+    class: "bg-gray-100 text-gray-500 border-gray-200",
+    dot: "bg-gray-400",
+    label: status,
+  };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const egp = (val: number) =>
+  `EGP ${Number(val).toLocaleString("en-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const InfoRow = ({
   label,
@@ -210,8 +217,6 @@ const InfoRow = ({
     </span>
   </motion.div>
 );
-
-// ─── Meta Card ────────────────────────────────────────────────────────────────
 
 const MetaCard = ({
   icon,
@@ -240,20 +245,35 @@ const MetaCard = ({
   </motion.div>
 );
 
-// ─── Empty Tab Placeholder ────────────────────────────────────────────────────
-
-const EmptyTab = ({ label }: { label: string }) => (
+const StatCard = ({
+  label,
+  value,
+  sub,
+  color,
+  icon,
+  delay = 0,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  color: string;
+  icon: React.ReactNode;
+  delay?: number;
+}) => (
   <motion.div
-    initial={{ opacity: 0, y: 8 }}
+    initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    className="flex flex-col items-center justify-center py-16 gap-2 text-gray-300"
+    transition={{ delay, duration: 0.3 }}
+    className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${color}`}
   >
-    <FolderOpen size={36} />
-    <p className="text-sm text-gray-400">No {label} data yet</p>
+    <div className="flex-shrink-0">{icon}</div>
+    <div>
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-sm font-bold text-gray-800">{value}</p>
+      {sub && <p className="text-xs text-gray-400">{sub}</p>}
+    </div>
   </motion.div>
 );
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const Skeleton = ({ className }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-100 rounded-lg ${className}`} />
@@ -266,15 +286,90 @@ const AnnualContractDetails = () => {
   const [activeTab, setActiveTab] = useState("info");
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const contract = DUMMY_CONTRACTS[contractId ?? "1"] ?? DUMMY_CONTRACTS["1"];
-  const statusCfg = statusConfig[contract.status];
-  const egp = (val: number) => `EGP ${val.toLocaleString("en-EG")}`;
-
-  // Resolve tab counts dynamically
-  const tabs = TABS.map((t) => {
-    if (t.key === "installments") return { ...t, count: contract.installments };
-    return t;
+  const {
+    data: contract,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["institute-annual-contract", contractId],
+    queryFn: () => fetchContractById(contractId!),
+    enabled: !!contractId,
   });
+
+  // ── Loading ────────────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-5 pb-8">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-4 w-80" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  }
+
+  // ── Error ──────────────────────────────────────────────────────────────────
+  if (isError || !contract) {
+    return (
+      <div className="flex flex-col gap-5">
+        <DashboardPageTitle text="Annual Contract Details" />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center justify-center py-20 gap-3"
+        >
+          <AlertCircle size={36} className="text-red-300" />
+          <p className="text-sm font-medium text-red-400">
+            Failed to load contract. Please try again.
+          </p>
+          <Link
+            to="/dashboard/institutions-contracts"
+            className="text-sm text-blue-500 hover:underline"
+          >
+            Back to Contracts
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const headerStatusCfg = getStatusCfg(contract.header.status);
+
+  // ── Dynamic tabs from API ──────────────────────────────────────────────────
+  const TABS = [
+    {
+      key: "info",
+      label: "Contract Info",
+      icon: <FileCheck2 size={14} />,
+      count: undefined,
+    },
+    {
+      key: "installments",
+      label: "Installments",
+      icon: <CreditCard size={14} />,
+      count: contract.tabs.installments,
+    },
+    {
+      key: "payments",
+      label: "Payments",
+      icon: <DollarSign size={14} />,
+      count: contract.tabs.payments,
+    },
+    {
+      key: "students",
+      label: "Students",
+      icon: <GraduationCap size={14} />,
+      count: contract.tabs.students,
+    },
+    {
+      key: "documents",
+      label: "Documents",
+      icon: <FolderOpen size={14} />,
+      count: contract.tabs.documents,
+    },
+  ];
+
+  const info = contract.contractInfo;
 
   return (
     <div className="flex flex-col gap-5 pb-8">
@@ -290,7 +385,6 @@ const AnnualContractDetails = () => {
             Print
           </motion.button>
 
-          {/* More dropdown */}
           <div className="relative">
             <motion.button
               whileTap={{ scale: 0.96 }}
@@ -367,26 +461,26 @@ const AnnualContractDetails = () => {
         className="bg-white rounded-xl border border-gray-100 shadow-sm px-6 py-5"
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
-          {/* Left — Institute info */}
+          {/* Left */}
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
               <Building2 size={24} className="text-blue-500" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900">
-                {contract.institute}
+                {contract.header.institute.name}
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-sm text-gray-400">
-                  Contract #{contract.contractNumber}
+                  Contract #{contract.header.contractNo}
                 </span>
                 <span
-                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${statusCfg.class}`}
+                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${headerStatusCfg.class}`}
                 >
                   <span
-                    className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`}
+                    className={`w-1.5 h-1.5 rounded-full ${headerStatusCfg.dot}`}
                   />
-                  {contract.status}
+                  {headerStatusCfg.label}
                 </span>
               </div>
             </div>
@@ -397,22 +491,76 @@ const AnnualContractDetails = () => {
             <div>
               <p className="text-xs text-gray-400">Year</p>
               <p className="font-bold text-gray-800 text-base">
-                {contract.year}
+                {contract.header.academicYear}
               </p>
             </div>
             <div className="w-px h-8 bg-gray-100" />
             <div>
               <p className="text-xs text-gray-400">Plan</p>
-              <p className="font-bold text-gray-800">{contract.plan}</p>
+              <p className="font-bold text-gray-800">
+                {contract.header.plan.name}
+              </p>
             </div>
             <div className="w-px h-8 bg-gray-100" />
             <div>
               <p className="text-xs text-gray-400">Max Students</p>
               <p className="font-bold text-gray-800">
-                {contract.maxStudents.toLocaleString()}
+                {contract.header.maxStudents.toLocaleString()}
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Settlement + Students usage strip */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5 pt-5 border-t border-gray-50">
+          <StatCard
+            label="Total Amount"
+            value={egp(contract.settlement.totalAmount)}
+            color="bg-blue-50 border-blue-100"
+            icon={<Receipt size={18} className="text-blue-400" />}
+            delay={0.12}
+          />
+          <StatCard
+            label="Total Paid"
+            value={egp(contract.settlement.totalPaid)}
+            sub={`${contract.settlement.paymentPercentage}% paid`}
+            color="bg-green-50 border-green-100"
+            icon={<CheckCircle2 size={18} className="text-green-500" />}
+            delay={0.16}
+          />
+          <StatCard
+            label="Remaining"
+            value={egp(contract.settlement.totalRemaining)}
+            sub={
+              contract.settlement.overdueInstallments > 0
+                ? `${contract.settlement.overdueInstallments} overdue`
+                : undefined
+            }
+            color={
+              contract.settlement.overdueInstallments > 0
+                ? "bg-red-50 border-red-100"
+                : "bg-gray-50 border-gray-100"
+            }
+            icon={
+              <AlarmClock
+                size={18}
+                className={
+                  contract.settlement.overdueInstallments > 0
+                    ? "text-red-400"
+                    : "text-gray-400"
+                }
+              />
+            }
+            delay={0.2}
+          />
+          <StatCard
+            label="Students"
+            value={`${contract.studentsUsage.addedStudents} / ${contract.studentsUsage.maxStudentsAllowed}`}
+            sub={`${contract.studentsUsage.remainingStudents} remaining`}
+            color="bg-violet-50 border-violet-100"
+            icon={<Users size={18} className="text-violet-400" />}
+            delay={0.24}
+          />
         </div>
       </motion.div>
 
@@ -424,8 +572,8 @@ const AnnualContractDetails = () => {
         className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
       >
         {/* Tab bar */}
-        <div className="flex items-center gap-0 border-b border-gray-100 px-2 overflow-x-auto">
-          {tabs.map((tab) => (
+        <div className="flex items-center border-b border-gray-100 px-2 overflow-x-auto">
+          {TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
@@ -443,7 +591,7 @@ const AnnualContractDetails = () => {
                 {tab.icon}
               </span>
               {tab.label}
-              {tab.count !== undefined && (
+              {tab.count !== undefined && tab.count > 0 && (
                 <span
                   className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
                     activeTab === tab.key
@@ -467,6 +615,7 @@ const AnnualContractDetails = () => {
         {/* Tab content */}
         <div className="p-6">
           <AnimatePresence mode="wait">
+            {/* ── Contract Info ── */}
             {activeTab === "info" && (
               <motion.div
                 key="info"
@@ -478,66 +627,54 @@ const AnnualContractDetails = () => {
                 <p className="text-sm font-semibold text-gray-800 mb-4">
                   Contract Information
                 </p>
-
-                {/* Two-column info grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12">
-                  {/* Left */}
                   <div>
                     <InfoRow
                       label="Price Per Student (EGP)"
-                      value={`${contract.pricePerStudent}.00`}
+                      value={egp(info.pricePerStudent)}
                       delay={0.05}
                     />
                     <InfoRow
                       label="Package Amount"
-                      value={egp(contract.packageAmount)}
+                      value={egp(info.packageAmount)}
                       delay={0.08}
                     />
                     <InfoRow
-                      label="Discount (%)"
-                      value={`${contract.discountPct}%`}
+                      label={`Discount (${info.discountType === "PERCENTAGE" ? `${info.discountValue}%` : "Fixed"})`}
+                      value={egp(info.discountAmount)}
                       delay={0.11}
-                    />
-                    <InfoRow
-                      label="Discount Amount"
-                      value={egp(contract.discountAmount)}
-                      delay={0.14}
                     />
                     <InfoRow
                       label="Amount After Discount"
-                      value={egp(contract.amountAfterDiscount)}
-                      delay={0.17}
-                    />
-                  </div>
-
-                  {/* Right */}
-                  <div>
-                    <InfoRow
-                      label="Administrative Fees"
-                      value={egp(contract.administrativeFees)}
-                      delay={0.05}
-                    />
-                    <InfoRow
-                      label="Tax (%)"
-                      value={`${contract.taxPct}%`}
-                      delay={0.08}
-                    />
-                    <InfoRow
-                      label="Tax Amount"
-                      value={egp(contract.taxAmount)}
-                      delay={0.11}
-                    />
-                    <InfoRow
-                      label="Total Amount"
-                      value={egp(contract.totalAmount)}
-                      bold
+                      value={egp(info.amountAfterDiscount)}
                       delay={0.14}
                     />
                     <InfoRow
-                      label="Installments"
-                      value={String(contract.installments)}
+                      label="Administrative Fees"
+                      value={egp(info.administrativeFees)}
                       delay={0.17}
                     />
+                  </div>
+                  <div>
+                    <InfoRow
+                      label={`Tax (${info.taxPercentage}%)`}
+                      value={egp(info.taxAmount)}
+                      delay={0.05}
+                    />
+                    <InfoRow
+                      label="Total Amount"
+                      value={egp(info.totalAmount)}
+                      bold
+                      delay={0.08}
+                    />
+                    <InfoRow
+                      label="Installments Count"
+                      value={String(info.installmentsCount)}
+                      delay={0.11}
+                    />
+                    {info.notes && (
+                      <InfoRow label="Notes" value={info.notes} delay={0.14} />
+                    )}
                   </div>
                 </div>
 
@@ -551,34 +688,35 @@ const AnnualContractDetails = () => {
                   <MetaCard
                     icon={<CalendarDays size={16} />}
                     label="Start Date"
-                    value={contract.startDate}
+                    value={fmtDate(info.startDate)}
                     delay={0.32}
                   />
                   <div className="w-px h-10 bg-gray-100 hidden sm:block" />
                   <MetaCard
                     icon={<CalendarDays size={16} />}
                     label="End Date"
-                    value={contract.endDate}
+                    value={fmtDate(info.endDate)}
                     delay={0.36}
                   />
                   <div className="w-px h-10 bg-gray-100 hidden sm:block" />
                   <MetaCard
                     icon={<UserCircle size={16} />}
                     label="Created By"
-                    value={contract.createdBy}
+                    value={info.createdBy.fullName}
                     delay={0.4}
                   />
                   <div className="w-px h-10 bg-gray-100 hidden sm:block" />
                   <MetaCard
                     icon={<Clock size={16} />}
                     label="Created At"
-                    value={contract.createdAt}
+                    value={fmtDateTime(info.createdAt)}
                     delay={0.44}
                   />
                 </motion.div>
               </motion.div>
             )}
 
+            {/* ── Installments ── */}
             {activeTab === "installments" && (
               <motion.div
                 key="installments"
@@ -587,10 +725,80 @@ const AnnualContractDetails = () => {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.22 }}
               >
-                <EmptyTab label="installments" />
+                <p className="text-sm font-semibold text-gray-800 mb-4">
+                  Installments
+                </p>
+                {contract.installments.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-300">
+                    <CreditCard size={36} />
+                    <p className="text-sm text-gray-400">No installments yet</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {contract.installments.map((inst, i) => {
+                      const cfg = getStatusCfg(inst.status);
+                      return (
+                        <motion.div
+                          key={inst.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.06, duration: 0.28 }}
+                          className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-bold text-blue-600">
+                                #{inst.installmentNo}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-800">
+                                {egp(inst.installmentAmount)}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                Due: {fmtDate(inst.dueDate)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <div className="text-right">
+                              <p className="text-xs text-gray-400">Paid</p>
+                              <p className="font-semibold text-green-600">
+                                {egp(inst.paidAmount)}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-gray-400">Remaining</p>
+                              <p
+                                className={`font-semibold ${inst.remainingAmount > 0 ? "text-red-500" : "text-gray-400"}`}
+                              >
+                                {egp(inst.remainingAmount)}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-gray-400">%</p>
+                              <p className="font-semibold text-gray-700">
+                                {inst.installmentPercentage}%
+                              </p>
+                            </div>
+                            <span
+                              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${cfg.class}`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
+                              />
+                              {cfg.label}
+                            </span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
               </motion.div>
             )}
 
+            {/* ── Payments ── */}
             {activeTab === "payments" && (
               <motion.div
                 key="payments"
@@ -599,10 +807,74 @@ const AnnualContractDetails = () => {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.22 }}
               >
-                <EmptyTab label="payments" />
+                <p className="text-sm font-semibold text-gray-800 mb-4">
+                  Payments
+                </p>
+                {contract.payments.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-300">
+                    <DollarSign size={36} />
+                    <p className="text-sm text-gray-400">No payments yet</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {contract.payments.map((pay, i) => {
+                      const cfg = getStatusCfg(pay.status);
+                      return (
+                        <motion.div
+                          key={pay.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.06, duration: 0.28 }}
+                          className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                              <CheckCircle2
+                                size={16}
+                                className="text-green-500"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-800">
+                                {egp(pay.paidAmount)}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {fmtDate(pay.paymentDate)} · Receipt:{" "}
+                                {pay.receiptNo}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <div className="text-right">
+                              <p className="text-xs text-gray-400">Method</p>
+                              <p className="font-medium text-gray-700 text-xs">
+                                {pay.paymentMethod.replace("_", " ")}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-gray-400">By</p>
+                              <p className="font-medium text-gray-700 text-xs">
+                                {pay.createdBy.fullName}
+                              </p>
+                            </div>
+                            <span
+                              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${cfg.class}`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
+                              />
+                              {cfg.label}
+                            </span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
               </motion.div>
             )}
 
+            {/* ── Students ── */}
             {activeTab === "students" && (
               <motion.div
                 key="students"
@@ -611,10 +883,14 @@ const AnnualContractDetails = () => {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.22 }}
               >
-                <EmptyTab label="students" />
+                <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-300">
+                  <GraduationCap size={36} />
+                  <p className="text-sm text-gray-400">No students added yet</p>
+                </div>
               </motion.div>
             )}
 
+            {/* ── Documents ── */}
             {activeTab === "documents" && (
               <motion.div
                 key="documents"
@@ -623,7 +899,10 @@ const AnnualContractDetails = () => {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.22 }}
               >
-                <EmptyTab label="documents" />
+                <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-300">
+                  <FolderOpen size={36} />
+                  <p className="text-sm text-gray-400">No documents yet</p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

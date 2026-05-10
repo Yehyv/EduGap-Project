@@ -1,183 +1,111 @@
-import { useState, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye,
-  Pencil,
   Search,
-  SlidersHorizontal,
   Check,
   Plus,
-  FileText,
-  LayoutGrid,
-  CheckCircle2,
   XCircle,
-  Clock,
+  Loader2,
+  ChevronDown,
+  Building2,
+  X,
 } from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
+import {
+  fetchContracts,
+  fetchInstitutesForSelect,
+} from "@/features/Dashboard/services/dashboardApis";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Contract {
+interface ContractItem {
+  rowNumber: number;
   id: number;
-  institute: string;
-  year: number;
-  plan: string;
+  contractNo: string;
+  instituteId: number;
+  instituteName: string;
+  academicYear: number;
+  planId: number;
+  planName: string;
   maxStudents: number;
   totalAmount: number;
   paidAmount: number;
-  status: "Active" | "Closed" | "Pending";
+  totalRemaining: number;
+  installmentsCount: number;
+  status: string;
+  createdAt: string;
 }
 
-// ─── Dummy Data ───────────────────────────────────────────────────────────────
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
 
-const DUMMY_CONTRACTS: Contract[] = [
-  {
-    id: 1,
-    institute: "Almarefa Institute",
-    year: 2025,
-    plan: "Growth Plan",
-    maxStudents: 2000,
-    totalAmount: 360000,
-    paidAmount: 180000,
-    status: "Active",
-  },
-  {
-    id: 2,
-    institute: "Attamia Institute",
-    year: 2025,
-    plan: "Starter Plan",
-    maxStudents: 500,
-    totalAmount: 100000,
-    paidAmount: 75000,
-    status: "Active",
-  },
-  {
-    id: 3,
-    institute: "Future Academy",
-    year: 2025,
-    plan: "Enterprise Plan",
-    maxStudents: 5000,
-    totalAmount: 750000,
-    paidAmount: 375000,
-    status: "Active",
-  },
-  {
-    id: 4,
-    institute: "Smart Learning Inst.",
-    year: 2024,
-    plan: "Growth Plan",
-    maxStudents: 1500,
-    totalAmount: 270000,
-    paidAmount: 270000,
-    status: "Closed",
-  },
-  {
-    id: 5,
-    institute: "Knowledge House",
-    year: 2025,
-    plan: "Starter Plan",
-    maxStudents: 300,
-    totalAmount: 60000,
-    paidAmount: 10000,
-    status: "Active",
-  },
-  {
-    id: 6,
-    institute: "Success Academy",
-    year: 2025,
-    plan: "Enterprise Plan",
-    maxStudents: 4000,
-    totalAmount: 600000,
-    paidAmount: 300000,
-    status: "Active",
-  },
-  {
-    id: 7,
-    institute: "Nile Learning Center",
-    year: 2024,
-    plan: "Starter Plan",
-    maxStudents: 450,
-    totalAmount: 90000,
-    paidAmount: 0,
-    status: "Pending",
-  },
-  {
-    id: 8,
-    institute: "Cairo Digital Academy",
-    year: 2025,
-    plan: "Growth Plan",
-    maxStudents: 1800,
-    totalAmount: 324000,
-    paidAmount: 162000,
-    status: "Active",
-  },
-  {
-    id: 9,
-    institute: "Delta Tech Institute",
-    year: 2024,
-    plan: "Enterprise Plan",
-    maxStudents: 3000,
-    totalAmount: 450000,
-    paidAmount: 450000,
-    status: "Closed",
-  },
-  {
-    id: 10,
-    institute: "Alexandria Institute",
-    year: 2025,
-    plan: "Growth Plan",
-    maxStudents: 1200,
-    totalAmount: 216000,
-    paidAmount: 108000,
-    status: "Active",
-  },
+type StatusFilter = "all" | "ACTIVE" | "INACTIVE";
+
+// ─── Status config ────────────────────────────────────────────────────────────
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string; dot: string }[] = [
+  { value: "all", label: "All Status", dot: "bg-gray-400" },
+  { value: "ACTIVE", label: "Active", dot: "bg-green-500" },
+  { value: "DRAFT", label: "Daft", dot: "bg-gray-400" },
 ];
 
-// ─── Stats ────────────────────────────────────────────────────────────────────
-
-const YEARS = ["2024", "2025", "2026"];
-const PLANS = ["Starter Plan", "Growth Plan", "Enterprise Plan"];
-type StatusFilter = "all" | "Active" | "Closed" | "Pending";
-
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "All Status" },
-  { value: "Active", label: "Active" },
-  { value: "Closed", label: "Closed" },
-  { value: "Pending", label: "Pending" },
-];
-
-const statusConfig = {
-  Active: {
+const statusConfig: Record<
+  string,
+  { class: string; dot: string; label: string }
+> = {
+  ACTIVE: {
     class: "bg-green-50 text-green-600",
     dot: "bg-green-500",
-    icon: <CheckCircle2 size={11} />,
+    label: "Active",
   },
-  Closed: {
+  DRAFT: {
+    class: "bg-blue-50 text-blue-500",
+    dot: "bg-blue-400",
+    label: "Draft",
+  },
+  CLOSED: {
     class: "bg-gray-100 text-gray-500",
     dot: "bg-gray-400",
-    icon: <XCircle size={11} />,
+    label: "Closed",
   },
-  Pending: {
+  PENDING: {
     class: "bg-amber-50 text-amber-600",
     dot: "bg-amber-400",
-    icon: <Clock size={11} />,
+    label: "Pending",
+  },
+  INACTIVE: {
+    class: "bg-gray-100 text-gray-500",
+    dot: "bg-gray-400",
+    label: "Inactive",
   },
 };
+
+const getStatusCfg = (status: string) =>
+  statusConfig[status] ?? {
+    class: "bg-gray-100 text-gray-500",
+    dot: "bg-gray-400",
+    label: status,
+  };
 
 // ─── Custom Styles ────────────────────────────────────────────────────────────
 
 const customStyles = {
-  rows: {
-    style: { minHeight: "56px", borderBottom: "1px solid #f3f4f6" },
-  },
+  rows: { style: { minHeight: "56px", borderBottom: "1px solid #f3f4f6" } },
   subHeader: {
     style: { paddingLeft: "0", paddingRight: "0", paddingBottom: "0" },
   },
-  headRow: {
-    style: { backgroundColor: "#f9fafb" },
-  },
+  headRow: { style: { backgroundColor: "#f9fafb" } },
   headCells: {
     style: {
       fontSize: "13px",
@@ -194,76 +122,332 @@ const customStyles = {
   },
 };
 
-// ─── Format EGP ──────────────────────────────────────────────────────────────
+const egp = (val: number) =>
+  `EGP ${Number(val).toLocaleString("en-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const egp = (val: number) => `EGP ${val.toLocaleString("en-EG")}`;
+const YEARS = ["2024", "2025", "2026", "2027"];
+
+// ─── Institute Search Dropdown ────────────────────────────────────────────────
+
+const InstituteSelect = ({
+  value,
+  onChange,
+}: {
+  value: { id: number; name: string } | null;
+  onChange: (inst: { id: number; name: string } | null) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const { data: institutes = [] } = useQuery({
+    queryKey: ["institutes-select"],
+    queryFn: fetchInstitutesForSelect,
+  });
+
+  const filtered = institutes.filter((i) =>
+    i.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`h-9 px-3 rounded-2xl border flex items-center gap-2 text-sm transition-colors min-w-[160px] ${
+          value
+            ? "bg-blue-500 text-white border-blue-500"
+            : "border-gray-200 text-gray-500 hover:bg-gray-50"
+        }`}
+      >
+        <Building2 size={14} />
+        <span className="truncate max-w-[120px]">
+          {value ? value.name : "Select Institute"}
+        </span>
+        {value ? (
+          <X
+            size={13}
+            className="flex-shrink-0 hover:opacity-70"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(null);
+              setOpen(false);
+            }}
+          />
+        ) : (
+          <motion.span
+            animate={{ rotate: open ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex-shrink-0"
+          >
+            <ChevronDown size={13} />
+          </motion.span>
+        )}
+      </motion.button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full mt-1 left-0 w-56 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden"
+          >
+            {/* Search inside dropdown */}
+            <div className="p-2 border-b border-gray-50">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search institute..."
+                  autoFocus
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full h-8 pl-8 pr-3 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100"
+                />
+                <Search
+                  size={12}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+              </div>
+            </div>
+
+            {/* Options */}
+            <div className="max-h-48 overflow-y-auto py-1">
+              {filtered.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-3">
+                  No institutes found
+                </p>
+              ) : (
+                filtered.map((inst) => (
+                  <button
+                    key={inst.id}
+                    onClick={() => {
+                      onChange(inst);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="truncate">{inst.name}</span>
+                    {value?.id === inst.id && (
+                      <Check
+                        size={13}
+                        className="text-blue-500 flex-shrink-0"
+                      />
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ─── Status Dropdown ──────────────────────────────────────────────────────────
+
+const StatusSelect = ({
+  value,
+  onChange,
+}: {
+  value: StatusFilter;
+  onChange: (v: StatusFilter) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const current = STATUS_OPTIONS.find((o) => o.value === value)!;
+
+  return (
+    <div className="relative" ref={ref}>
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`h-9 px-3 rounded-2xl border flex items-center gap-2 text-sm transition-colors select-none ${
+          value !== "all"
+            ? "bg-blue-500 text-white border-blue-500"
+            : "border-gray-200 text-gray-500 hover:bg-gray-50"
+        }`}
+      >
+        <span
+          className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${value !== "all" ? "bg-white" : current.dot}`}
+        />
+        <span>{current.label}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown size={13} />
+        </motion.span>
+      </motion.button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full mt-1 left-0 w-40 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1.5 overflow-hidden"
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`w-1.5 h-1.5 rounded-full ${opt.dot}`} />
+                  {opt.label}
+                </div>
+                {value === opt.value && (
+                  <Check size={13} className="text-blue-500" />
+                )}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const InstitutionsContractsList = () => {
-  const [filterText, setFilterText] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [selectedInstitute, setSelectedInstitute] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
   const [selectedYear, setSelectedYear] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
-  // ── Filtered data ──────────────────────────────────────────────────────────
-  const filteredItems = useMemo(() => {
-    return DUMMY_CONTRACTS.filter((c) => {
-      const matchesText =
-        c.institute.toLowerCase().includes(filterText.toLowerCase()) ||
-        c.plan.toLowerCase().includes(filterText.toLowerCase());
-      const matchesYear = selectedYear ? String(c.year) === selectedYear : true;
-      const matchesPlan = selectedPlan ? c.plan === selectedPlan : true;
-      const matchesStatus =
-        statusFilter === "all" ? true : c.status === statusFilter;
-      return matchesText && matchesYear && matchesPlan && matchesStatus;
-    });
-  }, [filterText, selectedYear, selectedPlan, statusFilter]);
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setSearchText(searchInput), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const resetPage = () => setPage(1);
+
+  // ── Query ──────────────────────────────────────────────────────────────────
+  const { data, isLoading, isError } = useQuery({
+    queryKey: [
+      "institute-annual-contracts",
+      page,
+      perPage,
+      selectedYear,
+      selectedInstitute?.id,
+      statusFilter,
+      searchText,
+    ],
+    queryFn: () =>
+      fetchContracts({
+        page,
+        limit: perPage,
+        Year: selectedYear ? Number(selectedYear) : undefined,
+        instituteId: selectedInstitute?.id ?? undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        search: searchText || undefined,
+      }),
+  });
+
+  const contracts: ContractItem[] = data?.items ?? [];
+  const pagination: Pagination | undefined = data?.pagination;
+
+  // ── Active filters count (for clear all) ──────────────────────────────────
+  const activeFilterCount = [
+    selectedInstitute,
+    selectedYear,
+    statusFilter !== "all",
+    searchText,
+  ].filter(Boolean).length;
+
+  const clearAll = () => {
+    setSelectedInstitute(null);
+    setSelectedYear("");
+    setStatusFilter("all");
+    setSearchInput("");
+    setSearchText("");
+    setPage(1);
+  };
 
   // ── Columns ────────────────────────────────────────────────────────────────
   const columns = [
     {
       name: "#",
-      selector: (_: unknown, index: number) => index + 1,
+      selector: (row: ContractItem) => row.rowNumber,
       width: "60px",
       center: true,
     },
+
     {
       name: "Institute",
-      selector: (row: Contract) => row.institute,
-      cell: (row: Contract) => (
-        <span className="font-medium text-gray-800">{row.institute}</span>
+      selector: (row: ContractItem) => row.instituteName,
+      cell: (row: ContractItem) => (
+        <span className="font-medium text-gray-800">{row.instituteName}</span>
       ),
       sortable: true,
       minWidth: "180px",
     },
     {
       name: "Year",
-      selector: (row: Contract) => row.year,
+      selector: (row: ContractItem) => row.academicYear,
       sortable: true,
       center: true,
-      width: "90px",
+      width: "80px",
     },
     {
       name: "Plan",
-      selector: (row: Contract) => row.plan,
+      selector: (row: ContractItem) => row.planName,
       sortable: true,
       center: true,
-      minWidth: "140px",
+      minWidth: "120px",
     },
     {
       name: "Max Students",
-      selector: (row: Contract) => row.maxStudents,
-      cell: (row: Contract) => row.maxStudents.toLocaleString(),
+      selector: (row: ContractItem) => row.maxStudents,
+      cell: (row: ContractItem) => row.maxStudents.toLocaleString(),
       sortable: true,
       center: true,
-      minWidth: "130px",
+      minWidth: "120px",
     },
     {
       name: "Total Amount (EGP)",
-      selector: (row: Contract) => row.totalAmount,
-      cell: (row: Contract) => (
+      selector: (row: ContractItem) => row.totalAmount,
+      cell: (row: ContractItem) => (
         <span className="font-semibold text-gray-800">
           {egp(row.totalAmount)}
         </span>
@@ -274,8 +458,8 @@ const InstitutionsContractsList = () => {
     },
     {
       name: "Paid (EGP)",
-      selector: (row: Contract) => row.paidAmount,
-      cell: (row: Contract) => (
+      selector: (row: ContractItem) => row.paidAmount,
+      cell: (row: ContractItem) => (
         <span className="font-semibold text-green-600">
           {egp(row.paidAmount)}
         </span>
@@ -285,156 +469,165 @@ const InstitutionsContractsList = () => {
       minWidth: "150px",
     },
     {
+      name: "Remaining (EGP)",
+      selector: (row: ContractItem) => row.totalRemaining,
+      cell: (row: ContractItem) => (
+        <span
+          className={`font-semibold ${row.totalRemaining > 0 ? "text-red-500" : "text-gray-400"}`}
+        >
+          {egp(row.totalRemaining)}
+        </span>
+      ),
+      sortable: true,
+      center: true,
+      minWidth: "160px",
+    },
+    {
       name: "Status",
-      cell: (row: Contract) => {
-        const cfg = statusConfig[row.status];
+      cell: (row: ContractItem) => {
+        const cfg = getStatusCfg(row.status);
         return (
           <span
             className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${cfg.class}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-            {row.status}
+            {cfg.label}
           </span>
         );
       },
-      sortable: true,
+      sortable: false,
       center: true,
       minWidth: "110px",
     },
     {
-      name: "Actions",
-      cell: (row: Contract) => (
-        <div className="flex items-center gap-1.5">
-          <Link
-            to={`/dashboard/institutions-contracts/${row.id}`}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            title="View"
-          >
-            <Eye size={16} className="text-gray-500" />
-          </Link>
-          <Link
-            to={`/dashboard/institutions-contracts/edit/${row.id}`}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            title="Edit"
-          >
-            <Pencil size={16} className="text-gray-500" />
-          </Link>
-        </div>
+      name: "Edit",
+      cell: (row: ContractItem) => (
+        <Link
+          to={`/dashboard/institutions-contracts/edit/${row.id}`}
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          title="Edit"
+        >
+          <EditIcon className="text-secondary" />
+        </Link>
       ),
       ignoreRowClick: true,
       center: true,
       minWidth: "100px",
     },
+    {
+      name: "View",
+      cell: (row: ContractItem) => (
+        <Link
+          to={`/dashboard/institutions-contracts/${row.id}`}
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          title="View"
+        >
+          <Eye size={25} className="text-gray-500" />
+        </Link>
+      ),
+      ignoreRowClick: true,
+      center: true,
+      minWidth: "50px",
+    },
   ];
 
   // ── Sub-header ─────────────────────────────────────────────────────────────
   const subHeaderComponent = (
-    <div className="flex flex-wrap gap-2 w-full items-center justify-between px-1 py-2">
-      {/* Left filters */}
-      <div className="flex flex-wrap gap-2 items-center">
-        {/* Institute search / Select Institute */}
-        <select
-          className="h-9 px-3 rounded-2xl border border-gray-200 text-sm text-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer"
-          value={selectedPlan ? "plan" : ""}
-          onChange={() => {}}
-        >
-          <option value="">Select Institute</option>
-        </select>
+    <div className="flex flex-col gap-2 w-full px-1 py-2">
+      <div className="flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Institute searchable dropdown */}
+          <InstituteSelect
+            value={selectedInstitute}
+            onChange={(inst) => {
+              setSelectedInstitute(inst);
+              resetPage();
+            }}
+          />
 
-        {/* Year */}
-        <select
-          className="h-9 px-3 rounded-2xl border border-gray-200 text-sm text-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer"
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(e.target.value)}
-        >
-          <option value="">Select Year</option>
-          {YEARS.map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
-
-        {/* Status dropdown */}
-        <div className="relative">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setStatusDropdownOpen((p) => !p)}
-            className={`border h-9 px-3 rounded-2xl flex items-center gap-2 text-sm cursor-pointer transition-colors select-none ${
-              statusFilter !== "all"
-                ? "bg-blue-500 text-white border-blue-500"
-                : "border-gray-200 text-gray-500 hover:bg-gray-50"
-            }`}
-          >
-            <span>
-              {statusFilter === "all"
-                ? "Select Status"
-                : STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label}
-            </span>
-            <motion.svg
-              animate={{ rotate: statusDropdownOpen ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {/* Year */}
+          <div className="relative">
+            <select
+              className={`h-9 pl-3 pr-8 rounded-2xl border text-sm transition-colors cursor-pointer appearance-none ${
+                selectedYear
+                  ? "bg-blue-500 text-white border-blue-500"
+                  : "border-gray-200 text-gray-500 bg-white hover:bg-gray-50"
+              }`}
+              value={selectedYear}
+              onChange={(e) => {
+                setSelectedYear(e.target.value);
+                resetPage();
+              }}
             >
-              <polyline points="6 9 12 15 18 9" />
-            </motion.svg>
-          </motion.button>
+              <option value="">Select Year</option>
+              {YEARS.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={13}
+              className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
+                selectedYear ? "text-white" : "text-gray-400"
+              }`}
+            />
+          </div>
 
-          <AnimatePresence>
-            {statusDropdownOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                transition={{ duration: 0.15 }}
-                className="absolute top-full mt-1 left-0 w-40 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1.5 overflow-hidden"
+          {/* Status */}
+          <StatusSelect
+            value={statusFilter}
+            onChange={(v) => {
+              setStatusFilter(v);
+              resetPage();
+            }}
+          />
+
+          {/* Search */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by contract, institute..."
+              className="border border-gray-200 h-9 px-9 rounded-2xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 w-56"
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                resetPage();
+              }}
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <Search size={15} />
+            </span>
+            {searchInput && (
+              <button
+                onClick={() => {
+                  setSearchInput("");
+                  setSearchText("");
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {STATUS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => {
-                      setStatusFilter(opt.value);
-                      setStatusDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <span>{opt.label}</span>
-                    {statusFilter === opt.value && (
-                      <Check size={13} className="text-blue-500" />
-                    )}
-                  </button>
-                ))}
-              </motion.div>
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Clear all */}
+          <AnimatePresence>
+            {activeFilterCount > 0 && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={clearAll}
+                className="h-9 px-3 rounded-2xl border border-red-200 text-red-500 text-sm hover:bg-red-50 transition-colors flex items-center gap-1.5"
+              >
+                <X size={13} />
+                Clear ({activeFilterCount})
+              </motion.button>
             )}
           </AnimatePresence>
         </div>
-
-        {/* Search */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="border border-gray-200 h-9 px-9 rounded-2xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 w-44"
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <Search size={15} />
-          </span>
-        </div>
-      </div>
-
-      {/* Right — Filter button */}
-      <div className="flex items-center gap-2 border border-gray-200 h-9 px-3 rounded-2xl text-sm text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
-        <SlidersHorizontal size={15} />
-        Filter
       </div>
     </div>
   );
@@ -462,17 +655,38 @@ const InstitutionsContractsList = () => {
         transition={{ delay: 0.3, duration: 0.4 }}
         className="rounded-xl border border-gray-100 shadow-sm overflow-hidden bg-white"
       >
-        <DataTable
-          columns={columns}
-          data={filteredItems}
-          customStyles={customStyles}
-          highlightOnHover
-          pagination
-          subHeader
-          subHeaderComponent={subHeaderComponent}
-          paginationPerPage={5}
-          paginationRowsPerPageOptions={[5, 10, 25]}
-        />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16 gap-2 text-gray-400">
+            <Loader2 size={20} className="animate-spin" />
+            <span className="text-sm">Loading contracts...</span>
+          </div>
+        ) : isError ? (
+          <div className="flex items-center justify-center py-16 gap-2 text-red-400">
+            <XCircle size={20} />
+            <span className="text-sm">
+              Failed to load contracts. Try again.
+            </span>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={contracts}
+            customStyles={customStyles}
+            highlightOnHover
+            pagination
+            paginationServer
+            paginationTotalRows={pagination?.total ?? 0}
+            paginationPerPage={perPage}
+            paginationRowsPerPageOptions={[5, 10, 25]}
+            onChangePage={(p) => setPage(p)}
+            onChangeRowsPerPage={(newPerPage) => {
+              setPerPage(newPerPage);
+              setPage(1);
+            }}
+            subHeader
+            subHeaderComponent={subHeaderComponent}
+          />
+        )}
       </motion.div>
     </div>
   );

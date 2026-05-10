@@ -1435,3 +1435,36 @@ export async function updateSubscriptionPlan(
   const res = await dashboardApi.patch<void>(`/subscription-plans/${id}`, data);
   return res.data;
 }
+
+export async function fetchContracts(params: {
+  page?: number;
+  limit?: number;
+  Year?: number;
+  instituteId?: number;
+  status?: string;
+  search?: string;
+}) {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", String(params.page));
+  if (params.limit) query.set("limit", String(params.limit));
+  if (params.Year) query.set("Year", String(params.Year));
+  if (params.instituteId) query.set("instituteId", String(params.instituteId));
+  if (params.status) query.set("status", params.status);
+  if (params.search) query.set("search", params.search);
+  const res = await dashboardApi.get(
+    `/institute-annual-contracts?${query.toString()}`,
+  );
+  return res.data.data;
+}
+
+export async function fetchInstitutesForSelect(): Promise<
+  { id: number; name: string }[]
+> {
+  const res = await dashboardApi.get(`/institutes?limit=100`);
+  return res.data.data?.items ?? res.data.data ?? [];
+}
+
+export async function fetchContractById(id: string) {
+  const res = await dashboardApi.get(`/institute-annual-contracts/${id}`);
+  return res.data.data;
+}
