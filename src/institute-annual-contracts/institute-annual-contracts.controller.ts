@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Headers,
   Param,
@@ -11,6 +12,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -20,7 +22,12 @@ import { UpdateInstituteAnnualContractDto } from './dto/update-institute-annual-
 import { InstituteAnnualContractsService } from './institute-annual-contracts.service';
 
 interface AuthenticatedRequest extends Request {
-  user: { sub: number; email: string; instituteId: number; role?: string };
+  user: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    role?: string;
+  };
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,7 +56,11 @@ export class InstituteAnnualContractsController {
     @Req() req: AuthenticatedRequest,
     @Query('instituteId') instituteIdRaw?: string,
     @Query('academicYear') academicYearRaw?: string,
+    @Query('planId') planIdRaw?: string,
     @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit?: number,
     @Headers('languageid') languageId?: string,
   ) {
     return this.service.findAll({
@@ -57,9 +68,27 @@ export class InstituteAnnualContractsController {
       requesterInstituteId: req.user.instituteId,
       selectedInstituteId: instituteIdRaw ? Number(instituteIdRaw) : undefined,
       academicYear: academicYearRaw ? Number(academicYearRaw) : undefined,
+      planId: planIdRaw ? Number(planIdRaw) : undefined,
       status,
+      search,
+      page,
+      limit,
       languageId: languageId ? Number(languageId) : undefined,
     });
+  }
+
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('current')
+  getMyCurrentContract(
+    @Req() req: AuthenticatedRequest,
+    @Query('academicYear') academicYearRaw?: string,
+    @Headers('languageid') languageId?: string,
+  ) {
+    return this.service.getCurrentForInstitute(
+      req.user.instituteId,
+      academicYearRaw ? Number(academicYearRaw) : undefined,
+      languageId ? Number(languageId) : undefined,
+    );
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
@@ -67,10 +96,12 @@ export class InstituteAnnualContractsController {
   getCurrentForInstitute(
     @Param('instituteId', ParseIntPipe) instituteId: number,
     @Query('academicYear') academicYearRaw?: string,
+    @Headers('languageid') languageId?: string,
   ) {
     return this.service.getCurrentForInstitute(
       instituteId,
       academicYearRaw ? Number(academicYearRaw) : undefined,
+      languageId ? Number(languageId) : undefined,
     );
   }
 
@@ -111,5 +142,16 @@ export class InstituteAnnualContractsController {
   @Patch(':id/cancel')
   cancel(@Param('id', ParseIntPipe) id: number) {
     return this.service.cancel(id);
+  }
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Get('create-options')
+  getCreateOptions(
+    @Query('academicYear') academicYearRaw?: string,
+    @Headers('languageId') languageId?: string,
+  ) {
+    return this.service.getCreateOptions(
+      academicYearRaw ? Number(academicYearRaw) : undefined,
+      languageId ? Number(languageId) : undefined,
+    );
   }
 }
