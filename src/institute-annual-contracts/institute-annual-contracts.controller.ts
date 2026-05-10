@@ -144,7 +144,7 @@ export class InstituteAnnualContractsController {
     return this.service.cancel(id);
   }
   @Roles('SUPER_ADMIN', 'ADMIN')
-  @Get('create-options')
+  @Get('dropdown/create-options')
   getCreateOptions(
     @Query('academicYear') academicYearRaw?: string,
     @Headers('languageId') languageId?: string,
