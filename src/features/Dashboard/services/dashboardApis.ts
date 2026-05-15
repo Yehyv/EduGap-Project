@@ -1447,7 +1447,7 @@ export async function fetchContracts(params: {
   const query = new URLSearchParams();
   if (params.page) query.set("page", String(params.page));
   if (params.limit) query.set("limit", String(params.limit));
-  if (params.Year) query.set("Year", String(params.Year));
+  if (params.Year) query.set("academicYear", String(params.Year));
   if (params.instituteId) query.set("instituteId", String(params.instituteId));
   if (params.status) query.set("status", params.status);
   if (params.search) query.set("search", params.search);
@@ -1455,6 +1455,54 @@ export async function fetchContracts(params: {
     `/institute-annual-contracts?${query.toString()}`,
   );
   return res.data.data;
+}
+
+export async function fetchCreateContractOptions(academicYear: number) {
+  const res = await dashboardApi.get(
+    `/institute-annual-contracts/dropdown/create-options?academicYear=${academicYear}`,
+  );
+  return res.data.data;
+}
+
+export async function createContract(data: {
+  instituteId: number;
+  planId: number;
+  academicYear: number;
+  maxStudentsAllowed: number;
+  pricePerStudent: number;
+  discountType: "PERCENTAGE" | "FIXED";
+  discountValue: number;
+  administrativeFees: number;
+  taxPercentage: number;
+  installmentsCount: number;
+  contractStartDate: string;
+  contractEndDate: string;
+  notes: string;
+}): Promise<void> {
+  const res = await dashboardApi.post(`/institute-annual-contracts`, data);
+  return res.data;
+}
+export async function editContract(data: {
+  contractId: number;
+  instituteId: number;
+  planId: number;
+  academicYear: number;
+  maxStudentsAllowed: number;
+  pricePerStudent: number;
+  discountType: "PERCENTAGE" | "FIXED";
+  discountValue: number;
+  administrativeFees: number;
+  taxPercentage: number;
+  installmentsCount: number;
+  contractStartDate: string;
+  contractEndDate: string;
+  notes: string;
+}): Promise<void> {
+  const res = await dashboardApi.patch(
+    `/institute-annual-contracts/${data?.contractId}`,
+    data,
+  );
+  return res.data;
 }
 
 export async function fetchInstitutesForSelect(): Promise<
@@ -1467,4 +1515,38 @@ export async function fetchInstitutesForSelect(): Promise<
 export async function fetchContractById(id: string) {
   const res = await dashboardApi.get(`/institute-annual-contracts/${id}`);
   return res.data.data;
+}
+export async function calculateContract(data: {
+  maxStudentsAllowed: number;
+  pricePerStudent: number;
+  discountType: "PERCENTAGE" | "FIXED";
+  discountValue: number;
+  administrativeFees: number;
+  taxPercentage: number;
+}) {
+  const res = await dashboardApi.post(
+    `/institute-annual-contracts/calculate`,
+    data,
+  );
+  return res.data.data;
+}
+export async function cancelContract(id: string): Promise<void> {
+  const res = await dashboardApi.patch(
+    `/institute-annual-contracts/${id}/cancel`,
+  );
+  return res.data;
+}
+
+export async function closeContract(id: string): Promise<void> {
+  const res = await dashboardApi.patch(
+    `/institute-annual-contracts/${id}/close`,
+  );
+  return res.data;
+}
+
+export async function activateContract(id: string): Promise<void> {
+  const res = await dashboardApi.patch(
+    `/institute-annual-contracts/${id}/activate`,
+  );
+  return res.data;
 }

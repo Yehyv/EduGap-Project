@@ -18,7 +18,7 @@ import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTit
 import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
 import {
   fetchContracts,
-  fetchInstitutesForSelect,
+  fetchCreateContractOptions,
 } from "@/features/Dashboard/services/dashboardApis";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -55,9 +55,11 @@ type StatusFilter = "all" | "ACTIVE" | "INACTIVE";
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string; dot: string }[] = [
-  { value: "all", label: "All Status", dot: "bg-gray-400" },
+  { value: "all", label: "All Status", dot: "bg-gray-600" },
   { value: "ACTIVE", label: "Active", dot: "bg-green-500" },
-  { value: "DRAFT", label: "Daft", dot: "bg-gray-400" },
+  { value: "DRAFT", label: "Draft", dot: "bg-secondary" },
+  { value: "CLOSED", label: "Closed", dot: "bg-gray-400" },
+  { value: "CANCELLED", label: "Cancelled", dot: "bg-red-400" },
 ];
 
 const statusConfig: Record<
@@ -142,10 +144,10 @@ const InstituteSelect = ({
 
   const { data: institutes = [] } = useQuery({
     queryKey: ["institutes-select"],
-    queryFn: fetchInstitutesForSelect,
+    queryFn: () => fetchCreateContractOptions(""),
   });
 
-  const filtered = institutes.filter((i) =>
+  const filtered = institutes?.institutes?.filter((i) =>
     i.name.toLowerCase().includes(search.toLowerCase()),
   );
 
@@ -497,7 +499,7 @@ const InstitutionsContractsList = () => {
       },
       sortable: false,
       center: true,
-      minWidth: "110px",
+      minWidth: "130px",
     },
     {
       name: "Edit",
