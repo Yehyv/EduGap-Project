@@ -4,11 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   ContractStatus,
   InstituteAnnualContract,
 } from 'src/institute-annual-contracts/entities/institute-annual-contract.entity';
+import { PaymentStatus } from 'src/contract-payments/entities/contract-payment.entity';
 import { GenerateInstallmentsDto } from './dto/generate-installments.dto';
 import { UpdateContractInstallmentDto } from './dto/update-contract-installment.dto';
 import {
@@ -16,193 +17,591 @@ import {
   InstallmentStatus,
 } from './entities/contract-installment.entity';
 
+export interface InstallmentPreviewItem {
+  installmentNo: number;
+  dueDate: string;
+  installmentAmount: number;
+  installmentPercentage: number;
+}
+
+export interface PreviewInstallmentsResponse {
+  contractId: number;
+  totalAmount: number;
+  installmentsCount: number;
+  installments: InstallmentPreviewItem[];
+}
+type LinkedPaymentRaw = {
+  paymentId: number;
+};
+
+type InstallmentSummaryRaw = {
+  totalInstallments: string | number;
+  totalInstallmentsAmount: string | number;
+  paidAmount: string | number;
+  remainingAmount: string | number;
+  paidInstallments: string | number;
+  partialInstallments: string | number;
+  pendingInstallments: string | number;
+  overdueInstallments: string | number;
+};
+
+type RecalculateInstallmentRaw = {
+  id: number;
+  installmentAmount: string | number;
+  dueDate: string;
+  paidAmount: string | number;
+};
+
 @Injectable()
 export class ContractInstallmentsService {
   constructor(
     @InjectRepository(ContractInstallment)
     private readonly installmentRepo: Repository<ContractInstallment>,
+
     @InjectRepository(InstituteAnnualContract)
     private readonly contractRepo: Repository<InstituteAnnualContract>,
-    private readonly dataSource: DataSource,
   ) {}
 
   private round2(value: number): number {
     return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
   }
 
-  async generate(contractId: number, dto: GenerateInstallmentsDto) {
-    const contract = await this.contractRepo.findOne({
-      where: { id: contractId },
-      relations: ['installments'],
-    });
+  private toDateOnly(date: Date): string {
+    return date.toISOString().slice(0, 10);
+  }
 
-    if (!contract) throw new NotFoundException('Annual contract not found');
+  private addMonths(date: Date, months: number): Date {
+    const result = new Date(date);
+    const expectedMonth = result.getMonth() + months;
 
-    if (contract.status === ContractStatus.CANCELLED) {
+    result.setMonth(expectedMonth);
+
+    if (result.getMonth() !== ((expectedMonth % 12) + 12) % 12) {
+      result.setDate(0);
+    }
+
+    return result;
+  }
+
+  private resolveInstallmentStatus(
+    dueDate: string,
+    installmentAmount: number,
+    paidAmount: number,
+  ): InstallmentStatus {
+    const amount = this.round2(installmentAmount);
+    const paid = this.round2(paidAmount);
+    const remaining = this.round2(Math.max(amount - paid, 0));
+
+    if (remaining <= 0 || paid >= amount) {
+      return InstallmentStatus.PAID;
+    }
+
+    if (paid > 0) {
+      return InstallmentStatus.PARTIAL;
+    }
+
+    const today = this.toDateOnly(new Date());
+
+    if (dueDate < today) {
+      return InstallmentStatus.OVERDUE;
+    }
+
+    return InstallmentStatus.PENDING;
+  }
+
+  private validateInstallmentGenerationContract(
+    contract: InstituteAnnualContract,
+  ): void {
+    if (
+      [ContractStatus.CANCELLED, ContractStatus.CLOSED].includes(
+        contract.status,
+      )
+    ) {
       throw new BadRequestException(
-        'Cannot generate installments for cancelled contract',
+        'Cannot generate installments for closed or cancelled contract',
       );
     }
 
-    const existing = await this.installmentRepo.count({
-      where: { contract: { id: contractId } },
-    });
-    if (existing > 0 && !dto.force) {
+    if (
+      !contract.installments_count ||
+      Number(contract.installments_count) < 1
+    ) {
       throw new BadRequestException(
-        'Installments already exist. Pass force=true to regenerate.',
+        'Contract installments count must be greater than zero',
       );
     }
-    if (existing > 0 && dto.force) {
-      await this.installmentRepo.delete({
-        contract: { id: contractId },
-      } as any);
-    }
 
-    const count = contract.installments_count || 1;
+    if (!contract.total_amount || Number(contract.total_amount) <= 0) {
+      throw new BadRequestException(
+        'Contract total amount must be greater than zero',
+      );
+    }
+  }
+
+  private buildInstallmentsPreview(
+    contract: InstituteAnnualContract,
+    dto: GenerateInstallmentsDto,
+  ): InstallmentPreviewItem[] {
+    this.validateInstallmentGenerationContract(contract);
+
+    const count = Number(contract.installments_count);
     const total = Number(contract.total_amount);
+
     const baseAmount = this.round2(total / count);
-    const percentage = this.round2(100 / count);
+    const basePercentage = this.round2(100 / count);
+
     const firstDueDate = dto.firstDueDate
       ? new Date(dto.firstDueDate)
       : contract.contract_start_date
         ? new Date(contract.contract_start_date)
         : new Date();
+
     const intervalMonths = dto.intervalMonths ?? 1;
 
-    const installments: ContractInstallment[] = [];
-    let accumulated = 0;
+    const preview: InstallmentPreviewItem[] = [];
+    let accumulatedAmount = 0;
+    let accumulatedPercentage = 0;
 
     for (let i = 1; i <= count; i++) {
-      const dueDate = new Date(firstDueDate);
-      dueDate.setMonth(firstDueDate.getMonth() + (i - 1) * intervalMonths);
-      const amount =
-        i === count ? this.round2(total - accumulated) : baseAmount;
-      accumulated = this.round2(accumulated + amount);
+      const installmentAmount =
+        i === count ? this.round2(total - accumulatedAmount) : baseAmount;
 
-      installments.push(
-        this.installmentRepo.create({
-          contract,
-          installment_no: i,
-          due_date: dueDate.toISOString().slice(0, 10),
-          installment_percentage:
-            i === count
-              ? this.round2(100 - percentage * (count - 1))
-              : percentage,
-          installment_amount: amount,
-          paid_amount: 0,
-          remaining_amount: amount,
-          status: InstallmentStatus.PENDING,
-          notes: null,
-        }),
+      const installmentPercentage =
+        i === count ? this.round2(100 - accumulatedPercentage) : basePercentage;
+
+      accumulatedAmount = this.round2(accumulatedAmount + installmentAmount);
+
+      accumulatedPercentage = this.round2(
+        accumulatedPercentage + installmentPercentage,
+      );
+
+      preview.push({
+        installmentNo: i,
+        dueDate: this.toDateOnly(
+          this.addMonths(firstDueDate, (i - 1) * intervalMonths),
+        ),
+        installmentAmount,
+        installmentPercentage,
+      });
+    }
+
+    return preview;
+  }
+
+  private async getContractOrFail(
+    contractId: number,
+    withRelations = false,
+  ): Promise<InstituteAnnualContract> {
+    const qb = this.contractRepo
+      .createQueryBuilder('contract')
+      .where('contract.id = :contractId', { contractId });
+
+    if (withRelations) {
+      qb.leftJoinAndSelect('contract.institute', 'institute');
+      qb.leftJoinAndSelect('contract.plan', 'plan');
+    }
+
+    const contract = await qb.getOne();
+
+    if (!contract) {
+      throw new NotFoundException('Annual contract not found');
+    }
+
+    return contract;
+  }
+
+  async getGenerateInfo(contractId: number): Promise<any> {
+    const contract = await this.getContractOrFail(contractId, true);
+
+    const existingInstallments = await this.installmentRepo
+      .createQueryBuilder('installment')
+      .where('installment.contract_id = :contractId', { contractId })
+      .getCount();
+
+    return {
+      contractId: contract.id,
+      contractNo: `CON-${contract.academic_year}-${String(contract.id).padStart(3, '0')}`,
+      institute: contract.institute,
+      year: contract.academic_year,
+      plan: contract.plan,
+      totalAmount: Number(contract.total_amount || 0),
+      installmentsCount: Number(contract.installments_count || 0),
+      contractStartDate: contract.contract_start_date,
+      contractEndDate: contract.contract_end_date,
+      status: contract.status,
+      hasInstallments: existingInstallments > 0,
+      existingInstallments,
+    };
+  }
+
+  async preview(
+    contractId: number,
+    dto: GenerateInstallmentsDto,
+  ): Promise<PreviewInstallmentsResponse> {
+    const contract = await this.getContractOrFail(contractId, true);
+
+    const installments = this.buildInstallmentsPreview(contract, dto);
+
+    return {
+      contractId,
+      totalAmount: Number(contract.total_amount || 0),
+      installmentsCount: Number(contract.installments_count || 0),
+      installments,
+    };
+  }
+
+  async generate(
+    contractId: number,
+    dto: GenerateInstallmentsDto,
+  ): Promise<any> {
+    const contract = await this.getContractOrFail(contractId, false);
+
+    this.validateInstallmentGenerationContract(contract);
+
+    const existing = await this.installmentRepo
+      .createQueryBuilder('installment')
+      .where('installment.contract_id = :contractId', { contractId })
+      .getCount();
+
+    if (existing > 0 && !dto.force) {
+      throw new BadRequestException(
+        'Installments already exist. Pass force=true to regenerate.',
       );
     }
 
+    if (existing > 0 && dto.force) {
+      const linkedPayment = await this.installmentRepo
+        .createQueryBuilder('installment')
+        .innerJoin('installment.payments', 'payment')
+        .where('installment.contract_id = :contractId', { contractId })
+        .select('payment.id', 'paymentId')
+        .limit(1)
+        .getRawOne<LinkedPaymentRaw>();
+
+      if (linkedPayment) {
+        throw new BadRequestException(
+          'Cannot regenerate installments because payments are already linked to this contract installments.',
+        );
+      }
+
+      await this.installmentRepo
+        .createQueryBuilder()
+        .delete()
+        .from(ContractInstallment)
+        .where('contract_id = :contractId', { contractId })
+        .execute();
+    }
+
+    const preview = this.buildInstallmentsPreview(contract, dto);
+
+    const installments = preview.map((item) =>
+      this.installmentRepo.create({
+        contract,
+        installment_no: item.installmentNo,
+        due_date: item.dueDate,
+        installment_percentage: item.installmentPercentage,
+        installment_amount: item.installmentAmount,
+        paid_amount: 0,
+        remaining_amount: item.installmentAmount,
+        status: this.resolveInstallmentStatus(
+          item.dueDate,
+          item.installmentAmount,
+          0,
+        ),
+        notes: null,
+      }),
+    );
+
     const saved = await this.installmentRepo.save(installments);
+
     return {
       message: 'Installments generated successfully',
       contractId,
+      installmentsCount: Number(contract.installments_count),
       installments: saved,
     };
   }
 
-  async findByContract(contractId: number) {
-    return this.installmentRepo.find({
-      where: { contract: { id: contractId } },
-      order: { installment_no: 'ASC' },
-      relations: ['payments'],
-    });
+  async findByContract(contractId: number): Promise<ContractInstallment[]> {
+    await this.getContractOrFail(contractId, false);
+
+    return this.installmentRepo
+      .createQueryBuilder('installment')
+      .leftJoinAndSelect('installment.payments', 'payment')
+      .where('installment.contract_id = :contractId', { contractId })
+      .orderBy('installment.installment_no', 'ASC')
+      .getMany();
   }
 
-  async update(id: number, dto: UpdateContractInstallmentDto) {
-    const installment = await this.installmentRepo.findOne({
-      where: { id },
-      relations: ['contract'],
-    });
-    if (!installment) throw new NotFoundException('Installment not found');
+  async summary(contractId: number): Promise<any> {
+    const contract = await this.getContractOrFail(contractId, false);
 
-    if (dto.dueDate !== undefined) installment.due_date = dto.dueDate;
+    const row = await this.installmentRepo
+      .createQueryBuilder('installment')
+      .select('COUNT(installment.id)', 'totalInstallments')
+      .addSelect(
+        'COALESCE(SUM(installment.installment_amount), 0)',
+        'totalInstallmentsAmount',
+      )
+      .addSelect('COALESCE(SUM(installment.paid_amount), 0)', 'paidAmount')
+      .addSelect(
+        'COALESCE(SUM(installment.remaining_amount), 0)',
+        'remainingAmount',
+      )
+      .addSelect(
+        `SUM(CASE WHEN installment.status = :paid THEN 1 ELSE 0 END)`,
+        'paidInstallments',
+      )
+      .addSelect(
+        `SUM(CASE WHEN installment.status = :partial THEN 1 ELSE 0 END)`,
+        'partialInstallments',
+      )
+      .addSelect(
+        `SUM(CASE WHEN installment.status = :pending THEN 1 ELSE 0 END)`,
+        'pendingInstallments',
+      )
+      .addSelect(
+        `SUM(CASE WHEN installment.status = :overdue THEN 1 ELSE 0 END)`,
+        'overdueInstallments',
+      )
+      .where('installment.contract_id = :contractId', { contractId })
+      .setParameters({
+        paid: InstallmentStatus.PAID,
+        partial: InstallmentStatus.PARTIAL,
+        pending: InstallmentStatus.PENDING,
+        overdue: InstallmentStatus.OVERDUE,
+      })
+      .getRawOne<InstallmentSummaryRaw>();
+
+    return {
+      contractId,
+      totalAmount: Number(contract.total_amount || 0),
+      installmentsCount: Number(contract.installments_count || 0),
+      totalInstallments: Number(row?.totalInstallments || 0),
+      totalInstallmentsAmount: this.round2(
+        Number(row?.totalInstallmentsAmount || 0),
+      ),
+      paidAmount: this.round2(Number(row?.paidAmount || 0)),
+      remainingAmount: this.round2(Number(row?.remainingAmount || 0)),
+      paidPercentage: Number(contract.payment_percentage || 0),
+      paidInstallments: Number(row?.paidInstallments || 0),
+      partialInstallments: Number(row?.partialInstallments || 0),
+      pendingInstallments: Number(row?.pendingInstallments || 0),
+      overdueInstallments: Number(row?.overdueInstallments || 0),
+    };
+  }
+
+  async findOne(id: number): Promise<ContractInstallment> {
+    const installment = await this.installmentRepo
+      .createQueryBuilder('installment')
+      .leftJoinAndSelect('installment.contract', 'contract')
+      .leftJoinAndSelect('contract.institute', 'institute')
+      .leftJoinAndSelect('contract.plan', 'plan')
+      .where('installment.id = :id', { id })
+      .getOne();
+
+    if (!installment) {
+      throw new NotFoundException('Installment not found');
+    }
+
+    return installment;
+  }
+
+  async details(id: number): Promise<any> {
+    const installment = await this.installmentRepo
+      .createQueryBuilder('installment')
+      .leftJoinAndSelect('installment.contract', 'contract')
+      .leftJoinAndSelect('contract.institute', 'institute')
+      .leftJoinAndSelect('contract.plan', 'plan')
+      .leftJoinAndSelect('installment.payments', 'payment')
+      .leftJoinAndSelect('payment.createdBy', 'createdBy')
+      .leftJoinAndSelect('payment.cancelledBy', 'cancelledBy')
+      .where('installment.id = :id', { id })
+      .getOne();
+
+    if (!installment) {
+      throw new NotFoundException('Installment not found');
+    }
+
+    const amount = Number(installment.installment_amount || 0);
+    const paid = Number(installment.paid_amount || 0);
+    const paidPercentage = amount > 0 ? this.round2((paid / amount) * 100) : 0;
+
+    return {
+      contract: {
+        id: installment.contract.id,
+        contractNo: `CON-${installment.contract.academic_year}-${String(
+          installment.contract.id,
+        ).padStart(3, '0')}`,
+        institute: installment.contract.institute,
+        year: installment.contract.academic_year,
+        plan: installment.contract.plan,
+      },
+      installment: {
+        id: installment.id,
+        installmentNo: installment.installment_no,
+        dueDate: installment.due_date,
+        installmentPercentage: Number(installment.installment_percentage || 0),
+        installmentAmount: Number(installment.installment_amount || 0),
+        paidAmount: Number(installment.paid_amount || 0),
+        remainingAmount: Number(installment.remaining_amount || 0),
+        paidPercentage,
+        status: installment.status,
+        notes: installment.notes,
+      },
+      payments: (installment.payments || []).sort((a, b) => b.id - a.id),
+    };
+  }
+
+  async update(
+    id: number,
+    dto: UpdateContractInstallmentDto,
+  ): Promise<ContractInstallment> {
+    const installment = await this.installmentRepo
+      .createQueryBuilder('installment')
+      .leftJoinAndSelect('installment.contract', 'contract')
+      .where('installment.id = :id', { id })
+      .getOne();
+
+    if (!installment) {
+      throw new NotFoundException('Installment not found');
+    }
+
+    if (dto.dueDate !== undefined) {
+      installment.due_date = dto.dueDate;
+    }
+
     if (dto.installmentAmount !== undefined) {
       installment.installment_amount = dto.installmentAmount;
+
       const remaining =
         Number(dto.installmentAmount) - Number(installment.paid_amount || 0);
+
       installment.remaining_amount = this.round2(Math.max(remaining, 0));
-      if (Number(installment.remaining_amount) === 0)
-        installment.status = InstallmentStatus.PAID;
-      else if (Number(installment.paid_amount || 0) > 0)
-        installment.status = InstallmentStatus.PARTIAL;
     }
-    if (dto.installmentPercentage !== undefined)
+
+    if (dto.installmentPercentage !== undefined) {
       installment.installment_percentage = dto.installmentPercentage;
-    if (dto.status !== undefined) installment.status = dto.status;
-    if (dto.notes !== undefined) installment.notes = dto.notes?.trim() || null;
+    }
+
+    if (dto.notes !== undefined) {
+      installment.notes = dto.notes?.trim() || null;
+    }
+
+    installment.status =
+      dto.status ??
+      this.resolveInstallmentStatus(
+        installment.due_date,
+        Number(installment.installment_amount || 0),
+        Number(installment.paid_amount || 0),
+      );
 
     return this.installmentRepo.save(installment);
   }
 
-  async upcoming(days = 15) {
+  async upcoming(days = 15): Promise<any[]> {
     const safeDays = Math.min(Math.max(Number(days) || 15, 1), 365);
-    return this.dataSource.query(
-      `
-      SELECT ci.id AS installmentId, ci.installment_no AS installmentNo, ci.due_date AS dueDate,
-        ci.installment_amount AS installmentAmount, ci.paid_amount AS paidAmount,
-        ci.remaining_amount AS remainingAmount, ci.status,
-        c.id AS contractId, c.academic_year AS academicYear,
-        i.id AS instituteId, DATEDIFF(ci.due_date, CURDATE()) AS daysRemaining
-      FROM contract_installments ci
-      INNER JOIN institute_annual_contracts c ON c.id = ci.contract_id
-      INNER JOIN institute i ON i.id = c.institute_id
-      WHERE ci.status IN ('PENDING', 'PARTIAL')
-        AND ci.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
-      ORDER BY ci.due_date ASC
-      `,
-      [safeDays],
-    );
+
+    return this.installmentRepo
+      .createQueryBuilder('installment')
+      .innerJoin('installment.contract', 'contract')
+      .innerJoin('contract.institute', 'institute')
+      .select('installment.id', 'installmentId')
+      .addSelect('installment.installment_no', 'installmentNo')
+      .addSelect('installment.due_date', 'dueDate')
+      .addSelect('installment.installment_amount', 'installmentAmount')
+      .addSelect('installment.paid_amount', 'paidAmount')
+      .addSelect('installment.remaining_amount', 'remainingAmount')
+      .addSelect('installment.status', 'status')
+      .addSelect('contract.id', 'contractId')
+      .addSelect('contract.academic_year', 'academicYear')
+      .addSelect('institute.id', 'instituteId')
+      .addSelect('DATEDIFF(installment.due_date, CURDATE())', 'daysRemaining')
+      .where('installment.status IN (:...statuses)', {
+        statuses: [InstallmentStatus.PENDING, InstallmentStatus.PARTIAL],
+      })
+      .andWhere('installment.remaining_amount > 0')
+      .andWhere(
+        'installment.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL :days DAY)',
+        {
+          days: safeDays,
+        },
+      )
+      .orderBy('installment.due_date', 'ASC')
+      .getRawMany();
   }
 
-  async overdue() {
-    return this.dataSource.query(
-      `
-      SELECT ci.id AS installmentId, ci.installment_no AS installmentNo, ci.due_date AS dueDate,
-        ci.installment_amount AS installmentAmount, ci.paid_amount AS paidAmount,
-        ci.remaining_amount AS remainingAmount, ci.status,
-        c.id AS contractId, c.academic_year AS academicYear,
-        i.id AS instituteId, DATEDIFF(CURDATE(), ci.due_date) AS overdueDays
-      FROM contract_installments ci
-      INNER JOIN institute_annual_contracts c ON c.id = ci.contract_id
-      INNER JOIN institute i ON i.id = c.institute_id
-      WHERE ci.status IN ('PENDING', 'PARTIAL')
-        AND ci.due_date < CURDATE()
-      ORDER BY ci.due_date ASC
-      `,
-    );
+  async overdue(): Promise<any[]> {
+    return this.installmentRepo
+      .createQueryBuilder('installment')
+      .innerJoin('installment.contract', 'contract')
+      .innerJoin('contract.institute', 'institute')
+      .select('installment.id', 'installmentId')
+      .addSelect('installment.installment_no', 'installmentNo')
+      .addSelect('installment.due_date', 'dueDate')
+      .addSelect('installment.installment_amount', 'installmentAmount')
+      .addSelect('installment.paid_amount', 'paidAmount')
+      .addSelect('installment.remaining_amount', 'remainingAmount')
+      .addSelect('installment.status', 'status')
+      .addSelect('contract.id', 'contractId')
+      .addSelect('contract.academic_year', 'academicYear')
+      .addSelect('institute.id', 'instituteId')
+      .addSelect('DATEDIFF(CURDATE(), installment.due_date)', 'overdueDays')
+      .where('installment.status IN (:...statuses)', {
+        statuses: [
+          InstallmentStatus.PENDING,
+          InstallmentStatus.PARTIAL,
+          InstallmentStatus.OVERDUE,
+        ],
+      })
+      .andWhere('installment.remaining_amount > 0')
+      .andWhere('installment.due_date < CURDATE()')
+      .orderBy('installment.due_date', 'ASC')
+      .getRawMany();
   }
 
-  async recalculateInstallment(id: number) {
-    const rows = await this.dataSource.query(
-      `
-      SELECT ci.id, ci.installment_amount AS installmentAmount,
-        COALESCE(SUM(CASE WHEN p.status = 'CONFIRMED' THEN p.paid_amount ELSE 0 END), 0) AS paidAmount
-      FROM contract_installments ci
-      LEFT JOIN contract_payments p ON p.installment_id = ci.id
-      WHERE ci.id = ?
-      GROUP BY ci.id
-      `,
-      [id],
-    );
+  async recalculateInstallment(id: number): Promise<void> {
+    const row = await this.installmentRepo
+      .createQueryBuilder('installment')
+      .leftJoin(
+        'installment.payments',
+        'payment',
+        'payment.status = :confirmed',
+        { confirmed: PaymentStatus.CONFIRMED },
+      )
+      .select('installment.id', 'id')
+      .addSelect('installment.installment_amount', 'installmentAmount')
+      .addSelect('installment.due_date', 'dueDate')
+      .addSelect('COALESCE(SUM(payment.paid_amount), 0)', 'paidAmount')
+      .where('installment.id = :id', { id })
+      .groupBy('installment.id')
+      .addGroupBy('installment.installment_amount')
+      .addGroupBy('installment.due_date')
+      .getRawOne<RecalculateInstallmentRaw>();
 
-    const row = rows[0];
-    if (!row) return;
+    if (!row) {
+      return;
+    }
+
+    if (!row) {
+      return;
+    }
+
     const amount = Number(row.installmentAmount || 0);
     const paid = this.round2(Number(row.paidAmount || 0));
     const remaining = this.round2(Math.max(amount - paid, 0));
-    let status = InstallmentStatus.PENDING;
-    if (paid >= amount) status = InstallmentStatus.PAID;
-    else if (paid > 0) status = InstallmentStatus.PARTIAL;
 
-    await this.installmentRepo.update(id, {
-      paid_amount: paid,
-      remaining_amount: remaining,
-      status,
-    });
+    const status = this.resolveInstallmentStatus(row.dueDate, amount, paid);
+
+    await this.installmentRepo
+      .createQueryBuilder()
+      .update(ContractInstallment)
+      .set({
+        paid_amount: paid,
+        remaining_amount: remaining,
+        status,
+      })
+      .where('id = :id', { id })
+      .execute();
   }
 }
