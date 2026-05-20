@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -16,6 +17,8 @@ import {
   ContractInstallment,
   InstallmentStatus,
 } from './entities/contract-installment.entity';
+import { Brackets } from 'typeorm';
+import { FindContractInstallmentsQueryDto } from './dto/find-contract-installments-query.dto';
 
 export interface InstallmentPreviewItem {
   installmentNo: number;
@@ -51,6 +54,12 @@ type RecalculateInstallmentRaw = {
   dueDate: string;
   paidAmount: string | number;
 };
+type AuthUser = {
+  sub: number;
+  email: string;
+  instituteId: number;
+  role?: string;
+};
 
 @Injectable()
 export class ContractInstallmentsService {
@@ -61,6 +70,86 @@ export class ContractInstallmentsService {
     @InjectRepository(InstituteAnnualContract)
     private readonly contractRepo: Repository<InstituteAnnualContract>,
   ) {}
+  private isInstituteRole(user?: AuthUser) {
+    return ['INST_ADMIN', 'INSTITUTE_ADMIN'].includes(user?.role ?? '');
+  }
+
+  private assertInstituteScope(
+    contract: InstituteAnnualContract,
+    user?: AuthUser,
+  ) {
+    if (!user || !this.isInstituteRole(user)) return;
+
+    const contractInstituteId = Number((contract as any).institute?.id);
+
+    if (
+      !contractInstituteId ||
+      contractInstituteId !== Number(user.instituteId)
+    ) {
+      throw new ForbiddenException(
+        'You are not allowed to access installments for this institute',
+      );
+    }
+  }
+
+  private mapInstallmentResponse(installment: ContractInstallment) {
+    const payments = installment.payments ?? [];
+
+    const confirmedPayments = payments.filter(
+      (payment) => payment.status === PaymentStatus.CONFIRMED,
+    );
+
+    const paymentHistory = confirmedPayments.map((payment) => ({
+      id: payment.id,
+      paymentId: payment.id,
+      paymentDate: payment.payment_date,
+      amount: Number(payment.paid_amount || 0),
+      paidAmount: Number(payment.paid_amount || 0),
+      paymentMethod: payment.payment_method,
+      receiptNo: payment.receipt_no,
+      receiptFile: payment.receipt_file,
+      status: payment.status,
+      notes: payment.notes,
+      createdAt: payment.created_at,
+    }));
+
+    const contract = installment.contract;
+
+    const institute = contract?.institute;
+
+    const instituteName =
+      institute?.translations?.[0]?.name ?? institute?.email ?? null;
+
+    return {
+      id: installment.id,
+      installmentId: installment.id,
+
+      contractId: contract?.id ?? null,
+      contractNo: contract
+        ? `CON-${contract.academic_year}-${String(contract.id).padStart(3, '0')}`
+        : null,
+
+      instituteId: institute?.id ?? null,
+      instituteName,
+
+      year: contract?.academic_year ?? null,
+
+      installmentNo: installment.installment_no,
+      dueDate: installment.due_date,
+      installmentPercentage: Number(installment.installment_percentage || 0),
+      installmentAmount: Number(installment.installment_amount || 0),
+      paidAmount: Number(installment.paid_amount || 0),
+      remainingAmount: Number(installment.remaining_amount || 0),
+      status: installment.status,
+      notes: installment.notes,
+
+      paymentsCount: paymentHistory.length,
+      paymentHistory,
+
+      createdAt: installment.created_at,
+      updatedAt: installment.updated_at,
+    };
+  }
 
   private round2(value: number): number {
     return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
@@ -322,19 +411,222 @@ export class ContractInstallmentsService {
     };
   }
 
-  async findByContract(contractId: number): Promise<ContractInstallment[]> {
-    await this.getContractOrFail(contractId, false);
+  async findAll(query: FindContractInstallmentsQueryDto, user?: AuthUser) {
+    const page = Number(query.page || 1);
+    const limit = Math.min(Number(query.limit || 10), 100);
+    const skip = (page - 1) * limit;
 
-    return this.installmentRepo
+    const qb = this.installmentRepo
       .createQueryBuilder('installment')
-      .leftJoinAndSelect('installment.payments', 'payment')
-      .where('installment.contract_id = :contractId', { contractId })
-      .orderBy('installment.installment_no', 'ASC')
-      .getMany();
+      .leftJoinAndSelect('installment.contract', 'contract')
+      .leftJoinAndSelect('contract.institute', 'institute')
+      .leftJoinAndSelect('institute.translations', 'instituteTranslation')
+      .leftJoinAndSelect('installment.payments', 'payment');
+
+    if (this.isInstituteRole(user)) {
+      qb.andWhere('institute.id = :userInstituteId', {
+        userInstituteId: user?.instituteId,
+      });
+    } else if (query.instituteId) {
+      qb.andWhere('institute.id = :instituteId', {
+        instituteId: query.instituteId,
+      });
+    }
+
+    if (query.contractId) {
+      qb.andWhere('contract.id = :contractId', {
+        contractId: query.contractId,
+      });
+    }
+
+    if (query.year) {
+      qb.andWhere('contract.academic_year = :year', {
+        year: query.year,
+      });
+    }
+
+    if (query.status) {
+      qb.andWhere('installment.status = :status', {
+        status: query.status,
+      });
+    }
+
+    if (query.dueFrom) {
+      qb.andWhere('installment.due_date >= :dueFrom', {
+        dueFrom: query.dueFrom,
+      });
+    }
+
+    if (query.dueTo) {
+      qb.andWhere('installment.due_date <= :dueTo', {
+        dueTo: query.dueTo,
+      });
+    }
+
+    if (query.minAmount !== undefined) {
+      qb.andWhere('installment.installment_amount >= :minAmount', {
+        minAmount: query.minAmount,
+      });
+    }
+
+    if (query.maxAmount !== undefined) {
+      qb.andWhere('installment.installment_amount <= :maxAmount', {
+        maxAmount: query.maxAmount,
+      });
+    }
+
+    if (query.search?.trim()) {
+      const search = `%${query.search.trim()}%`;
+
+      qb.andWhere(
+        new Brackets((subQb) => {
+          subQb
+            .where('installment.notes LIKE :search', { search })
+            .orWhere('installment.installment_no LIKE :search', { search })
+            .orWhere('instituteTranslation.name LIKE :search', { search });
+        }),
+      );
+    }
+
+    const sortMap: Record<string, string> = {
+      installmentNo: 'installment.installment_no',
+      dueDate: 'installment.due_date',
+      amount: 'installment.installment_amount',
+      paidAmount: 'installment.paid_amount',
+      remainingAmount: 'installment.remaining_amount',
+      status: 'installment.status',
+    };
+
+    const sortBy = sortMap[query.sortBy ?? 'installmentNo'];
+    const sortOrder = query.sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+    qb.orderBy(sortBy, sortOrder).skip(skip).take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    const summaryQb = this.installmentRepo
+      .createQueryBuilder('installment')
+      .leftJoin('installment.contract', 'contract')
+      .leftJoin('contract.institute', 'institute')
+      .select('COUNT(installment.id)', 'totalInstallments')
+      .addSelect(
+        'COALESCE(SUM(installment.installment_amount), 0)',
+        'totalInstallmentsAmount',
+      )
+      .addSelect('COALESCE(SUM(installment.paid_amount), 0)', 'paidAmount')
+      .addSelect(
+        'COALESCE(SUM(installment.remaining_amount), 0)',
+        'remainingAmount',
+      );
+
+    if (this.isInstituteRole(user)) {
+      summaryQb.andWhere('institute.id = :userInstituteId', {
+        userInstituteId: user?.instituteId,
+      });
+    } else if (query.instituteId) {
+      summaryQb.andWhere('institute.id = :instituteId', {
+        instituteId: query.instituteId,
+      });
+    }
+
+    if (query.contractId) {
+      summaryQb.andWhere('contract.id = :contractId', {
+        contractId: query.contractId,
+      });
+    }
+
+    if (query.year) {
+      summaryQb.andWhere('contract.academic_year = :year', {
+        year: query.year,
+      });
+    }
+
+    if (query.status) {
+      summaryQb.andWhere('installment.status = :status', {
+        status: query.status,
+      });
+    }
+
+    if (query.dueFrom) {
+      summaryQb.andWhere('installment.due_date >= :dueFrom', {
+        dueFrom: query.dueFrom,
+      });
+    }
+
+    if (query.dueTo) {
+      summaryQb.andWhere('installment.due_date <= :dueTo', {
+        dueTo: query.dueTo,
+      });
+    }
+
+    if (query.minAmount !== undefined) {
+      summaryQb.andWhere('installment.installment_amount >= :minAmount', {
+        minAmount: query.minAmount,
+      });
+    }
+
+    if (query.maxAmount !== undefined) {
+      summaryQb.andWhere('installment.installment_amount <= :maxAmount', {
+        maxAmount: query.maxAmount,
+      });
+    }
+
+    const summary = await summaryQb.getRawOne<{
+      totalInstallments: string;
+      totalInstallmentsAmount: string;
+      paidAmount: string;
+      remainingAmount: string;
+    }>();
+
+    return {
+      data: items.map((installment) =>
+        this.mapInstallmentResponse(installment),
+      ),
+      meta: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        count: items.length,
+      },
+      summary: {
+        totalInstallments: Number(summary?.totalInstallments || 0),
+        totalInstallmentsAmount: Number(summary?.totalInstallmentsAmount || 0),
+        paidAmount: Number(summary?.paidAmount || 0),
+        remainingAmount: Number(summary?.remainingAmount || 0),
+      },
+    };
   }
 
-  async summary(contractId: number): Promise<any> {
-    const contract = await this.getContractOrFail(contractId, false);
+  async findByContract(contractId: number, user?: AuthUser) {
+    return this.findAll({ contractId, page: 1, limit: 100 }, user);
+  }
+
+  async findOne(id: number, user?: AuthUser) {
+    const installment = await this.installmentRepo.findOne({
+      where: { id },
+      relations: [
+        'contract',
+        'contract.institute',
+        'contract.institute.translations',
+        'payments',
+        'payments.createdBy',
+      ],
+    });
+
+    if (!installment) {
+      throw new NotFoundException('Installment not found');
+    }
+
+    this.assertInstituteScope(installment.contract, user);
+
+    return this.mapInstallmentResponse(installment);
+  }
+
+  async summary(contractId: number, user?: AuthUser): Promise<any> {
+    const contract = await this.getContractOrFail(contractId, true);
+
+    this.assertInstituteScope(contract, user);
 
     const row = await this.installmentRepo
       .createQueryBuilder('installment')
@@ -389,22 +681,6 @@ export class ContractInstallmentsService {
       pendingInstallments: Number(row?.pendingInstallments || 0),
       overdueInstallments: Number(row?.overdueInstallments || 0),
     };
-  }
-
-  async findOne(id: number): Promise<ContractInstallment> {
-    const installment = await this.installmentRepo
-      .createQueryBuilder('installment')
-      .leftJoinAndSelect('installment.contract', 'contract')
-      .leftJoinAndSelect('contract.institute', 'institute')
-      .leftJoinAndSelect('contract.plan', 'plan')
-      .where('installment.id = :id', { id })
-      .getOne();
-
-    if (!installment) {
-      throw new NotFoundException('Installment not found');
-    }
-
-    return installment;
   }
 
   async details(id: number): Promise<any> {

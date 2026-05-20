@@ -7,14 +7,26 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import { ContractInstallmentsService } from './contract-installments.service';
 import { GenerateInstallmentsDto } from './dto/generate-installments.dto';
 import { UpdateContractInstallmentDto } from './dto/update-contract-installment.dto';
+import { FindContractInstallmentsQueryDto } from './dto/find-contract-installments-query.dto';
+import { ContractInstallmentsService } from './contract-installments.service';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    role?: string;
+  };
+}
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()
@@ -22,6 +34,34 @@ export class ContractInstallmentsController {
   constructor(private readonly service: ContractInstallmentsService) {}
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('contract-installments')
+  findAll(
+    @Query() query: FindContractInstallmentsQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.findAll(query, req.user);
+  }
+
+  @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute-annual-contracts/:contractId/installments')
+  findByContract(
+    @Param('contractId', ParseIntPipe) contractId: number,
+    @Query() query: FindContractInstallmentsQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.findAll({ ...query, contractId }, req.user);
+  }
+
+  @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('contract-installments/:id')
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.findOne(id, req.user);
+  }
+
+  @Roles('SUPER_ADMIN', 'ADMIN')
   @Get('institute-annual-contracts/:contractId/installments/generate-info')
   getGenerateInfo(@Param('contractId', ParseIntPipe) contractId: number) {
     return this.service.getGenerateInfo(contractId);
@@ -47,38 +87,11 @@ export class ContractInstallmentsController {
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
   @Get('institute-annual-contracts/:contractId/installments/summary')
-  summary(@Param('contractId', ParseIntPipe) contractId: number) {
-    return this.service.summary(contractId);
-  }
-
-  @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
-  @Get('institute-annual-contracts/:contractId/installments')
-  findByContract(@Param('contractId', ParseIntPipe) contractId: number) {
-    return this.service.findByContract(contractId);
-  }
-
-  @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
-  @Get('contract-installments/upcoming')
-  upcoming(@Query('days') daysRaw?: string) {
-    return this.service.upcoming(daysRaw ? Number(daysRaw) : 15);
-  }
-
-  @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
-  @Get('contract-installments/overdue')
-  overdue() {
-    return this.service.overdue();
-  }
-
-  @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
-  @Get('contract-installments/:id/details')
-  details(@Param('id', ParseIntPipe) id: number) {
-    return this.service.details(id);
-  }
-
-  @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
-  @Get('contract-installments/:id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
+  summary(
+    @Param('contractId', ParseIntPipe) contractId: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.summary(contractId, req.user);
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN')
