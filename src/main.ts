@@ -8,9 +8,14 @@ import { join } from 'path';
 import { ContextInterceptor } from './common/interceptors/context.interceptor';
 import { TransactionsService } from './transactions/transactions.service';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { NestExpressApplication } from '@nestjs/platform-express';
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const transactionsService = app.get(TransactionsService);
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
