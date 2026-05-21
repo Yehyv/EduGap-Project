@@ -137,12 +137,104 @@ interface InstitutePlanDetailsRaw {
   totalAmount: number | string;
 }
 
+type QueryParam = string | number;
+
+interface InstituteQueryOptions {
+  academicYear?: number;
+  page?: number;
+  limit?: number;
+}
+
+interface InstitutePaymentsQueryOptions extends InstituteQueryOptions {
+  fromDate?: string;
+  toDate?: string;
+  status?: string;
+}
+
+interface PaginationResult {
+  page: number;
+  limit: number;
+  offset: number;
+}
+
+interface InstituteInstallmentRow {
+  installmentId: number | string;
+  installmentNo: number | string;
+  dueDate: string;
+  installmentAmount: number | string;
+  paidAmount: number | string;
+  remainingAmount: number | string;
+  status: string;
+}
+
+interface InstituteInstallmentsSummaryRaw {
+  totalInstallments: number | string;
+  paidInstallments: number | string;
+  remainingInstallments: number | string;
+  totalAmount: number | string;
+}
+
+interface InstitutePaymentRow {
+  paymentId: number | string;
+  installmentId: number | string | null;
+  installmentNo: number | string | null;
+  paymentDate: string;
+  paidAmount: number | string;
+  paymentMethod: string;
+  receiptNo: string | null;
+  status: string;
+  createdAt: string;
+}
+
+interface InstitutePaymentsSummaryRaw {
+  totalPayments: number | string;
+  totalPaid: number | string;
+}
+
+interface InstituteContractRemainingRaw {
+  totalAmount: number | string;
+  totalPaid: number | string;
+  remainingAmount: number | string;
+}
+
 @Injectable()
 export class AnnualSettlementsService {
   constructor(private readonly dataSource: DataSource) {}
 
   private round2(value: number): number {
     return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  }
+
+  private getPagination(pageRaw?: number, limitRaw?: number): PaginationResult {
+    const page = Math.max(Number(pageRaw || 1), 1);
+    const limit = Math.min(Math.max(Number(limitRaw || 10), 1), 100);
+
+    return {
+      page,
+      limit,
+      offset: (page - 1) * limit,
+    };
+  }
+
+  private getInstallmentLabel(installmentNo: number): string {
+    const suffix =
+      installmentNo === 1
+        ? 'st'
+        : installmentNo === 2
+          ? 'nd'
+          : installmentNo === 3
+            ? 'rd'
+            : 'th';
+
+    return `${installmentNo}${suffix} Installment`;
+  }
+
+  private todayDate(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private clampPercentage(value: number): number {
+    return Math.min(Math.max(this.round2(value), 0), 100);
   }
 
   private isInstituteAdminRole(role?: string): boolean {
@@ -553,6 +645,393 @@ export class AnnualSettlementsService {
             status: nextInstallment.status,
           }
         : null,
+    };
+  }
+
+  async instituteInstallments(
+    instituteId: number,
+    options: InstituteQueryOptions = {},
+  ) {
+    const contractId = await this.getActiveInstituteContractId(
+      instituteId,
+      options.academicYear,
+    );
+
+    const pagination = this.getPagination(options.page, options.limit);
+
+    const summaryRows = await this.dataSource.query<
+      InstituteInstallmentsSummaryRaw[]
+    >(
+      `
+        SELECT
+          COUNT(ci.id) AS totalInstallments,
+          COALESCE(SUM(CASE WHEN ci.status = 'PAID' THEN 1 ELSE 0 END), 0) AS paidInstallments,
+          COALESCE(SUM(CASE WHEN ci.status <> 'PAID' THEN 1 ELSE 0 END), 0) AS remainingInstallments,
+          COALESCE(SUM(ci.installment_amount), 0) AS totalAmount
+        FROM contract_installments ci
+        INNER JOIN institute_annual_contracts c ON c.id = ci.contract_id
+        WHERE ci.contract_id = ?
+          AND c.institute_id = ?
+          AND c.deleted_at IS NULL
+        `,
+      [contractId, instituteId],
+    );
+
+    const totalRows = await this.dataSource.query<
+      Array<{ total: number | string }>
+    >(
+      `
+      SELECT COUNT(ci.id) AS total
+      FROM contract_installments ci
+      INNER JOIN institute_annual_contracts c ON c.id = ci.contract_id
+      WHERE ci.contract_id = ?
+        AND c.institute_id = ?
+        AND c.deleted_at IS NULL
+      `,
+      [contractId, instituteId],
+    );
+
+    const rows = await this.dataSource.query<InstituteInstallmentRow[]>(
+      `
+      SELECT
+        ci.id AS installmentId,
+        ci.installment_no AS installmentNo,
+        ci.due_date AS dueDate,
+        ci.installment_amount AS installmentAmount,
+        ci.paid_amount AS paidAmount,
+        ci.remaining_amount AS remainingAmount,
+        ci.status
+      FROM contract_installments ci
+      INNER JOIN institute_annual_contracts c ON c.id = ci.contract_id
+      WHERE ci.contract_id = ?
+        AND c.institute_id = ?
+        AND c.deleted_at IS NULL
+      ORDER BY ci.installment_no ASC
+      LIMIT ? OFFSET ?
+      `,
+      [contractId, instituteId, pagination.limit, pagination.offset],
+    );
+
+    const nextRows = await this.dataSource.query<NextInstallmentRaw[]>(
+      `
+      SELECT
+        ci.id AS installmentId,
+        ci.installment_no AS installmentNo,
+        ci.due_date AS dueDate,
+        ci.installment_amount AS installmentAmount,
+        ci.paid_amount AS paidAmount,
+        ci.remaining_amount AS remainingAmount,
+        ci.status
+      FROM contract_installments ci
+      INNER JOIN institute_annual_contracts c ON c.id = ci.contract_id
+      WHERE ci.contract_id = ?
+        AND c.institute_id = ?
+        AND c.deleted_at IS NULL
+        AND ci.status IN ('PENDING', 'PARTIAL', 'OVERDUE')
+        AND ci.remaining_amount > 0
+      ORDER BY ci.due_date ASC, ci.installment_no ASC
+      LIMIT 1
+      `,
+      [contractId, instituteId],
+    );
+
+    const summary = summaryRows[0];
+    const total = Number(totalRows[0]?.total || 0);
+    const nextInstallment = nextRows[0] ?? null;
+
+    return {
+      summary: {
+        totalInstallments: Number(summary?.totalInstallments || 0),
+        paidInstallments: Number(summary?.paidInstallments || 0),
+        remainingInstallments: Number(summary?.remainingInstallments || 0),
+        totalAmount: this.round2(Number(summary?.totalAmount || 0)),
+      },
+      data: rows.map((row) => {
+        const installmentNo = Number(row.installmentNo);
+
+        return {
+          installmentId: Number(row.installmentId),
+          installmentNo,
+          label: this.getInstallmentLabel(installmentNo),
+          dueDate: row.dueDate,
+          installmentAmount: this.round2(Number(row.installmentAmount || 0)),
+          paidAmount: this.round2(Number(row.paidAmount || 0)),
+          remainingAmount: this.round2(Number(row.remainingAmount || 0)),
+          status: row.status,
+        };
+      }),
+      nextInstallment: nextInstallment
+        ? {
+            installmentId: Number(nextInstallment.installmentId),
+            installmentNo: Number(nextInstallment.installmentNo),
+            label: this.getInstallmentLabel(
+              Number(nextInstallment.installmentNo),
+            ),
+            dueDate: nextInstallment.dueDate,
+            amount: this.round2(Number(nextInstallment.remainingAmount || 0)),
+            installmentAmount: this.round2(
+              Number(nextInstallment.installmentAmount || 0),
+            ),
+            paidAmount: this.round2(Number(nextInstallment.paidAmount || 0)),
+            remainingAmount: this.round2(
+              Number(nextInstallment.remainingAmount || 0),
+            ),
+            status: nextInstallment.status,
+          }
+        : null,
+      meta: {
+        page: pagination.page,
+        limit: pagination.limit,
+        total,
+        pages: Math.ceil(total / pagination.limit),
+        count: rows.length,
+      },
+    };
+  }
+
+  async institutePayments(
+    instituteId: number,
+    options: InstitutePaymentsQueryOptions = {},
+  ) {
+    const contractId = await this.getActiveInstituteContractId(
+      instituteId,
+      options.academicYear,
+    );
+
+    const pagination = this.getPagination(options.page, options.limit);
+
+    const conditions: string[] = [
+      'p.contract_id = ?',
+      'c.institute_id = ?',
+      'c.deleted_at IS NULL',
+    ];
+
+    const params: QueryParam[] = [contractId, instituteId];
+
+    if (options.fromDate?.trim()) {
+      conditions.push('p.payment_date >= ?');
+      params.push(options.fromDate.trim());
+    }
+
+    if (options.toDate?.trim()) {
+      conditions.push('p.payment_date <= ?');
+      params.push(options.toDate.trim());
+    }
+
+    if (options.status?.trim()) {
+      conditions.push('p.status = ?');
+      params.push(options.status.trim());
+    }
+
+    const whereSql = `WHERE ${conditions.join(' AND ')}`;
+
+    const summaryRows = await this.dataSource.query<
+      InstitutePaymentsSummaryRaw[]
+    >(
+      `
+        SELECT
+          COUNT(p.id) AS totalPayments,
+          COALESCE(SUM(p.paid_amount), 0) AS totalPaid
+        FROM contract_payments p
+        INNER JOIN institute_annual_contracts c ON c.id = p.contract_id
+        ${whereSql}
+        `,
+      params,
+    );
+
+    const remainingRows = await this.dataSource.query<
+      InstituteContractRemainingRaw[]
+    >(
+      `
+        SELECT
+          c.total_amount AS totalAmount,
+          COALESCE(payments.totalPaid, 0) AS totalPaid,
+          GREATEST(c.total_amount - COALESCE(payments.totalPaid, 0), 0) AS remainingAmount
+        FROM institute_annual_contracts c
+        LEFT JOIN (
+          SELECT contract_id, SUM(paid_amount) AS totalPaid
+          FROM contract_payments
+          WHERE status = 'CONFIRMED'
+          GROUP BY contract_id
+        ) payments ON payments.contract_id = c.id
+        WHERE c.id = ?
+          AND c.institute_id = ?
+          AND c.deleted_at IS NULL
+        LIMIT 1
+        `,
+      [contractId, instituteId],
+    );
+
+    const totalRows = await this.dataSource.query<
+      Array<{ total: number | string }>
+    >(
+      `
+      SELECT COUNT(p.id) AS total
+      FROM contract_payments p
+      INNER JOIN institute_annual_contracts c ON c.id = p.contract_id
+      ${whereSql}
+      `,
+      params,
+    );
+
+    const rows = await this.dataSource.query<InstitutePaymentRow[]>(
+      `
+      SELECT
+        p.id AS paymentId,
+        p.installment_id AS installmentId,
+        ci.installment_no AS installmentNo,
+        p.payment_date AS paymentDate,
+        p.paid_amount AS paidAmount,
+        p.payment_method AS paymentMethod,
+        p.receipt_no AS receiptNo,
+        p.status,
+        p.created_at AS createdAt
+      FROM contract_payments p
+      INNER JOIN institute_annual_contracts c ON c.id = p.contract_id
+      LEFT JOIN contract_installments ci ON ci.id = p.installment_id
+      ${whereSql}
+      ORDER BY p.payment_date DESC, p.id DESC
+      LIMIT ? OFFSET ?
+      `,
+      [...params, pagination.limit, pagination.offset],
+    );
+
+    const summary = summaryRows[0];
+    const remaining = remainingRows[0];
+    const total = Number(totalRows[0]?.total || 0);
+
+    return {
+      filters: {
+        academicYear: options.academicYear ?? null,
+        fromDate: options.fromDate ?? null,
+        toDate: options.toDate ?? null,
+        status: options.status ?? null,
+      },
+      summary: {
+        totalPayments: Number(summary?.totalPayments || 0),
+        totalPaid: this.round2(Number(summary?.totalPaid || 0)),
+        remainingAmount: this.round2(Number(remaining?.remainingAmount || 0)),
+      },
+      data: rows.map((row) => {
+        const installmentNo = row.installmentNo
+          ? Number(row.installmentNo)
+          : null;
+
+        return {
+          paymentId: Number(row.paymentId),
+          paymentNo: `PAY-${new Date(row.paymentDate).getFullYear()}-${String(
+            row.paymentId,
+          ).padStart(3, '0')}`,
+          installmentId: row.installmentId ? Number(row.installmentId) : null,
+          installmentNo,
+          installmentLabel: installmentNo
+            ? this.getInstallmentLabel(installmentNo)
+            : null,
+          paymentDate: row.paymentDate,
+          amount: this.round2(Number(row.paidAmount || 0)),
+          paymentMethod: row.paymentMethod,
+          method: row.paymentMethod,
+          receiptNo: row.receiptNo,
+          status: row.status,
+          createdAt: row.createdAt,
+        };
+      }),
+      meta: {
+        page: pagination.page,
+        limit: pagination.limit,
+        total,
+        pages: Math.ceil(total / pagination.limit),
+        count: rows.length,
+      },
+    };
+  }
+
+  async instituteNextInstallment(instituteId: number, academicYear?: number) {
+    const contractId = await this.getActiveInstituteContractId(
+      instituteId,
+      academicYear,
+    );
+
+    const rows = await this.dataSource.query<NextInstallmentRaw[]>(
+      `
+      SELECT
+        ci.id AS installmentId,
+        ci.installment_no AS installmentNo,
+        ci.due_date AS dueDate,
+        ci.installment_amount AS installmentAmount,
+        ci.paid_amount AS paidAmount,
+        ci.remaining_amount AS remainingAmount,
+        ci.status
+      FROM contract_installments ci
+      INNER JOIN institute_annual_contracts c ON c.id = ci.contract_id
+      WHERE ci.contract_id = ?
+        AND c.institute_id = ?
+        AND c.deleted_at IS NULL
+        AND ci.status IN ('PENDING', 'PARTIAL', 'OVERDUE')
+        AND ci.remaining_amount > 0
+      ORDER BY ci.due_date ASC, ci.installment_no ASC
+      LIMIT 1
+      `,
+      [contractId, instituteId],
+    );
+
+    const nextInstallment = rows[0];
+
+    if (!nextInstallment) {
+      return {
+        hasNextInstallment: false,
+        nextInstallment: null,
+        progress: null,
+        actions: {
+          payNow: false,
+          viewInstallments: true,
+        },
+      };
+    }
+
+    const today = this.todayDate();
+
+    const daysRows = await this.dataSource.query<
+      Array<{ daysLeft: number | string }>
+    >(
+      `
+      SELECT DATEDIFF(?, ?) AS daysLeft
+      `,
+      [nextInstallment.dueDate, today],
+    );
+
+    const daysLeft = Number(daysRows[0]?.daysLeft || 0);
+    const progressPercentage = this.clampPercentage(
+      ((90 - daysLeft) / 90) * 100,
+    );
+    const installmentNo = Number(nextInstallment.installmentNo);
+
+    return {
+      hasNextInstallment: true,
+      nextInstallment: {
+        installmentId: Number(nextInstallment.installmentId),
+        installmentNo,
+        label: this.getInstallmentLabel(installmentNo),
+        dueDate: nextInstallment.dueDate,
+        amount: this.round2(Number(nextInstallment.remainingAmount || 0)),
+        installmentAmount: this.round2(
+          Number(nextInstallment.installmentAmount || 0),
+        ),
+        paidAmount: this.round2(Number(nextInstallment.paidAmount || 0)),
+        remainingAmount: this.round2(
+          Number(nextInstallment.remainingAmount || 0),
+        ),
+        daysLeft,
+        status: nextInstallment.status,
+      },
+      progress: {
+        daysLeft,
+        progressPercentage,
+      },
+      actions: {
+        payNow: true,
+        viewInstallments: true,
+      },
     };
   }
 

@@ -59,6 +59,72 @@ export class AnnualSettlementsController {
   }
 
   /**
+   * Screen 34
+   * Institution Installments Schedule - Institute Admin
+   *
+   * GET /annual-settlements/institute/installments?academicYear=2025&page=1&limit=10
+   */
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute/installments')
+  instituteInstallments(
+    @Req() req: AuthenticatedRequest,
+    @Query('academicYear') academicYearRaw?: string,
+    @Query('page') pageRaw?: string,
+    @Query('limit') limitRaw?: string,
+  ) {
+    return this.service.instituteInstallments(req.user.instituteId, {
+      academicYear: academicYearRaw ? Number(academicYearRaw) : undefined,
+      page: pageRaw ? Number(pageRaw) : undefined,
+      limit: limitRaw ? Number(limitRaw) : undefined,
+    });
+  }
+
+  /**
+   * Screen 35
+   * Institution Payments History - Institute Admin
+   *
+   * GET /annual-settlements/institute/payments?academicYear=2025&fromDate=2025-01-01&toDate=2025-12-31&status=CONFIRMED&page=1&limit=10
+   */
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute/payments')
+  institutePayments(
+    @Req() req: AuthenticatedRequest,
+    @Query('academicYear') academicYearRaw?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+    @Query('status') status?: string,
+    @Query('page') pageRaw?: string,
+    @Query('limit') limitRaw?: string,
+  ) {
+    return this.service.institutePayments(req.user.instituteId, {
+      academicYear: academicYearRaw ? Number(academicYearRaw) : undefined,
+      fromDate,
+      toDate,
+      status,
+      page: pageRaw ? Number(pageRaw) : undefined,
+      limit: limitRaw ? Number(limitRaw) : undefined,
+    });
+  }
+
+  /**
+   * Screen 36
+   * Next Installment Alert - Institute Admin
+   *
+   * GET /annual-settlements/institute/next-installment?academicYear=2025
+   */
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute/next-installment')
+  instituteNextInstallment(
+    @Req() req: AuthenticatedRequest,
+    @Query('academicYear') academicYearRaw?: string,
+  ) {
+    return this.service.instituteNextInstallment(
+      req.user.instituteId,
+      academicYearRaw ? Number(academicYearRaw) : undefined,
+    );
+  }
+
+  /**
    * Screen 33
    * Institution Plan Details - Institute Admin
    *
