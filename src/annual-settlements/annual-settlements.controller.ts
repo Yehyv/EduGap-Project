@@ -30,7 +30,7 @@ export class AnnualSettlementsController {
 
   /**
    * Screen 21
-   * Annual Settlement Dashboard
+   * Annual Settlement Dashboard - Super Admin / Admin
    *
    * GET /annual-settlements/dashboard?academicYear=2025
    */
@@ -41,7 +41,44 @@ export class AnnualSettlementsController {
   }
 
   /**
-   * Current institute settlement
+   * Screen 31
+   * Institution Billing Dashboard - Institute Admin
+   *
+   * GET /annual-settlements/institute/dashboard?academicYear=2025
+   */
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute/dashboard')
+  instituteDashboard(
+    @Req() req: AuthenticatedRequest,
+    @Query('academicYear') academicYearRaw?: string,
+  ) {
+    return this.service.instituteDashboard(
+      req.user.instituteId,
+      academicYearRaw ? Number(academicYearRaw) : undefined,
+    );
+  }
+
+  /**
+   * Screen 33
+   * Institution Plan Details - Institute Admin
+   *
+   * GET /annual-settlements/institute/plan-details?academicYear=2025
+   */
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute/plan-details')
+  institutePlanDetails(
+    @Req() req: AuthenticatedRequest,
+    @Query('academicYear') academicYearRaw?: string,
+  ) {
+    return this.service.institutePlanDetails(
+      req.user.instituteId,
+      academicYearRaw ? Number(academicYearRaw) : undefined,
+    );
+  }
+
+  /**
+   * Screen 32
+   * Current Annual Contract - Institute Admin
    *
    * GET /annual-settlements/institute/current?academicYear=2025
    */

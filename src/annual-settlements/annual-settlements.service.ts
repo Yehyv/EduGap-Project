@@ -83,6 +83,60 @@ interface TopOverdueRaw {
   oldestDueDate: string | null;
 }
 
+interface InstituteDashboardRaw {
+  contractId: number | string;
+  contractNo: string;
+  instituteId: number | string;
+  instituteName: string | null;
+  academicYear: number | string;
+  contractStatus: string;
+  contractStartDate: string | null;
+  contractEndDate: string | null;
+  planId: number | string;
+  planName: string | null;
+  planDescription: string | null;
+  maxStudentsAllowed: number | string;
+  pricePerStudent: number | string;
+  installmentsCount: number | string;
+  packageAmount: number | string;
+  discountAmount: number | string;
+  administrativeFees: number | string;
+  taxAmount: number | string;
+  totalAmount: number | string;
+  paymentPercentage: number | string;
+  addedStudents: number | string;
+  totalPaid: number | string;
+}
+
+interface NextInstallmentRaw {
+  installmentId: number | string;
+  installmentNo: number | string;
+  dueDate: string;
+  installmentAmount: number | string;
+  paidAmount: number | string;
+  remainingAmount: number | string;
+  status: string;
+}
+
+interface InstitutePlanDetailsRaw {
+  contractId: number | string;
+  contractNo: string;
+  instituteId: number | string;
+  academicYear: number | string;
+  contractStatus: string;
+  planId: number | string;
+  planName: string | null;
+  planDescription: string | null;
+  maxStudentsAllowed: number | string;
+  pricePerStudent: number | string;
+  installmentsCount: number | string;
+  packageAmount: number | string;
+  discountAmount: number | string;
+  administrativeFees: number | string;
+  taxAmount: number | string;
+  totalAmount: number | string;
+}
+
 @Injectable()
 export class AnnualSettlementsService {
   constructor(private readonly dataSource: DataSource) {}
@@ -114,6 +168,61 @@ export class AnnualSettlementsService {
     if (totalPaid > 0) return 'PARTIALLY_PAID';
 
     return 'PENDING';
+  }
+
+  private getPlanLabel(planName?: string | null): string {
+    const normalized = String(planName || '').toLowerCase();
+
+    if (normalized.includes('growth')) return 'Popular';
+    if (normalized.includes('enterprise')) return 'Enterprise';
+    if (normalized.includes('starter')) return 'Basic';
+
+    return 'Current';
+  }
+
+  private buildPlanFeatures(params: {
+    planName?: string | null;
+    maxStudents: number;
+    installmentsCount: number;
+  }): string[] {
+    const { maxStudents, installmentsCount } = params;
+
+    return [
+      `Add up to ${maxStudents.toLocaleString()} students`,
+      'Access to all learning features',
+      'Unlimited courses and learning paths',
+      'Priority support',
+      `${installmentsCount} installment payment schedule`,
+    ];
+  }
+
+  private async getActiveInstituteContractId(
+    instituteId: number,
+    academicYear?: number,
+  ): Promise<number> {
+    const year = academicYear ?? new Date().getFullYear();
+
+    const rows = await this.dataSource.query<Array<{ id: number | string }>>(
+      `
+      SELECT id
+      FROM institute_annual_contracts
+      WHERE institute_id = ?
+        AND academic_year = ?
+        AND status = 'ACTIVE'
+        AND deleted_at IS NULL
+      ORDER BY id DESC
+      LIMIT 1
+      `,
+      [instituteId, year],
+    );
+
+    if (!rows.length) {
+      throw new NotFoundException(
+        'No active annual contract found for current institute',
+      );
+    }
+
+    return Number(rows[0].id);
   }
 
   async dashboard(query: AnnualSettlementDashboardQueryDto) {
@@ -298,6 +407,235 @@ export class AnnualSettlementsService {
         overdueInstallments: Number(row.overdueInstallments || 0),
         oldestDueDate: row.oldestDueDate,
       })),
+    };
+  }
+
+  async instituteDashboard(instituteId: number, academicYear?: number) {
+    const contractId = await this.getActiveInstituteContractId(
+      instituteId,
+      academicYear,
+    );
+
+    const rows = await this.dataSource.query<InstituteDashboardRaw[]>(
+      `
+      SELECT
+        c.id AS contractId,
+        CONCAT('CON-', c.academic_year, '-', LPAD(c.id, 3, '0')) AS contractNo,
+        i.id AS instituteId,
+        i.email AS instituteName,
+        c.academic_year AS academicYear,
+        c.status AS contractStatus,
+        c.contract_start_date AS contractStartDate,
+        c.contract_end_date AS contractEndDate,
+        sp.id AS planId,
+        sp.plan_name AS planName,
+        sp.description AS planDescription,
+        c.max_students_allowed AS maxStudentsAllowed,
+        c.price_per_student AS pricePerStudent,
+        c.installments_count AS installmentsCount,
+        c.package_amount AS packageAmount,
+        c.discount_amount AS discountAmount,
+        c.administrative_fees AS administrativeFees,
+        c.tax_amount AS taxAmount,
+        c.total_amount AS totalAmount,
+        c.payment_percentage AS paymentPercentage,
+        COUNT(DISTINCT u.id) AS addedStudents,
+        COALESCE(MAX(payments.totalPaid), 0) AS totalPaid
+      FROM institute_annual_contracts c
+      INNER JOIN institute i ON i.id = c.institute_id
+      INNER JOIN subscription_plans sp ON sp.id = c.plan_id
+      LEFT JOIN \`user\` u
+        ON u.annual_contract_id = c.id
+        AND u.deletedAt IS NULL
+        AND u.is_active = 1
+      LEFT JOIN (
+        SELECT contract_id, SUM(paid_amount) AS totalPaid
+        FROM contract_payments
+        WHERE status = 'CONFIRMED'
+        GROUP BY contract_id
+      ) payments ON payments.contract_id = c.id
+      WHERE c.id = ?
+        AND c.institute_id = ?
+        AND c.deleted_at IS NULL
+      GROUP BY c.id, i.id, sp.id
+      LIMIT 1
+      `,
+      [contractId, instituteId],
+    );
+
+    const row = rows[0];
+
+    if (!row) {
+      throw new NotFoundException(
+        'No active annual contract found for current institute',
+      );
+    }
+
+    const nextRows = await this.dataSource.query<NextInstallmentRaw[]>(
+      `
+      SELECT
+        id AS installmentId,
+        installment_no AS installmentNo,
+        due_date AS dueDate,
+        installment_amount AS installmentAmount,
+        paid_amount AS paidAmount,
+        remaining_amount AS remainingAmount,
+        status
+      FROM contract_installments
+      WHERE contract_id = ?
+        AND status IN ('PENDING', 'PARTIAL', 'OVERDUE')
+        AND remaining_amount > 0
+      ORDER BY due_date ASC, installment_no ASC
+      LIMIT 1
+      `,
+      [contractId],
+    );
+
+    const nextInstallment = nextRows[0] ?? null;
+
+    const maxStudents = Number(row.maxStudentsAllowed || 0);
+    const addedStudents = Number(row.addedStudents || 0);
+    const remainingStudents = Math.max(maxStudents - addedStudents, 0);
+    const totalAmount = Number(row.totalAmount || 0);
+    const totalPaid = Number(row.totalPaid || 0);
+    const remainingAmount = Math.max(totalAmount - totalPaid, 0);
+    const usedPercentage =
+      maxStudents > 0 ? this.round2((addedStudents / maxStudents) * 100) : 0;
+    const remainingPercentage =
+      maxStudents > 0
+        ? this.round2((remainingStudents / maxStudents) * 100)
+        : 0;
+
+    return {
+      currentPlan: {
+        planId: Number(row.planId),
+        planName: row.planName,
+        label: this.getPlanLabel(row.planName),
+        description: row.planDescription,
+      },
+      students: {
+        maxStudents,
+        addedStudents,
+        remainingStudents,
+        usedPercentage,
+        remainingPercentage,
+      },
+      contract: {
+        contractId: Number(row.contractId),
+        contractNo: row.contractNo,
+        instituteId: Number(row.instituteId),
+        instituteName: row.instituteName,
+        academicYear: Number(row.academicYear),
+        startDate: row.contractStartDate,
+        endDate: row.contractEndDate,
+        status: row.contractStatus,
+      },
+      financial: {
+        contractValue: this.round2(totalAmount),
+        totalPaid: this.round2(totalPaid),
+        remainingAmount: this.round2(remainingAmount),
+        paymentPercentage: Number(row.paymentPercentage || 0),
+        totalInstallments: Number(row.installmentsCount || 0),
+      },
+      nextInstallment: nextInstallment
+        ? {
+            installmentId: Number(nextInstallment.installmentId),
+            installmentNo: Number(nextInstallment.installmentNo),
+            dueDate: nextInstallment.dueDate,
+            amount: this.round2(Number(nextInstallment.remainingAmount || 0)),
+            installmentAmount: this.round2(
+              Number(nextInstallment.installmentAmount || 0),
+            ),
+            paidAmount: this.round2(Number(nextInstallment.paidAmount || 0)),
+            remainingAmount: this.round2(
+              Number(nextInstallment.remainingAmount || 0),
+            ),
+            status: nextInstallment.status,
+          }
+        : null,
+    };
+  }
+
+  async institutePlanDetails(instituteId: number, academicYear?: number) {
+    const contractId = await this.getActiveInstituteContractId(
+      instituteId,
+      academicYear,
+    );
+
+    const rows = await this.dataSource.query<InstitutePlanDetailsRaw[]>(
+      `
+      SELECT
+        c.id AS contractId,
+        CONCAT('CON-', c.academic_year, '-', LPAD(c.id, 3, '0')) AS contractNo,
+        i.id AS instituteId,
+        c.academic_year AS academicYear,
+        c.status AS contractStatus,
+        sp.id AS planId,
+        sp.plan_name AS planName,
+        sp.description AS planDescription,
+        c.max_students_allowed AS maxStudentsAllowed,
+        c.price_per_student AS pricePerStudent,
+        c.installments_count AS installmentsCount,
+        c.package_amount AS packageAmount,
+        c.discount_amount AS discountAmount,
+        c.administrative_fees AS administrativeFees,
+        c.tax_amount AS taxAmount,
+        c.total_amount AS totalAmount
+      FROM institute_annual_contracts c
+      INNER JOIN institute i ON i.id = c.institute_id
+      INNER JOIN subscription_plans sp ON sp.id = c.plan_id
+      WHERE c.id = ?
+        AND c.institute_id = ?
+        AND c.deleted_at IS NULL
+      LIMIT 1
+      `,
+      [contractId, instituteId],
+    );
+
+    const row = rows[0];
+
+    if (!row) {
+      throw new NotFoundException(
+        'No active plan details found for current institute',
+      );
+    }
+
+    const maxStudents = Number(row.maxStudentsAllowed || 0);
+    const installmentsCount = Number(row.installmentsCount || 0);
+
+    return {
+      plan: {
+        planId: Number(row.planId),
+        planName: row.planName,
+        label: this.getPlanLabel(row.planName),
+        description:
+          row.planDescription ??
+          'Current active billing plan for this institute.',
+        features: this.buildPlanFeatures({
+          planName: row.planName,
+          maxStudents,
+          installmentsCount,
+        }),
+      },
+      limits: {
+        maxStudents,
+        pricePerStudent: this.round2(Number(row.pricePerStudent || 0)),
+        installments: installmentsCount,
+      },
+      financial: {
+        contractValue: this.round2(Number(row.packageAmount || 0)),
+        discount: this.round2(Number(row.discountAmount || 0)),
+        administrativeFees: this.round2(Number(row.administrativeFees || 0)),
+        tax: this.round2(Number(row.taxAmount || 0)),
+        totalContractValue: this.round2(Number(row.totalAmount || 0)),
+      },
+      contract: {
+        contractId: Number(row.contractId),
+        contractNo: row.contractNo,
+        instituteId: Number(row.instituteId),
+        academicYear: Number(row.academicYear),
+        status: row.contractStatus,
+      },
     };
   }
 
@@ -581,29 +919,12 @@ export class AnnualSettlementsService {
   }
 
   async currentForInstitute(instituteId: number, academicYear?: number) {
-    const year = academicYear ?? new Date().getFullYear();
-
-    const rows = await this.dataSource.query<Array<{ id: number | string }>>(
-      `
-      SELECT id
-      FROM institute_annual_contracts
-      WHERE institute_id = ?
-        AND academic_year = ?
-        AND status = 'ACTIVE'
-        AND deleted_at IS NULL
-      ORDER BY id DESC
-      LIMIT 1
-      `,
-      [instituteId, year],
+    const contractId = await this.getActiveInstituteContractId(
+      instituteId,
+      academicYear,
     );
 
-    if (!rows.length) {
-      throw new NotFoundException(
-        'No active settlement found for current institute',
-      );
-    }
-
-    return this.findOne(Number(rows[0].id), {
+    return this.findOne(contractId, {
       requesterRole: 'INSTITUTE_ADMIN',
       requesterInstituteId: instituteId,
     });
