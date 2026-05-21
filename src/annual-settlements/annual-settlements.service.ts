@@ -197,6 +197,41 @@ interface InstituteContractRemainingRaw {
   remainingAmount: number | string;
 }
 
+interface InstituteSettlementSummaryRaw {
+  contractId: number | string;
+  contractNo: string;
+  instituteId: number | string;
+  instituteName: string | null;
+  academicYear: number | string;
+  contractStatus: string;
+  maxStudentsAllowed: number | string;
+  totalAmount: number | string;
+  paymentPercentage: number | string;
+  addedStudents: number | string;
+  totalPaid: number | string;
+}
+
+interface InstituteOverdueSummaryRaw {
+  overdueAmount: number | string;
+}
+
+interface InstituteInvoiceRaw {
+  installmentId: number | string;
+  installmentNo: number | string;
+  dueDate: string;
+  installmentAmount: number | string;
+  paidAmount: number | string;
+  remainingAmount: number | string;
+  installmentStatus: string;
+  contractId: number | string;
+  contractNo: string;
+  instituteId: number | string;
+  instituteName: string | null;
+  academicYear: number | string;
+  contractStartDate: string | null;
+  contractStatus: string;
+}
+
 @Injectable()
 export class AnnualSettlementsService {
   constructor(private readonly dataSource: DataSource) {}
@@ -1031,6 +1066,213 @@ export class AnnualSettlementsService {
       actions: {
         payNow: true,
         viewInstallments: true,
+      },
+    };
+  }
+
+  async instituteSettlementSummary(instituteId: number, academicYear?: number) {
+    const contractId = await this.getActiveInstituteContractId(
+      instituteId,
+      academicYear,
+    );
+
+    const rows = await this.dataSource.query<InstituteSettlementSummaryRaw[]>(
+      `
+      SELECT
+        c.id AS contractId,
+        CONCAT('CON-', c.academic_year, '-', LPAD(c.id, 3, '0')) AS contractNo,
+        i.id AS instituteId,
+        i.email AS instituteName,
+        c.academic_year AS academicYear,
+        c.status AS contractStatus,
+        c.max_students_allowed AS maxStudentsAllowed,
+        c.total_amount AS totalAmount,
+        c.payment_percentage AS paymentPercentage,
+        COUNT(DISTINCT u.id) AS addedStudents,
+        COALESCE(MAX(payments.totalPaid), 0) AS totalPaid
+      FROM institute_annual_contracts c
+      INNER JOIN institute i ON i.id = c.institute_id
+      LEFT JOIN \`user\` u
+        ON u.annual_contract_id = c.id
+        AND u.deletedAt IS NULL
+        AND u.is_active = 1
+      LEFT JOIN (
+        SELECT contract_id, SUM(paid_amount) AS totalPaid
+        FROM contract_payments
+        WHERE status = 'CONFIRMED'
+        GROUP BY contract_id
+      ) payments ON payments.contract_id = c.id
+      WHERE c.id = ?
+        AND c.institute_id = ?
+        AND c.deleted_at IS NULL
+      GROUP BY c.id, i.id
+      LIMIT 1
+      `,
+      [contractId, instituteId],
+    );
+
+    const row = rows[0];
+
+    if (!row) {
+      throw new NotFoundException(
+        'No active settlement summary found for current institute',
+      );
+    }
+
+    const overdueRows = await this.dataSource.query<
+      InstituteOverdueSummaryRaw[]
+    >(
+      `
+      SELECT
+        COALESCE(SUM(ci.remaining_amount), 0) AS overdueAmount
+      FROM contract_installments ci
+      INNER JOIN institute_annual_contracts c ON c.id = ci.contract_id
+      WHERE ci.contract_id = ?
+        AND c.institute_id = ?
+        AND c.deleted_at IS NULL
+        AND ci.status IN ('PENDING', 'PARTIAL', 'OVERDUE')
+        AND ci.remaining_amount > 0
+        AND ci.due_date < CURDATE()
+      `,
+      [contractId, instituteId],
+    );
+
+    const contractValue = Number(row.totalAmount || 0);
+    const totalPaid = Number(row.totalPaid || 0);
+    const remainingAmount = Math.max(contractValue - totalPaid, 0);
+    const overdueAmount = Number(overdueRows[0]?.overdueAmount || 0);
+    const pendingAmount = Math.max(remainingAmount - overdueAmount, 0);
+
+    const maxStudents = Number(row.maxStudentsAllowed || 0);
+    const addedStudents = Number(row.addedStudents || 0);
+    const remainingStudents = Math.max(maxStudents - addedStudents, 0);
+
+    const collectionPercentage =
+      contractValue > 0 ? this.round2((totalPaid / contractValue) * 100) : 0;
+
+    const usagePercentage =
+      maxStudents > 0 ? this.round2((addedStudents / maxStudents) * 100) : 0;
+
+    const amountPercentage = (amount: number): number =>
+      contractValue > 0 ? this.round2((amount / contractValue) * 100) : 0;
+
+    return {
+      financial: {
+        contractValue: this.round2(contractValue),
+        totalPaid: this.round2(totalPaid),
+        remainingAmount: this.round2(remainingAmount),
+        collectionPercentage,
+      },
+      paymentStatus: {
+        paid: {
+          amount: this.round2(totalPaid),
+          percentage: amountPercentage(totalPaid),
+        },
+        pending: {
+          amount: this.round2(pendingAmount),
+          percentage: amountPercentage(pendingAmount),
+        },
+        overdue: {
+          amount: this.round2(overdueAmount),
+          percentage: amountPercentage(overdueAmount),
+        },
+      },
+      students: {
+        maxStudents,
+        addedStudents,
+        remainingStudents,
+        usagePercentage,
+      },
+      contract: {
+        contractId: Number(row.contractId),
+        contractNo: row.contractNo,
+        instituteId: Number(row.instituteId),
+        instituteName: row.instituteName,
+        academicYear: Number(row.academicYear),
+        status: row.contractStatus,
+      },
+    };
+  }
+
+  async instituteInvoice(instituteId: number, installmentId: number) {
+    const rows = await this.dataSource.query<InstituteInvoiceRaw[]>(
+      `
+      SELECT
+        ci.id AS installmentId,
+        ci.installment_no AS installmentNo,
+        ci.due_date AS dueDate,
+        ci.installment_amount AS installmentAmount,
+        ci.paid_amount AS paidAmount,
+        ci.remaining_amount AS remainingAmount,
+        ci.status AS installmentStatus,
+        c.id AS contractId,
+        CONCAT('CON-', c.academic_year, '-', LPAD(c.id, 3, '0')) AS contractNo,
+        i.id AS instituteId,
+        i.email AS instituteName,
+        c.academic_year AS academicYear,
+        c.contract_start_date AS contractStartDate,
+        c.status AS contractStatus
+      FROM contract_installments ci
+      INNER JOIN institute_annual_contracts c ON c.id = ci.contract_id
+      INNER JOIN institute i ON i.id = c.institute_id
+      WHERE ci.id = ?
+        AND c.institute_id = ?
+        AND c.deleted_at IS NULL
+      LIMIT 1
+      `,
+      [installmentId, instituteId],
+    );
+
+    const row = rows[0];
+
+    if (!row) {
+      throw new NotFoundException('Invoice installment not found');
+    }
+
+    const installmentNo = Number(row.installmentNo);
+    const amount = Number(row.installmentAmount || 0);
+    const academicYear = Number(row.academicYear);
+
+    return {
+      invoice: {
+        invoiceNo: `INV-${academicYear}-${String(row.installmentId).padStart(
+          3,
+          '0',
+        )}`,
+        contractNo: row.contractNo,
+        contractId: Number(row.contractId),
+        installmentId: Number(row.installmentId),
+        installmentNo,
+        invoiceDate: row.contractStartDate ?? row.dueDate,
+        dueDate: row.dueDate,
+        status: row.installmentStatus,
+        amount: this.round2(amount),
+        paidAmount: this.round2(Number(row.paidAmount || 0)),
+        remainingAmount: this.round2(Number(row.remainingAmount || 0)),
+      },
+      billTo: {
+        instituteId: Number(row.instituteId),
+        instituteName: row.instituteName,
+      },
+      items: [
+        {
+          description: this.getInstallmentLabel(installmentNo),
+          amount: this.round2(amount),
+        },
+      ],
+      total: this.round2(amount),
+    };
+  }
+
+  async downloadInstituteInvoice(instituteId: number, installmentId: number) {
+    const invoice = await this.instituteInvoice(instituteId, installmentId);
+
+    return {
+      ...invoice,
+      download: {
+        format: 'JSON',
+        message:
+          'Invoice PDF generation is not configured yet. This response is invoice-ready data.',
       },
     };
   }

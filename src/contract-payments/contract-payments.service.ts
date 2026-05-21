@@ -5,7 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Not, Repository } from 'typeorm';
+import {
+  Brackets,
+  DataSource,
+  Not,
+  Repository,
+  FindOptionsWhere,
+  In,
+} from 'typeorm';
 import { ContractInstallmentsService } from 'src/contract-installments/contract-installments.service';
 import { ContractInstallment } from 'src/contract-installments/entities/contract-installment.entity';
 import {
@@ -23,6 +30,7 @@ import {
   PaymentMethod,
   PaymentStatus,
 } from './entities/contract-payment.entity';
+import { UploadInstitutePaymentProofDto } from './dto/upload-institute-payment-proof.dto';
 
 type AuthUser = {
   sub: number;
@@ -129,10 +137,10 @@ export class ContractPaymentsService {
 
     if (!normalizedReceiptNo) return;
 
-    const where: any = {
+    const where: FindOptionsWhere<ContractPayment> = {
       contract: { id: contractId },
       receipt_no: normalizedReceiptNo,
-      status: PaymentStatus.CONFIRMED,
+      status: In([PaymentStatus.CONFIRMED, PaymentStatus.PENDING_REVIEW]),
     };
 
     if (excludePaymentId) {
@@ -766,6 +774,155 @@ export class ContractPaymentsService {
         : null,
       createdAt: payment.created_at,
       updatedAt: payment.updated_at,
+    };
+  }
+  async uploadInstitutePaymentProof(
+    dto: UploadInstitutePaymentProofDto,
+    receiptFile: string,
+    user: AuthUser,
+  ) {
+    if (!user?.instituteId) {
+      throw new ForbiddenException('Institute user is required');
+    }
+
+    if (!this.isInstituteRole(user)) {
+      throw new ForbiddenException(
+        'Only institute admins can upload payment proof',
+      );
+    }
+
+    const savedPaymentId = await this.dataSource.transaction(
+      async (manager) => {
+        const installmentRepo = manager.getRepository(ContractInstallment);
+        const paymentRepo = manager.getRepository(ContractPayment);
+        const systemUserRepo = manager.getRepository(SystemUser);
+
+        const installment = await installmentRepo.findOne({
+          where: { id: dto.installmentId },
+          relations: ['contract', 'contract.institute'],
+          lock: { mode: 'pessimistic_write' },
+        });
+
+        if (!installment) {
+          throw new NotFoundException('Installment not found');
+        }
+
+        const contract = installment.contract;
+
+        if (!contract) {
+          throw new NotFoundException('Annual contract not found');
+        }
+
+        this.assertInstituteScope(contract, user);
+
+        if (contract.status !== ContractStatus.ACTIVE) {
+          throw new BadRequestException(
+            'Payment proof can only be uploaded for active contracts',
+          );
+        }
+
+        const amount = this.round2(Number(dto.amount || 0));
+
+        if (amount <= 0) {
+          throw new BadRequestException(
+            'Payment amount must be greater than zero',
+          );
+        }
+
+        const submittedForInstallment = await paymentRepo
+          .createQueryBuilder('payment')
+          .select('COALESCE(SUM(payment.paid_amount), 0)', 'totalPaid')
+          .where('payment.installment_id = :installmentId', {
+            installmentId: installment.id,
+          })
+          .andWhere('payment.status IN (:...statuses)', {
+            statuses: [PaymentStatus.CONFIRMED, PaymentStatus.PENDING_REVIEW],
+          })
+          .getRawOne<{ totalPaid: string }>();
+
+        const installmentSubmitted = Number(
+          submittedForInstallment?.totalPaid || 0,
+        );
+
+        const installmentRemaining = this.round2(
+          Number(installment.installment_amount || 0) - installmentSubmitted,
+        );
+
+        if (amount > installmentRemaining) {
+          throw new BadRequestException(
+            `Payment proof amount exceeds installment remaining amount. Remaining: ${installmentRemaining}`,
+          );
+        }
+
+        const submittedForContract = await paymentRepo
+          .createQueryBuilder('payment')
+          .select('COALESCE(SUM(payment.paid_amount), 0)', 'totalPaid')
+          .where('payment.contract_id = :contractId', {
+            contractId: contract.id,
+          })
+          .andWhere('payment.status IN (:...statuses)', {
+            statuses: [PaymentStatus.CONFIRMED, PaymentStatus.PENDING_REVIEW],
+          })
+          .getRawOne<{ totalPaid: string }>();
+
+        const contractSubmitted = Number(submittedForContract?.totalPaid || 0);
+
+        const contractRemaining = this.round2(
+          Number(contract.total_amount || 0) - contractSubmitted,
+        );
+
+        if (amount > contractRemaining) {
+          throw new BadRequestException(
+            `Payment proof amount exceeds contract remaining amount. Remaining: ${contractRemaining}`,
+          );
+        }
+
+        const createdBy = user.sub
+          ? await systemUserRepo.findOne({ where: { id: user.sub } })
+          : null;
+
+        const payment = paymentRepo.create({
+          contract,
+          installment,
+          payment_date: new Date().toISOString().slice(0, 10),
+          paid_amount: amount,
+          payment_method: dto.paymentMethod ?? PaymentMethod.BANK_TRANSFER,
+          receipt_no: dto.receiptNo?.trim() || null,
+          receipt_file: receiptFile,
+          notes: dto.notes?.trim() || null,
+          status: PaymentStatus.PENDING_REVIEW,
+          createdBy,
+        });
+
+        const saved = await paymentRepo.save(payment);
+
+        return saved.id;
+      },
+    );
+
+    const saved = await this.paymentRepo.findOne({
+      where: { id: savedPaymentId },
+      relations: ['contract', 'contract.institute', 'installment', 'createdBy'],
+    });
+
+    if (!saved) {
+      throw new NotFoundException('Payment proof was not saved');
+    }
+
+    return {
+      message: 'Payment proof uploaded successfully and is pending review',
+      payment: {
+        paymentId: saved.id,
+        contractId: saved.contract.id,
+        installmentId: saved.installment?.id ?? null,
+        amount: this.round2(Number(saved.paid_amount || 0)),
+        paymentMethod: saved.payment_method,
+        receiptNo: saved.receipt_no,
+        receiptFile: saved.receipt_file,
+        status: saved.status,
+        notes: saved.notes,
+        createdAt: saved.created_at,
+      },
     };
   }
 }

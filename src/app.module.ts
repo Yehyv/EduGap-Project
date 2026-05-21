@@ -60,6 +60,7 @@ import { AnnualSettlementsModule } from './annual-settlements/annual-settlements
 import { BillingDashboardModule } from './billing-dashboard/billing-dashboard.module';
 import { BillingReportsModule } from './billing-reports/billing-reports.module';
 import { BillingStudentLimitsModule } from './billing-student-limits/billing-student-limits.module';
+import { PlanUpgradeRequestsModule } from './plan-upgrade-requests/plan-upgrade-requests.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -125,6 +126,7 @@ import { BillingStudentLimitsModule } from './billing-student-limits/billing-stu
     BillingDashboardModule,
     BillingReportsModule,
     BillingStudentLimitsModule,
+    PlanUpgradeRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AuditSubscriber],

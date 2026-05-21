@@ -7,17 +7,17 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Query,
   Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { existsSync, mkdirSync } from 'fs';
-import { extname } from 'path';
+import { extname, join } from 'path';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -27,7 +27,15 @@ import { FindContractPaymentsQueryDto } from './dto/find-contract-payments-query
 import { ReverseContractPaymentDto } from './dto/reverse-contract-payment.dto';
 import { UpdateContractPaymentDto } from './dto/update-contract-payment.dto';
 import { ContractPaymentsService } from './contract-payments.service';
+import { UploadInstitutePaymentProofDto } from './dto/upload-institute-payment-proof.dto';
 
+const proofUploadPath = join(process.cwd(), 'uploads', 'payment-proofs');
+interface UploadedPaymentProofFile {
+  filename: string;
+  originalname: string;
+  mimetype: string;
+  size: number;
+}
 interface AuthenticatedRequest extends Request {
   user: {
     sub: number;
@@ -69,6 +77,60 @@ export class ContractPaymentsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.findByContract(contractId, req.user);
+  }
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Post('contract-payments/institute/upload-proof')
+  @UseInterceptors(
+    FileInterceptor('receiptFile', {
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          if (!existsSync(proofUploadPath)) {
+            mkdirSync(proofUploadPath, { recursive: true });
+          }
+
+          cb(null, proofUploadPath);
+        },
+        filename: (_req, file, cb) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `payment-proof-${unique}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        const allowed = [
+          'image/jpeg',
+          'image/png',
+          'image/jpg',
+          'application/pdf',
+        ];
+
+        if (!allowed.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              'Only JPG, PNG, JPEG and PDF payment proofs are allowed',
+            ),
+            false,
+          );
+        }
+
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+    }),
+  )
+  uploadInstitutePaymentProof(
+    @Body() dto: UploadInstitutePaymentProofDto,
+    @UploadedFile() file: UploadedPaymentProofFile,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Payment proof file is required');
+    }
+
+    const receiptFile = `/uploads/payment-proofs/${file.filename}`;
+
+    return this.service.uploadInstitutePaymentProof(dto, receiptFile, req.user);
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')

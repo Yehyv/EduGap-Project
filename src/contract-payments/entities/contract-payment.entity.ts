@@ -20,6 +20,7 @@ export enum PaymentMethod {
 }
 
 export enum PaymentStatus {
+  PENDING_REVIEW = 'PENDING_REVIEW',
   CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
   REFUNDED = 'REFUNDED',

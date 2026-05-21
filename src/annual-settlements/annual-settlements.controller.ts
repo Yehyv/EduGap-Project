@@ -125,6 +125,60 @@ export class AnnualSettlementsController {
   }
 
   /**
+   * Screen 37
+   * Institution Settlement Summary - Institute Admin
+   *
+   * GET /annual-settlements/institute/settlement-summary?academicYear=2025
+   */
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute/settlement-summary')
+  instituteSettlementSummary(
+    @Req() req: AuthenticatedRequest,
+    @Query('academicYear') academicYearRaw?: string,
+  ) {
+    return this.service.instituteSettlementSummary(
+      req.user.instituteId,
+      academicYearRaw ? Number(academicYearRaw) : undefined,
+    );
+  }
+
+  /**
+   * Screen 38
+   * Download Invoice - Institute Admin
+   *
+   * GET /annual-settlements/institute/invoices/:installmentId
+   */
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute/invoices/:installmentId')
+  instituteInvoice(
+    @Req() req: AuthenticatedRequest,
+    @Param('installmentId', ParseIntPipe) installmentId: number,
+  ) {
+    return this.service.instituteInvoice(req.user.instituteId, installmentId);
+  }
+
+  /**
+   * Screen 38
+   * Download Invoice Data - Institute Admin
+   *
+   * GET /annual-settlements/institute/invoices/:installmentId/download
+   *
+   * Currently returns invoice-ready JSON.
+   * PDF generation can be added later.
+   */
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
+  @Get('institute/invoices/:installmentId/download')
+  downloadInstituteInvoice(
+    @Req() req: AuthenticatedRequest,
+    @Param('installmentId', ParseIntPipe) installmentId: number,
+  ) {
+    return this.service.downloadInstituteInvoice(
+      req.user.instituteId,
+      installmentId,
+    );
+  }
+
+  /**
    * Screen 33
    * Institution Plan Details - Institute Admin
    *
