@@ -2,6 +2,7 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { CollectionSummaryQueryDto } from './dto/collection-summary-query.dto';
 import { BillingReportsService } from './billing-reports.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -21,28 +22,26 @@ export class BillingReportsController {
   }
 
   @Get('collection-summary')
-  collectionSummary(@Query('academicYear') academicYearRaw?: string) {
-    return this.service.collectionSummary(
-      academicYearRaw ? Number(academicYearRaw) : undefined,
-    );
+  collectionSummary(@Query() query: CollectionSummaryQueryDto) {
+    return this.service.collectionSummary(query);
   }
 
   @Get('payment-percentage')
-  paymentPercentage(@Query('academicYear') academicYearRaw?: string) {
+  paymentPercentageReport(@Query('academicYear') academicYearRaw?: string) {
     return this.service.paymentPercentageReport(
       academicYearRaw ? Number(academicYearRaw) : undefined,
     );
   }
 
   @Get('discount-tax')
-  discountTax(@Query('academicYear') academicYearRaw?: string) {
+  discountTaxReport(@Query('academicYear') academicYearRaw?: string) {
     return this.service.discountTaxReport(
       academicYearRaw ? Number(academicYearRaw) : undefined,
     );
   }
 
   @Get('administrative-fees')
-  administrativeFees(@Query('academicYear') academicYearRaw?: string) {
+  administrativeFeesReport(@Query('academicYear') academicYearRaw?: string) {
     return this.service.administrativeFeesReport(
       academicYearRaw ? Number(academicYearRaw) : undefined,
     );
@@ -54,7 +53,7 @@ export class BillingReportsController {
   }
 
   @Get('added-students')
-  addedStudents(@Query('academicYear') academicYearRaw?: string) {
+  addedStudentsReport(@Query('academicYear') academicYearRaw?: string) {
     return this.service.addedStudentsReport(
       academicYearRaw ? Number(academicYearRaw) : undefined,
     );

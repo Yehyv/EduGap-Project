@@ -7,13 +7,20 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { AnnualSettlementsService } from './annual-settlements.service';
+import { AnnualSettlementDashboardQueryDto } from 'src/billing-reports/dto/annual-settlement-dashboard-query.dto';
 
 interface AuthenticatedRequest extends Request {
-  user: { sub: number; email: string; instituteId: number; role?: string };
+  user: {
+    sub: number;
+    email: string;
+    instituteId: number;
+    role?: string;
+  };
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -21,6 +28,41 @@ interface AuthenticatedRequest extends Request {
 export class AnnualSettlementsController {
   constructor(private readonly service: AnnualSettlementsService) {}
 
+  /**
+   * Screen 21
+   * Annual Settlement Dashboard
+   *
+   * GET /annual-settlements/dashboard?academicYear=2025
+   */
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Get('dashboard')
+  dashboard(@Query() query: AnnualSettlementDashboardQueryDto) {
+    return this.service.dashboard(query);
+  }
+
+  /**
+   * Current institute settlement
+   *
+   * GET /annual-settlements/institute/current?academicYear=2025
+   */
+  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN', 'SUPER_ADMIN', 'ADMIN')
+  @Get('institute/current')
+  currentForMyInstitute(
+    @Req() req: AuthenticatedRequest,
+    @Query('academicYear') academicYearRaw?: string,
+  ) {
+    return this.service.currentForInstitute(
+      req.user.instituteId,
+      academicYearRaw ? Number(academicYearRaw) : undefined,
+    );
+  }
+
+  /**
+   * Screen 21 list / raw settlements list
+   *
+   * GET /annual-settlements?academicYear=2025
+   * GET /annual-settlements?instituteId=1&academicYear=2025
+   */
   @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
   @Get()
   findAll(
@@ -36,21 +78,21 @@ export class AnnualSettlementsController {
     });
   }
 
-  @Roles('INST_ADMIN', 'INSTITUTE_ADMIN', 'SUPER_ADMIN', 'ADMIN')
-  @Get('institute/current')
-  currentForMyInstitute(
-    @Req() req: AuthenticatedRequest,
-    @Query('academicYear') academicYearRaw?: string,
-  ) {
-    return this.service.currentForInstitute(
-      req.user.instituteId,
-      academicYearRaw ? Number(academicYearRaw) : undefined,
-    );
-  }
-
+  /**
+   * Screen 22
+   * Institution Settlement Details
+   *
+   * GET /annual-settlements/:contractId
+   */
   @Roles('SUPER_ADMIN', 'ADMIN', 'INST_ADMIN', 'INSTITUTE_ADMIN')
   @Get(':contractId')
-  findOne(@Param('contractId', ParseIntPipe) contractId: number) {
-    return this.service.findOne(contractId);
+  findOne(
+    @Param('contractId', ParseIntPipe) contractId: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.findOne(contractId, {
+      requesterRole: req.user.role,
+      requesterInstituteId: req.user.instituteId,
+    });
   }
 }
