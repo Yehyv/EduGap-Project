@@ -33,7 +33,7 @@ import type {
 } from "../types/dashboardTypes";
 import type { ExpertsResponse } from "@/shared/types/sharedTypes";
 import type { QuizQuestion } from "@/features/Quiz/types/quizTypes";
-import { formatLinesToComma } from "@/shared/utils/globals";
+import { cleanParams, formatLinesToComma } from "@/shared/utils/globals";
 
 export async function getInstitutes(): Promise<InstitutesResponse> {
   const res = await dashboardApi.get<InstitutesResponse>(
@@ -1516,6 +1516,10 @@ export async function fetchContractById(id: string) {
   const res = await dashboardApi.get(`/institute-annual-contracts/${id}`);
   return res.data.data;
 }
+export async function getInstallmentForUpdate(id: string) {
+  const res = await dashboardApi.get(`/contract-installments/${id}`);
+  return res.data.data;
+}
 export async function calculateContract(data: {
   maxStudentsAllowed: number;
   pricePerStudent: number;
@@ -1549,4 +1553,75 @@ export async function activateContract(id: string): Promise<void> {
     `/institute-annual-contracts/${id}/activate`,
   );
   return res.data;
+}
+
+export async function fetchInstallments(params: {
+  contractId: string;
+  status: string;
+  year: string;
+  dueFrom: string;
+  dueTo: string;
+  page: string;
+  limit: string;
+}) {
+  const res = await dashboardApi.get(`/contract-installments`, {
+    params: cleanParams(params),
+  });
+
+  return res.data.data;
+}
+
+export async function fetchInstallmentsSummary(contractId: string) {
+  const res = await dashboardApi.get(
+    `/institute-annual-contracts/${contractId}/installments/summary`,
+  );
+  return res.data.data;
+}
+export async function fetchInstallmentDetails(installmentId: string) {
+  const res = await dashboardApi.get(`/contract-installments/${installmentId}`);
+  return res.data.data;
+}
+export async function generateInstallments(
+  contractId: string,
+  data: {
+    firstDueDate: string;
+    intervalMonths: number;
+    force: boolean;
+  },
+): Promise<void> {
+  const res = await dashboardApi.post(
+    `/institute-annual-contracts/${contractId}/installments/generate`,
+    data,
+  );
+  return res.data;
+}
+export async function editInstallment(
+  installmentId: string,
+  data: {
+    dueDate: string;
+    installmentAmount: number;
+    installmentPercentage: number;
+    notes: string;
+  },
+): Promise<void> {
+  const res = await dashboardApi.patch(
+    `/contract-installments/${installmentId}`,
+    data,
+  );
+  return res.data;
+}
+export async function fetchPaymentsHistory(params: {
+  contractId: string;
+  status: string;
+  year: string;
+  fromDate: string;
+  toDate: string;
+  page: string;
+  limit: string;
+}) {
+  const res = await dashboardApi.get(`/contract-payments`, {
+    params: cleanParams(params),
+  });
+
+  return res.data.data;
 }

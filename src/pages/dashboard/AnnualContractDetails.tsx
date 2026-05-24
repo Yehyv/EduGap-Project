@@ -26,6 +26,8 @@ import {
   Unlock,
   Pencil,
   Lock,
+  Plus,
+  Eye,
 } from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
@@ -708,6 +710,13 @@ const AnnualContractDetails = () => {
                     >
                       <Pencil size={14} /> Edit
                     </Link>
+
+                    <Link
+                      to={`/dashboard/institutions-contracts/${contractId}/generate-installment`}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 text-secondary hover:bg-secondary/10`}
+                    >
+                      <Plus size={14} /> Generate Installment
+                    </Link>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1067,6 +1076,7 @@ const AnnualContractDetails = () => {
                                   {inst.installmentPercentage}%
                                 </p>
                               </div>
+
                               <span
                                 className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${cfg.class}`}
                               >
@@ -1075,6 +1085,15 @@ const AnnualContractDetails = () => {
                                 />
                                 {cfg.label}
                               </span>
+                              <div className="text-right">
+                                <Link
+                                  title="Edit"
+                                  to={`/dashboard/installments/edit/${inst?.id}`}
+                                  className="text-secondary "
+                                >
+                                  <Pencil className="w-5" />
+                                </Link>
+                              </div>
                             </div>
                           </motion.div>
                         );

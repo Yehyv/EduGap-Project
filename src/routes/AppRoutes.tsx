@@ -124,6 +124,11 @@ import InstitutionsContractsList from "@/pages/dashboard/InstitutionsContractsLi
 import CreateAnnualContract from "@/pages/dashboard/CreateAnnualContract";
 import EditAnnualContract from "@/pages/dashboard/EditAnnualContract";
 import AnnualContractDetails from "@/pages/dashboard/AnnualContractDetails";
+import InstallmentsList from "@/pages/dashboard/InstallmentsList";
+import InstallmentDetails from "@/pages/dashboard/InstallmentDetails";
+import GenerateInstallment from "@/pages/dashboard/GenerateInstallment";
+import EditInstallment from "@/pages/dashboard/EditInstallment";
+import ContractPaymentsList from "@/pages/dashboard/ContractPaymentsList";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -823,6 +828,47 @@ export default function AppRoutes() {
             element={
               <DashboardRoute allowed={SUPER_ONLY}>
                 <AnnualContractDetails />
+              </DashboardRoute>
+            }
+          />
+          {/* Installments */}
+          <Route
+            path="/dashboard/installments"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <InstallmentsList />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/installments/:installmentId"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <InstallmentDetails />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/institutions-contracts/:contractId/generate-installment"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <GenerateInstallment />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/installments/edit/:installmentId"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <EditInstallment />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/contract-payments"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <ContractPaymentsList />
               </DashboardRoute>
             }
           />

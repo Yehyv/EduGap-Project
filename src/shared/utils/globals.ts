@@ -92,7 +92,13 @@ export const ROLES = {
   INST_ADMIN: "INST_ADMIN",
   STUDENT: "STUDENT",
 };
-
+export const cleanParams = (params: Record<string, any>) => {
+  return Object.fromEntries(
+    Object.entries(params).filter(
+      ([_, value]) => value !== undefined && value !== null && value !== "",
+    ),
+  );
+};
 export const ALL_ROLES = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INST_ADMIN];
 export const SUPER_AND_ADMIN = [ROLES.SUPER_ADMIN, ROLES.ADMIN];
 export const SUPER_ONLY = [ROLES.SUPER_ADMIN];

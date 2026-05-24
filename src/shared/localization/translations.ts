@@ -909,6 +909,8 @@ const translations = {
     ai_content: "Ai Content Generated",
     Subscription_plans: "Subscription Plans",
     institutions_contracts: "Institutional Contracts",
+    installments: "Installments",
+    payments: "Payments",
     ...dashboardMenuTranslations.en,
     ...homeTranslations.en,
   },
@@ -1870,6 +1872,9 @@ const translations = {
     ai_content: "محتوى بالذكاء الاصطناعي",
     Subscription_plans: "خطط الاشتراك",
     institutions_contracts: "عقود المعاهد",
+    installments: "الأقساط",
+    payments: "المدفوعات",
+
     ...dashboardMenuTranslations.ar,
     ...homeTranslations.ar,
   },
