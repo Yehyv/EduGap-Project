@@ -1038,7 +1038,10 @@ const AnnualContractDetails = () => {
                             transition={{ delay: i * 0.06, duration: 0.28 }}
                             className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
                           >
-                            <div className="flex items-center gap-3">
+                            <Link
+                              to={`/dashboard/installments/${inst.id}`}
+                              className="flex items-center gap-3"
+                            >
                               <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                                 <span className="text-xs font-bold text-secondary">
                                   #{inst.installmentNo}
@@ -1052,7 +1055,7 @@ const AnnualContractDetails = () => {
                                   Due: {fmtDate(inst.dueDate)}
                                 </p>
                               </div>
-                            </div>
+                            </Link>
                             <div className="flex items-center gap-4 text-sm">
                               <div className="text-right">
                                 <p className="text-xs text-gray-400">Paid</p>
@@ -1131,7 +1134,10 @@ const AnnualContractDetails = () => {
                             transition={{ delay: i * 0.06, duration: 0.28 }}
                             className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
                           >
-                            <div className="flex items-center gap-3">
+                            <Link
+                              to={`/dashboard/contract-payments/${pay.id}`}
+                              className="flex items-center gap-3"
+                            >
                               <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
                                 <CheckCircle2
                                   size={16}
@@ -1147,7 +1153,7 @@ const AnnualContractDetails = () => {
                                   {pay.receiptNo}
                                 </p>
                               </div>
-                            </div>
+                            </Link>
                             <div className="flex items-center gap-4 text-sm">
                               <div className="text-right">
                                 <p className="text-xs text-gray-400">Method</p>

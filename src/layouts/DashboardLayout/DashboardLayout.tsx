@@ -1,7 +1,8 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
+import LogoIcon from "@/assets/imgs/LogoIcon.png";
 import CloseIcon from "@/assets/svgs/CloseIcon.svg?react";
 import DashboardIcon from "@/assets/svgs/DashboardIcon.svg?react";
 import GovernmentIcon from "@/assets/svgs/GovernmentIcon.svg?react";
@@ -26,6 +27,19 @@ import {
   FileText,
   ListChecks,
   PackageCheck,
+  ChevronDown,
+  ChevronRight,
+  BarChart2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  BadgeDollarSignIcon,
+  ClockAlert,
+  CalendarClock,
+  PieChart,
+  Tag,
+  FileCog,
+  TrendingUp,
+  Download,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,24 +52,27 @@ const ROLES = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NAV LINK CLASS
+// COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
-const navLinkClass = ({ isActive }) =>
-  `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+const DashboardLayout = () => {
+  const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const { lang, setLang, t } = useLanguage();
+  const { dashboardToken, dashboardLogout, instAdminInfo } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // NAV LINK CLASS
+  // ─────────────────────────────────────────────────────────────────────────────
+  const navLinkClass = ({ isActive }) =>
+    `p-2 flex items-center gap-2 ${collapsed ? "justify-center" : ""} rounded-xl text-sm transition-all
   ${
     isActive
       ? "text-secondary font-bold bg-[#ECF8FF]"
       : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
   }`;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-const DashboardLayout = () => {
-  const [open, setOpen] = useState(false);
-  const { lang, setLang, t } = useLanguage();
-  const { dashboardToken, dashboardLogout, instAdminInfo } = useAuth();
-  const navigate = useNavigate();
 
   const decoded = (() => {
     try {
@@ -73,6 +90,9 @@ const DashboardLayout = () => {
   const isInstAdmin = role === ROLES.INST_ADMIN;
   const isSuperOrAdmin = isSuperAdmin || isAdmin;
 
+  // Keep reports open if a reports route is active
+  const isReportsActive = location.pathname.startsWith("/dashboard/reports");
+
   const handleLogout = () => {
     logoutDashboardUser()
       .then(() => {
@@ -82,14 +102,19 @@ const DashboardLayout = () => {
       .catch(console.error);
   };
 
+  // Sidebar width classes
+  const sidebarW = collapsed ? "w-[68px]" : "w-64";
+  const mainML = collapsed ? "md:ms-[68px]" : "md:ms-64";
+
   return (
     <div className="min-h-screen gap-2 bg-gray-50">
-      {/* Sidebar */}
+      {/* ── Sidebar ── */}
       <aside
         className={`
           flex flex-col justify-between
-          fixed top-0 h-screen w-64 bg-white z-40 shadow-lg
+          fixed top-0 h-screen bg-white z-40 shadow-lg
           transform transition-all duration-300 ease-in-out
+          ${sidebarW}
           ${lang === "en" ? "left-0" : "right-0"}
           ${
             open
@@ -102,24 +127,40 @@ const DashboardLayout = () => {
         `}
       >
         <div>
+          {/* Mobile close button */}
           <button
             onClick={() => setOpen(false)}
             className="bg-gray-200 cursor-pointer w-7 h-7 center rounded-full absolute end-2 top-2 md:!hidden"
           >
             <CloseIcon className="w-3 h-3" />
           </button>
-          {/* Logo */}
+
+          {/* Logo + collapse toggle */}
           <div className="flex flex-col items-center justify-center py-4 gap-3">
-            <NavLink to="/userHome">
-              <LogoSm className="cursor-pointer" />
+            <NavLink to="/dashboard/home">
+              {collapsed ? (
+                <img src={LogoIcon} alt="logo" className="w-8"></img>
+              ) : (
+                <LogoSm className="cursor-pointer" />
+              )}
             </NavLink>
 
-            {role === ROLES.INST_ADMIN && instAdminInfo && (
-              <div className="flex flex-col items-center gap-2 w-full px-3">
-                {/* Divider */}
-                <div className="w-full h-px bg-gray-200" />
+            {/* Desktop collapse toggle */}
+            <button
+              onClick={() => setCollapsed((v) => !v)}
+              className="flex absolute -end-3 top-12 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm items-center justify-center text-gray-400 hover:text-secondary hover:border-secondary transition-colors z-10"
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {collapsed ? (
+                <PanelLeftOpen size={13} />
+              ) : (
+                <PanelLeftClose size={13} />
+              )}
+            </button>
 
-                {/* Institute logo */}
+            {!collapsed && role === ROLES.INST_ADMIN && instAdminInfo && (
+              <div className="flex flex-col items-center gap-2 w-full px-3">
+                <div className="w-full h-px bg-gray-200" />
                 <div className="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center bg-white flex-shrink-0">
                   <img
                     src={instAdminInfo.logo}
@@ -127,8 +168,6 @@ const DashboardLayout = () => {
                     className="w-full h-full object-contain"
                   />
                 </div>
-
-                {/* Institute name */}
                 <p
                   className="font-medium text-center text-gray-600 leading-tight line-clamp-2 w-full"
                   title={instAdminInfo.instituteName}
@@ -141,32 +180,33 @@ const DashboardLayout = () => {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="py-2 px-3 flex flex-col gap-1 overflow-y-auto flex-1">
-          <h5 className="text-[#575757] mb-2 mx-2">{t("menu")}</h5>
+        {/* ── Navigation ── */}
+        <nav className="py-2 px-2 flex flex-col gap-1 overflow-y-auto flex-1">
+          {!collapsed && (
+            <h5 className="text-[#575757] mb-2 mx-2 text-sm">{t("menu")}</h5>
+          )}
 
-          {/* ── ALL roles ─────────────────────────────────────────────────── */}
+          {/* ── ALL roles ── */}
           <NavLink
             to="/dashboard/home"
             end
             className={navLinkClass}
             onClick={() => setOpen(false)}
+            title={collapsed ? t("dashboard") : undefined}
           >
-            <DashboardIcon />
-            <span>{t("dashboard")}</span>
+            <DashboardIcon className="flex-shrink-0" />
+            {!collapsed && <span>{t("dashboard")}</span>}
           </NavLink>
 
-          {/* Institutes:
-              SUPER_ADMIN & ADMIN → /dashboard/institutes (list)
-              INST_ADMIN          → /dashboard/institutes/:instituteId (their own) */}
           {isSuperOrAdmin && (
             <NavLink
               to="/dashboard/institutes"
               className={navLinkClass}
               onClick={() => setOpen(false)}
+              title={collapsed ? t("institutes") : undefined}
             >
-              <GovernmentIcon />
-              <span>{t("institutes")}</span>
+              <GovernmentIcon className="flex-shrink-0" />
+              {!collapsed && <span>{t("institutes")}</span>}
             </NavLink>
           )}
 
@@ -175,9 +215,10 @@ const DashboardLayout = () => {
               to={`/dashboard/institutes/${instituteId}`}
               className={navLinkClass}
               onClick={() => setOpen(false)}
+              title={collapsed ? t("institutes") : undefined}
             >
-              <GovernmentIcon />
-              <span>{t("institutes")}</span>
+              <GovernmentIcon className="flex-shrink-0" />
+              {!collapsed && <span>{t("institutes")}</span>}
             </NavLink>
           )}
 
@@ -185,138 +226,444 @@ const DashboardLayout = () => {
             to="/dashboard/contents"
             className={navLinkClass}
             onClick={() => setOpen(false)}
+            title={collapsed ? t("trainingCourses") : undefined}
           >
-            <ConentsIcon />
-            <span>{t("trainingCourses")}</span>
+            <ConentsIcon className="flex-shrink-0" />
+            {!collapsed && <span>{t("trainingCourses")}</span>}
           </NavLink>
 
-          {/* ── SUPER_ADMIN & ADMIN only ──────────────────────────────────── */}
+          {/* ── SUPER_ADMIN & ADMIN only ── */}
           {isSuperOrAdmin && (
             <>
               <NavLink
                 to="/dashboard/users"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("users") : undefined}
               >
-                <StudentIcon />
-                <span>{t("users")}</span>
+                <StudentIcon className="flex-shrink-0" />
+                {!collapsed && <span>{t("users")}</span>}
               </NavLink>
 
               <NavLink
                 to="/dashboard/programs"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("nav_programs") : undefined}
               >
-                <ProgramsIcon />
-                <span>{t("nav_programs")}</span>
+                <ProgramsIcon className="flex-shrink-0" />
+                {!collapsed && <span>{t("nav_programs")}</span>}
               </NavLink>
 
               <NavLink
                 to="/dashboard/courses"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("courses") : undefined}
               >
-                <CoursesDashboardIcon />
-                <span>{t("courses")}</span>
+                <CoursesDashboardIcon className="flex-shrink-0" />
+                {!collapsed && <span>{t("courses")}</span>}
               </NavLink>
 
               <NavLink
                 to="/dashboard/learning-paths"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("learningPaths") : undefined}
               >
-                <LearningPathsIcon />
-                <span>{t("learningPaths")}</span>
+                <LearningPathsIcon className="flex-shrink-0" />
+                {!collapsed && <span>{t("learningPaths")}</span>}
               </NavLink>
 
               <NavLink
                 to="/dashboard/experts"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("experts") : undefined}
               >
-                <EducatorsIcon />
-                <span>{t("experts")}</span>
+                <EducatorsIcon className="flex-shrink-0" />
+                {!collapsed && <span>{t("experts")}</span>}
               </NavLink>
 
               <NavLink
                 to="/dashboard/location"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("location") : undefined}
               >
-                <LocationIcon />
-                <span>{t("location")}</span>
+                <LocationIcon className="flex-shrink-0" />
+                {!collapsed && <span>{t("location")}</span>}
               </NavLink>
             </>
           )}
 
-          {/* ── SUPER_ADMIN only ──────────────────────────────────────────── */}
+          {/* ── SUPER_ADMIN only ── */}
           {isSuperAdmin && (
             <>
               <NavLink
                 to="/dashboard/roles"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("roles") : undefined}
               >
-                <SettingSidebarIcon />
-                <span>{t("roles")}</span>
+                <SettingSidebarIcon className="flex-shrink-0" />
+                {!collapsed && <span>{t("roles")}</span>}
               </NavLink>
 
               <NavLink
                 to="/dashboard/system-users"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("systemUsers") : undefined}
               >
-                <SystemUsersIcon />
-                <span>{t("systemUsers")}</span>
+                <SystemUsersIcon className="flex-shrink-0" />
+                {!collapsed && <span>{t("systemUsers")}</span>}
               </NavLink>
 
               <NavLink
                 to="/dashboard/subscription-plans"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("Subscription_plans") : undefined}
               >
-                <PackageCheck className="text-[#ACACAC] " />
-                <span>{t("Subscription_plans")}</span>
+                <PackageCheck className="text-[#ACACAC] flex-shrink-0" />
+                {!collapsed && <span>{t("Subscription_plans")}</span>}
               </NavLink>
+
               <NavLink
                 to="/dashboard/institutions-contracts"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("institutions_contracts") : undefined}
               >
-                <FileSignature className="text-[#ACACAC] " />
-                <span>{t("institutions_contracts")}</span>
+                <FileSignature className="text-[#ACACAC] flex-shrink-0" />
+                {!collapsed && <span>{t("institutions_contracts")}</span>}
               </NavLink>
+
               <NavLink
                 to="/dashboard/installments"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("installments") : undefined}
               >
-                <ListChecks className="text-[#ACACAC] " />
-                <span>{t("installments")}</span>
+                <ListChecks className="text-[#ACACAC] flex-shrink-0" />
+                {!collapsed && <span>{t("installments")}</span>}
               </NavLink>
+
               <NavLink
                 to="/dashboard/contract-payments"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
+                title={collapsed ? t("payments") : undefined}
               >
-                <DollarSign className="text-[#ACACAC] " />
-                <span>{t("payments")}</span>
+                <DollarSign className="text-[#ACACAC] flex-shrink-0" />
+                {!collapsed && <span>{t("payments")}</span>}
               </NavLink>
+
+              {/* ── Reports accordion ── */}
+              {collapsed ? (
+                // Collapsed: just the icon, clicking navigates directly to annual settlement
+                <>
+                  <NavLink
+                    to="/dashboard/reports/settlements"
+                    className={navLinkClass}
+                    onClick={() => setOpen(false)}
+                    title="Reports"
+                  >
+                    <BarChart2 className="text-[#ACACAC] flex-shrink-0" />
+                  </NavLink>
+                  <NavLink
+                    to="/dashboard/reports/collections"
+                    className={navLinkClass}
+                    onClick={() => setOpen(false)}
+                    title="Collections"
+                  >
+                    <BadgeDollarSignIcon className="text-[#ACACAC] flex-shrink-0" />
+                  </NavLink>
+                  <NavLink
+                    to="/dashboard/reports/overdue"
+                    className={navLinkClass}
+                    onClick={() => setOpen(false)}
+                    title="Overdue"
+                  >
+                    <ClockAlert className="text-[#ACACAC] flex-shrink-0" />
+                  </NavLink>
+                  <NavLink
+                    to="/dashboard/reports/upcoming"
+                    className={navLinkClass}
+                    onClick={() => setOpen(false)}
+                    title="Upcoming"
+                  >
+                    <CalendarClock className="text-[#ACACAC] flex-shrink-0" />
+                  </NavLink>
+                  <NavLink
+                    to="/dashboard/reports/payment-percentage"
+                    className={navLinkClass}
+                    onClick={() => setOpen(false)}
+                    title="Payment Percentage"
+                  >
+                    <PieChart className="text-[#ACACAC] flex-shrink-0" />
+                  </NavLink>
+                  <NavLink
+                    to="/dashboard/reports/discount-tax-report"
+                    className={navLinkClass}
+                    onClick={() => setOpen(false)}
+                    title="Discount & Tax"
+                  >
+                    <Tag className="text-[#ACACAC] flex-shrink-0" />
+                  </NavLink>
+                  <NavLink
+                    to="/dashboard/reports/administrative-fees"
+                    className={navLinkClass}
+                    onClick={() => setOpen(false)}
+                    title="Administrative Fees"
+                  >
+                    <FileCog className="text-[#ACACAC] flex-shrink-0" />
+                  </NavLink>
+                  <NavLink
+                    to="/dashboard/reports/yearly-revenue"
+                    className={navLinkClass}
+                    onClick={() => setOpen(false)}
+                    title="Yearly Revenue"
+                  >
+                    <TrendingUp className="text-[#ACACAC] flex-shrink-0" />
+                  </NavLink>
+                  <NavLink
+                    to="/dashboard/reports/financial-reports-export"
+                    className={navLinkClass}
+                    onClick={() => setOpen(false)}
+                    title="Export Financial Reports"
+                  >
+                    <Download className="text-[#ACACAC] flex-shrink-0" />
+                  </NavLink>
+                </>
+              ) : (
+                <div className="flex flex-col">
+                  {/* Reports toggle button */}
+                  <button
+                    type="button"
+                    onClick={() => setReportsOpen((v) => !v)}
+                    className={`p-2 flex items-center gap-2 rounded-xl text-sm transition-all w-full
+                      ${
+                        isReportsActive
+                          ? "text-secondary font-bold bg-[#ECF8FF]"
+                          : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                      }`}
+                  >
+                    <BarChart2
+                      className={`flex-shrink-0 ${isReportsActive ? "text-secondary" : "text-[#ACACAC]"}`}
+                      size={18}
+                    />
+                    <span className="flex-1 text-left">Reports</span>
+                    <span
+                      className="transition-transform duration-200"
+                      style={{
+                        transform:
+                          reportsOpen || isReportsActive
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
+                      }}
+                    >
+                      <ChevronDown size={14} />
+                    </span>
+                  </button>
+
+                  {/* Sub-links */}
+                  <div
+                    className="overflow-hidden transition-all duration-200 ease-in-out"
+                    style={{
+                      maxHeight:
+                        reportsOpen || isReportsActive ? "350px" : "0px",
+                      opacity: reportsOpen || isReportsActive ? 1 : 0,
+                    }}
+                  >
+                    <div className="ms-4 mt-0.5 flex flex-col gap-0.5 border-s-2 border-gray-100 ps-2">
+                      <NavLink
+                        to="/dashboard/reports/settlements"
+                        className={({ isActive }) =>
+                          `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+                          ${
+                            isActive
+                              ? "text-secondary font-bold bg-[#ECF8FF]"
+                              : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                          }`
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <FileText
+                          size={13}
+                          className="flex-shrink-0 text-[#ACACAC]"
+                        />
+                        <span>Annual Settlement</span>
+                      </NavLink>
+                      <NavLink
+                        to="/dashboard/reports/collections"
+                        className={({ isActive }) =>
+                          `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+                          ${
+                            isActive
+                              ? "text-secondary font-bold bg-[#ECF8FF]"
+                              : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                          }`
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <BadgeDollarSignIcon
+                          size={13}
+                          className="flex-shrink-0 text-[#ACACAC]"
+                        />
+                        <span>Collections Summary</span>
+                      </NavLink>
+                      <NavLink
+                        to="/dashboard/reports/overdue"
+                        className={({ isActive }) =>
+                          `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+                          ${
+                            isActive
+                              ? "text-secondary font-bold bg-[#ECF8FF]"
+                              : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                          }`
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <ClockAlert
+                          size={13}
+                          className="flex-shrink-0 text-[#ACACAC]"
+                        />
+                        <span>Collection Overdue</span>
+                      </NavLink>
+                      <NavLink
+                        to="/dashboard/reports/upcoming"
+                        className={({ isActive }) =>
+                          `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+                          ${
+                            isActive
+                              ? "text-secondary font-bold bg-[#ECF8FF]"
+                              : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                          }`
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <CalendarClock
+                          size={13}
+                          className="flex-shrink-0 text-[#ACACAC]"
+                        />
+                        <span>Collection Upcoming</span>
+                      </NavLink>
+                      <NavLink
+                        to="/dashboard/reports/payment-percentage"
+                        className={({ isActive }) =>
+                          `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+                          ${
+                            isActive
+                              ? "text-secondary font-bold bg-[#ECF8FF]"
+                              : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                          }`
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <PieChart
+                          size={13}
+                          className="flex-shrink-0 text-[#ACACAC]"
+                        />
+                        <span>Payment Percentage</span>
+                      </NavLink>
+
+                      <NavLink
+                        to="/dashboard/reports/discount-tax-report"
+                        className={({ isActive }) =>
+                          `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+                          ${
+                            isActive
+                              ? "text-secondary font-bold bg-[#ECF8FF]"
+                              : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                          }`
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <Tag
+                          size={13}
+                          className="flex-shrink-0 text-[#ACACAC]"
+                        />
+                        <span>Discount & Tax</span>
+                      </NavLink>
+                      <NavLink
+                        to="/dashboard/reports/administrative-fees"
+                        className={({ isActive }) =>
+                          `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+                          ${
+                            isActive
+                              ? "text-secondary font-bold bg-[#ECF8FF]"
+                              : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                          }`
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <FileCog
+                          size={13}
+                          className="flex-shrink-0 text-[#ACACAC]"
+                        />
+                        <span>Administrative Fees</span>
+                      </NavLink>
+                      <NavLink
+                        to="/dashboard/reports/yearly-revenue"
+                        className={({ isActive }) =>
+                          `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+                          ${
+                            isActive
+                              ? "text-secondary font-bold bg-[#ECF8FF]"
+                              : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                          }`
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <TrendingUp
+                          size={13}
+                          className="flex-shrink-0 text-[#ACACAC]"
+                        />
+                        <span>Yearly Revenue</span>
+                      </NavLink>
+                      <NavLink
+                        to="/dashboard/reports/financial-reports-export"
+                        className={({ isActive }) =>
+                          `p-2 flex items-center gap-2 rounded-xl text-sm transition-all
+                          ${
+                            isActive
+                              ? "text-secondary font-bold bg-[#ECF8FF]"
+                              : "text-[#575757] hover:text-secondary hover:font-bold hover:bg-[#ECF8FF]"
+                          }`
+                        }
+                        onClick={() => setOpen(false)}
+                      >
+                        <Download
+                          size={13}
+                          className="flex-shrink-0 text-[#ACACAC]"
+                        />
+                        <span>Financial Reports Export</span>
+                      </NavLink>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </nav>
 
+        {/* Logout */}
         <button
           onClick={handleLogout}
-          className="pb-10 mx-4 pt-2 flex items-center gap-2 text-[#ACACAC] border-t border-[#ACACAC]"
+          className={`pb-10 mx-4 pt-2 flex items-center gap-2 text-[#ACACAC] border-t border-[#ACACAC] ${collapsed ? "justify-center" : ""}`}
+          title={collapsed ? t("logout") : undefined}
         >
-          <LogoutIcon className="rotate-180" />
-          <span>{t("logout")}</span>
+          <LogoutIcon className="rotate-180 flex-shrink-0" />
+          {!collapsed && <span>{t("logout")}</span>}
         </button>
       </aside>
 
-      {/* Main Area */}
-      <div className="flex-1 flex flex-col min-h-screen ml-0 md:me-4 md:ms-64 pt-2">
+      {/* ── Main Area ── */}
+      <div
+        className={`flex-1 flex flex-col min-h-screen ml-0 md:me-4 ${mainML} pt-2 transition-all duration-300`}
+      >
         {/* Header */}
         <header className="py-2 bg-white rounded-2xl flex items-center mx-6 justify-between px-4">
           <button

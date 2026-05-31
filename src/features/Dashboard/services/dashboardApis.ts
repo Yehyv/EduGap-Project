@@ -1581,6 +1581,7 @@ export async function fetchInstallmentDetails(installmentId: string) {
   const res = await dashboardApi.get(`/contract-installments/${installmentId}`);
   return res.data.data;
 }
+
 export async function generateInstallments(
   contractId: string,
   data: {
@@ -1623,5 +1624,24 @@ export async function fetchPaymentsHistory(params: {
     params: cleanParams(params),
   });
 
+  return res.data.data;
+}
+export async function createContractPayment(data) {
+  const res = await dashboardApi.post(`/contract-payments`, data);
+  return res.data;
+}
+export async function fetchPaymentDetails(paymentId: string) {
+  const res = await dashboardApi.get(`/contract-payments/${paymentId}`);
+  return res.data.data;
+}
+export async function fetchAnnualSettlementDashboard(academicYear) {
+  const res = await dashboardApi.get(
+    `/annual-settlements/dashboard?academicYear=${academicYear}`,
+  );
+  return res.data.data;
+}
+
+export async function fetchAnnualSettlementDetail(contractId) {
+  const res = await dashboardApi.get(`/annual-settlements/${contractId}`);
   return res.data.data;
 }

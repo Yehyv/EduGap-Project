@@ -276,7 +276,7 @@ const InstallmentDetails = () => {
         </Link>
         <ChevronRight size={14} />
         <Link
-          to={`/dashboard/institutions-contracts/${data.id}/installments`}
+          to={`/dashboard/installments`}
           className="hover:text-gray-600 transition-colors"
         >
           Installments
@@ -544,11 +544,9 @@ const InstallmentDetails = () => {
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() =>
-            navigate(
-              `/dashboard/institutions-contracts/${data?.id}/installments/${installmentId}/add-payment`,
-            )
+            navigate(`/dashboard/installments/${installmentId}/create-payment`)
           }
-          className="h-9 px-5 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2"
+          className="h-9 px-5 rounded-lg bg-secondary text-white text-sm font-semibold hover:bg-secondary/90 transition-colors flex items-center gap-2"
         >
           <Plus size={15} />
           Add Payment

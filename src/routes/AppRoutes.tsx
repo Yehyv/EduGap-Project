@@ -129,6 +129,20 @@ import InstallmentDetails from "@/pages/dashboard/InstallmentDetails";
 import GenerateInstallment from "@/pages/dashboard/GenerateInstallment";
 import EditInstallment from "@/pages/dashboard/EditInstallment";
 import ContractPaymentsList from "@/pages/dashboard/ContractPaymentsList";
+import RecordPaymentPage from "@/pages/dashboard/RecordPaymentPage";
+import PaymentDetailsPage from "@/pages/dashboard/PaymentDetailsPage";
+import CancelPayment from "@/pages/dashboard/CancelPayment";
+import PaymentSuccessPage from "@/pages/dashboard/PaymentSuccessPage";
+import AnnualSettlementDashboard from "@/pages/dashboard/Reports/SuperAdmin/AnnualSettlementDashboard";
+import AnnualSettlementDetails from "@/pages/dashboard/Reports/SuperAdmin/AnnualSettlementDetails";
+import CollectionSummaryPage from "@/pages/dashboard/Reports/SuperAdmin/CollectionSummaryPage";
+import OverdueInstallmentsPage from "@/pages/dashboard/Reports/SuperAdmin/OverdueInstallmentsPage";
+import UpcomingPaymentsPage from "@/pages/dashboard/Reports/SuperAdmin/UpcomingPaymentsPage";
+import PaymentPercentagePage from "@/pages/dashboard/Reports/SuperAdmin/PaymentPercentagePage";
+import DiscountTaxPage from "@/pages/dashboard/Reports/SuperAdmin/DiscountTaxPage";
+import AdministrativeFeesPage from "@/pages/dashboard/Reports/SuperAdmin/AdministrativeFeesPage";
+import YearlyRevenuePage from "@/pages/dashboard/Reports/SuperAdmin/YearlyRevenuePage";
+import FinancialReportsExportPage from "@/pages/dashboard/Reports/SuperAdmin/FinancialReportsExportPage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -871,6 +885,75 @@ export default function AppRoutes() {
                 <ContractPaymentsList />
               </DashboardRoute>
             }
+          />
+          <Route
+            path="/dashboard/contract-payments/:paymentId"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <PaymentDetailsPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/contract-payments/:paymentId/cancel"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <CancelPayment />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/installments/:installmentId/create-payment"
+            element={
+              <DashboardRoute allowed={SUPER_ONLY}>
+                <RecordPaymentPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/installments/:installmentId/create-payment/success"
+            element={<PaymentSuccessPage />}
+          />
+          {/* Reports */}
+          <Route
+            path="/dashboard/reports/settlements"
+            element={<AnnualSettlementDashboard />}
+          />
+          <Route
+            path="/dashboard/reports/settlements/:contractId"
+            element={<AnnualSettlementDetails />}
+          />
+          <Route
+            path="/dashboard/reports/collections"
+            element={<CollectionSummaryPage />}
+          />
+          <Route
+            path="/dashboard/reports/overdue"
+            element={<OverdueInstallmentsPage />}
+          />
+          <Route
+            path="/dashboard/reports/upcoming"
+            element={<UpcomingPaymentsPage />}
+          />
+          <Route
+            path="/dashboard/reports/payment-percentage"
+            element={<PaymentPercentagePage />}
+          />
+          <Route
+            path="/dashboard/reports/discount-tax-report"
+            element={<DiscountTaxPage />}
+          />
+          <Route
+            path="/dashboard/reports/administrative-fees"
+            element={<AdministrativeFeesPage />}
+          />
+          <Route
+            path="/dashboard/reports/yearly-revenue"
+            element={<YearlyRevenuePage />}
+          />
+          <Route
+            path="/dashboard/reports/financial-reports-export"
+            element={<FinancialReportsExportPage />}
           />
         </Route>
       </Route>

@@ -565,7 +565,7 @@ const InstallmentsScheduleList = () => {
       ),
       sortable: true,
       center: true,
-      minWidth: "10px",
+      minWidth: "130px",
     },
     {
       name: "Receipt No.",
@@ -599,7 +599,7 @@ const InstallmentsScheduleList = () => {
       name: "Details",
       cell: (row: Payment) => (
         <Link
-          to={`/dashboard/payments/${row.paymentId}`}
+          to={`/dashboard/contract-payments/${row.paymentId}`}
           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
           title="View"
         >
@@ -727,7 +727,7 @@ const InstallmentsScheduleList = () => {
   if (listError) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Installments Schedule List" />
+        <DashboardPageTitle text="Payments History" />
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -735,7 +735,7 @@ const InstallmentsScheduleList = () => {
         >
           <XCircle size={36} className="text-red-300" />
           <p className="text-sm font-medium text-red-400">
-            Failed to load installments.
+            Failed to load payments history.
           </p>
           <Link
             to="/dashboard/institutions-contracts"
