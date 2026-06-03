@@ -40,6 +40,9 @@ import {
   FileCog,
   TrendingUp,
   Download,
+  LayoutDashboardIcon,
+  Package,
+  CalendarRange,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -231,6 +234,51 @@ const DashboardLayout = () => {
             <ConentsIcon className="flex-shrink-0" />
             {!collapsed && <span>{t("trainingCourses")}</span>}
           </NavLink>
+
+          {isInstAdmin && (
+            <>
+              <h5 className="text-[#575757] my-2 mx-2 text-sm">Billing</h5>
+
+              <NavLink
+                to="/dashboard/billing-dashboard"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title="Billing Dashboard"
+              >
+                <LayoutDashboardIcon className="flex-shrink-0 text-[#ACACAC]" />
+                {!collapsed && <span>Billing Dashboard</span>}
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/my-contract"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title="My Contract"
+              >
+                <FileText className="flex-shrink-0 text-[#ACACAC]" />
+                {!collapsed && <span>My Contract</span>}
+              </NavLink>
+
+              <NavLink
+                to="/dashboard/my-plan"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title="My Plan"
+              >
+                <Package className="flex-shrink-0 text-[#ACACAC]" />
+                {!collapsed && <span>My Plan</span>}
+              </NavLink>
+              <NavLink
+                to="/dashboard/installment-schedule"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title="Installment Schedule"
+              >
+                <CalendarRange className="flex-shrink-0 text-[#ACACAC]" />
+                {!collapsed && <span>Installment Schedule</span>}
+              </NavLink>
+            </>
+          )}
 
           {/* ── SUPER_ADMIN & ADMIN only ── */}
           {isSuperOrAdmin && (

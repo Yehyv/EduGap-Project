@@ -143,6 +143,10 @@ import DiscountTaxPage from "@/pages/dashboard/Reports/SuperAdmin/DiscountTaxPag
 import AdministrativeFeesPage from "@/pages/dashboard/Reports/SuperAdmin/AdministrativeFeesPage";
 import YearlyRevenuePage from "@/pages/dashboard/Reports/SuperAdmin/YearlyRevenuePage";
 import FinancialReportsExportPage from "@/pages/dashboard/Reports/SuperAdmin/FinancialReportsExportPage";
+import InstitutionBillingDashboard from "@/pages/dashboard/Reports/InstAdmin/InstitutionBillingDashboard";
+import MyContractPage from "@/pages/dashboard/Reports/InstAdmin/MyContractPage";
+import PlanDetailsPage from "@/pages/dashboard/Reports/InstAdmin/PlanDetailsPage";
+import InstituteInstallmentsPage from "@/pages/dashboard/Reports/InstAdmin/InstituteInstallmentsPage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -157,6 +161,7 @@ const ROLES = {
 const ALL_ROLES = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INST_ADMIN];
 const SUPER_AND_ADMIN = [ROLES.SUPER_ADMIN, ROLES.ADMIN];
 const SUPER_ONLY = [ROLES.SUPER_ADMIN];
+const INST_ADMIN_ONLY = [ROLES.INST_ADMIN];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INST_ADMIN INSTITUTES REDIRECT
@@ -598,6 +603,40 @@ export default function AppRoutes() {
               </DashboardRoute>
             }
           />
+          {/* INST_ADMIN ONLY */}
+          <Route
+            path="/dashboard/billing-dashboard"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <InstitutionBillingDashboard />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/my-contract"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <MyContractPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/my-plan"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <PlanDetailsPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/installment-schedule"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <InstituteInstallmentsPage />
+              </DashboardRoute>
+            }
+          />
+          {/* INST_ADMIN ONLY */}
           <Route
             path="/dashboard/contents/add"
             element={
