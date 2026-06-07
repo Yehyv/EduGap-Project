@@ -181,10 +181,15 @@ const buildColumns = () => [
         activateApi={() => planActivateToggle(row.id ?? "")}
         deactivateApi={() => planActivateToggle(row.id ?? "")}
         isActive={row.is_active ?? false}
-        refetchKey={"subscription-plans"}
+        refetchKey={[
+          "subscription-plans",
+          "totalActivePlans",
+          "totalInActivePlans",
+        ]}
         showModal={false}
       />
     ),
+
     sortable: false,
     ignoreRowClick: true,
     center: true,

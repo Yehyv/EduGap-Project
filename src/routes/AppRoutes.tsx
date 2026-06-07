@@ -147,6 +147,7 @@ import InstitutionBillingDashboard from "@/pages/dashboard/Reports/InstAdmin/Ins
 import MyContractPage from "@/pages/dashboard/Reports/InstAdmin/MyContractPage";
 import PlanDetailsPage from "@/pages/dashboard/Reports/InstAdmin/PlanDetailsPage";
 import InstituteInstallmentsPage from "@/pages/dashboard/Reports/InstAdmin/InstituteInstallmentsPage";
+import InstitutePaymentHistoryPage from "@/pages/dashboard/InstitutePaymentHistoryPage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -633,6 +634,14 @@ export default function AppRoutes() {
             element={
               <DashboardRoute allowed={INST_ADMIN_ONLY}>
                 <InstituteInstallmentsPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/payments-history"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <InstitutePaymentHistoryPage />
               </DashboardRoute>
             }
           />

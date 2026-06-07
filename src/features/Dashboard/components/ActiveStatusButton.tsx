@@ -42,7 +42,11 @@ const ActiveStatusButton = ({
 
   const invalidate = () => {
     if (Array.isArray(refetchKey)) {
-      queryClient.invalidateQueries({ queryKey: refetchKey });
+      refetchKey?.map((r) => {
+        console.log(r);
+
+        queryClient.invalidateQueries({ queryKey: [r] });
+      });
     } else {
       queryClient.invalidateQueries({ queryKey: [refetchKey] });
     }

@@ -43,6 +43,7 @@ import {
   LayoutDashboardIcon,
   Package,
   CalendarRange,
+  History,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -276,6 +277,15 @@ const DashboardLayout = () => {
               >
                 <CalendarRange className="flex-shrink-0 text-[#ACACAC]" />
                 {!collapsed && <span>Installment Schedule</span>}
+              </NavLink>
+              <NavLink
+                to="/dashboard/payments-history"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title="Installment Schedule"
+              >
+                <History className="flex-shrink-0 text-[#ACACAC]" />
+                {!collapsed && <span>Payments History</span>}
               </NavLink>
             </>
           )}

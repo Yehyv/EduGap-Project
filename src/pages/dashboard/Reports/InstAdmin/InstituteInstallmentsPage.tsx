@@ -552,7 +552,7 @@ const InstituteInstallmentsPage = () => {
                   </p>
                   <p className="text-sm font-semibold text-gray-800">
                     {nextInstallment.label} is due on{" "}
-                    <span className="text-blue-600">
+                    <span className="text-secondary">
                       {fmtDate(nextInstallment.dueDate)}
                     </span>
                     {" · "}
@@ -564,7 +564,7 @@ const InstituteInstallmentsPage = () => {
 
                 <Link
                   to={`/dashboard/billing/installments/${nextInstallment.installmentId}/pay`}
-                  className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors flex items-center gap-2 flex-shrink-0"
+                  className="h-10 px-6 rounded-xl bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2 flex-shrink-0"
                 >
                   <CreditCard size={14} />
                   Pay Now
