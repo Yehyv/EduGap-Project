@@ -148,6 +148,10 @@ import MyContractPage from "@/pages/dashboard/Reports/InstAdmin/MyContractPage";
 import PlanDetailsPage from "@/pages/dashboard/Reports/InstAdmin/PlanDetailsPage";
 import InstituteInstallmentsPage from "@/pages/dashboard/Reports/InstAdmin/InstituteInstallmentsPage";
 import InstitutePaymentHistoryPage from "@/pages/dashboard/InstitutePaymentHistoryPage";
+import NextInstallmentPage from "@/pages/dashboard/Reports/InstAdmin/NextInstallmentPage";
+import SettlementSummaryPage from "@/pages/dashboard/Reports/InstAdmin/SettlementSummaryPage";
+import InvoiceDetailPage from "@/pages/dashboard/Reports/InstAdmin/InvoiceDetailPage";
+import UploadPaymentProofPage from "@/pages/dashboard/Reports/InstAdmin/UploadPaymentProofPage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -642,6 +646,38 @@ export default function AppRoutes() {
             element={
               <DashboardRoute allowed={INST_ADMIN_ONLY}>
                 <InstitutePaymentHistoryPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/payments-history/invoice/:invoiceId"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <InvoiceDetailPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/next-installment"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <NextInstallmentPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/settlement-summary"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <SettlementSummaryPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/payment-proof"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <UploadPaymentProofPage />
               </DashboardRoute>
             }
           />

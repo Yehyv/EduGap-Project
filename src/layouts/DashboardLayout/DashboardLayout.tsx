@@ -44,6 +44,9 @@ import {
   Package,
   CalendarRange,
   History,
+  CalendarClockIcon,
+  Calculator,
+  Receipt,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -286,6 +289,33 @@ const DashboardLayout = () => {
               >
                 <History className="flex-shrink-0 text-[#ACACAC]" />
                 {!collapsed && <span>Payments History</span>}
+              </NavLink>
+              <NavLink
+                to="/dashboard/next-installment"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title="Installment Schedule"
+              >
+                <CalendarClockIcon className="flex-shrink-0 text-[#ACACAC]" />
+                {!collapsed && <span>Next Installment</span>}
+              </NavLink>
+              <NavLink
+                to="/dashboard/settlement-summary"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title="Installment Schedule"
+              >
+                <Calculator className="flex-shrink-0 text-[#ACACAC]" />
+                {!collapsed && <span>Settlement Summary</span>}
+              </NavLink>
+              <NavLink
+                to="/dashboard/payment-proof"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title="Installment Schedule"
+              >
+                <Receipt className="flex-shrink-0 text-[#ACACAC]" />
+                {!collapsed && <span>Payment Proof</span>}
               </NavLink>
             </>
           )}

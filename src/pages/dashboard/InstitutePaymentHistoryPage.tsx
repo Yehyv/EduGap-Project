@@ -14,6 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
+import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -354,8 +355,6 @@ const InstitutePaymentHistoryPage = () => {
 
   const handleYearChange = (y: number) => {
     setAcademicYear(y);
-    setFromDate(yearStart(y));
-    setToDate(yearEnd(y));
   };
 
   const handleFilter = () => {
@@ -433,7 +432,7 @@ const InstitutePaymentHistoryPage = () => {
       center: true,
       cell: (row: PaymentRow) => (
         <Link
-          to={`/dashboard/billing/payments/${row.paymentId}`}
+          to={`/dashboard/payments-history/invoice/${row.installmentId}`}
           className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-colors"
           title="View Details"
         >
@@ -446,219 +445,229 @@ const InstitutePaymentHistoryPage = () => {
   const summary = data?.summary;
 
   return (
-    <div className="flex flex-col gap-5 pb-8">
-      {/* ── Breadcrumb + Year ── */}
-      <motion.div {...fadeUp(0)} className="flex items-center justify-between">
-        <nav className="flex items-center gap-1.5 text-sm text-gray-400">
-          <Link
-            to="/dashboard/billing"
-            className="hover:text-gray-600 transition-colors"
-          >
-            Billing
-          </Link>
-          <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Payments</span>
-        </nav>
-        <YearDropdown value={academicYear} onChange={handleYearChange} />
-      </motion.div>
-
-      {/* ── Filters ── */}
-      <motion.div
-        {...fadeUp(0.04)}
-        className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
-      >
-        <div className="flex flex-wrap items-end gap-3">
-          {/* From Date */}
-          <div className="flex flex-col gap-1 min-w-[150px]">
-            <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-              <CalendarDays size={11} /> From Date
-            </label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className={inputCls}
-            />
-          </div>
-
-          {/* To Date */}
-          <div className="flex flex-col gap-1 min-w-[150px]">
-            <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-              <CalendarDays size={11} /> To Date
-            </label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className={inputCls}
-            />
-          </div>
-
-          {/* Status */}
-          <div className="flex flex-col gap-1 min-w-[140px]">
-            <label className="text-xs font-medium text-gray-500">Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className={`${inputCls} pr-8 appearance-none`}
-            >
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filter button */}
-          <button
-            type="button"
-            onClick={handleFilter}
-            disabled={isFetching}
-            className="h-9 px-5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-70"
-          >
-            {isFetching ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Filter size={14} />
-            )}
-            Filter
-          </button>
-        </div>
-      </motion.div>
-
-      {/* ── Loading ── */}
-      {isLoading && (
-        <div className="flex flex-col gap-5">
-          <div className="grid grid-cols-3 gap-4">
-            {[...Array(3)].map((_, i) => (
-              <Sk key={i} className="h-20" />
-            ))}
-          </div>
-          <Sk className="h-64" />
-        </div>
-      )}
-
-      {/* ── Real error ── */}
-      {isError && !isLoading && (
+    <>
+      <DashboardPageTitle text="Payments History Page" />
+      <div className="flex flex-col gap-5 pb-8">
+        {/* ── Breadcrumb + Year ── */}
         <motion.div
-          {...fadeUp(0.05)}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
+          {...fadeUp(0)}
+          className="flex items-center justify-between"
         >
-          <AlertCircle size={32} className="text-red-300" />
-          <p className="text-sm text-red-400">
-            Something went wrong. Please try again.
-          </p>
+          <nav className="flex items-center gap-1.5 text-sm text-gray-400">
+            <Link
+              to="/dashboard/billing"
+              className="hover:text-gray-600 transition-colors"
+            >
+              Billing
+            </Link>
+            <ChevronRight size={13} />
+            <span className="text-gray-600 font-medium">Payments</span>
+          </nav>
+          <YearDropdown value={academicYear} onChange={handleYearChange} />
         </motion.div>
-      )}
 
-      {/* ── No contract ── */}
-      {!isLoading && !isError && data === null && (
-        <NoContractState
-          year={academicYear}
-          onChangeYear={(y) => {
-            handleYearChange(y);
-            setApplied((prev) => ({
-              ...prev,
-              academicYear: y,
-              fromDate: yearStart(y),
-              toDate: yearEnd(y),
-              page: 1,
-            }));
-          }}
-        />
-      )}
+        {/* ── Filters ── */}
+        <motion.div
+          {...fadeUp(0.04)}
+          className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
+        >
+          <div className="flex flex-wrap items-end gap-3">
+            {/* From Date */}
+            <div className="flex flex-col gap-1 min-w-[150px]">
+              <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                <CalendarDays size={11} /> From Date
+              </label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className={inputCls}
+              />
+            </div>
 
-      {/* ── Content ── */}
-      {!isLoading && !isError && data && (
-        <>
-          {/* ── KPI Cards ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <motion.div
-              {...fadeUp(0.08)}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
+            {/* To Date */}
+            <div className="flex flex-col gap-1 min-w-[150px]">
+              <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                <CalendarDays size={11} /> To Date
+              </label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+
+            {/* Status */}
+            <div className="flex flex-col gap-1 min-w-[140px]">
+              <label className="text-xs font-medium text-gray-500">
+                Status
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className={`${inputCls} pr-8 appearance-none`}
+              >
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter button */}
+            <button
+              type="button"
+              onClick={handleFilter}
+              disabled={isFetching}
+              className="h-9 px-5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-70"
             >
-              <p className="text-xs text-gray-400 font-medium mb-1">
-                Total Payments
-              </p>
-              <p className="text-2xl font-bold text-gray-800">
-                {summary!.totalPayments}
-              </p>
-            </motion.div>
-
-            <motion.div
-              {...fadeUp(0.12)}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
-            >
-              <p className="text-xs text-gray-400 font-medium mb-1">
-                Total Paid
-              </p>
-              <p className="text-2xl font-bold text-green-600">
-                {egp(summary!.totalPaid)}
-              </p>
-            </motion.div>
-
-            <motion.div
-              {...fadeUp(0.16)}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
-            >
-              <p className="text-xs text-gray-400 font-medium mb-1">
-                Remaining Amount
-              </p>
-              <p className="text-2xl font-bold text-red-400">
-                {egp(summary!.remainingAmount)}
-              </p>
-            </motion.div>
+              {isFetching ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Filter size={14} />
+              )}
+              Filter
+            </button>
           </div>
+        </motion.div>
 
-          {/* ── DataTable ── */}
+        {/* ── Loading ── */}
+        {isLoading && (
+          <div className="flex flex-col gap-5">
+            <div className="grid grid-cols-3 gap-4">
+              {[...Array(3)].map((_, i) => (
+                <Sk key={i} className="h-20" />
+              ))}
+            </div>
+            <Sk className="h-64" />
+          </div>
+        )}
+
+        {/* ── Real error ── */}
+        {isError && !isLoading && (
           <motion.div
-            {...fadeUp(0.2)}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+            {...fadeUp(0.05)}
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
           >
-            <DataTable<PaymentRow>
-              columns={columns}
-              data={data.data}
-              progressPending={isFetching && !data}
-              progressComponent={
-                <div className="flex flex-col gap-3 p-5 w-full">
-                  {[...Array(4)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="animate-pulse bg-gray-100 rounded-lg h-10 w-full"
-                    />
-                  ))}
-                </div>
-              }
-              noDataComponent={
-                <div className="flex flex-col items-center gap-2 py-14">
-                  <FileX size={28} className="text-gray-200" />
-                  <p className="text-sm text-gray-400">No payments found.</p>
-                </div>
-              }
-              pagination
-              paginationServer
-              paginationTotalRows={data.meta.total}
-              paginationDefaultPage={applied.page}
-              paginationPerPage={applied.limit}
-              onChangePage={(p) => setApplied((prev) => ({ ...prev, page: p }))}
-              onChangeRowsPerPage={(l, p) =>
-                setApplied((prev) => ({ ...prev, limit: l, page: p }))
-              }
-              paginationRowsPerPageOptions={[10, 20, 50]}
-              customStyles={customStyles}
-              highlightOnHover
-              responsive
-              className={
-                isFetching
-                  ? "opacity-60 transition-opacity"
-                  : "transition-opacity"
-              }
-            />
+            <AlertCircle size={32} className="text-red-300" />
+            <p className="text-sm text-red-400">
+              Something went wrong. Please try again.
+            </p>
           </motion.div>
-        </>
-      )}
-    </div>
+        )}
+
+        {/* ── No contract ── */}
+        {!isLoading && !isError && data === null && (
+          <NoContractState
+            year={academicYear}
+            onChangeYear={(y) => {
+              handleYearChange(y);
+              setApplied((prev) => ({
+                ...prev,
+                academicYear: y,
+                fromDate: yearStart(y),
+                toDate: yearEnd(y),
+                page: 1,
+              }));
+            }}
+          />
+        )}
+
+        {/* ── Content ── */}
+        {!isLoading && !isError && data && (
+          <>
+            {/* ── KPI Cards ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <motion.div
+                {...fadeUp(0.08)}
+                className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
+              >
+                <p className="text-xs text-gray-400 font-medium mb-1">
+                  Total Payments
+                </p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {summary!.totalPayments}
+                </p>
+              </motion.div>
+
+              <motion.div
+                {...fadeUp(0.12)}
+                className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
+              >
+                <p className="text-xs text-gray-400 font-medium mb-1">
+                  Total Paid
+                </p>
+                <p className="text-2xl font-bold text-green-600">
+                  {egp(summary!.totalPaid)}
+                </p>
+              </motion.div>
+
+              <motion.div
+                {...fadeUp(0.16)}
+                className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
+              >
+                <p className="text-xs text-gray-400 font-medium mb-1">
+                  Remaining Amount
+                </p>
+                <p className="text-2xl font-bold text-red-400">
+                  {egp(summary!.remainingAmount)}
+                </p>
+              </motion.div>
+            </div>
+
+            {/* ── DataTable ── */}
+            <motion.div
+              {...fadeUp(0.2)}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+            >
+              <DataTable<PaymentRow>
+                columns={columns}
+                data={data.data}
+                progressPending={isFetching && !data}
+                progressComponent={
+                  <div className="flex flex-col gap-3 p-5 w-full">
+                    {[...Array(4)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="animate-pulse bg-gray-100 rounded-lg h-10 w-full"
+                      />
+                    ))}
+                  </div>
+                }
+                noDataComponent={
+                  <div className="flex flex-col items-center gap-2 py-14">
+                    <FileX size={28} className="text-gray-200" />
+                    <p className="text-sm text-gray-400">No payments found.</p>
+                  </div>
+                }
+                pagination
+                paginationServer
+                paginationTotalRows={data.meta.total}
+                paginationDefaultPage={applied.page}
+                paginationPerPage={applied.limit}
+                onChangePage={(p) =>
+                  setApplied((prev) => ({ ...prev, page: p }))
+                }
+                onChangeRowsPerPage={(l, p) =>
+                  setApplied((prev) => ({ ...prev, limit: l, page: p }))
+                }
+                paginationRowsPerPageOptions={[10, 20, 50]}
+                customStyles={customStyles}
+                highlightOnHover
+                responsive
+                className={
+                  isFetching
+                    ? "opacity-60 transition-opacity"
+                    : "transition-opacity"
+                }
+              />
+            </motion.div>
+          </>
+        )}
+      </div>
+    </>
   );
 };
 
