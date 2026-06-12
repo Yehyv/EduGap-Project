@@ -152,6 +152,7 @@ import NextInstallmentPage from "@/pages/dashboard/Reports/InstAdmin/NextInstall
 import SettlementSummaryPage from "@/pages/dashboard/Reports/InstAdmin/SettlementSummaryPage";
 import InvoiceDetailPage from "@/pages/dashboard/Reports/InstAdmin/InvoiceDetailPage";
 import UploadPaymentProofPage from "@/pages/dashboard/Reports/InstAdmin/UploadPaymentProofPage";
+import UpgradePlanPage from "@/pages/dashboard/Reports/InstAdmin/UpgradePlanPage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -678,6 +679,14 @@ export default function AppRoutes() {
             element={
               <DashboardRoute allowed={INST_ADMIN_ONLY}>
                 <UploadPaymentProofPage />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/dashboard/upgrade-plan"
+            element={
+              <DashboardRoute allowed={INST_ADMIN_ONLY}>
+                <UpgradePlanPage />
               </DashboardRoute>
             }
           />

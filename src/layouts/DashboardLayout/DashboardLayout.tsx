@@ -317,6 +317,15 @@ const DashboardLayout = () => {
                 <Receipt className="flex-shrink-0 text-[#ACACAC]" />
                 {!collapsed && <span>Payment Proof</span>}
               </NavLink>
+              <NavLink
+                to="/dashboard/upgrade-plan"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title="Installment Schedule"
+              >
+                <TrendingUp className="flex-shrink-0 text-[#ACACAC]" />
+                {!collapsed && <span>Upgrade Plan</span>}
+              </NavLink>
             </>
           )}
 
