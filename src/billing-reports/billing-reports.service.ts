@@ -75,6 +75,7 @@ interface CollectionSummaryRaw {
 }
 
 interface CollectionTrendRaw {
+  year: number | string;
   monthNo: number | string;
   month: string;
   collected: number | string;
@@ -616,6 +617,7 @@ export class BillingReportsService {
     const trendRows = await this.dataSource.query<CollectionTrendRaw[]>(
       `
       SELECT
+        YEAR(p.payment_date) AS year,
         MONTH(p.payment_date) AS monthNo,
         DATE_FORMAT(p.payment_date, '%b') AS month,
         COALESCE(SUM(p.paid_amount), 0) AS collected,
@@ -623,8 +625,8 @@ export class BillingReportsService {
       FROM contract_payments p
       INNER JOIN (${filteredContractsSql}) filtered ON filtered.id = p.contract_id
       WHERE p.status = 'CONFIRMED'
-      GROUP BY MONTH(p.payment_date), DATE_FORMAT(p.payment_date, '%b')
-      ORDER BY MONTH(p.payment_date)
+      GROUP BY YEAR(p.payment_date), MONTH(p.payment_date), DATE_FORMAT(p.payment_date, '%b')
+      ORDER BY YEAR(p.payment_date), MONTH(p.payment_date)
       `,
       allParams,
     );
@@ -674,6 +676,7 @@ export class BillingReportsService {
         },
       },
       collectionTrend: trendRows.map((row) => ({
+        year: Number(row.year),
         monthNo: Number(row.monthNo),
         month: row.month,
         collected: this.round2(Number(row.collected || 0)),
