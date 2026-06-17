@@ -37,6 +37,12 @@ const PHONE = '1012000000';
 const PASSWORD = 'Test@123456';
 const IMAGE_URL = 'https://example.com/test-seed-image.png';
 
+// Every plan this script creates carries this tag so it can never be
+// mistaken for (or collide by name with) a real, unrelated production plan,
+// and so the cleanup script can identify exactly which plans are ours.
+const SEED_TAG = '[SEED-FINHIST]';
+const SEED_INSTITUTE_EMAIL = 'finance.history.institute@edugap.test';
+
 type SeedAuthUser = {
   sub: number;
   email: string;
@@ -105,7 +111,7 @@ const YEAR_PLANS: YearPlan[] = [
   {
     academicYear: 2023,
     isCurrentYear: false,
-    planName: 'Starter (Legacy)',
+    planName: `${SEED_TAG} Starter 2023`,
     minStudents: 1,
     maxStudents: 100,
     pricePerStudent: 150,
@@ -120,7 +126,7 @@ const YEAR_PLANS: YearPlan[] = [
   {
     academicYear: 2024,
     isCurrentYear: false,
-    planName: 'Growth (Legacy)',
+    planName: `${SEED_TAG} Growth 2024`,
     minStudents: 1,
     maxStudents: 300,
     pricePerStudent: 170,
@@ -135,7 +141,7 @@ const YEAR_PLANS: YearPlan[] = [
   {
     academicYear: 2025,
     isCurrentYear: false,
-    planName: 'Growth',
+    planName: `${SEED_TAG} Growth 2025`,
     minStudents: 1,
     maxStudents: 300,
     pricePerStudent: 180,
@@ -150,7 +156,7 @@ const YEAR_PLANS: YearPlan[] = [
   {
     academicYear: 2026,
     isCurrentYear: true,
-    planName: 'Premium',
+    planName: `${SEED_TAG} Premium 2026`,
     minStudents: 1,
     maxStudents: 1000,
     pricePerStudent: 200,
@@ -293,38 +299,56 @@ async function main() {
       'system_user: Seed Super Admin',
     );
 
-    // 3) The target institute + its admin (the account given by the user)
-    const institute = await findOrCreate(
-      instituteRepo,
-      { email: 'finance.history.institute@edugap.test' },
-      {
-        logo: IMAGE_URL,
-        image_profile: IMAGE_URL,
-        email: 'finance.history.institute@edugap.test',
-        phone_key: '020',
-        phone: '1099000000',
-        is_active: 1,
-        region,
-        createdBy: superAdmin,
-        translations: [
-          {
-            name: 'معهد السجل المالي',
-            address: 'القاهرة - مصر',
-            contactPersopnName: 'مدير المعهد',
-            contactPersonPostion: 'مدير',
-            language: ar,
-          },
-          {
-            name: 'Financial History Institute',
-            address: 'Cairo, Egypt',
-            contactPersopnName: 'Institute Manager',
-            contactPersonPostion: 'Manager',
-            language: en,
-          },
-        ],
-      },
-      'institute: Financial History Institute',
-    );
+    // 3) The target admin (the account given by the user) and its institute.
+    // We never overwrite an existing admin's real fields (findOrCreate only
+    // applies `data` on create), and crucially: if this admin already has a
+    // real institute attached, we seed onto THAT institute rather than
+    // fabricating an unrelated one.
+    const existingAdmin = await systemUserRepo.findOne({
+      where: { national_id: NATIONAL_ID, phone: PHONE },
+      relations: ['institute'],
+    });
+
+    let institute: Institute;
+
+    if (existingAdmin?.institute) {
+      institute = existingAdmin.institute;
+      console.log(
+        `using existing institute #${institute.id} already linked to admin (${NATIONAL_ID} / ${PHONE})`,
+      );
+    } else {
+      institute = await findOrCreate(
+        instituteRepo,
+        { email: SEED_INSTITUTE_EMAIL },
+        {
+          logo: IMAGE_URL,
+          image_profile: IMAGE_URL,
+          email: SEED_INSTITUTE_EMAIL,
+          phone_key: '020',
+          phone: '1099000000',
+          is_active: 1,
+          region,
+          createdBy: superAdmin,
+          translations: [
+            {
+              name: 'معهد السجل المالي',
+              address: 'القاهرة - مصر',
+              contactPersopnName: 'مدير المعهد',
+              contactPersonPostion: 'مدير',
+              language: ar,
+            },
+            {
+              name: 'Financial History Institute',
+              address: 'Cairo, Egypt',
+              contactPersopnName: 'Institute Manager',
+              contactPersonPostion: 'Manager',
+              language: en,
+            },
+          ],
+        },
+        'institute: Financial History Institute (fallback - admin had no real institute)',
+      );
+    }
 
     const instituteAdmin = await findOrCreate(
       systemUserRepo,
