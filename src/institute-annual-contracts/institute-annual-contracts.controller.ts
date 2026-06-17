@@ -109,11 +109,13 @@ export class InstituteAnnualContractsController {
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
     @Headers('languageid') languageId?: string,
   ) {
     return this.service.findOne(
       id,
       languageId ? Number(languageId) : undefined,
+      { role: req.user.role, instituteId: req.user.instituteId },
     );
   }
 

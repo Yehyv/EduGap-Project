@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -74,10 +75,6 @@ interface ContractDetailsRawRow extends ContractListRawRow {
   overdueInstallments: number | string | null;
   installmentsTotal: number | string | null;
   paymentsTotal: number | string | null;
-}
-
-interface CountRawRow {
-  total: number | string | null;
 }
 interface ContractCreateOptionsInstituteRow {
   instituteId: number | string;
@@ -227,7 +224,9 @@ export class InstituteAnnualContractsService {
       .andWhere('institute.deletedAt IS NULL')
       .getOne();
 
-    if (!institute) throw new NotFoundException('Institute not found');
+    if (!institute) {
+      throw new NotFoundException('Institute not found');
+    }
 
     const plan = await this.planRepo
       .createQueryBuilder('plan')
@@ -235,11 +234,43 @@ export class InstituteAnnualContractsService {
       .andWhere('plan.deleted_at IS NULL')
       .getOne();
 
-    if (!plan) throw new NotFoundException('Subscription plan not found');
+    if (!plan) {
+      throw new NotFoundException('Subscription plan not found');
+    }
 
     if (plan.is_active !== 1) {
       throw new BadRequestException(
         'Cannot create contract using inactive plan',
+      );
+    }
+
+    /**
+     * Validation:
+     * Prevent creating a new contract for an institute
+     * if it already has an ACTIVE contract in the same academic year.
+     */
+    const existingActiveContract = await this.contractRepo
+      .createQueryBuilder('contract')
+      .leftJoinAndSelect('contract.plan', 'existingPlan')
+      .where('contract.institute_id = :instituteId', {
+        instituteId: dto.instituteId,
+      })
+      .andWhere('contract.academic_year = :academicYear', {
+        academicYear: dto.academicYear,
+      })
+      .andWhere('contract.status = :status', {
+        status: ContractStatus.ACTIVE,
+      })
+      .andWhere('contract.deleted_at IS NULL')
+      .getOne();
+
+    if (existingActiveContract) {
+      throw new BadRequestException(
+        `This institute already has an active contract for academic year ${dto.academicYear}${
+          existingActiveContract.plan?.plan_name
+            ? ` on plan ${existingActiveContract.plan.plan_name}`
+            : ''
+        }.`,
       );
     }
 
@@ -257,10 +288,13 @@ export class InstituteAnnualContractsService {
     }
 
     const maxStudentsAllowed = dto.maxStudentsAllowed ?? plan.max_students;
+
     const pricePerStudent =
       dto.pricePerStudent ?? Number(plan.default_price_per_student);
+
     const installmentsCount =
       dto.installmentsCount ?? plan.default_installments_count;
+
     const administrativeFees =
       dto.administrativeFees ?? Number(plan.administrative_fees ?? 0);
 
@@ -307,6 +341,7 @@ export class InstituteAnnualContractsService {
     });
 
     const saved = await this.contractRepo.save(contract);
+
     return this.findOne(saved.id);
   }
 
@@ -351,13 +386,27 @@ export class InstituteAnnualContractsService {
     };
   }
 
-  async findOne(id: number, languageId?: number) {
+  async findOne(
+    id: number,
+    languageId?: number,
+    requester?: { role?: string; instituteId?: number },
+  ) {
     const row = await this.createContractDetailsQuery(languageId)
       .andWhere('contract.id = :id', { id })
       .getRawOne<ContractDetailsRawRow>();
 
     if (!row) {
       throw new NotFoundException(`Annual contract with id ${id} not found`);
+    }
+
+    if (
+      requester &&
+      ['INST_ADMIN', 'INSTITUTE_ADMIN'].includes(requester.role ?? '') &&
+      Number(row.instituteId) !== Number(requester.instituteId)
+    ) {
+      throw new ForbiddenException(
+        'You are not allowed to access this contract',
+      );
     }
 
     const installments = await this.getContractInstallments(id);

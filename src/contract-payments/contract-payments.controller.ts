@@ -206,6 +206,12 @@ export class ContractPaymentsController {
   }
 
   @Roles('SUPER_ADMIN', 'ADMIN')
+  @Patch('contract-payments/:id/approve')
+  approve(@Param('id', ParseIntPipe) id: number) {
+    return this.service.approve(id);
+  }
+
+  @Roles('SUPER_ADMIN', 'ADMIN')
   @Patch('contract-payments/:id/cancel')
   cancel(
     @Param('id', ParseIntPipe) id: number,

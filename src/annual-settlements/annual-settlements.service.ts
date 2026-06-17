@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import PDFDocument from 'pdfkit';
 import { AnnualSettlementDashboardQueryDto } from 'src/billing-reports/dto/annual-settlement-dashboard-query.dto';
 
 interface SettlementFilters {
@@ -866,7 +867,7 @@ export class AnnualSettlementsService {
       `
         SELECT
           COUNT(p.id) AS totalPayments,
-          COALESCE(SUM(p.paid_amount), 0) AS totalPaid
+          COALESCE(SUM(CASE WHEN p.status = 'CONFIRMED' THEN p.paid_amount ELSE 0 END), 0) AS totalPaid
         FROM contract_payments p
         INNER JOIN institute_annual_contracts c ON c.id = p.contract_id
         ${whereSql}
@@ -1268,13 +1269,89 @@ export class AnnualSettlementsService {
     const invoice = await this.instituteInvoice(instituteId, installmentId);
 
     return {
-      ...invoice,
-      download: {
-        format: 'JSON',
-        message:
-          'Invoice PDF generation is not configured yet. This response is invoice-ready data.',
-      },
+      fileName: `${invoice.invoice.invoiceNo}.pdf`,
+      buffer: await this.buildInvoicePdfBuffer(invoice),
     };
+  }
+
+  private buildInvoicePdfBuffer(
+    invoice: Awaited<ReturnType<typeof this.instituteInvoice>>,
+  ): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      doc.fontSize(20).text('Invoice', { align: 'center' });
+      doc.moveDown();
+
+      doc
+        .fontSize(10)
+        .text(`Invoice No: ${invoice.invoice.invoiceNo}`)
+        .text(`Contract No: ${invoice.invoice.contractNo}`)
+        .text(`Invoice Date: ${this.formatPdfDate(invoice.invoice.invoiceDate)}`)
+        .text(`Due Date: ${this.formatPdfDate(invoice.invoice.dueDate)}`)
+        .text(`Status: ${invoice.invoice.status}`);
+
+      doc.moveDown();
+      doc.fontSize(12).text('Bill To', { underline: true });
+      doc
+        .fontSize(10)
+        .text(`Institute: ${invoice.billTo.instituteName}`)
+        .text(`Institute ID: ${invoice.billTo.instituteId}`);
+
+      doc.moveDown();
+      doc.fontSize(12).text('Items', { underline: true });
+      doc.moveDown(0.5);
+
+      const tableTop = doc.y;
+      doc
+        .fontSize(10)
+        .text('Description', 50, tableTop)
+        .text('Amount', 450, tableTop, { width: 100, align: 'right' });
+      doc.moveTo(50, doc.y + 5).lineTo(550, doc.y + 5).stroke();
+      doc.moveDown();
+
+      for (const item of invoice.items) {
+        const rowY = doc.y;
+        doc
+          .text(item.description, 50, rowY)
+          .text(item.amount.toFixed(2), 450, rowY, {
+            width: 100,
+            align: 'right',
+          });
+        doc.moveDown(0.5);
+      }
+
+      doc.moveTo(50, doc.y + 5).lineTo(550, doc.y + 5).stroke();
+      doc.moveDown();
+
+      doc
+        .fontSize(12)
+        .text(`Total: ${invoice.total.toFixed(2)}`, { align: 'right' });
+      doc
+        .fontSize(10)
+        .text(`Paid: ${invoice.invoice.paidAmount.toFixed(2)}`, {
+          align: 'right',
+        })
+        .text(`Remaining: ${invoice.invoice.remainingAmount.toFixed(2)}`, {
+          align: 'right',
+        });
+
+      doc.end();
+    });
+  }
+
+  private formatPdfDate(value: string | null | undefined): string {
+    if (!value) return '-';
+
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? String(value)
+      : date.toISOString().slice(0, 10);
   }
 
   async institutePlanDetails(instituteId: number, academicYear?: number) {

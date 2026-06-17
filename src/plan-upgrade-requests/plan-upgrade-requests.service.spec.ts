@@ -9,7 +9,9 @@ describe('PlanUpgradeRequestsService', () => {
       providers: [PlanUpgradeRequestsService],
     }).compile();
 
-    service = module.get<PlanUpgradeRequestsService>(PlanUpgradeRequestsService);
+    service = module.get<PlanUpgradeRequestsService>(
+      PlanUpgradeRequestsService,
+    );
   });
 
   it('should be defined', () => {

@@ -11,7 +11,9 @@ describe('PlanUpgradeRequestsController', () => {
       providers: [PlanUpgradeRequestsService],
     }).compile();
 
-    controller = module.get<PlanUpgradeRequestsController>(PlanUpgradeRequestsController);
+    controller = module.get<PlanUpgradeRequestsController>(
+      PlanUpgradeRequestsController,
+    );
   });
 
   it('should be defined', () => {

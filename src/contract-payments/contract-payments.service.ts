@@ -401,7 +401,13 @@ export class ContractPaymentsService {
 
     const payments = await this.paymentRepo.find({
       where: { contract: { id: contractId } },
-      relations: ['contract', 'installment', 'createdBy', 'cancelledBy'],
+      relations: [
+        'contract',
+        'contract.institute',
+        'installment',
+        'createdBy',
+        'cancelledBy',
+      ],
       order: { id: 'DESC' },
     });
 
@@ -616,6 +622,46 @@ export class ContractPaymentsService {
     };
   }
 
+  async approve(id: number) {
+    const payment = await this.paymentRepo.findOne({
+      where: { id },
+      relations: ['contract', 'installment'],
+    });
+
+    if (!payment) throw new NotFoundException('Payment not found');
+
+    if (payment.status !== PaymentStatus.PENDING_REVIEW) {
+      throw new BadRequestException(
+        'Only payments pending review can be approved',
+      );
+    }
+
+    await this.validatePaymentAmount({
+      paymentRepo: this.paymentRepo,
+      contract: payment.contract,
+      installment: payment.installment,
+      paidAmount: Number(payment.paid_amount),
+      excludePaymentId: payment.id,
+    });
+
+    payment.status = PaymentStatus.CONFIRMED;
+
+    await this.paymentRepo.save(payment);
+
+    if (payment.installment?.id) {
+      await this.installmentsService.recalculateInstallment(
+        payment.installment.id,
+      );
+    }
+
+    await this.recalculateContractPaymentPercentage(payment.contract.id);
+
+    return {
+      message: 'Payment proof approved successfully',
+      payment: await this.findOne(id),
+    };
+  }
+
   async reverse(
     id: number,
     dto: ReverseContractPaymentDto,
@@ -733,8 +779,9 @@ export class ContractPaymentsService {
       id: payment.id,
       paymentId: payment.id,
       contractId: payment.contract?.id ?? null,
-      contractNo:
-        (payment.contract as { contract_no?: string })?.contract_no ?? null,
+      contractNo: payment.contract
+        ? `CON-${payment.contract.academic_year}-${String(payment.contract.id).padStart(4, '0')}`
+        : null,
       instituteId:
         (payment.contract as { institute?: { id?: number } })?.institute?.id ??
         null,

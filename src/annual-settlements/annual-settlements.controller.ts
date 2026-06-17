@@ -5,9 +5,11 @@ import {
   ParseIntPipe,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import express from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -159,23 +161,29 @@ export class AnnualSettlementsController {
 
   /**
    * Screen 38
-   * Download Invoice Data - Institute Admin
+   * Download Invoice PDF - Institute Admin
    *
    * GET /annual-settlements/institute/invoices/:installmentId/download
-   *
-   * Currently returns invoice-ready JSON.
-   * PDF generation can be added later.
    */
   @Roles('INST_ADMIN', 'INSTITUTE_ADMIN')
   @Get('institute/invoices/:installmentId/download')
-  downloadInstituteInvoice(
+  async downloadInstituteInvoice(
     @Req() req: AuthenticatedRequest,
     @Param('installmentId', ParseIntPipe) installmentId: number,
+    @Res() res: express.Response,
   ) {
-    return this.service.downloadInstituteInvoice(
+    const file = await this.service.downloadInstituteInvoice(
       req.user.instituteId,
       installmentId,
     );
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${file.fileName}"`,
+    );
+
+    return res.send(file.buffer);
   }
 
   /**

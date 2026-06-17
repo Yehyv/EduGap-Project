@@ -21,12 +21,22 @@ export class BillingDashboardService {
       `
       SELECT COUNT(DISTINCT c.id) AS totalContracts,
         COALESCE(SUM(c.total_amount), 0) AS totalContractValue,
-        COALESCE(SUM(CASE WHEN p.status = 'CONFIRMED' THEN p.paid_amount ELSE 0 END), 0) AS totalPaid,
-        COUNT(DISTINCT u.id) AS addedStudents,
+        COALESCE(SUM(paid.totalPaid), 0) AS totalPaid,
+        COALESCE(SUM(students.addedStudents), 0) AS addedStudents,
         COALESCE(SUM(c.max_students_allowed), 0) AS totalAllowedStudents
       FROM institute_annual_contracts c
-      LEFT JOIN contract_payments p ON p.contract_id = c.id
-      LEFT JOIN \`user\` u ON u.annual_contract_id = c.id AND u.deletedAt IS NULL AND u.is_active = 1
+      LEFT JOIN (
+        SELECT contract_id, SUM(paid_amount) AS totalPaid
+        FROM contract_payments
+        WHERE status = 'CONFIRMED'
+        GROUP BY contract_id
+      ) paid ON paid.contract_id = c.id
+      LEFT JOIN (
+        SELECT annual_contract_id, COUNT(id) AS addedStudents
+        FROM \`user\`
+        WHERE deletedAt IS NULL AND is_active = 1
+        GROUP BY annual_contract_id
+      ) students ON students.annual_contract_id = c.id
       WHERE c.deleted_at IS NULL ${yearFilter}
       `,
       params,
