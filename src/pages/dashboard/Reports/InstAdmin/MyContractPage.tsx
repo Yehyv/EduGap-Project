@@ -543,7 +543,7 @@ const MyContractPage = () => {
                     </p>
                   </div>
                   <Link
-                    to={`/dashboard/installments?contractId=${data.contractId}`}
+                    to={`/dashboard/installment-schedule`}
                     className="h-9 px-5 rounded-lg bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2 flex-shrink-0"
                   >
                     <ListChecks size={14} />

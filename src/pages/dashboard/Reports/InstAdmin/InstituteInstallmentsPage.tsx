@@ -563,7 +563,7 @@ const InstituteInstallmentsPage = () => {
                 </div>
 
                 <Link
-                  to={`/dashboard/billing/installments/${nextInstallment.installmentId}/pay`}
+                  to={`/dashboard/payment-proof`}
                   className="h-10 px-6 rounded-xl bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2 flex-shrink-0"
                 >
                   <CreditCard size={14} />

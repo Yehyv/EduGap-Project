@@ -107,24 +107,24 @@ const StatsCards = ({ counts }) => {
       icon: <Users2 />,
       gradient: "from-sky-500 to-cyan-500",
     },
-    {
-      title: "Completion Rate",
-      value: "78%",
-      icon: <GraduationCap />,
-      gradient: "from-emerald-500 to-green-600",
-    },
-    {
-      title: "Skill Improvement",
-      value: "64%",
-      icon: <TrendingUp />,
-      gradient: "from-violet-500 to-purple-500",
-    },
-    {
-      title: "Faculty Engagement",
-      value: "88%",
-      icon: <BookOpen />,
-      gradient: "from-amber-500 to-orange-600",
-    },
+    // {
+    //   title: "Completion Rate",
+    //   value: "78%",
+    //   icon: <GraduationCap />,
+    //   gradient: "from-emerald-500 to-green-600",
+    // },
+    // {
+    //   title: "Skill Improvement",
+    //   value: "64%",
+    //   icon: <TrendingUp />,
+    //   gradient: "from-violet-500 to-purple-500",
+    // },
+    // {
+    //   title: "Faculty Engagement",
+    //   value: "88%",
+    //   icon: <BookOpen />,
+    //   gradient: "from-amber-500 to-orange-600",
+    // },
   ];
 
   const stats = role === ROLES.SUPER_ADMIN ? superAdminStats : otherRoleStats;

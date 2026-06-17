@@ -455,10 +455,10 @@ const InstitutePaymentHistoryPage = () => {
         >
           <nav className="flex items-center gap-1.5 text-sm text-gray-400">
             <Link
-              to="/dashboard/billing"
+              to="/dashboard/home"
               className="hover:text-gray-600 transition-colors"
             >
-              Billing
+              Dashboard
             </Link>
             <ChevronRight size={13} />
             <span className="text-gray-600 font-medium">Payments</span>
@@ -521,7 +521,7 @@ const InstitutePaymentHistoryPage = () => {
               type="button"
               onClick={handleFilter}
               disabled={isFetching}
-              className="h-9 px-5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-70"
+              className="h-9 px-5 rounded-lg bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-70"
             >
               {isFetching ? (
                 <Loader2 size={14} className="animate-spin" />

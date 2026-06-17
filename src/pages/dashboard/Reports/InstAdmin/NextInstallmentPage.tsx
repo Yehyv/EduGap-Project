@@ -14,6 +14,7 @@ import {
   FileX,
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
+import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -244,146 +245,152 @@ const NextInstallmentPage = () => {
         : "text-gray-700";
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* ── Breadcrumb + Year ── */}
-      <motion.div {...fadeUp(0)} className="flex items-center justify-between">
-        <nav className="flex items-center gap-1.5 text-sm text-gray-400">
-          <Link
-            to="/dashboard/home"
-            className="hover:text-gray-600 transition-colors"
-          >
-            Dashboard
-          </Link>
-          <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Next Installment</span>
-        </nav>
-        <YearDropdown value={academicYear} onChange={setAcademicYear} />
-      </motion.div>
-
-      {/* ── Loading ── */}
-      {isLoading && (
-        <div className="flex flex-col gap-5 max-w-2xl mx-auto w-full">
-          <Sk className="h-64" />
-        </div>
-      )}
-
-      {/* ── Real error ── */}
-      {isError && !isLoading && (
+    <>
+      <DashboardPageTitle text="Next Installment" />
+      <div className="flex flex-col gap-5">
+        {/* ── Breadcrumb + Year ── */}
         <motion.div
-          {...fadeUp(0.05)}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
+          {...fadeUp(0)}
+          className="flex items-center justify-between"
         >
-          <AlertCircle size={32} className="text-red-300" />
-          <p className="text-sm text-red-400">
-            Something went wrong. Please try again.
-          </p>
+          <nav className="flex items-center gap-1.5 text-sm text-gray-400">
+            <Link
+              to="/dashboard/home"
+              className="hover:text-gray-600 transition-colors"
+            >
+              Dashboard
+            </Link>
+            <ChevronRight size={13} />
+            <span className="text-gray-600 font-medium">Next Installment</span>
+          </nav>
+          <YearDropdown value={academicYear} onChange={setAcademicYear} />
         </motion.div>
-      )}
 
-      {/* ── No contract ── */}
-      {!isLoading && !isError && data === null && (
-        <NoContractState year={academicYear} onChangeYear={setAcademicYear} />
-      )}
-
-      {/* ── No next installment (all paid) ── */}
-      {!isLoading && !isError && data && !data.hasNextInstallment && (
-        <AllPaidState />
-      )}
-
-      {/* ── Main card ── */}
-      {!isLoading && !isError && data?.hasNextInstallment && inst && (
-        <motion.div {...fadeUp(0.06)} className="mx-auto w-full ">
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex flex-col gap-6 px-20">
-            {/* ── Header ── */}
-            <div className="flex flex-col items-center gap-2 text-center">
-              {/* Bell icon in amber circle */}
-              <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-1">
-                <Bell size={26} className="text-amber-500 fill-amber-400" />
-              </div>
-              <h2 className="text-lg font-bold text-gray-800">
-                Next Installment Reminder!
-              </h2>
-              <p className="text-sm text-gray-500">
-                Your next installment is due soon.
-              </p>
-            </div>
-
-            {/* ── Info card ── */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="grid grid-cols-3 divide-x divide-gray-100">
-                {/* Installment */}
-                <div className="px-5 py-4 flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 font-medium">
-                    Installment
-                  </p>
-                  <p className="text-sm font-bold text-gray-800">
-                    {inst.label}
-                  </p>
-                </div>
-
-                {/* Due Date */}
-                <div className="px-5 py-4 flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                    <CalendarDays size={10} /> Due Date
-                  </p>
-                  <p className="text-sm font-bold text-gray-800">
-                    {fmtDate(inst.dueDate)}
-                  </p>
-                </div>
-
-                {/* Amount */}
-                <div className="px-5 py-4 flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 font-medium">Amount</p>
-                  <p className="text-sm font-bold text-gray-800">
-                    {egp(inst.remainingAmount)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Progress bar ── */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col gap-3">
-              <p className={`text-sm font-medium ${textColor}`}>
-                You have <span className="font-bold">{daysLeft} days</span> left
-                to pay this installment.
-              </p>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{
-                    width: `${Math.min(progress?.progressPercentage ?? 0, 100)}%`,
-                  }}
-                  transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
-                  className={`h-full rounded-full ${barColor}`}
-                />
-              </div>
-            </div>
-
-            {/* ── Actions ── */}
-            <div className="flex items-center justify-center gap-3">
-              {actions?.payNow && (
-                <Link
-                  to={`/dashboard/billing/installments/${inst.installmentId}/pay`}
-                  className="h-10 px-7 rounded-xl bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2"
-                >
-                  <CreditCard size={14} />
-                  Pay Now
-                </Link>
-              )}
-              {actions?.viewInstallments && (
-                <Link
-                  to="/dashboard/billing/installments"
-                  className="h-10 px-7 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors flex items-center gap-2"
-                >
-                  <ListChecks size={14} />
-                  View Installments
-                </Link>
-              )}
-            </div>
+        {/* ── Loading ── */}
+        {isLoading && (
+          <div className="flex flex-col gap-5 max-w-2xl mx-auto w-full">
+            <Sk className="h-64" />
           </div>
-        </motion.div>
-      )}
-    </div>
+        )}
+
+        {/* ── Real error ── */}
+        {isError && !isLoading && (
+          <motion.div
+            {...fadeUp(0.05)}
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
+          >
+            <AlertCircle size={32} className="text-red-300" />
+            <p className="text-sm text-red-400">
+              Something went wrong. Please try again.
+            </p>
+          </motion.div>
+        )}
+
+        {/* ── No contract ── */}
+        {!isLoading && !isError && data === null && (
+          <NoContractState year={academicYear} onChangeYear={setAcademicYear} />
+        )}
+
+        {/* ── No next installment (all paid) ── */}
+        {!isLoading && !isError && data && !data.hasNextInstallment && (
+          <AllPaidState />
+        )}
+
+        {/* ── Main card ── */}
+        {!isLoading && !isError && data?.hasNextInstallment && inst && (
+          <motion.div {...fadeUp(0.06)} className="mx-auto w-full ">
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex flex-col gap-6 px-20">
+              {/* ── Header ── */}
+              <div className="flex flex-col items-center gap-2 text-center">
+                {/* Bell icon in amber circle */}
+                <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-1">
+                  <Bell size={26} className="text-amber-500 fill-amber-400" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-800">
+                  Next Installment Reminder!
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Your next installment is due soon.
+                </p>
+              </div>
+
+              {/* ── Info card ── */}
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="grid grid-cols-3 divide-x divide-gray-100">
+                  {/* Installment */}
+                  <div className="px-5 py-4 flex flex-col gap-1">
+                    <p className="text-xs text-gray-400 font-medium">
+                      Installment
+                    </p>
+                    <p className="text-sm font-bold text-gray-800">
+                      {inst.label}
+                    </p>
+                  </div>
+
+                  {/* Due Date */}
+                  <div className="px-5 py-4 flex flex-col gap-1">
+                    <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                      <CalendarDays size={10} /> Due Date
+                    </p>
+                    <p className="text-sm font-bold text-gray-800">
+                      {fmtDate(inst.dueDate)}
+                    </p>
+                  </div>
+
+                  {/* Amount */}
+                  <div className="px-5 py-4 flex flex-col gap-1">
+                    <p className="text-xs text-gray-400 font-medium">Amount</p>
+                    <p className="text-sm font-bold text-gray-800">
+                      {egp(inst.remainingAmount)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Progress bar ── */}
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col gap-3">
+                <p className={`text-sm font-medium ${textColor}`}>
+                  You have <span className="font-bold">{daysLeft} days</span>{" "}
+                  left to pay this installment.
+                </p>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: `${Math.min(progress?.progressPercentage ?? 0, 100)}%`,
+                    }}
+                    transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
+                    className={`h-full rounded-full ${barColor}`}
+                  />
+                </div>
+              </div>
+
+              {/* ── Actions ── */}
+              <div className="flex items-center justify-center gap-3">
+                {actions?.payNow && (
+                  <Link
+                    to={`/dashboard/payment-proof`}
+                    className="h-10 px-7 rounded-xl bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2"
+                  >
+                    <CreditCard size={14} />
+                    Pay Now
+                  </Link>
+                )}
+                {actions?.viewInstallments && (
+                  <Link
+                    to="/dashboard/installment-schedule"
+                    className="h-10 px-7 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors flex items-center gap-2"
+                  >
+                    <ListChecks size={14} />
+                    View Installments
+                  </Link>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </>
   );
 };
 

@@ -97,7 +97,7 @@ function InfoRow({
         {label}
       </span>
       <span
-        className={`text-base font-bold ${highlight ? "text-blue-600" : "text-slate-800"}`}
+        className={`text-base font-bold ${highlight ? "text-secondary" : "text-slate-800"}`}
       >
         {value}
       </span>
@@ -217,7 +217,7 @@ export default function UploadPaymentProofPage() {
             animate={{ opacity: 1 }}
             className="flex items-center gap-1.5 text-sm text-slate-400"
           >
-            {["Billing", "Payments"].map((c) => (
+            {["Dashboard"].map((c) => (
               <span key={c} className="flex items-center gap-1.5">
                 <span className="hover:text-slate-600 cursor-pointer transition-colors">
                   {c}
@@ -328,7 +328,7 @@ export default function UploadPaymentProofPage() {
                         ? "bg-red-100 text-red-600"
                         : installment.daysLeft <= 14
                           ? "bg-amber-100 text-amber-700"
-                          : "bg-blue-100 text-blue-700"
+                          : "bg-blue-100 text-secondary"
                     }`}
                   >
                     <span
@@ -337,7 +337,7 @@ export default function UploadPaymentProofPage() {
                           ? "bg-red-500"
                           : installment.daysLeft <= 14
                             ? "bg-amber-500"
-                            : "bg-blue-500"
+                            : "bg-secondary"
                       }`}
                     />
                     {installment.daysLeft} days left
@@ -360,7 +360,7 @@ export default function UploadPaymentProofPage() {
                     onDrop={onDrop}
                     onClick={() => !file && fileInputRef.current?.click()}
                     className={`relative border-2 border-dashed rounded-xl transition-all duration-200 cursor-pointer
-                    ${file ? "border-blue-300 bg-blue-50/40 cursor-default" : "hover:border-blue-400 hover:bg-blue-50/30"}
+                    ${file ? "border-blue-300 bg-blue-50/40 cursor-default" : "hover:border-secondary/90 hover:bg-blue-50/30"}
                     ${dragOver ? "border-blue-500 bg-blue-50 scale-[1.01]" : "border-slate-200 bg-slate-50/50"}
                   `}
                   >
@@ -385,7 +385,7 @@ export default function UploadPaymentProofPage() {
                           className="flex flex-col items-center gap-2 py-8 px-4"
                         >
                           <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mb-1">
-                            <CloudUpload size={26} className="text-blue-500" />
+                            <CloudUpload size={26} className="text-secondary" />
                           </div>
                           <p className="text-sm font-semibold text-slate-700">
                             Drag & drop your file here
@@ -397,7 +397,7 @@ export default function UploadPaymentProofPage() {
                               e.stopPropagation();
                               fileInputRef.current?.click();
                             }}
-                            className="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors"
+                            className="h-8 px-4 bg-secondary hover:bg-secondary/90 text-white text-xs font-semibold rounded-lg transition-colors"
                           >
                             Choose File
                           </button>
@@ -546,7 +546,7 @@ export default function UploadPaymentProofPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={mutation.isPending || !file}
-                  className="h-10 px-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-10 px-6 flex items-center gap-2 bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {mutation.isPending ? (
                     <Loader2 size={14} className="animate-spin" />

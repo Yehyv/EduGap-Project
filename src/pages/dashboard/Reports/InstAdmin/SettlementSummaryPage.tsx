@@ -221,10 +221,10 @@ const SettlementSummaryPage = () => {
         >
           <nav className="flex items-center gap-1.5 text-sm text-gray-400">
             <Link
-              to="/dashboard/billing"
+              to="/dashboard/home"
               className="hover:text-gray-600 transition-colors"
             >
-              Billing
+              Dashboard
             </Link>
             <ChevronRight size={13} />
             <span className="text-gray-600 font-medium">
