@@ -378,22 +378,22 @@ const InstituteInstallmentsPage = () => {
       center: true,
       cell: (row: InstallmentRow) => <StatusBadge status={row.status} />,
     },
-    {
-      name: "Action",
-      center: true,
-      cell: (row: InstallmentRow) => (
-        <button
-          type="button"
-          onClick={() =>
-            navigate(`/dashboard/billing/installments/${row.installmentId}`)
-          }
-          className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-colors"
-          title="View Details"
-        >
-          <Eye size={14} />
-        </button>
-      ),
-    },
+    // {
+    //   name: "Action",
+    //   center: true,
+    //   cell: (row: InstallmentRow) => (
+    //     <button
+    //       type="button"
+    //       onClick={() =>
+    //         navigate(`/dashboard/billing/installments/${row.installmentId}`)
+    //       }
+    //       className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-colors"
+    //       title="View Details"
+    //     >
+    //       <Eye size={14} />
+    //     </button>
+    //   ),
+    // },
   ];
 
   const summary = data?.summary;

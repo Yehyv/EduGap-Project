@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
@@ -19,9 +19,15 @@ import {
   BadgeCheck,
   DollarSign,
   Landmark,
+  CheckCircle2,
+  StickyNote,
+  Loader2,
 } from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
-import { fetchPaymentDetails } from "@/features/Dashboard/services/dashboardApis";
+import {
+  fetchPaymentDetails,
+  approvePayment,
+} from "@/features/Dashboard/services/dashboardApis";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,7 +82,7 @@ const paymentStatusConfig: Record<
     label: "Confirmed",
     icon: <BadgeCheck size={13} className="text-green-500" />,
   },
-  PENDING: {
+  PENDING_REVIEW: {
     class: "bg-amber-50 text-amber-600 border-amber-200",
     dot: "bg-amber-400",
     label: "Pending",
@@ -110,7 +116,7 @@ const installmentStatusConfig: Record<
     dot: "bg-blue-400",
     label: "Partial",
   },
-  PENDING: {
+  PENDING_REVIEW: {
     class: "bg-amber-50 text-amber-600 border-amber-200",
     dot: "bg-amber-400",
     label: "Pending",
@@ -279,9 +285,133 @@ const StatusBadge = ({
   </span>
 );
 
+// ─── Approve Panel ────────────────────────────────────────────────────────────
+
+const ApprovePanel = ({
+  paymentId,
+  onSuccess,
+}: {
+  paymentId: string;
+  onSuccess: () => void;
+}) => {
+  const [notes, setNotes] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+
+  const { mutate, isPending, isError, isSuccess } = useMutation({
+    mutationFn: () => approvePayment(paymentId, { reviewNotes: notes }),
+    onSuccess,
+  });
+
+  const handleApprove = () => {
+    if (!confirmed) {
+      setConfirmed(true);
+      return;
+    }
+    mutate();
+  };
+
+  if (isSuccess) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center justify-center gap-2 py-6"
+      >
+        <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center">
+          <CheckCircle2 size={22} className="text-green-500" />
+        </div>
+        <p className="text-sm font-semibold text-green-600">
+          Payment Approved!
+        </p>
+        <p className="text-xs text-gray-400 text-center">
+          The payment has been confirmed successfully.
+        </p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Notes field */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
+          <StickyNote size={12} className="text-gray-400" />
+          Review Notes
+          <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <textarea
+          rows={3}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add any notes about this approval…"
+          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-700 bg-white
+            focus:outline-none focus:ring-2 focus:ring-green-100 focus:border-green-400
+            transition-colors resize-none"
+        />
+      </div>
+
+      {/* Confirmation warning — shown after first click */}
+      <AnimatePresence>
+        {confirmed && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg"
+          >
+            <AlertCircle
+              size={13}
+              className="text-amber-500 flex-shrink-0 mt-0.5"
+            />
+            <p className="text-xs text-amber-700 leading-relaxed">
+              Are you sure? This will confirm the payment and update the
+              installment balance. Click <strong>Approve</strong> again to
+              proceed.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error */}
+      {isError && (
+        <p className="text-xs text-red-500 text-center flex items-center justify-center gap-1">
+          <XCircle size={12} /> Failed to approve. Please try again.
+        </p>
+      )}
+
+      {/* Approve button */}
+      <button
+        type="button"
+        onClick={handleApprove}
+        disabled={isPending}
+        className={`h-10 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed
+          ${
+            confirmed
+              ? "bg-green-600 hover:bg-green-700 shadow-md shadow-green-200"
+              : "bg-green-500 hover:bg-green-600"
+          }`}
+      >
+        {isPending ? (
+          <>
+            <Loader2 size={15} className="animate-spin" /> Approving…
+          </>
+        ) : (
+          <>
+            <CheckCircle2 size={15} />{" "}
+            {confirmed ? "Confirm Approval" : "Approve Payment"}
+          </>
+        )}
+      </button>
+    </div>
+  );
+};
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 const PaymentDetailsPage = () => {
   const { paymentId } = useParams<{ paymentId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [imgModalOpen, setImgModalOpen] = useState(false);
 
   const {
@@ -294,7 +424,10 @@ const PaymentDetailsPage = () => {
     enabled: !!paymentId,
   });
 
-  // ── Loading ────────────────────────────────────────────────────────────────
+  const handleApproveSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["payment-details", paymentId] });
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-5 pb-8">
@@ -314,7 +447,6 @@ const PaymentDetailsPage = () => {
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────────
   if (isError || !payment) {
     return (
       <div className="flex flex-col gap-5">
@@ -335,20 +467,23 @@ const PaymentDetailsPage = () => {
     );
   }
 
-  const paymentStatusCfg = getPaymentStatusCfg(payment.status);
+  const paymentStatusCfg = getPaymentStatusCfg(payment?.status);
   const installmentStatusCfg = getInstallmentStatusCfg(
-    payment.installment.status,
+    payment?.installment?.status,
   );
   const methodInfo = getMethodInfo(payment.paymentMethod);
+  const isPendingPayment = payment.status === "PENDING_REVIEW";
 
   const installmentPaidPct =
-    payment.installment.installmentAmount > 0
+    payment?.installment?.installmentAmount > 0
       ? Math.round(
           (payment.installment.paidAmount /
-            payment.installment.installmentAmount) *
+            payment?.installment?.installmentAmount) *
             100,
         )
       : 0;
+
+  console.log(`${import.meta.env.VITE_BASE_URL}${payment?.receiptFile}`);
 
   return (
     <>
@@ -381,7 +516,7 @@ const PaymentDetailsPage = () => {
                 </button>
               </div>
               <img
-                src={payment.receiptFile}
+                src={`${import.meta.env.VITE_BASE_URL}${payment?.receiptFile}`}
                 alt="Receipt"
                 className="w-full object-contain max-h-[70vh]"
               />
@@ -412,7 +547,6 @@ const PaymentDetailsPage = () => {
           >
             Payments
           </Link>
-
           <ChevronRight size={14} />
           <span className="text-gray-600">Payment Details</span>
         </motion.nav>
@@ -437,10 +571,9 @@ const PaymentDetailsPage = () => {
             </div>
             <div>
               <p className="text-xs text-gray-400">Payment ID</p>
-              <p className="text-sm font-bold text-gray-800">#{payment.id}</p>
+              <p className="text-sm font-bold text-gray-800">#{payment?.id}</p>
             </div>
           </div>
-
           <div className="flex items-center gap-4 flex-wrap">
             <div className="text-center sm:text-right">
               <p className="text-xs text-gray-400">Amount</p>
@@ -452,8 +585,7 @@ const PaymentDetailsPage = () => {
             <StatusBadge cfg={paymentStatusCfg} />
             {payment.isReversal && (
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-purple-50 text-purple-600 border-purple-200">
-                <RefreshCw size={11} />
-                Reversal
+                <RefreshCw size={11} /> Reversal
               </span>
             )}
           </div>
@@ -461,7 +593,7 @@ const PaymentDetailsPage = () => {
 
         {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-          {/* ── Left column ─────────────────────────────────────────────── */}
+          {/* ── Left column ── */}
           <div className="flex flex-col gap-4">
             {/* Installment info */}
             <SectionCard
@@ -473,30 +605,30 @@ const PaymentDetailsPage = () => {
               <div className="flex flex-col">
                 <DetailRow
                   label="Installment No."
-                  value={ordinal(payment.installment.installmentNo)}
+                  value={ordinal(payment?.installment?.installmentNo)}
                 />
                 <DetailRow
                   label="Due Date"
-                  value={fmtDate(payment.installment.dueDate)}
+                  value={fmtDate(payment?.installment?.dueDate)}
                 />
                 <DetailRow
                   label="Total Amount"
-                  value={egp(payment.installment.installmentAmount)}
+                  value={egp(payment?.installment?.installmentAmount)}
                 />
                 <DetailRow
                   label="Paid Amount"
-                  value={egp(payment.installment.paidAmount)}
+                  value={egp(payment?.installment?.paidAmount)}
                   highlight="green"
                 />
                 <DetailRow
                   label="Remaining"
-                  value={egp(payment.installment.remainingAmount)}
+                  value={egp(payment?.installment?.remainingAmount)}
                   highlight={
-                    payment.installment.remainingAmount > 0 ? "red" : undefined
+                    payment?.installment?.remainingAmount > 0
+                      ? "red"
+                      : undefined
                   }
                 />
-
-                {/* Installment progress bar */}
                 <div className="flex flex-col gap-1.5 pt-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-gray-400">Paid Progress</p>
@@ -591,7 +723,7 @@ const PaymentDetailsPage = () => {
             </SectionCard>
           </div>
 
-          {/* ── Right column ─────────────────────────────────────────────── */}
+          {/* ── Right column ── */}
           <div className="lg:col-span-2 flex flex-col gap-4">
             {/* Payment details */}
             <SectionCard
@@ -600,7 +732,6 @@ const PaymentDetailsPage = () => {
               delay={0.08}
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-                {/* Left col */}
                 <div className="flex flex-col">
                   <DetailRow
                     label="Payment ID"
@@ -627,7 +758,6 @@ const PaymentDetailsPage = () => {
                     highlight={payment.receiptNo ? "blue" : undefined}
                   />
                 </div>
-                {/* Right col */}
                 <div className="flex flex-col">
                   <DetailRow
                     label="Amount"
@@ -661,6 +791,25 @@ const PaymentDetailsPage = () => {
               </div>
             </SectionCard>
 
+            {/* ── Approve Payment — only when PENDING_REVIEW ── */}
+            {isPendingPayment && (
+              <SectionCard
+                icon={<CheckCircle2 size={15} className="text-green-500" />}
+                title="Approve Payment"
+                badge={
+                  <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Clock size={9} /> Awaiting Approval
+                  </span>
+                }
+                delay={0.1}
+              >
+                <ApprovePanel
+                  paymentId={paymentId!}
+                  onSuccess={handleApproveSuccess}
+                />
+              </SectionCard>
+            )}
+
             {/* Notes */}
             <SectionCard
               icon={<FileText size={15} />}
@@ -678,7 +827,7 @@ const PaymentDetailsPage = () => {
               )}
             </SectionCard>
 
-            {/* Cancel reason (only when applicable) */}
+            {/* Cancel reason */}
             {payment.cancelReason && (
               <SectionCard
                 icon={<XCircle size={15} />}
@@ -714,7 +863,7 @@ const PaymentDetailsPage = () => {
                   transition={{ duration: 0.15 }}
                 >
                   <img
-                    src={payment.receiptFile}
+                    src={`${import.meta.env.VITE_BASE_URL}${payment?.receiptFile}`}
                     alt="Receipt"
                     className="w-full max-h-52 object-contain bg-gray-50"
                   />
@@ -749,8 +898,7 @@ const PaymentDetailsPage = () => {
             onClick={() => navigate(-1)}
             className="h-10 px-5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
-            <ArrowLeft size={15} />
-            Back
+            <ArrowLeft size={15} /> Back
           </button>
         </motion.div>
       </div>

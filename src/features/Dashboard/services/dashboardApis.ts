@@ -1645,3 +1645,43 @@ export async function fetchAnnualSettlementDetail(contractId) {
   const res = await dashboardApi.get(`/annual-settlements/${contractId}`);
   return res.data.data;
 }
+export async function fetchUpgradeRequests(page: number, limit: number) {
+  const res = await dashboardApi.get(`/plan-upgrade-requests`, {
+    params: {
+      page,
+      limit,
+    },
+  });
+  return res.data.data;
+}
+
+export async function fetchUpgradeRequestDetails(id: string) {
+  const res = await dashboardApi.get(`/plan-upgrade-requests/${id}`);
+  return res.data.data;
+}
+interface ReviewBody {
+  reviewNotes?: string;
+}
+
+export async function approveUpgradeRequest(id: string, body: ReviewBody) {
+  const res = await dashboardApi.patch(
+    `/plan-upgrade-requests/${id}/approve`,
+    body,
+  );
+  return res.data.data;
+}
+
+export async function rejectUpgradeRequest(id: string, body: ReviewBody) {
+  const res = await dashboardApi.patch(
+    `/plan-upgrade-requests/${id}/reject`,
+    body,
+  );
+  return res.data.data;
+}
+export async function approvePayment(id: string, body: ReviewBody) {
+  const res = await dashboardApi.patch(
+    `/contract-payments/${id}/approve`,
+    body,
+  );
+  return res.data.data;
+}

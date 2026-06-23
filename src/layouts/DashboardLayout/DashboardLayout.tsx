@@ -47,6 +47,7 @@ import {
   CalendarClockIcon,
   Calculator,
   Receipt,
+  ArrowUpCircle,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -455,6 +456,15 @@ const DashboardLayout = () => {
               >
                 <DollarSign className="text-[#ACACAC] flex-shrink-0" />
                 {!collapsed && <span>{t("payments")}</span>}
+              </NavLink>
+              <NavLink
+                to="/dashboard/upgrade-plan-requests"
+                className={navLinkClass}
+                onClick={() => setOpen(false)}
+                title={collapsed ? t("payments") : undefined}
+              >
+                <ArrowUpCircle className="text-[#ACACAC] flex-shrink-0" />
+                {!collapsed && <span>Upgrade Plan Requests</span>}
               </NavLink>
 
               {/* ── Reports accordion ── */}

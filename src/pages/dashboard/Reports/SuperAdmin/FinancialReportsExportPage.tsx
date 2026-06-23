@@ -267,7 +267,7 @@ export default function FinancialReportsExportPage() {
                     </button>
 
                     {/* PDF */}
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() => setFormat("PDF")}
                       className={`flex items-center gap-2 px-4 h-10 rounded-lg border text-sm font-semibold transition-all ${
@@ -290,7 +290,7 @@ export default function FinancialReportsExportPage() {
                         }
                       />
                       PDF (.pdf)
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               </div>

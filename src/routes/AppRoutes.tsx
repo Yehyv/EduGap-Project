@@ -153,6 +153,8 @@ import SettlementSummaryPage from "@/pages/dashboard/Reports/InstAdmin/Settlemen
 import InvoiceDetailPage from "@/pages/dashboard/Reports/InstAdmin/InvoiceDetailPage";
 import UploadPaymentProofPage from "@/pages/dashboard/Reports/InstAdmin/UploadPaymentProofPage";
 import UpgradePlanPage from "@/pages/dashboard/Reports/InstAdmin/UpgradePlanPage";
+import UpgradePlanRequests from "@/pages/dashboard/Reports/SuperAdmin/UpgradePlanRequests";
+import UpgradePlanRequestDetails from "@/pages/dashboard/Reports/SuperAdmin/UpgradePlanRequestDetails";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -1006,6 +1008,14 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/installments/:installmentId/create-payment/success"
             element={<PaymentSuccessPage />}
+          />
+          <Route
+            path="/dashboard/upgrade-plan-requests"
+            element={<UpgradePlanRequests />}
+          />
+          <Route
+            path="/dashboard/upgrade-plan-requests/:requestId"
+            element={<UpgradePlanRequestDetails />}
           />
           {/* Reports */}
           <Route

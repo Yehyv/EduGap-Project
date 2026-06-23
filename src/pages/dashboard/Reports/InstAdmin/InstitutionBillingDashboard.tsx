@@ -530,13 +530,13 @@ const InstitutionBillingDashboard = () => {
                           {egp(data.nextInstallment.remainingAmount)}
                         </p>
                       </div>
-                      <Link
+                      {/* <Link
                         to={`/dashboard/installments/${data.nextInstallment.installmentId}`}
                         className="h-9 px-4 rounded-lg bg-secondary hover:bg-secondary/90 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 flex-shrink-0"
                       >
                         View Details
                         <ArrowRight size={12} />
-                      </Link>
+                      </Link> */}
                     </div>
                   </>
                 ) : (

@@ -510,7 +510,7 @@ const InstallmentDetails = () => {
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         <Link
-                          to={`/dashboard/payments/${pay.id}`}
+                          to={`/dashboard/contract-payments/${pay.id}`}
                           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors inline-flex"
                           title="View Payment"
                         >

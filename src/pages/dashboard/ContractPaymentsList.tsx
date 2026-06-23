@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
 import { motion, AnimatePresence } from "framer-motion";
@@ -58,6 +58,7 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string; dot: string }[] = [
   { value: "CONFIRMED", label: "Confirmed", dot: "bg-green-500" },
   { value: "CANCELLED", label: "Cancelled", dot: "bg-blue-400" },
   { value: "REFUNDED", label: "Refunded", dot: "bg-amber-400" },
+  { value: "PENDING_REVIEW", label: "Pending", dot: "bg-gray-400" },
 ];
 
 const statusConfig: Record<
@@ -91,10 +92,7 @@ const getStatusCfg = (status: string) =>
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const egp = (val: number | string) =>
-  `EGP ${Number(val).toLocaleString("en-EG", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  `EGP ${Number(val).toLocaleString("en-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const ordinal = (n: number) => {
   const s = ["th", "st", "nd", "rd"];
@@ -192,7 +190,6 @@ const ContractSelect = ({
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
-  // Fetch all contracts with a big limit to avoid pagination
   const { data: contractsData } = useQuery({
     queryKey: ["contracts-select"],
     queryFn: () => fetchContracts({ page: 1, limit: 1000 }),
@@ -241,7 +238,7 @@ const ContractSelect = ({
       >
         <Building2 size={14} />
         <span className="truncate max-w-[140px]">
-          {value ? `${value.contractNo}` : "Select Contract"}
+          {value ? value.contractNo : "Select Contract"}
         </span>
         {value ? (
           <X
@@ -273,7 +270,6 @@ const ContractSelect = ({
             transition={{ duration: 0.15 }}
             className="absolute top-full mt-1 left-0 w-64 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden"
           >
-            {/* Search */}
             <div className="p-2 border-b border-gray-50">
               <div className="relative">
                 <input
@@ -290,8 +286,6 @@ const ContractSelect = ({
                 />
               </div>
             </div>
-
-            {/* Options */}
             <div className="max-h-52 overflow-y-auto py-1">
               {filtered.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-4">
@@ -363,16 +357,16 @@ const StatusDropdown = ({
         type="button"
         onClick={() => setOpen((p) => !p)}
         className={`h-9 px-3 rounded-2xl border flex items-center gap-2 text-sm transition-colors select-none ${
-          value !== "all"
+          value !== "ALL"
             ? "bg-blue-500 text-white border-blue-500"
             : "border-gray-200 text-gray-500 hover:bg-gray-50 bg-white"
         }`}
       >
-        {value !== "all" && (
+        {value !== "ALL" && (
           <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />
         )}
         <span>
-          {value === "all"
+          {value === "ALL"
             ? "All Status"
             : STATUS_OPTIONS.find((o) => o.value === value)?.label}
         </span>
@@ -423,46 +417,73 @@ const StatusDropdown = ({
 const InstallmentsScheduleList = () => {
   const { contractId: urlContractId } = useParams<{ contractId?: string }>();
 
-  // ── Filter state ───────────────────────────────────────────────────────────
+  // ── All filter state lives in URL search params ────────────────────────────
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const page = Number(searchParams.get("page") ?? "1");
+  const perPage = Number(searchParams.get("limit") ?? "10");
+  const status = (searchParams.get("status") ?? "ALL") as StatusFilter;
+  const fromDate = searchParams.get("fromDate") ?? "";
+  const toDate = searchParams.get("toDate") ?? "";
+  // contractId filter only used when not in URL params
+  const contractIdParam = searchParams.get("contractId") ?? "";
+
+  // Local state only for the contract dropdown object (label needs the full object)
   const [selectedContract, setSelectedContract] =
     useState<ContractOption | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
-  const [fromDate, setfromDate] = useState("");
-  const [toDate, settoDate] = useState("");
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
 
-  // Resolve which contractId to use (from URL or selected dropdown)
-  const activeContractId = urlContractId ?? String(selectedContract?.id ?? "");
+  const activeContractId = urlContractId ?? contractIdParam;
 
-  // Active filter count for clear button
+  // Helper — update one or many params and always reset page to 1
+  // unless we're explicitly setting the page itself
+  const setParam = (updates: Record<string, string>, resetPage = true) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        Object.entries(updates).forEach(([k, v]) => {
+          if (v) next.set(k, v);
+          else next.delete(k);
+        });
+        if (resetPage) next.set("page", "1");
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
   const activeFilterCount = [
     selectedContract && !urlContractId,
-    statusFilter !== "ALL",
+    status !== "ALL",
     fromDate,
     toDate,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
-    if (!urlContractId) setSelectedContract(null);
-    setStatusFilter("ALL");
-    setfromDate("");
-    settoDate("");
-    setPage(1);
+    setSelectedContract(null);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("status");
+        next.delete("fromDate");
+        next.delete("toDate");
+        if (!urlContractId) next.delete("contractId");
+        next.set("page", "1");
+        return next;
+      },
+      { replace: true },
+    );
   };
 
-  const resetPage = () => setPage(1);
-
-  // ── Installments query ─────────────────────────────────────────────────────
+  // ── Query — keys include everything from URL so any param change re-fetches ─
   const {
     data: paymentsData,
     isLoading,
     isError: listError,
   } = useQuery({
     queryKey: [
-      "installments",
+      "payments-history",
       activeContractId,
-      statusFilter,
+      status,
       fromDate,
       toDate,
       page,
@@ -471,20 +492,19 @@ const InstallmentsScheduleList = () => {
     queryFn: () =>
       fetchPaymentsHistory({
         contractId: activeContractId,
-        status: statusFilter !== "ALL" ? statusFilter : "",
+        status: status !== "ALL" ? status : "",
         year: "",
         fromDate,
         toDate,
         page: String(page),
         limit: String(perPage),
       }),
+    // Keep showing previous data while new page loads (no full-page skeleton on pagination)
+    placeholderData: (prev) => prev,
   });
-  console.log(paymentsData);
 
   const installments: Payment[] = paymentsData?.data ?? [];
-
   const pagination: ApiPagination | undefined = paymentsData?.meta;
-
   const summary = paymentsData?.summary;
 
   // ── Columns ────────────────────────────────────────────────────────────────
@@ -535,7 +555,7 @@ const InstallmentsScheduleList = () => {
       name: "Installment",
       selector: (row: Payment) => Number(row.installment),
       cell: (row: Payment) => (
-        <span className=" text-gray-800">
+        <span className="text-gray-800">
           {ordinal(row.installment?.installmentNo)}
         </span>
       ),
@@ -561,7 +581,7 @@ const InstallmentsScheduleList = () => {
       name: "Method",
       selector: (row: Payment) => row.paymentMethod,
       cell: (row: Payment) => (
-        <span className={`text-gray-800`}>{row.paymentMethod}</span>
+        <span className="text-gray-800">{row.paymentMethod}</span>
       ),
       sortable: true,
       center: true,
@@ -571,7 +591,7 @@ const InstallmentsScheduleList = () => {
       name: "Receipt No.",
       selector: (row: Payment) => row.receiptNo,
       cell: (row: Payment) => (
-        <span className={`text-gray-800`}>{row.receiptNo}</span>
+        <span className="text-gray-800">{row.receiptNo}</span>
       ),
       sortable: true,
       center: true,
@@ -594,7 +614,6 @@ const InstallmentsScheduleList = () => {
       center: true,
       minWidth: "120px",
     },
-
     {
       name: "Details",
       cell: (row: Payment) => (
@@ -617,27 +636,24 @@ const InstallmentsScheduleList = () => {
     <div className="flex flex-col gap-2 w-full px-1 py-2">
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div className="flex flex-wrap gap-2 items-center">
-          {/* Contract dropdown — hidden if contractId is in URL */}
+          {/* Contract dropdown */}
           {!urlContractId && (
             <ContractSelect
               value={selectedContract}
               onChange={(c) => {
                 setSelectedContract(c);
-                resetPage();
+                setParam({ contractId: c ? String(c.id) : "" });
               }}
             />
           )}
 
           {/* Status */}
           <StatusDropdown
-            value={statusFilter}
-            onChange={(v) => {
-              setStatusFilter(v);
-              resetPage();
-            }}
+            value={status}
+            onChange={(v) => setParam({ status: v === "ALL" ? "" : v })}
           />
 
-          {/* Due From */}
+          {/* From date */}
           <div className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-gray-200 bg-white text-sm text-gray-500">
             <span className="text-xs text-gray-400 whitespace-nowrap">
               From
@@ -645,43 +661,27 @@ const InstallmentsScheduleList = () => {
             <input
               type="date"
               value={fromDate}
-              onChange={(e) => {
-                setfromDate(e.target.value);
-                resetPage();
-              }}
+              onChange={(e) => setParam({ fromDate: e.target.value })}
               className="text-sm text-gray-700 focus:outline-none bg-transparent w-32"
             />
             {fromDate && (
-              <button
-                onClick={() => {
-                  setfromDate("");
-                  resetPage();
-                }}
-              >
+              <button onClick={() => setParam({ fromDate: "" })}>
                 <X size={12} className="text-gray-400 hover:text-gray-600" />
               </button>
             )}
           </div>
 
-          {/* Due To */}
+          {/* To date */}
           <div className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-gray-200 bg-white text-sm text-gray-500">
             <span className="text-xs text-gray-400 whitespace-nowrap">To</span>
             <input
               type="date"
               value={toDate}
-              onChange={(e) => {
-                settoDate(e.target.value);
-                resetPage();
-              }}
+              onChange={(e) => setParam({ toDate: e.target.value })}
               className="text-sm text-gray-700 focus:outline-none bg-transparent w-32"
             />
             {toDate && (
-              <button
-                onClick={() => {
-                  settoDate("");
-                  resetPage();
-                }}
-              >
+              <button onClick={() => setParam({ toDate: "" })}>
                 <X size={12} className="text-gray-400 hover:text-gray-600" />
               </button>
             )}
@@ -708,8 +708,8 @@ const InstallmentsScheduleList = () => {
     </div>
   );
 
-  // ── Loading ────────────────────────────────────────────────────────────────
-  if (isLoading) {
+  // ── Loading (first load only — placeholderData keeps old rows on page change) ─
+  if (isLoading && !paymentsData) {
     return (
       <div className="flex flex-col gap-5">
         <Skeleton className="h-10 w-72" />
@@ -764,9 +764,7 @@ const InstallmentsScheduleList = () => {
         >
           Dashboard
         </Link>
-
         <ChevronRight size={14} />
-
         <span className="text-gray-600">Payments</span>
       </motion.nav>
 
@@ -794,7 +792,7 @@ const InstallmentsScheduleList = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
-        className="rounded-xl border border-gray-100 shadow-sm bg-white"
+        className={`rounded-xl border border-gray-100 shadow-sm bg-white transition-opacity duration-200 ${isLoading ? "opacity-60" : "opacity-100"}`}
       >
         <DataTable
           columns={columns}
@@ -804,12 +802,30 @@ const InstallmentsScheduleList = () => {
           pagination
           paginationServer
           paginationTotalRows={pagination?.total ?? 0}
+          paginationDefaultPage={page}
           paginationPerPage={perPage}
           paginationRowsPerPageOptions={[5, 10, 25]}
-          onChangePage={(p) => setPage(p)}
-          onChangeRowsPerPage={(newPerPage) => {
-            setPerPage(newPerPage);
-            setPage(1);
+          // ── Key fix: update URL params directly; React Query re-fetches automatically ──
+          onChangePage={(newPage) => {
+            setSearchParams(
+              (prev) => {
+                const next = new URLSearchParams(prev);
+                next.set("page", String(newPage));
+                return next;
+              },
+              { replace: true },
+            );
+          }}
+          onChangeRowsPerPage={(newPerPage, newPage) => {
+            setSearchParams(
+              (prev) => {
+                const next = new URLSearchParams(prev);
+                next.set("limit", String(newPerPage));
+                next.set("page", String(newPage));
+                return next;
+              },
+              { replace: true },
+            );
           }}
           subHeader
           subHeaderComponent={subHeaderComponent}
