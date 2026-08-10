@@ -45,25 +45,25 @@ const StatsCards = ({ counts }) => {
 
   const superAdminStats = [
     {
-      title: "Total Institutions",
+      title: t("totalInstitutions"),
       value: counts?.totalInstitutes,
       icon: <AllPartnersIcon />,
       gradient: "from-indigo-500 to-blue-500",
     },
     {
-      title: "Active Students",
+      title: t("activeStudents"),
       value: counts?.totalActiveStudents,
       icon: <Users2 />,
       gradient: "from-sky-500 to-cyan-500",
     },
     {
-      title: "Monthly Revenue",
+      title: t("monthlyRevenue"),
       value: "EGP 310k",
       icon: <DollarSign />,
       gradient: "from-emerald-500 to-green-600",
     },
     {
-      title: "Retention Rate",
+      title: t("retentionRate"),
       value: "91%",
       icon: <UserCheck />,
       gradient: "from-teal-500 to-emerald-500",
@@ -96,13 +96,13 @@ const StatsCards = ({ counts }) => {
 
   const otherRoleStats = [
     {
-      title: "Total Students",
+      title: t("totalStudents"),
       value: counts?.totalStudents,
       icon: <TotalStudentsIcon />,
       gradient: "from-indigo-500 to-blue-500",
     },
     {
-      title: "Active Students",
+      title: t("activeStudents"),
       value: counts?.totalActiveStudents,
       icon: <Users2 />,
       gradient: "from-sky-500 to-cyan-500",

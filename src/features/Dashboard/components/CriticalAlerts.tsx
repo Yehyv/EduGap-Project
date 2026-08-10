@@ -4,6 +4,7 @@ import {
   fetchInstitutesExpiringWithinMonth,
   fetchInstitutesWithHighNoCourseStudents,
 } from "../services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -12,43 +13,6 @@ interface Alert {
   title: string;
   description: string;
   tag: string;
-}
-
-interface StudentsWithoutCourseData {
-  instituteId: number | null;
-  totalStudents: number;
-  eligibleStudentsAfterThreeMonths: number;
-  studentsWithoutCourseAfterThreeMonths: number;
-  percentage: number;
-}
-
-interface StudentsWithoutCourseResponse {
-  status: number;
-  message: string;
-  data: StudentsWithoutCourseData;
-}
-
-interface InstitutesExpiringResponse {
-  status: number;
-  message: string;
-  data: {
-    institutesExpiringWithinMonth: number;
-  };
-}
-
-interface InstitutesHighNoCourseResponse {
-  status: number;
-  message: string;
-  data: {
-    thresholdPercentage: number;
-    institutesCount: number;
-    institutes: {
-      instituteId: number;
-      totalStudents: number;
-      studentsWithoutCourseAfterThreeMonths: number;
-      percentage: number;
-    }[];
-  };
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -86,47 +50,44 @@ const AlertRowSkeleton = () => (
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const CriticalAlerts = () => {
-  const { data: studentsData, isLoading: studentsLoading } = useQuery<
-    StudentsWithoutCourseResponse,
-    Error
-  >({
+  const { t } = useLanguage();
+  const { data: studentsData, isLoading: studentsLoading } = useQuery({
     queryKey: ["students-without-course"],
     queryFn: fetchStudentsWithoutCourse,
   });
 
-  const { data: institutesData, isLoading: institutesLoading } = useQuery<
-    InstitutesExpiringResponse,
-    Error
-  >({
+  const { data: institutesData, isLoading: institutesLoading } = useQuery({
     queryKey: ["institutes-expiring-within-month"],
     queryFn: fetchInstitutesExpiringWithinMonth,
   });
 
-  const { data: highNoCourseData, isLoading: highNoCourseLoading } = useQuery<
-    InstitutesHighNoCourseResponse,
-    Error
-  >({
+  const { data: highNoCourseData, isLoading: highNoCourseLoading } = useQuery({
     queryKey: ["institutes-with-high-no-course-students"],
     queryFn: fetchInstitutesWithHighNoCourseStudents,
   });
-
   const institutesAlert: Alert | null = institutesData?.data
     ? {
         id: 1,
-        title: "Institutions expiring soon",
-        description: `${institutesData.data.institutesExpiringWithinMonth} institution${
-          institutesData.data.institutesExpiringWithinMonth !== 1 ? "s" : ""
-        } have subscriptions expiring within the next month.`,
-        tag: "Expires in 30 days",
+        title: t("institutionsExpiringSoon"),
+        description: `${institutesData.data.institutesExpiringWithinMonth} ${
+          institutesData.data.institutesExpiringWithinMonth !== 1
+            ? t("institutionsHaveSubscriptionsExpiring")
+            : t("institutionHasSubscriptionExpiring")
+        }`,
+        tag: t("expiresIn30Days"),
       }
     : null;
 
   const studentsAlert: Alert | null = studentsData?.data
     ? {
         id: 2,
-        title: "Students at risk",
-        description: `${studentsData.data.studentsWithoutCourseAfterThreeMonths} students of ${studentsData.data.totalStudents} (${studentsData.data.percentage.toFixed(1)}%) haven't enrolled in a course within 3 months.`,
-        tag: "Low activity",
+        title: t("studentsAtRisk"),
+        description: `${studentsData.data.studentsWithoutCourseAfterThreeMonths} ${t(
+          "studentsOf",
+        )} ${studentsData.data.totalStudents} (${studentsData.data.percentage.toFixed(
+          1,
+        )}%) ${t("haventEnrolledInCourse")}`,
+        tag: t("lowActivity"),
       }
     : null;
 
@@ -134,11 +95,15 @@ const CriticalAlerts = () => {
     (highNoCourseData?.data?.institutesCount ?? 0) > 0
       ? {
           id: 3,
-          title: "Institutions with high inactive students",
-          description: `${highNoCourseData!.data.institutesCount} institution${
-            highNoCourseData!.data.institutesCount !== 1 ? "s" : ""
-          } have more than ${highNoCourseData!.data.thresholdPercentage}% of students without a course after 3 months.`,
-          tag: "High inactivity",
+          title: t("institutionsWithHighInactiveStudents"),
+          description: `${highNoCourseData!.data.institutesCount} ${
+            highNoCourseData!.data.institutesCount !== 1
+              ? t("institutionsHaveMoreThan")
+              : t("institutionHasMoreThan")
+          } ${highNoCourseData!.data.thresholdPercentage}% ${t(
+            "studentsWithoutCourseAfter3Months",
+          )}`,
+          tag: t("highInactivity"),
         }
       : null;
 
@@ -156,12 +121,14 @@ const CriticalAlerts = () => {
       <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100">
         <div>
           <span className="text-xl font-semibold text-gray-900">
-            Critical alerts
+            {t("criticalAlerts")}
           </span>
-          <p className="text-gray-400">Items requiring immediate attention</p>
+          <p className="text-gray-400">
+            {t("itemsRequiringImmediateAttention")}
+          </p>
         </div>
         <span className="ml-auto text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700">
-          {isLoading ? "..." : allAlerts.length} alerts
+          {isLoading ? "..." : allAlerts.length} {t("alerts")}
         </span>
       </div>
 

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { useLanguage } from "@/shared/localization/useLanguage";
 import { fetchTopContentCategories } from "../services/dashboardApis";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -26,12 +27,16 @@ const COLORS = ["#1d4ed8", "#3b82f6", "#60a5fa", "#93c5fd", "#1e293b"];
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  t,
+}: any & { t: (key: string) => string }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white border border-gray-200 rounded-lg px-4 py-2 shadow-md">
       <span className="text-sm font-semibold text-blue-700">
-        {payload[0].name} : {payload[0].value} enrollments
+        {payload[0].name} : {payload[0].value} {t("enrollments")}
       </span>
     </div>
   );
@@ -58,6 +63,8 @@ const ChartSkeleton = () => (
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const TopContentCategories = () => {
+  const { t } = useLanguage();
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["top-content-categories"],
     queryFn: fetchTopContentCategories,
@@ -76,11 +83,10 @@ const TopContentCategories = () => {
     <div className="rounded-xl bg-white border border-gray-100 shadow-custom overflow-hidden p-5">
       {/* Header */}
       <h5 className="text-lg font-semibold text-gray-900 mb-0.5">
-        Top Content Categories
+        {t("topContentCategories")}
       </h5>
       <p className="text-sm text-gray-400 mb-4">
-        Most consumed skill tracks. Total enrollments:{" "}
-        {isLoading ? "..." : total}
+        {t("topContentCategoriesSubtitle")} {isLoading ? "..." : total}
       </p>
 
       {/* States */}
@@ -88,11 +94,11 @@ const TopContentCategories = () => {
         <ChartSkeleton />
       ) : isError ? (
         <div className="flex items-center justify-center h-[260px]">
-          <p className="text-sm text-red-400">Failed to load categories.</p>
+          <p className="text-sm text-red-400">{t("failedToLoadCategories")}</p>
         </div>
       ) : chartData.length === 0 ? (
         <div className="flex items-center justify-center h-[260px]">
-          <p className="text-sm text-gray-400">No categories available.</p>
+          <p className="text-sm text-gray-400">{t("noCategoriesAvailable")}</p>
         </div>
       ) : (
         <>
@@ -113,7 +119,7 @@ const TopContentCategories = () => {
                   <Cell key={index} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip t={t} />} />
             </PieChart>
           </ResponsiveContainer>
 

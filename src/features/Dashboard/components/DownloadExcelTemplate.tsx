@@ -2,9 +2,11 @@ import Swal from "sweetalert2";
 import { useState } from "react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import { FileSpreadsheet, Download } from "lucide-react";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const DownloadExcelTemplate = ({ excelContent }: { excelContent?: string }) => {
   const [isDownloading, setIsDownloading] = useState(false);
+  const { t } = useLanguage();
 
   const handleDownload = async () => {
     setIsDownloading(true);
@@ -21,18 +23,17 @@ const DownloadExcelTemplate = ({ excelContent }: { excelContent?: string }) => {
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${excelContent || "students"}_template.xlsx`;
+      link.download = `${excelContent || t("students")}_template.xlsx`;
       document.body.appendChild(link);
       link.click();
 
-      // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Template downloaded successfully",
+        title: t("success"),
+        text: t("templateDownloadedSuccess"),
         confirmButtonColor: "#0d6efd",
         timer: 2000,
       });
@@ -40,8 +41,8 @@ const DownloadExcelTemplate = ({ excelContent }: { excelContent?: string }) => {
       console.error("Download error:", error);
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: error?.response?.data?.message || "Failed to download template",
+        title: t("error"),
+        text: error?.response?.data?.message || t("templateDownloadError"),
         confirmButtonColor: "#dc3545",
       });
     } finally {
@@ -55,7 +56,6 @@ const DownloadExcelTemplate = ({ excelContent }: { excelContent?: string }) => {
       disabled={isDownloading}
       className="group relative bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl px-4 py-2 min-w-60 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
     >
-      {/* Excel Icon with Download Badge */}
       <div className="relative">
         <FileSpreadsheet className="w-5 h-5" />
         {!isDownloading && (
@@ -63,14 +63,12 @@ const DownloadExcelTemplate = ({ excelContent }: { excelContent?: string }) => {
         )}
       </div>
 
-      {/* Button Text */}
       <span className="font-medium text-sm">
         {isDownloading
-          ? "Downloading..."
-          : `Download ${excelContent ?? ""} Excel Template`}
+          ? t("downloading")
+          : `${t("download")} ${excelContent} ${t("excelTemplate")}`}
       </span>
 
-      {/* Loading Spinner */}
       {isDownloading && (
         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
       )}

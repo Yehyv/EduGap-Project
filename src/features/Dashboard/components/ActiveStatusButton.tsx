@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import { useState } from "react";
 import StudentStatusModal from "@/features/Dashboard/components/StudentStatusModal";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 interface ActiveStatusButtonProps {
   isActive: boolean;
@@ -26,7 +27,7 @@ interface ActiveStatusButtonProps {
 const ActiveStatusButton = ({
   isActive,
   itemId,
-  itemName = "Item",
+  itemName,
   activateApi,
   deactivateApi,
   refetchKey,
@@ -36,6 +37,9 @@ const ActiveStatusButton = ({
   onSuccess,
   onError,
 }: ActiveStatusButtonProps) => {
+  const { t } = useLanguage();
+  const resolvedItemName = itemName ?? t("item");
+
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
   const queryClient = useQueryClient();
@@ -61,8 +65,8 @@ const ActiveStatusButton = ({
       setStatusModalOpen(false);
       Swal.fire({
         icon: "success",
-        title: "Success!",
-        text: `${itemName} activated successfully`,
+        title: t("success"),
+        text: `${resolvedItemName} ${t("activatedSuccessfully")}`,
         confirmButtonColor: "#10b981",
       });
       onSuccess?.(true);
@@ -71,11 +75,11 @@ const ActiveStatusButton = ({
       setStatusModalOpen(false);
       Swal.fire({
         icon: "error",
-        title: "Error!",
+        title: t("error"),
         text:
           error?.response?.data?.message ||
           error?.message ||
-          `Failed to activate ${itemName.toLowerCase()}`,
+          `${t("failedToActivate")} ${resolvedItemName.toLowerCase()}`,
         confirmButtonColor: "#ef4444",
       });
       onError?.(error, true);
@@ -90,8 +94,8 @@ const ActiveStatusButton = ({
       setStatusModalOpen(false);
       Swal.fire({
         icon: "success",
-        title: "Success!",
-        text: `${itemName} deactivated successfully`,
+        title: t("success"),
+        text: `${resolvedItemName} ${t("deactivatedSuccessfully")}`,
         confirmButtonColor: "#10b981",
       });
       onSuccess?.(false);
@@ -100,11 +104,11 @@ const ActiveStatusButton = ({
       setStatusModalOpen(false);
       Swal.fire({
         icon: "error",
-        title: "Error!",
+        title: t("error"),
         text:
           error?.response?.data?.message ||
           error?.message ||
-          `Failed to deactivate ${itemName.toLowerCase()}`,
+          `${t("failedToDeactivate")} ${resolvedItemName.toLowerCase()}`,
         confirmButtonColor: "#ef4444",
       });
       onError?.(error, false);
@@ -122,16 +126,16 @@ const ActiveStatusButton = ({
   };
 
   const handleConfirmation = () => {
-    const action = isActive ? "deactivate" : "activate";
+    const action = isActive ? t("deactivate") : t("activate");
     Swal.fire({
-      title: "Are you sure?",
-      text: `Do you want to ${action} this ${itemName.toLowerCase()}?`,
+      title: t("areYouSure"),
+      text: `${t("doYouWantTo")} ${action} ${t("this")} ${resolvedItemName.toLowerCase()}?`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: isActive ? "#ef4444" : "#10b981",
       cancelButtonColor: "#6b7280",
-      confirmButtonText: `Yes, ${action}!`,
-      cancelButtonText: "Cancel",
+      confirmButtonText: `${t("yes")}, ${action}!`,
+      cancelButtonText: t("cancel"),
     }).then((result) => {
       if (result.isConfirmed) {
         const fallback = { note: "", reasonId: 0 };
@@ -169,11 +173,11 @@ const ActiveStatusButton = ({
         {isLoading ? (
           <span className="flex items-center gap-2">
             <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            Loading...
+            {t("loading")}
           </span>
         ) : (
           <>
-            {isActive ? "Active" : "Inactive"}
+            {isActive ? t("active") : t("inactive")}
             <span
               className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
                 isActive ? "bg-green-500" : "bg-red-500"

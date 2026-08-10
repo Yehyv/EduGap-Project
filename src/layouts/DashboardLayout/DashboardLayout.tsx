@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import LogoSm from "@/assets/svgs/EduGapWithShadow.svg?react";
 import LogoIcon from "@/assets/imgs/LogoIcon.png";
@@ -66,11 +66,17 @@ const DashboardLayout = () => {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { lang, setLang, t } = useLanguage();
   const { dashboardToken, dashboardLogout, instAdminInfo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 4);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   // ─────────────────────────────────────────────────────────────────────────────
   // NAV LINK CLASS
   // ─────────────────────────────────────────────────────────────────────────────
@@ -772,7 +778,12 @@ const DashboardLayout = () => {
         className={`flex-1 flex flex-col min-h-screen ml-0 md:me-4 ${mainML} pt-2 transition-all duration-300`}
       >
         {/* Header */}
-        <header className="py-2 bg-white rounded-2xl flex items-center mx-6 justify-between px-4">
+        <header
+          className={`sticky top-0 z-30 py-2 rounded-2xl flex items-center mx-6 justify-between px-4 transition-all duration-200 ${
+            scrolled ? "bg-white/90 backdrop-blur-md shadow-md" : "bg-white"
+          }`}
+        >
+          {" "}
           <button
             onClick={() => setOpen(true)}
             className="md:hidden p-2 rounded hover:bg-gray-100"
@@ -790,15 +801,13 @@ const DashboardLayout = () => {
               />
             </svg>
           </button>
-
           <SearchBar placeholder={t("search")} lang={lang} />
-
           <ProfileSection
-            userName={instAdminInfo?.userName}
             userRole={role}
             userImage={instAdminInfo?.userImage}
             currentLang={lang}
             onLanguageChange={setLang}
+            userName={instAdminInfo?.userName}
           />
         </header>
 

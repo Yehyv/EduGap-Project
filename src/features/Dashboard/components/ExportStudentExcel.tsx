@@ -13,7 +13,7 @@ const ExportStudentsButton = () => {
   const programId = searchParams.get("programId") || "";
   const isActive = searchParams.get("isActive") || "";
 
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage(); // ✅ فقط t
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -28,7 +28,7 @@ const ExportStudentsButton = () => {
       const response = await dashboardApi.get(url, {
         responseType: "blob",
         headers: {
-          languageId: lang === "ar" ? "1" : "2", // ← language header
+          languageId: lang === "ar" ? "1" : "2",
         },
         params: {
           instituteId: instituteId ? +instituteId : 0,
@@ -58,25 +58,25 @@ const ExportStudentsButton = () => {
 
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Students data exported successfully",
+        title: t("success"),
+        text: t("studentsExportedSuccess"),
         confirmButtonColor: "#0d6efd",
         timer: 2000,
         showConfirmButton: false,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Export error:", error);
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text:
-          error?.response?.data?.message || "Failed to export students data",
+        title: t("error"),
+        text: error?.response?.data?.message || t("studentsExportedError"),
         confirmButtonColor: "#dc3545",
       });
     } finally {
       setIsExporting(false);
     }
   };
+
   const hasActiveFilters = programId || isActive;
 
   return (
@@ -86,28 +86,32 @@ const ExportStudentsButton = () => {
       className="group relative bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl px-4 py-2 flex items-center gap-2 shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
       title={
         hasActiveFilters
-          ? `Export with filters: ${programId ? `Program ${programId}` : ""}${programId && isActive ? ", " : ""}${isActive ? (isActive === "1" ? "Active" : "Inactive") : ""}`
-          : "Export all students"
+          ? `${t("exportWithFilters")}: ${
+              programId ? `${t("program")} ${programId}` : ""
+            }${programId && isActive ? ", " : ""}${
+              isActive ? (isActive === "1" ? t("active") : t("inactive")) : ""
+            }`
+          : t("exportAllStudents")
       }
     >
-      {/* Excel Icon */}
+      {/* Icon */}
       <div className="relative">
         <FileSpreadsheet className="w-5 h-5" />
         {!isExporting && (
           <Download className="w-3 h-3 absolute -bottom-1 -right-1 bg-white text-green-600 rounded-full p-0.5" />
         )}
-        {/* Active Filters Badge */}
+
         {hasActiveFilters && !isExporting && (
           <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />
         )}
       </div>
 
-      {/* Button Text */}
+      {/* Text */}
       <span className="font-medium text-sm">
-        {isExporting ? "Exporting..." : "Export to Excel"}
+        {isExporting ? t("exporting") : t("exportToExcel")}
       </span>
 
-      {/* Loading Spinner */}
+      {/* Spinner */}
       {isExporting && (
         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
       )}

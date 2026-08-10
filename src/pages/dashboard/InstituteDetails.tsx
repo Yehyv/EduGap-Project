@@ -91,7 +91,7 @@ const InstituteDetails = () => {
           <img
             src={instituteData?.logo}
             className="w-10 h-10 rounded-full object-cover"
-            alt="Institute Logo"
+            alt={t("instituteLogo")}
           />
           <h2 className="mb-0">{instituteDataAr?.name ?? ""}</h2>
         </div>
@@ -183,10 +183,12 @@ const InstituteDetails = () => {
                   <img
                     className="max-h-50 rounded-2xl"
                     src={instituteData.logo}
-                    alt="Institute Logo"
+                    alt={t("instituteLogo")}
                   />
                 ) : (
-                  <p className="text-gray-400 text-sm">No logo available</p>
+                  <p className="text-gray-400 text-sm">
+                    {t("noLogoAvailable")}
+                  </p>
                 )}
               </div>
 
@@ -196,11 +198,11 @@ const InstituteDetails = () => {
                   <img
                     className="max-h-50 rounded-2xl"
                     src={instituteData.image_profile}
-                    alt="Institute Image"
+                    alt={t("instituteImage")}
                   />
                 ) : (
                   <p className="text-gray-400 text-sm">
-                    No profile image available
+                    {t("noProfileImageAvailable")}
                   </p>
                 )}
               </div>

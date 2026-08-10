@@ -9,6 +9,7 @@ import {
 } from "../services/dashboardApis";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ROLES } from "@/shared/utils/globals";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 interface HomeChartSliderProps {
   programId?: number;
@@ -20,17 +21,6 @@ const GROWTH_DUMMY_DATA = {
   series: [
     { name: "Institutions", data: [12, 18, 15, 24, 21, 30] },
     { name: "Students", data: [140, 210, 195, 310, 275, 420] },
-  ],
-};
-
-const STUDENT_ACTIVITY_DUMMY_DATA = {
-  categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-  series: [
-    {
-      name: "Weekly Active Students",
-      data: [210, 185, 240, 198, 267, 143, 89],
-    },
-    { name: "Content Interactions", data: [540, 420, 610, 480, 700, 310, 190] },
   ],
 };
 
@@ -133,8 +123,77 @@ export default function HomeChartSlider({
 }: HomeChartSliderProps) {
   const [current, setCurrent] = useState(0);
   const { role } = useAuth();
-
+  const { t } = useLanguage();
   const isSuperAdminRole = role === ROLES.SUPER_ADMIN;
+  const superAdminSlides = [
+    {
+      heading: t("studentPerformance"),
+      subHeading: t("subscriptionsAndActiveEngagementRate"),
+      label1: "Students",
+      label2: "Active Students",
+      dataSource: "students" as const,
+      dataKey1: "students",
+      dataKey2: "activeStudents",
+    },
+    {
+      heading: t("learningPaths"),
+      subHeading: t("subscriptionsAndActiveEngagementRate"),
+      label1: "Completed Packages",
+      dataSource: "learningPaths" as const,
+      dataKey1: "completedPackages",
+    },
+    {
+      heading: t("certificates"),
+      subHeading: t("numberOfIssuedCertificates"),
+      label1: "Certificates",
+      dataSource: "certificates" as const,
+      dataKey1: "certificates",
+    },
+    {
+      heading: t("growthOverview"),
+      subHeading: t("growthOverviewSubHeading"),
+      label1: "Institutions",
+      label2: "Students",
+      dataSource: "students" as const,
+      dataKey1: "institutions",
+      dataKey2: "students",
+    },
+  ];
+
+  const otherRoleSlides = [
+    {
+      heading: t("studentPerformance"),
+      subHeading: t("subscriptionsAndActiveEngagementRate"),
+      label1: "Students",
+      label2: "Active Students",
+      dataSource: "students" as const,
+      dataKey1: "students",
+      dataKey2: "activeStudents",
+    },
+    {
+      heading: t("learningPaths"),
+      subHeading: t("subscriptionsAndActiveEngagementRate"),
+      label1: "Completed Packages",
+      dataSource: "learningPaths" as const,
+      dataKey1: "completedPackages",
+    },
+    {
+      heading: t("certificates"),
+      subHeading: t("numberOfIssuedCertificates"),
+      label1: "Certificates",
+      dataSource: "certificates" as const,
+      dataKey1: "certificates",
+    },
+    {
+      heading: t("studentActivity"),
+      subHeading: t("studentActivitySubHeading"),
+      label1: "Weekly Active Students",
+      label2: "Content Interactions",
+      dataSource: "students" as const,
+      dataKey1: "weeklyActiveStudents",
+      dataKey2: "contentInteractions",
+    },
+  ];
   const slides = isSuperAdminRole ? superAdminSlides : otherRoleSlides;
 
   const resolvedId = isSuperAdmin ? undefined : programId;

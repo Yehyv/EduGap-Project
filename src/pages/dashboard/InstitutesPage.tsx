@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { Institute } from "@/features/Dashboard/types/dashboardTypes";
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -41,129 +42,134 @@ const customStyles = {
   },
 };
 
-const columns = [
-  {
-    name: "Num",
-    selector: (_, index: number) => index + 1,
-    sortable: false,
-    width: "60px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Logo",
-    selector: (row: Institute) => (
-      <img
-        src={row.logo}
-        alt={row.translation.name}
-        className="w-12 h-12 rounded-full"
-      />
-    ),
-    sortable: false,
-    minWidth: "80px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Name",
-    selector: (row: Institute) => (
-      <Link
-        className="underline text-sm"
-        to={`/dashboard/institutes/${row.id}`}
-      >
-        {row?.translation?.name}
-      </Link>
-    ),
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Email",
-    selector: (row: Institute) => row?.email,
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-
-  {
-    name: "Person To Contact",
-    selector: (row: Institute) => row?.translation?.contactPersopnName ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Location",
-    selector: (row: Institute) => row?.translation?.address,
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Created At",
-    selector: (row: Institute) => row?.createdAt,
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Is Active",
-    style: { justifyContent: "center" },
-    cell: (row: Institute) => {
-      const isActive = row?.is_active;
-      return (
-        <ActiveStatusButton
-          itemId={row.id ?? ""}
-          activateApi={() => instituteActiveToggle(row.id ?? "")}
-          deactivateApi={() => instituteActiveToggle(row.id ?? "")}
-          isActive={isActive ?? false}
-          refetchKey={"getInstitutesForDashboard"}
-          showModal={false}
-        />
-      );
-    },
-    sortable: true,
-  },
-  {
-    name: "Phone",
-    style: { justifyContent: "center" },
-    selector: (row: Institute) => `${row?.phone_key} ${row?.phone}`,
-  },
-  {
-    name: "Edit",
-    style: { justifyContent: "center" },
-    cell: (row: Institute) => (
-      <Link
-        to={`/dashboard/institutes/edit/${row?.id}`}
-        className="cursor-pointer"
-      >
-        <EditIcon />
-      </Link>
-    ),
-    ignoreRowClick: true,
-    allowOverflow: true,
-    button: true,
-    minWidth: "50px",
-  },
-  {
-    name: "Delete",
-    style: { justifyContent: "center" },
-    cell: (row: Institute) => (
-      <DeleteButton
-        deleteApi={() => deleteInstitute(row.id)}
-        successMessage="تم حذف المعهد بنجاح"
-        errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getInstitutesForDashboard"
-      />
-    ),
-    ignoreRowClick: true,
-    allowOverflow: true,
-    button: true,
-    minWidth: "60px",
-  },
-];
-
 const InstitutesPage = () => {
+  const { t } = useLanguage();
+
   const { data: InstitutesData, isLoading } = useQuery({
     queryKey: ["getInstitutesForDashboard"],
     queryFn: () => getInstitutes(),
   });
 
   const [filterText, setFilterText] = useState("");
+
+  const columns = useMemo(
+    () => [
+      {
+        name: t("num"),
+        selector: (_, index: number) => index + 1,
+        sortable: false,
+        width: "60px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("logo"),
+        selector: (row: Institute) => (
+          <img
+            src={row.logo}
+            alt={row.translation.name}
+            className="w-12 h-12 rounded-full"
+          />
+        ),
+        sortable: false,
+        minWidth: "80px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("name"),
+        selector: (row: Institute) => (
+          <Link
+            className="underline text-sm"
+            to={`/dashboard/institutes/${row.id}`}
+          >
+            {row?.translation?.name}
+          </Link>
+        ),
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("email"),
+        selector: (row: Institute) => row?.email,
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("personToContact"),
+        selector: (row: Institute) =>
+          row?.translation?.contactPersopnName ?? "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("location"),
+        selector: (row: Institute) => row?.translation?.address,
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("createdAt"),
+        selector: (row: Institute) => row?.createdAt,
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("isActive"),
+        style: { justifyContent: "center" },
+        cell: (row: Institute) => {
+          const isActive = row?.is_active;
+          return (
+            <ActiveStatusButton
+              itemId={row.id ?? ""}
+              activateApi={() => instituteActiveToggle(row.id ?? "")}
+              deactivateApi={() => instituteActiveToggle(row.id ?? "")}
+              isActive={isActive ?? false}
+              refetchKey={"getInstitutesForDashboard"}
+              showModal={false}
+            />
+          );
+        },
+        sortable: true,
+      },
+      {
+        name: t("phone"),
+        style: { justifyContent: "center" },
+        selector: (row: Institute) => `${row?.phone_key} ${row?.phone}`,
+      },
+      {
+        name: t("edit"),
+        style: { justifyContent: "center" },
+        cell: (row: Institute) => (
+          <Link
+            to={`/dashboard/institutes/edit/${row?.id}`}
+            className="cursor-pointer"
+          >
+            <EditIcon />
+          </Link>
+        ),
+        ignoreRowClick: true,
+        allowOverflow: true,
+        button: true,
+        minWidth: "50px",
+      },
+      {
+        name: t("delete"),
+        style: { justifyContent: "center" },
+        cell: (row: Institute) => (
+          <DeleteButton
+            deleteApi={() => deleteInstitute(row.id)}
+            successMessage={t("instituteDeletedSuccess")}
+            errorMessage={t("instituteDeletedError")}
+            refetchFunction="getInstitutesForDashboard"
+          />
+        ),
+        ignoreRowClick: true,
+        allowOverflow: true,
+        button: true,
+        minWidth: "60px",
+      },
+    ],
+    [t],
+  );
 
   const filteredItems = useMemo(() => {
     if (!InstitutesData?.data) return [];
@@ -180,7 +186,7 @@ const InstitutesPage = () => {
         <div className="relative w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Search by name"
+            placeholder={t("searchByName")}
             className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
@@ -194,22 +200,22 @@ const InstitutesPage = () => {
         </div>
         <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm focus:outline-none">
           <FilterIcon />
-          <span>Filter</span>
+          <span>{t("filter")}</span>
         </div>
       </div>
     );
-  }, [filterText]);
+  }, [filterText, t]);
 
   return (
     <>
       <DashboardPageTitle
-        text="Institutes"
+        text={t("institutes")}
         button
         buttonText={
           <Link to={"/dashboard/institutes/add"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
             <span className="inline-block me-4 text-white">
-              Add New Institute
+              {t("addNewInstitute")}
             </span>
           </Link>
         }
@@ -224,7 +230,6 @@ const InstitutesPage = () => {
           subHeader
           subHeaderComponent={subHeaderComponent}
           pagination
-          pa
           progressComponent={<CircleLoader />}
         />
       </div>

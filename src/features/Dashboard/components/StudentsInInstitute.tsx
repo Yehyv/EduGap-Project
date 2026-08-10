@@ -23,7 +23,8 @@ import DownloadExcelTemplate from "./DownloadExcelTemplate";
 import ExportStudentsButton from "./ExportStudentExcel";
 import ActiveStatusButton from "./ActiveStatusButton";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { ROLES, SUPER_ONLY } from "@/shared/utils/globals";
+import { ROLES } from "@/shared/utils/globals";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -55,6 +56,7 @@ const StudentsInInstitute = ({
   openAddModal?: boolean;
 }) => {
   const { instituteId } = useParams();
+  const { t } = useLanguage();
   const [isOpenModal, setOpenModal] = useState(openAddModal ?? false);
   const [addBulkStudentsModal, setAddBulkStudentsModal] = useState(false);
   const [filterText, setFilterText] = useState("");
@@ -152,13 +154,13 @@ const StudentsInInstitute = ({
   const columns = useMemo(() => {
     const cols = [
       {
-        name: "Num",
+        name: t("num"),
         selector: (_: unknown, index: number) => index + 1,
         width: "60px",
         style: { justifyContent: "center" },
       },
       {
-        name: "Image",
+        name: t("image"),
         cell: (row: Student) => (
           <img
             src={row?.image || "/default-avatar.png"}
@@ -170,7 +172,7 @@ const StudentsInInstitute = ({
         style: { justifyContent: "center" },
       },
       {
-        name: "Name",
+        name: t("name"),
         cell: (row: Student) => (
           <Link
             className="underline text-sm hover:text-secondary"
@@ -183,43 +185,43 @@ const StudentsInInstitute = ({
         style: { justifyContent: "center" },
       },
       {
-        name: "National Id",
+        name: t("nationalId"),
         selector: (row: Student) => row?.national_id || "-",
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
-        name: "Student Id",
+        name: t("studentId"),
         selector: (row: Student) => row?.studentId || "-",
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
-        name: "Email",
+        name: t("email"),
         selector: (row: Student) => row?.email || "-",
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
-        name: "Phone Key",
+        name: t("phoneKey"),
         selector: (row: Student) => `+${row?.phone_key}` || "-",
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
-        name: "Phone",
+        name: t("phone"),
         selector: (row: Student) => row?.phone || "-",
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
-        name: "Program",
+        name: t("program"),
         selector: (row: Student) => row?.program?.name ?? "-",
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
-        name: "Is Active",
+        name: t("isActive"),
         style: { justifyContent: "center" },
         cell: (row: Student) => (
           <ActiveStatusButton
@@ -238,7 +240,7 @@ const StudentsInInstitute = ({
       ...(isSuperAdmin
         ? [
             {
-              name: "Edit",
+              name: t("edit"),
               style: { justifyContent: "center" },
               cell: (row: Student) => (
                 <Link
@@ -255,7 +257,7 @@ const StudentsInInstitute = ({
           ]
         : []),
       {
-        name: "Delete",
+        name: t("delete"),
         style: { justifyContent: "center" },
         cell: (row: Student) => (
           <DeleteButton
@@ -281,7 +283,7 @@ const StudentsInInstitute = ({
           <div className="relative w-full sm:w-64">
             <input
               type="text"
-              placeholder="Search by name"
+              placeholder={t("searchByName")}
               className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
@@ -301,7 +303,7 @@ const StudentsInInstitute = ({
               }`}
             >
               <FilterIcon />
-              <span>Filter</span>
+              <span>{t("filter")}</span>
               {hasActiveFilters && (
                 <span className="ml-1 bg-secondary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                   {[studentProgramId, studentIsActive].filter(Boolean).length}
@@ -313,18 +315,18 @@ const StudentsInInstitute = ({
               <div className="fixed md:absolute top-auto md:top-full left-4 right-4 md:left-0 md:right-auto mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 w-auto md:w-64">
                 <div className="space-y-3">
                   <h3 className="font-semibold text-gray-800 text-sm mb-2">
-                    Filter Students
+                    {t("filterStudents")}
                   </h3>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Program
+                      {t("program")}
                     </label>
                     <select
                       value={tempProgramId}
                       onChange={(e) => setTempProgramId(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
                     >
-                      <option value="">All Programs</option>
+                      <option value="">{t("allPrograms")}</option>
                       {allProgramsInInstitute?.data?.map((program) => (
                         <option key={program?.id} value={program?.id}>
                           {program?.name}
@@ -334,16 +336,16 @@ const StudentsInInstitute = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Status
+                      {t("status")}
                     </label>
                     <select
                       value={tempIsActive}
                       onChange={(e) => setTempIsActive(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
                     >
-                      <option value="">All Status</option>
-                      <option value="1">Active</option>
-                      <option value="0">Inactive</option>
+                      <option value="">{t("allStatus")}</option>
+                      <option value="1">{t("active")}</option>
+                      <option value="0">{t("inactive")}</option>
                     </select>
                   </div>
                   <div className="flex gap-2 pt-2">
@@ -352,14 +354,14 @@ const StudentsInInstitute = ({
                       onClick={handleClearFilters}
                       className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      Clear
+                      {t("clear")}
                     </button>
                     <button
                       type="button"
                       onClick={handleApplyFilters}
                       className="flex-1 px-3 py-1.5 text-sm bg-secondary text-white rounded-lg hover:bg-secondary-dark transition-colors"
                     >
-                      Apply
+                      {t("apply")}
                     </button>
                   </div>
                 </div>
@@ -374,7 +376,7 @@ const StudentsInInstitute = ({
             className="flex items-center justify-center from-secondary to-secondary-dark text-white bg-gradient-to-r rounded-2xl h-9 px-4 whitespace-nowrap hover:shadow-md transition-shadow"
           >
             <PlusIcon className="h-5 w-5" />
-            <span className="ml-2">Add New Student</span>
+            <span className="ml-2">{t("addNewStudent")}</span>
           </button>
 
           <button
@@ -382,7 +384,7 @@ const StudentsInInstitute = ({
             className="bg-gradient-to-r justify-center from-[#FCB737] to-[#BB831A] text-white text-sm flex items-center gap-2 rounded-2xl h-9 px-4 whitespace-nowrap hover:shadow-md transition-shadow"
           >
             <PlusIcon className="h-5 w-5" />
-            <span className="ml-2">Add List Of Students</span>
+            <span className="ml-2">{t("addListOfStudents")}</span>
           </button>
         </div>
       </div>
@@ -398,7 +400,7 @@ const StudentsInInstitute = ({
 
   return (
     <>
-      <DashboardPageTitle text="Students" />
+      <DashboardPageTitle text={t("student")} />
 
       <div className="w-full">
         <DataTable
@@ -418,13 +420,13 @@ const StudentsInInstitute = ({
           onChangeRowsPerPage={handleRowsPerPageChange}
           progressComponent={<CircleLoader />}
           noDataComponent={
-            <div className="py-8 text-gray-500">No students found</div>
+            <div className="py-8 text-gray-500">{t("noStudentsFound")}</div>
           }
         />
       </div>
 
       <div className="flex gap-2 items-center mt-6">
-        <DownloadExcelTemplate excelContent="Add Students" />
+        <DownloadExcelTemplate excelContent={t("addStudents")} />
         <ExportStudentsButton />
       </div>
 

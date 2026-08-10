@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   GraduationCap,
-  UserX,
   BookOpen,
   MonitorPlay,
   FileText,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { instituteOverview } from "@/features/Dashboard/services/dashboardApis";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ── Animation ─────────────────────────────────────────────────────────────────
 const containerVariants = {
@@ -32,7 +32,7 @@ const cardVariants = {
 const STAT_CONFIG = [
   {
     key: "studentsCount",
-    label: "Total Students",
+    labelKey: "totalStudents",
     Icon: GraduationCap,
     bg: "bg-blue-50",
     border: "border-blue-200",
@@ -42,7 +42,7 @@ const STAT_CONFIG = [
   },
   {
     key: "nonStudentsCount",
-    label: "Staff",
+    labelKey: "staff",
     Icon: Users2,
     bg: "bg-purple-50",
     border: "border-purple-200",
@@ -52,7 +52,7 @@ const STAT_CONFIG = [
   },
   {
     key: "programsCount",
-    label: "Programs",
+    labelKey: "nav_programs",
     Icon: BookOpen,
     bg: "bg-green-50",
     border: "border-green-200",
@@ -62,7 +62,7 @@ const STAT_CONFIG = [
   },
   {
     key: "coursesCount",
-    label: "Courses",
+    labelKey: "courses",
     Icon: MonitorPlay,
     bg: "bg-orange-50",
     border: "border-orange-200",
@@ -72,7 +72,7 @@ const STAT_CONFIG = [
   },
   {
     key: "contentsCount",
-    label: "Contents",
+    labelKey: "contents",
     Icon: FileText,
     bg: "bg-cyan-50",
     border: "border-cyan-200",
@@ -82,7 +82,7 @@ const STAT_CONFIG = [
   },
   {
     key: "certifiedStudentsCount",
-    label: "Certified Students",
+    labelKey: "certifiedStudents",
     Icon: Award,
     bg: "bg-yellow-50",
     border: "border-yellow-200",
@@ -92,7 +92,7 @@ const STAT_CONFIG = [
   },
   {
     key: "completedStudentsCount",
-    label: "Completed Students",
+    labelKey: "completedStudents",
     Icon: BadgeCheck,
     bg: "bg-emerald-50",
     border: "border-emerald-200",
@@ -158,6 +158,8 @@ interface InstituteOverviewProps {
 }
 
 const InstituteOverview = ({ instituteId }: InstituteOverviewProps) => {
+  const { t } = useLanguage();
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["instituteOverview", instituteId],
     queryFn: () => instituteOverview(instituteId),
@@ -176,7 +178,7 @@ const InstituteOverview = ({ instituteId }: InstituteOverviewProps) => {
   if (isError)
     return (
       <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 text-sm">
-        Failed to load overview data.
+        {t("failedToLoadOverview")}
       </div>
     );
 
@@ -189,7 +191,7 @@ const InstituteOverview = ({ instituteId }: InstituteOverviewProps) => {
           style={{ background: "var(--color-secondary, #0a5c8a)" }}
         />
         <h5 className="text-secondary font-bold text-base m-0">
-          Institute Overview
+          {t("instituteOverview")}
         </h5>
       </div>
 
@@ -200,10 +202,10 @@ const InstituteOverview = ({ instituteId }: InstituteOverviewProps) => {
         animate="visible"
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
       >
-        {STAT_CONFIG.map(({ key, label, Icon, ...colors }) => (
+        {STAT_CONFIG.map(({ key, labelKey, Icon, ...colors }) => (
           <StatCard
             key={key}
-            label={label}
+            label={t(labelKey)}
             value={overviewData?.[key] ?? 0}
             Icon={Icon}
             {...colors}

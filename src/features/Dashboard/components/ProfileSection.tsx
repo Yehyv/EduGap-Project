@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
+import { useLanguage } from "@/shared/localization/useLanguage";
 import type { Language } from "@/shared/localization/LanguageContext";
 import LanguageDropdown from "@/shared/components/ui/LanguageDropdown";
 import PersonIcon from "@/assets/imgs/Profile.png";
@@ -23,6 +24,7 @@ const ProfileSection = ({
 }: ProfileSectionProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const sectionRef = useRef<HTMLDivElement | null>(null);
+  const { t } = useLanguage();
 
   useClickOutside(sectionRef, () => setIsOpen(false));
 
@@ -101,10 +103,12 @@ const ProfileSection = ({
               {/* Language Toggle Section */}
               <div className="space-y-3">
                 <h6 className="text-sm font-semibold text-gray-700">
-                  Language Settings
+                  {t("languageSettings")}
                 </h6>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Select Language</span>
+                  <span className="text-sm text-gray-600">
+                    {t("selectLanguage")}
+                  </span>
                   <LanguageDropdown
                     currentLang={currentLang}
                     onChange={onLanguageChange}
