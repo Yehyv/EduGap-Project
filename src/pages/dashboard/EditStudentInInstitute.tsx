@@ -9,9 +9,11 @@ import Swal from "sweetalert2";
 import { useParams } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import AddOrEditStudent from "@/features/Dashboard/components/AddOrEditStudent";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const EditStudentInInstitute = () => {
   const { studentId } = useParams();
+  const { t } = useLanguage();
   const { data: getStudentData, isLoading } = useQuery({
     queryKey: ["studentDetails", studentId],
     queryFn: () => getStudentDetails(studentId ?? ""),
@@ -52,7 +54,7 @@ const EditStudentInInstitute = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Edit Student Data" />
+      <DashboardPageTitle text={t("edit_student_data")} />
       {isLoading && <CircleLoader />}
       {!isLoading && (
         <AddOrEditStudent

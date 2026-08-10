@@ -11,6 +11,7 @@ import ErrorMessage from "@/shared/components/ErrorMessage";
 import TopicsAndLessonsInContent from "@/features/Dashboard/components/TopicsAndLessonsInContent";
 // import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // Types
 interface Translation {
@@ -32,6 +33,7 @@ interface ContentData {
 }
 
 const ContentDetails = () => {
+  const { t } = useLanguage();
   const { contentId } = useParams();
   const [activeTab, setActiveTab] = useState<"data" | "topicsAndLessons">(
     "data",
@@ -54,13 +56,13 @@ const ContentDetails = () => {
   if (isError) {
     return (
       <ErrorMessage
-        message={error?.message ?? "Error while fetching content details"}
+        message={error?.message ?? t("errorFetchingContentDetails")}
       />
     );
   }
 
   if (!contentData) {
-    return <ErrorMessage message="Content not found" />;
+    return <ErrorMessage message={t("contentNotFound")} />;
   }
 
   /* ================= TAB STYLING ================= */
@@ -75,7 +77,7 @@ const ContentDetails = () => {
     <div className="space-y-5">
       {/* ================= HEADER ================= */}
       <DashboardPageTitle
-        text="Training Course Details"
+        text={t("trainingCourseDetails")}
         button
         moreStyle="!from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5"
         buttonText={
@@ -84,7 +86,9 @@ const ContentDetails = () => {
             className="flex items-center gap-2"
           >
             <EditIcon className="h-8" />
-            <span className="text-secondary">Edit Training Course Data</span>
+            <span className="text-secondary">
+              {t("editTrainingCourseData")}
+            </span>
           </Link>
         }
       />
@@ -108,14 +112,14 @@ const ContentDetails = () => {
           className={tabClass("topicsAndLessons")}
           onClick={() => setActiveTab("topicsAndLessons")}
         >
-          Topics & Lessons
+          {t("topicsAndLessons")}
         </button>
 
         <button
           className={tabClass("data")}
           onClick={() => setActiveTab("data")}
         >
-          Training Course Data
+          {t("trainingCourseData")}
         </button>
       </div>
 
@@ -145,17 +149,19 @@ const DataTabContent = ({
   contentDataEn,
   contentDataAr,
 }: DataTabContentProps) => {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-6">
       {/* English Data Section */}
       <ContentDataSection
-        title="English Data"
+        title={t("englishData")}
         data={{
-          "Content Name": contentDataEn?.name,
-          Certificate: contentData?.hasCertificate ? "Yes" : "No",
-          Description: contentDataEn?.description,
-          Category: contentData?.category?.translations?.[1]?.name,
-          Level: contentData?.level,
+          [t("contentName")]: contentDataEn?.name,
+          [t("certificate")]: contentData?.hasCertificate ? t("yes") : t("no"),
+          [t("description")]: contentDataEn?.description,
+          [t("category")]: contentData?.category?.translations?.[1]?.name,
+          [t("level")]: contentData?.level,
         }}
         image={contentData?.image}
         whatToLearn={contentDataEn?.whatToLearn}
@@ -163,11 +169,11 @@ const DataTabContent = ({
 
       {/* Arabic Data Section */}
       <ContentDataSection
-        title="Arabic Data"
+        title={t("arabicData")}
         data={{
-          "Content Name": contentDataAr?.name,
-          Description: contentDataAr?.description,
-          Category: contentData?.category?.translations?.[0]?.name,
+          [t("contentName")]: contentDataAr?.name,
+          [t("description")]: contentDataAr?.description,
+          [t("category")]: contentData?.category?.translations?.[0]?.name,
         }}
         whatToLearn={contentDataAr?.whatToLearn}
       />
@@ -189,6 +195,8 @@ const ContentDataSection = ({
   image,
   whatToLearn,
 }: ContentDataSectionProps) => {
+  const { t } = useLanguage();
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
       <h4 className="text-lg font-semibold border-b pb-3 border-gray-200 mb-4">
@@ -205,7 +213,7 @@ const ContentDataSection = ({
         {image && (
           <div>
             <h6 className="text-sm font-bold text-gray-700 mb-3">
-              Content Image
+              {t("contentImage")}
             </h6>
             <img
               className="max-h-64 rounded-xl shadow-md object-cover"
@@ -219,7 +227,7 @@ const ContentDataSection = ({
         {whatToLearn && (
           <div>
             <h6 className="text-sm font-bold text-gray-700 mb-2">
-              What To Learn
+              {t("whatToLearn")}
             </h6>
             <ul className="list-disc ps-5 space-y-1">
               {whatToLearn.split(",").map((item, index) => (

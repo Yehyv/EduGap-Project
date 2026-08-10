@@ -13,7 +13,7 @@ const ExportStaffButton = () => {
   const programId = searchParams.get("programId") || "";
   const isActive = searchParams.get("isActive") || "";
 
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -58,8 +58,8 @@ const ExportStaffButton = () => {
 
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Staff data exported successfully",
+        title: t("success"),
+        text: t("staffExportedSuccessfully"),
         confirmButtonColor: "#0d6efd",
         timer: 2000,
         showConfirmButton: false,
@@ -68,9 +68,8 @@ const ExportStaffButton = () => {
       console.error("Export error:", error);
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text:
-          error?.response?.data?.message || "Failed to export students data",
+        title: t("error"),
+        text: error?.response?.data?.message || t("failedToExportStudentsData"),
         confirmButtonColor: "#dc3545",
       });
     } finally {
@@ -86,8 +85,8 @@ const ExportStaffButton = () => {
       className="group relative bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl px-4 py-2 flex items-center gap-2 shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
       title={
         hasActiveFilters
-          ? `Export with filters: ${programId ? `Program ${programId}` : ""}${programId && isActive ? ", " : ""}${isActive ? (isActive === "1" ? "Active" : "Inactive") : ""}`
-          : "Export all students"
+          ? `${t("exportWithFilters")}: ${programId ? `${t("program")} ${programId}` : ""}${programId && isActive ? ", " : ""}${isActive ? (isActive === "1" ? t("active") : t("inactive")) : ""}`
+          : t("exportAllStudents")
       }
     >
       {/* Excel Icon */}
@@ -104,7 +103,7 @@ const ExportStaffButton = () => {
 
       {/* Button Text */}
       <span className="font-medium text-sm">
-        {isExporting ? "Exporting..." : "Export to Excel"}
+        {isExporting ? t("exporting") : t("exportToExcel")}
       </span>
 
       {/* Loading Spinner */}

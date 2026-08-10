@@ -99,18 +99,16 @@ const EditContent = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Content created successfully",
+        title: t("success"),
+        text: t("contentCreatedSuccessfully"),
       });
     },
 
     onError: (error) => {
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text:
-          error?.response?.data?.message ||
-          "Something went wrong, please try again",
+        title: t("error"),
+        text: error?.response?.data?.message || t("somethingWentWrong"),
         confirmButtonColor: "#dc3545",
       });
     },
@@ -163,26 +161,26 @@ const EditContent = () => {
   const contentSchema: Yup.Schema<AddContentFormValues> = Yup.object({
     hasPrerequiest: Yup.boolean().required(),
 
-    image: Yup.mixed<File>().nullable().required("Content image is required"),
+    image: Yup.mixed<File>().nullable().required(t("contentImageRequired")),
 
-    level: Yup.string().required("Content level is required"),
+    level: Yup.string().required(t("contentLevelRequired")),
 
-    adVideo: Yup.string().url("Invalid video URL").required(),
+    adVideo: Yup.string().url(t("invalidVideoUrl")).required(),
 
-    categoryId: Yup.number().required("Category is required"),
+    categoryId: Yup.number().required(t("categoryRequired")),
 
-    educator: Yup.number().required("Educator is required"),
+    educator: Yup.number().required(t("educatorRequired")),
 
     prerequisites: Yup.array().of(Yup.number()),
     translations: Yup.array().of(
       Yup.object({
         languageId: Yup.number().required(),
         levelName: Yup.string().required(),
-        name: Yup.string().required("Name is required"),
-        description: Yup.string().required("Description is required"),
-        levelName: Yup.string().required("Level name is required"),
-        languageType: Yup.string().required("Language type is required"),
-        whatToLearn: Yup.string().required("What you will learn is required"),
+        name: Yup.string().required(t("nameRequired")),
+        description: Yup.string().required(t("descriptionRequired")),
+        levelName: Yup.string().required(t("levelNameRequired")),
+        languageType: Yup.string().required(t("languageTypeRequired")),
+        whatToLearn: Yup.string().required(t("whatToLearnRequired")),
       }),
     ),
   });
@@ -219,12 +217,14 @@ const EditContent = () => {
     ],
   };
 
+  const bulletPlaceholder = t("bulletPointsPlaceholder");
+
   if (isLoading) return <CircleLoader />;
   if (isError)
-    return <ErrorMessage message="Error while get content details" />;
+    return <ErrorMessage message={t("errorGettingContentDetails")} />;
   return (
     <>
-      <DashboardPageTitle text={"Edit Training Course"} />
+      <DashboardPageTitle text={t("editTrainingCourse")} />
       <Formik
         enableReinitialize
         initialValues={initialValues}
@@ -248,56 +248,60 @@ const EditContent = () => {
         {() => (
           <Form>
             <div className="bg-white rounded-xl p-4">
-              <h4 className="mb-4">Training Course Data</h4>
+              <h4 className="mb-4">{t("trainingCourseData")}</h4>
 
               <div className="grid grid-cols-1 gap-4">
                 <TextField
-                  label={"Content Name"}
+                  label={t("contentName")}
                   name="translations[0].name"
                   moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
                 />
                 <TextField
-                  label={"Content Description"}
+                  label={t("contentDescription")}
                   name="translations[0].description"
                   moreStyle="!border-[#ACACAC] bg-[#F9F8F8] pb-12"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <DropdownMenu
-                  label={"Category"}
+                  label={t("category")}
                   name="categoryId"
                   options={handleCategories}
                 />
-                <DropdownMenu label={"Levels"} name="level" options={LEVELS} />
+                <DropdownMenu
+                  label={t("levels")}
+                  name="level"
+                  options={LEVELS}
+                />
                 <TextField
-                  label={"Level Name"}
+                  label={t("levelName")}
                   name="translations[0].levelName"
                   moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
                 />
                 <DropdownMenu
-                  label={"Educator"}
+                  label={t("educator")}
                   name="educator"
                   options={handleEducatorsData}
                 />
                 <MultiSelectDropdown
-                  label={"Recommended Prerequisites"}
+                  label={t("recommendedPrerequisites")}
                   name="prerequisites"
                   options={handleContents}
                 />
                 <DropdownMenu
-                  label={"Language Course"}
+                  label={t("languageCourse")}
                   name="translations[0].languageType"
                   options={LANGUAGES}
                 />
 
                 <TextField
-                  label={"Course Promo Video Link"}
+                  label={t("coursePromoVideoLink")}
                   name="adVideo"
                   moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
                 />
 
                 <FileUploadField
-                  label={"image"}
+                  label={t("image")}
                   name="image"
                   moreStyle="bg-[#F9F8F8]"
                   placeholder=""
@@ -306,75 +310,67 @@ const EditContent = () => {
               </div>
             </div>
             <div className="bg-white rounded-xl p-4 mt-4">
-              <h4 className="mb-4">Training Course Details</h4>
+              <h4 className="mb-4">{t("trainingCourseDetails")}</h4>
               <TextareaField
                 label={t("whatToLearn")}
                 name="translations[0].whatToLearn"
-                placeholder={`• ستتعلم أساسيات الكورس
-• التعامل مع الأدوات
-• تطبيق عملي`}
+                placeholder={bulletPlaceholder}
                 moreStyle="!border-[#ACACAC] !bg-[#F9F8F8] mb-2"
               />
               <TextareaField
-                label={"Basic Requirements"}
+                label={t("basicRequirements")}
                 name="translations[0].previousBackground"
-                placeholder={`• ستتعلم أساسيات الكورس
-• التعامل مع الأدوات
-• تطبيق عملي`}
+                placeholder={bulletPlaceholder}
                 moreStyle="!border-[#ACACAC] !bg-[#F9F8F8]"
               />
 
               <DropdownMenu
-                label={"Language Course"}
+                label={t("languageCourse")}
                 name="translations[1].languageType"
                 options={LANGUAGES}
               />
 
               <p className="mt-2 text-[#444444] text-sm">
-                استخدم • أو سطر جديد للفصل بين النقاط
+                {t("bulletPointsHint")}
               </p>
             </div>
             <div className="bg-white rounded-xl p-4 mt-4">
-              <h4 className="mb-4">Training Course Data In English</h4>
+              <h4 className="mb-4">{t("trainingCourseDataInEnglish")}</h4>
               <TextField
-                label={"Content Name"}
+                label={t("contentName")}
                 name="translations[1].name"
                 moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
               />
               <TextField
-                label={"Content Description"}
+                label={t("contentDescription")}
                 name="translations[1].description"
                 moreStyle="!border-[#ACACAC] bg-[#F9F8F8] pb-12"
               />
 
               <TextField
-                label={"Level Name"}
+                label={t("levelName")}
                 name="translations[1].levelName"
                 moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
               />
             </div>
 
             <div className="bg-white rounded-xl p-4 mt-4">
-              <h4 className="mb-4">Training Course Details In English</h4>
+              <h4 className="mb-4">{t("trainingCourseDetailsInEnglish")}</h4>
               <TextareaField
                 label={t("whatToLearn")}
                 name="translations[1].whatToLearn"
-                placeholder={`• ستتعلم أساسيات الكورس
-• التعامل مع الأدوات
-• تطبيق عملي`}
+                placeholder={bulletPlaceholder}
                 moreStyle="!border-[#ACACAC] !bg-[#F9F8F8] mb-2"
               />
               <TextareaField
-                label={"Basic Requirements"}
+                label={t("basicRequirements")}
                 name="translations[1].previousBackground"
-                placeholder={`• ستتعلم أساسيات الكورس
-• التعامل مع الأدوات
-• تطبيق عملي`}
+                placeholder={bulletPlaceholder}
                 moreStyle="!border-[#ACACAC] !bg-[#F9F8F8]"
               />
 
               <p className="mt-2 text-[#444444] text-sm">
-                استخدم • أو سطر جديد للفصل بين النقاط
+                {t("bulletPointsHint")}
               </p>
             </div>
             <div className="text-end my-5">
@@ -382,7 +378,7 @@ const EditContent = () => {
                 type="submit"
                 className="bg-secondary hover:bg-secondary-dark text-white px-12 py-1.5 rounded-xl"
               >
-                {isPending ? <ButtonLoader /> : "Save Content"}
+                {isPending ? <ButtonLoader /> : t("saveContent")}
               </button>
             </div>
           </Form>

@@ -7,9 +7,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import AddOrEditTopic from "@/features/Dashboard/components/AddOrEditTopic";
 import { useParams } from "react-router-dom";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const EditTopic = () => {
   const { contentId, topicId } = useParams();
+  const { t } = useLanguage();
   const { data } = useQuery({
     queryKey: ["getTopicDetails"],
     queryFn: () => getTopicDetails(contentId ?? "", topicId ?? ""),
@@ -57,7 +59,7 @@ const EditTopic = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Edit Topic" />
+      <DashboardPageTitle text={t("edit_topic")} />
       <AddOrEditTopic
         initialValues={initialValues}
         isPending={isPending}

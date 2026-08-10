@@ -9,8 +9,10 @@ import Swal from "sweetalert2";
 import AddOrEditStudent from "@/features/Dashboard/components/AddOrEditUser";
 import { useParams } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const EditUserData = () => {
+  const { t } = useLanguage();
   const { studentId } = useParams();
   const { data: getStudentData, isLoading } = useQuery({
     queryKey: ["studentDetails", studentId],
@@ -32,8 +34,8 @@ const EditUserData = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Student edited successfully",
+        title: t("success"),
+        text: t("user_upadting_success"),
       });
     },
 
@@ -50,7 +52,7 @@ const EditUserData = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Edit User Data" />
+      <DashboardPageTitle text={t("edit_user_data")} />
       {isLoading && <CircleLoader />}
       {!isLoading && (
         <AddOrEditStudent

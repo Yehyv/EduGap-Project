@@ -665,6 +665,12 @@ export async function getExpertCourses(): Promise<CitiesResponse> {
   );
   return res.data;
 }
+export async function deleteContent(contentId: number): Promise<void> {
+  const res = await dashboardApi.delete<void>(
+    `/contents/super-admin/${contentId}`,
+  );
+  return res.data;
+}
 export async function getAllPrograms(
   instituteId: number | string,
 ): Promise<CitiesResponse> {

@@ -46,19 +46,19 @@ const AddOrEditUser = ({
 
   /* ================= VALIDATION ================= */
   const addStudentSchema = Yup.object({
-    full_name: Yup.string().required("Full name is required"),
+    full_name: Yup.string().required(t("fullNameRequired")),
     national_id: Yup.string()
-      .required("National ID is required")
-      .length(14, "National ID must be 14 digits"),
-    email: Yup.string().email("Invalid email").required("Email is required"),
-    phone_key: Yup.string().required("Phone key is required"),
-    phone: Yup.string().required("Phone is required"),
+      .required(t("nationalIdRequired"))
+      .length(14, t("nationalIdLength")),
+    email: Yup.string().email(t("invalidEmail")).required(t("emailRequired")),
+    phone_key: Yup.string().required(t("phoneKeyRequired")),
+    phone: Yup.string().required(t("phoneRequired")),
     instituteId: isForEdit
       ? Yup.number().nullable()
-      : Yup.number().required("Institute is required"),
+      : Yup.number().required(t("instituteRequired")),
     roleId: isForEdit
       ? Yup.number().nullable()
-      : Yup.number().required("Role is required"),
+      : Yup.number().required(t("roleRequired")),
   });
 
   return (
@@ -70,8 +70,8 @@ const AddOrEditUser = ({
         if (JSON.stringify(initialValues) === JSON.stringify(values)) {
           Swal.fire({
             icon: "warning",
-            title: "Warning",
-            text: "You didn't change the data",
+            title: t("warning"),
+            text: t("noDataChanged"),
           });
           return;
         }
@@ -87,31 +87,31 @@ const AddOrEditUser = ({
           <div className="grid grid-cols-1 gap-4">
             <TextField
               moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
-              label="Full Name:"
+              label={t("fullName")}
               name="full_name"
               type="text"
-              placeholder="Full Name"
+              placeholder={t("fullName")}
             />
             <TextField
               onlyNumbers
               moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
-              label="National Id:"
+              label={t("nationalId")}
               name="national_id"
               type="text"
-              placeholder="National Id"
+              placeholder={t("nationalId")}
             />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <TextField
                 moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
-                label="Email:"
+                label={t("email")}
                 name="email"
                 type="email"
-                placeholder="Email"
+                placeholder={t("email")}
               />
               <div className="flex gap-3">
                 <div className="w-[120px] max-sm:w-full">
                   <DropdownMenu
-                    label="Phone Key"
+                    label={t("phoneKey")}
                     name="phone_key"
                     options={phoneKeys}
                   />
@@ -119,10 +119,10 @@ const AddOrEditUser = ({
                 <div className="w-full">
                   <TextField
                     moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
-                    label="Phone:"
+                    label={t("phone")}
                     name="phone"
                     type="text"
-                    placeholder="phone number"
+                    placeholder={t("phoneNumber")}
                   />
                 </div>
               </div>
@@ -130,12 +130,12 @@ const AddOrEditUser = ({
               {!isForEdit && (
                 <>
                   <DropdownMenu
-                    label="Role"
+                    label={t("role")}
                     name="roleId"
                     options={handleRoles ?? []}
                   />
                   <DropdownMenu
-                    label="Institute"
+                    label={t("institute")}
                     name="instituteId"
                     options={institutesDataDropdownData ?? []}
                   />

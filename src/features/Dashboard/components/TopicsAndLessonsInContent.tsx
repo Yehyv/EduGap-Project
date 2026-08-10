@@ -3,7 +3,6 @@ import PlusIcon from "@/assets/svgs/PlusBlueIcon.svg?react";
 import PlusIconGray from "@/assets/svgs/PlusIconGray.svg?react";
 import TrashIcon from "@/assets/svgs/TrashIconDashboard.svg?react";
 import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
-import TimeIcon from "@/assets/svgs/TimeIcon.svg?react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -13,7 +12,7 @@ import {
 } from "../services/dashboardApis";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
-import { formatDuration, LESSON_TYPES } from "@/shared/utils/globals";
+import { LESSON_TYPES } from "@/shared/utils/globals";
 import { useLanguage } from "@/shared/localization/useLanguage";
 import Swal from "sweetalert2";
 import ButtonLoader from "@/shared/components/ButtonLoader";
@@ -46,7 +45,7 @@ const ArrowUp = () => (
 
 const TopicsAndLessonsInContent = () => {
   const [openId, setOpenId] = useState<number | null>(null);
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
 
   const toggle = (id: number) => {
     setOpenId((prev) => (prev === id ? null : id));
@@ -64,8 +63,8 @@ const TopicsAndLessonsInContent = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Deleted",
-        text: "Topic deleted successfully",
+        title: t("deleted"),
+        text: t("topicDeletedSuccessfully"),
         timer: 1500,
         showConfirmButton: false,
       });
@@ -77,21 +76,21 @@ const TopicsAndLessonsInContent = () => {
     onError: () => {
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Something went wrong",
+        title: t("error"),
+        text: t("somethingWentWrong"),
       });
     },
   });
 
   const handleDeleteTopic = (topicId: number) => {
     Swal.fire({
-      title: "Are you sure?",
-      text: "This action cannot be undone",
+      title: t("areYouSure"),
+      text: t("actionCannotBeUndone"),
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it",
+      confirmButtonText: t("yesDelete"),
     }).then((result) => {
       if (result.isConfirmed) {
         deleteTopic(topicId);
@@ -105,14 +104,14 @@ const TopicsAndLessonsInContent = () => {
     <>
       {/* ===== Header ===== */}
       <div className="flex justify-between items-center pb-3">
-        <h4 className="text-secondary font-bold">Topics</h4>
+        <h4 className="text-secondary font-bold">{t("topics")}</h4>
 
         <Link
           to={`/dashboard/contents/${contentId}/add-new-topic`}
           className="text-secondary font-bold center py-1.5 px-3 transition text-sm"
         >
           <PlusIcon className="h-5" />
-          Add New Topic
+          {t("addNewTopic")}
         </Link>
       </div>
 
@@ -121,7 +120,7 @@ const TopicsAndLessonsInContent = () => {
 
       <div className="mt-4 space-y-3">
         {data?.data?.length == 0 && (
-          <p className="text-gray-400 text-center">No Data Available</p>
+          <p className="text-gray-400 text-center">{t("noDataAvailable")}</p>
         )}
 
         {data?.data?.map((topic, index) => {
@@ -165,7 +164,7 @@ const TopicsAndLessonsInContent = () => {
                     </div>
                   </div>
                   <p className="text-start text-[#808080]">
-                    {topic.lessons.length} Lessons
+                    {topic.lessons.length} {t("lessons")}
                   </p>
                 </button>
 
@@ -176,7 +175,7 @@ const TopicsAndLessonsInContent = () => {
                 >
                   {topic?.lessons?.length == 0 && (
                     <p className="text-gray-400 text-center bg-white">
-                      there is no lessons in this topic
+                      {t("noLessonsInTopic")}
                     </p>
                   )}
                   <ul className="list-disc px-8 py-3 space-y-2  text-sm text-gray-700 bg-white marker:text-secondary">
@@ -192,12 +191,12 @@ const TopicsAndLessonsInContent = () => {
                             {index + 1} - {lesson.name}
                           </Link>
                           <span className="center gap-2">
-                            <EditIcon />
+                            {/* <EditIcon /> */}
                             <DeleteButton
                               deleteApi={() => deleteLesson(lesson.id)}
-                              errorMessage="Error while delete lesson"
+                              errorMessage={t("errorDeletingLesson")}
                               refetchFunction="topicsAndLessonsInContent"
-                              successMessage="Lesson deleted!"
+                              successMessage={t("lessonDeleted")}
                             />
                           </span>
                         </div>
@@ -211,7 +210,7 @@ const TopicsAndLessonsInContent = () => {
                       to={`/dashboard/contents/${contentId}/topic/${topic.id}/add-new-lesson`}
                       className="w-full center gap-1 dashed-border rounded-lg py-2 cursor-pointer text-[#808080]"
                     >
-                      Add Lesson
+                      {t("addLesson")}
                       <PlusIconGray />
                     </Link>
                   </div>

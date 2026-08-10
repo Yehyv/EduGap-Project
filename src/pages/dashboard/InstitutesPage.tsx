@@ -17,6 +17,7 @@ import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { Institute } from "@/features/Dashboard/types/dashboardTypes";
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 import { useLanguage } from "@/shared/localization/useLanguage";
+import { formatDate } from "@/shared/utils/globals";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -108,7 +109,7 @@ const InstitutesPage = () => {
       },
       {
         name: t("createdAt"),
-        selector: (row: Institute) => row?.createdAt,
+        selector: (row: Institute) => formatDate(row?.createdAt ?? ""),
         sortable: true,
         style: { justifyContent: "center" },
       },

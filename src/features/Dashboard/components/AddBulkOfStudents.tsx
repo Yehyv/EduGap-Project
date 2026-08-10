@@ -10,6 +10,7 @@ import { UploadIcon, XIcon, FileIcon } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { getAllProgramsForDropdown } from "../services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 /* ================== Validation ================== */
 const bulkStudentSchema = Yup.object({
@@ -32,6 +33,7 @@ interface Props {
 }
 
 const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
+  const { t } = useLanguage();
   const { instituteId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -44,6 +46,9 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
     queryKey: ["getAllProgramsForDropdown", instituteId],
     queryFn: () => getAllProgramsForDropdown(instituteId ?? ""),
   });
+
+  console.log(data);
+
   const handleProgramsData = data?.data.map((d) => ({
     label: d.name,
     value: d.id,
@@ -76,7 +81,7 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
     ) {
       handleFileChange(file, setFieldValue);
     } else {
-      Swal.fire("Error", "Please upload a valid Excel file", "error");
+      Swal.fire(t("error"), t("pleaseUploadValidExcelFile"), "error");
     }
   };
 
@@ -117,8 +122,8 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
 
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Students uploaded successfully",
+        title: t("success"),
+        text: t("studentsUploadedSuccessfully"),
       }).then(() => {
         const batchId = response.data.data.batchId;
         navigate(
@@ -139,10 +144,9 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
 
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: t("error"),
         text:
-          err?.response?.data?.message ||
-          "Something went wrong while uploading",
+          err?.response?.data?.message || t("somethingWentWrongWhileUploading"),
         confirmButtonColor: "#dc3545",
       });
     } finally {
@@ -167,7 +171,7 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
       }}
       headerComponent={
         <Dialog.Title className="text-secondary text-xl font-semibold">
-          Add List of Students
+          {t("addListOfStudents")}
         </Dialog.Title>
       }
     >
@@ -181,7 +185,7 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
           <Form className="">
             <div className="flex flex-col gap-4 max-h-[80vh] overflow-auto px-2 -mt-4 py-2">
               <DropdownMenu
-                label="Program"
+                label={t("program")}
                 name="programId"
                 options={handleProgramsData}
               />
@@ -203,19 +207,19 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
                     </div>
                     <div>
                       <p className="text-lg font-medium text-gray-700 mb-2">
-                        Drag and drop your Excel file here
+                        {t("dragAndDropExcelFileHere")}
                       </p>
-                      <p className="text-sm text-gray-500 mb-4">or</p>
+                      <p className="text-sm text-gray-500 mb-4">{t("or")}</p>
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         className="bg-secondary text-white px-6 py-2 rounded-lg hover:bg-secondary-dark transition-colors"
                       >
-                        Browse Files
+                        {t("browseFiles")}
                       </button>
                     </div>
                     <p className="text-xs text-gray-400">
-                      Supported formats: .xls, .xlsx
+                      {t("supportedFormats")}: .xls, .xlsx
                     </p>
                   </div>
                   <input
@@ -277,14 +281,14 @@ const AddBulkOfStudents = ({ reviewModalOpen, setReviewModalOpen }: Props) => {
                 className="border border-gray-300 text-gray-700 rounded-xl py-2 px-6 hover:bg-gray-50 transition-colors"
                 disabled={isUploading}
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 type="submit"
                 disabled={isUploading || !uploadedFile}
                 className="bg-secondary text-white rounded-xl py-2 px-6 hover:bg-secondary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isUploading ? "Uploading..." : "Continue"}
+                {isUploading ? t("uploading") : t("continue")}
               </button>
             </div>
           </Form>

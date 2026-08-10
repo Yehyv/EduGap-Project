@@ -2,6 +2,7 @@ import { FC } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import DeleteIcon from "@/assets/svgs/TrashIconDashboard.svg?react";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 type Props = {
   deleteApi: () => Promise<any>; // API Function (from parent)
@@ -16,6 +17,7 @@ const DeleteButton: FC<Props> = ({
   errorMessage,
   refetchFunction,
 }) => {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: deleteApi,
@@ -40,12 +42,12 @@ const DeleteButton: FC<Props> = ({
 
   const handleDelete = () => {
     Swal.fire({
-      title: "هل انت متأكد؟",
-      text: "لا يمكنك التراجع بعد الحذف!",
+      title: t("areYouSure"),
+      text: t("deleteCannotBeUndone"),
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "نعم، احذف",
-      cancelButtonText: "إلغاء",
+      confirmButtonText: t("yesDelete"),
+      cancelButtonText: t("cancel"),
     }).then((result) => {
       if (result.isConfirmed) {
         mutation.mutate();

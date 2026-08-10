@@ -13,6 +13,7 @@ import {
   getAllProgramsForStudent,
 } from "../services/dashboardApis";
 import ButtonLoader from "@/shared/components/ButtonLoader";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 /* ================== Validation ================== */
 const studentSchema = Yup.object({
@@ -46,11 +47,13 @@ const AddNewStudentToInstitute = ({
 }: Props) => {
   const { instituteId } = useParams();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
 
   const { data } = useQuery({
     queryKey: ["getAllProgramsForStudent", instituteId],
     queryFn: () => getAllProgramsForStudent(instituteId ?? ""),
   });
+
   const handleProgramsData = data?.data.map((d) => ({
     label: d.name,
     value: d.id,
@@ -61,8 +64,8 @@ const AddNewStudentToInstitute = ({
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Student created successfully",
+        title: t("success"),
+        text: t("studentCreatedSuccess"),
         confirmButtonColor: "#0d6efd",
       });
       setReviewModalOpen(false);
@@ -75,10 +78,10 @@ const AddNewStudentToInstitute = ({
       const message = err?.response?.data?.message;
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: t("error"),
         text: Array.isArray(message)
           ? message.join(", ")
-          : message || "Something went wrong, please try again",
+          : message || t("somethingWentWrong"),
         confirmButtonColor: "#dc3545",
       });
     },
@@ -111,7 +114,7 @@ const AddNewStudentToInstitute = ({
       onOpenChange={setReviewModalOpen}
       headerComponent={
         <Dialog.Title className="text-secondary text-xl font-semibold">
-          Add New Student
+          {t("addNewStudent")}
         </Dialog.Title>
       }
     >
@@ -145,36 +148,32 @@ const AddNewStudentToInstitute = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto overflow-x-hidden px-2">
-              {/* Full Name */}
-              <div>
-                <TextField
-                  label="Full Name"
-                  moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
-                  name="full_name"
-                  placeholder="Enter full name"
-                  autoComplete="name"
-                />
-              </div>
-              <div>
-                <TextField
-                  label="Student Id"
-                  moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
-                  name="studentId"
-                  placeholder="Enter Student Id"
-                  onlyNumbers
-                />
-              </div>
+              <TextField
+                label={t("fullName")}
+                moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
+                name="full_name"
+                placeholder={t("enterFullName")}
+                autoComplete="name"
+              />
+
+              <TextField
+                label={t("studentId")}
+                moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
+                name="studentId"
+                placeholder={t("enterStudentId")}
+                onlyNumbers
+              />
 
               <DropdownMenu
-                label="Program"
+                label={t("program")}
                 name="programId"
                 options={handleProgramsData}
               />
-              {/* Phone */}
+
               <div className="flex gap-3">
                 <div className="w-[120px] shrink-0">
                   <DropdownMenu
-                    label="Phone Key"
+                    label={t("phoneKey")}
                     name="phone_key"
                     options={phoneKeys}
                   />
@@ -182,42 +181,35 @@ const AddNewStudentToInstitute = ({
                 <div className="flex-1 min-w-0">
                   <TextField
                     moreStyle="!border-[#ACACAC] focus:!border-secondary !rounded-xl bg-[#F9F8F8]"
-                    label="Phone"
+                    label={t("phone")}
                     name="phone"
                     type="tel"
-                    placeholder="Enter phone number"
+                    placeholder={t("enterPhone")}
                     autoComplete="tel"
                     onlyNumbers
                   />
                 </div>
               </div>
 
-              {/* Email */}
-              <div>
-                <TextField
-                  label="Email"
-                  moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
-                  name="email"
-                  type="email"
-                  placeholder="Enter email address"
-                  autoComplete="email"
-                />
-              </div>
+              <TextField
+                label={t("email")}
+                moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
+                name="email"
+                type="email"
+                placeholder={t("enterEmail")}
+                autoComplete="email"
+              />
 
-              {/* National ID */}
-              <div>
-                <TextField
-                  label="National ID"
-                  moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
-                  name="national_id"
-                  placeholder="Enter 14-digit National ID"
-                  onlyNumbers
-                  maxLength={14}
-                />
-              </div>
+              <TextField
+                label={t("nationalId")}
+                moreStyle="!border-[#ACACAC] bg-[#F9F8F8]"
+                name="national_id"
+                placeholder={t("enterNationalId")}
+                onlyNumbers
+                maxLength={14}
+              />
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-200">
               <button
                 type="button"
@@ -225,14 +217,15 @@ const AddNewStudentToInstitute = ({
                 disabled={isPending}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl py-2 px-6 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Cancel
+                {t("cancel")}
               </button>
+
               <button
                 type="submit"
                 disabled={isPending || !isValid || !dirty}
                 className="bg-secondary hover:bg-secondary-dark text-white rounded-xl py-2 px-6 min-w-[140px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isPending ? <ButtonLoader /> : "Save Student"}
+                {isPending ? <ButtonLoader /> : t("saveStudent")}
               </button>
             </div>
           </Form>

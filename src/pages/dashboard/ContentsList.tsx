@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
+  deleteContent,
   getConentsList,
   trainingCourseToggle,
 } from "@/features/Dashboard/services/dashboardApis";
@@ -16,8 +17,9 @@ import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { Content } from "@/features/Dashboard/types/dashboardTypes";
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { SUPER_AND_ADMIN } from "@/shared/utils/globals";
+import { formatDate, SUPER_AND_ADMIN } from "@/shared/utils/globals";
 import { jwtDecode } from "jwt-decode";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -44,19 +46,20 @@ const customStyles = {
 };
 
 const ContentsList = () => {
+  const { t } = useLanguage();
   const { dashboardToken } = useAuth();
   const { role } = jwtDecode(dashboardToken);
   const allowed = SUPER_AND_ADMIN.includes(role);
   const columns = [
     {
-      name: "Num",
+      name: t("num"),
       selector: (_, index: number) => index + 1,
       sortable: false,
       width: "60px",
       style: { justifyContent: "center" },
     },
     {
-      name: "Logo",
+      name: t("logo"),
       selector: (row: Content) => (
         <img
           src={row.image}
@@ -69,7 +72,7 @@ const ContentsList = () => {
       style: { justifyContent: "center" },
     },
     {
-      name: "Name",
+      name: t("name"),
       selector: (row: Content) => (
         <Link
           className="underline text-sm"
@@ -82,25 +85,25 @@ const ContentsList = () => {
       style: { justifyContent: "center" },
     },
     {
-      name: "Category",
+      name: t("category"),
       selector: (row: Content) => row?.categoryName,
       sortable: true,
       style: { justifyContent: "center" },
     },
     {
-      name: "Level",
+      name: t("level"),
       selector: (row: Content) => row?.level,
       sortable: true,
       style: { justifyContent: "center" },
     },
     {
-      name: "Created At",
-      selector: (row: Content) => row?.createdAt ?? "-",
+      name: t("createdAt"),
+      selector: (row: Content) => formatDate(row?.createdAt ?? "") ?? "-",
       sortable: true,
       style: { justifyContent: "center" },
     },
     {
-      name: "Is Active",
+      name: t("isActive"),
       selector: (row: Content) =>
         allowed ? (
           <ActiveStatusButton
@@ -126,7 +129,7 @@ const ContentsList = () => {
                 : "bg-red-100 text-red-700"
             }`}
           >
-            {row?.isActive ? "Active" : "Inactive"}
+            {row?.isActive ? t("active") : t("inactive")}
           </span>
         ),
       sortable: true,
@@ -135,7 +138,7 @@ const ContentsList = () => {
     ...(allowed
       ? [
           {
-            name: "Edit",
+            name: t("edit"),
             style: { justifyContent: "center" },
             cell: (row: Content) => (
               <Link
@@ -151,12 +154,13 @@ const ContentsList = () => {
             minWidth: "50px",
           },
           {
-            name: "Delete",
+            name: t("delete"),
             style: { justifyContent: "center" },
             cell: (row: Content) => (
               <DeleteButton
-                successMessage="تم حذف المعهد بنجاح"
-                errorMessage="حدث خطأ أثناء الحذف"
+                deleteApi={() => deleteContent(row.id)}
+                successMessage={t("courseDeletedSuccessfully")}
+                errorMessage={t("errorWhileDeleting")}
                 refetchFunction="getContentsForDashboard"
               />
             ),
@@ -189,7 +193,7 @@ const ContentsList = () => {
         <div className="relative w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Search by name"
+            placeholder={t("searchByName")}
             className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
@@ -203,23 +207,23 @@ const ContentsList = () => {
         </div>
         <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm focus:outline-none">
           <FilterIcon />
-          <span>Filter</span>
+          <span>{t("filter")}</span>
         </div>
       </div>
     );
-  }, [filterText]);
+  }, [filterText, t]);
 
   return (
     <>
       <DashboardPageTitle
-        text="Training Courses"
+        text={t("trainingCourses")}
         button
         buttonText={
           allowed ? (
             <Link to={"/dashboard/contents/add"} className="center">
               <PlusIcon className="mt-1.5 h-8" />
               <span className="inline-block me-4 text-white">
-                Add New Training Courses
+                {t("addNewTrainingCourses")}
               </span>
             </Link>
           ) : (
@@ -237,7 +241,6 @@ const ContentsList = () => {
           subHeader
           subHeaderComponent={subHeaderComponent}
           pagination
-          pa
           progressComponent={<CircleLoader />}
         />
       </div>

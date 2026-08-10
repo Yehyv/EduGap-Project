@@ -262,7 +262,7 @@ const StudentsInInstitute = ({
         cell: (row: Student) => (
           <DeleteButton
             deleteApi={() => deleteStudent(row?.id)}
-            successMessage="Student deleted successfully!"
+            successMessage={t("studentDeletedSuccess")}
             errorMessage="Error while deleting student!"
             refetchFunction="getStudentsInInstitute"
           />
@@ -381,7 +381,7 @@ const StudentsInInstitute = ({
 
           <button
             onClick={() => setAddBulkStudentsModal(true)}
-            className="bg-gradient-to-r justify-center from-[#FCB737] to-[#BB831A] text-white text-sm flex items-center gap-2 rounded-2xl h-9 px-4 whitespace-nowrap hover:shadow-md transition-shadow"
+            className="bg-gradient-to-r justify-center from-[#FCB737] to-[#BB831A] text-white flex items-center gap-2 rounded-2xl h-9 px-4 whitespace-nowrap hover:shadow-md transition-shadow"
           >
             <PlusIcon className="h-5 w-5" />
             <span className="ml-2">{t("addListOfStudents")}</span>

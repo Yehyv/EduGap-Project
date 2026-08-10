@@ -18,6 +18,7 @@ import type { User } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ActiveStatusButton from "./ActiveStatusButton";
 import ExportStaffButton from "./ExportStaffButton";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -44,6 +45,7 @@ const customStyles = {
 };
 
 const InstituteStaffList = () => {
+  const { t } = useLanguage();
   const [filterText, setFilterText] = useState("");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const filterDropdownRef = useRef<HTMLDivElement>(null);
@@ -67,14 +69,14 @@ const InstituteStaffList = () => {
 
   const columns = [
     {
-      name: "Num",
+      name: t("num"),
       selector: (_: User, index: number) => index + 1,
       sortable: false,
       width: "60px",
       style: { justifyContent: "center" },
     },
     {
-      name: "Photo",
+      name: t("photo"),
       cell: (row: User) => (
         <img
           src={row.image || "/default-avatar.png"}
@@ -87,7 +89,7 @@ const InstituteStaffList = () => {
       style: { justifyContent: "center" },
     },
     {
-      name: "Name",
+      name: t("name"),
       cell: (row: User) => (
         <Link
           className="underline text-sm hover:text-secondary"
@@ -101,26 +103,26 @@ const InstituteStaffList = () => {
     },
 
     {
-      name: "Phone",
+      name: t("phone"),
       selector: (row: User) => row?.phone ?? "-",
       sortable: true,
       style: { justifyContent: "center" },
     },
     {
-      name: "Role",
+      name: t("role"),
       selector: (row: User) => row?.role ?? "-",
       sortable: true,
       style: { justifyContent: "center" },
     },
     {
-      name: "Created At",
+      name: t("createdAt"),
       selector: (row: User) =>
         row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-",
       sortable: true,
       style: { justifyContent: "center" },
     },
     {
-      name: "Is Active",
+      name: t("isActive"),
       style: { justifyContent: "center" },
       cell: (row: User) => {
         const isActive = row?.isActive;
@@ -139,7 +141,7 @@ const InstituteStaffList = () => {
       sortable: true,
     },
     {
-      name: "Edit",
+      name: t("edit"),
       style: { justifyContent: "center" },
       cell: (row: User) => (
         <Link
@@ -155,13 +157,13 @@ const InstituteStaffList = () => {
       minWidth: "50px",
     },
     {
-      name: "Delete",
+      name: t("delete"),
       style: { justifyContent: "center" },
       cell: (row: User) => (
         <DeleteButton
           deleteApi={() => deleteStudent(row.id)}
-          successMessage="Staff member deleted successfully"
-          errorMessage="Error occurred during deletion"
+          successMessage={t("staffMemberDeletedSuccessfully")}
+          errorMessage={t("errorOccurredDuringDeletion")}
           refetchFunction="getInstituteStaff"
         />
       ),
@@ -251,7 +253,7 @@ const InstituteStaffList = () => {
           <div className="relative w-full sm:w-64">
             <input
               type="text"
-              placeholder="Search by name"
+              placeholder={t("searchByName")}
               className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
@@ -271,7 +273,7 @@ const InstituteStaffList = () => {
               }`}
             >
               <FilterIcon />
-              <span>Filter</span>
+              <span>{t("filter")}</span>
               {hasActiveFilters && (
                 <span className="ml-1 bg-secondary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                   {[staffProgramId, staffIsActive].filter(Boolean).length}
@@ -283,12 +285,12 @@ const InstituteStaffList = () => {
               <div className="fixed md:absolute top-auto md:top-full left-4 right-4 md:left-0 md:right-auto mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 w-auto md:w-64">
                 <div className="space-y-3">
                   <h3 className="font-semibold text-gray-800 text-sm mb-2">
-                    Filter Staff
+                    {t("filterStaff")}
                   </h3>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Program
+                      {t("program")}
                     </label>
                     <select
                       value={tempProgramId}
@@ -296,7 +298,7 @@ const InstituteStaffList = () => {
                       disabled={programsLoading}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary disabled:bg-gray-100"
                     >
-                      <option value="">All Programs</option>
+                      <option value="">{t("allPrograms")}</option>
                       {allProgramsInInstitute?.data?.map((program) => (
                         <option key={program.id} value={program.id}>
                           {program?.name}
@@ -307,16 +309,16 @@ const InstituteStaffList = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Status
+                      {t("status")}
                     </label>
                     <select
                       value={tempIsActive}
                       onChange={(e) => setTempIsActive(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
                     >
-                      <option value="">All Status</option>
-                      <option value="1">Active</option>
-                      <option value="0">Inactive</option>
+                      <option value="">{t("allStatus")}</option>
+                      <option value="1">{t("active")}</option>
+                      <option value="0">{t("inactive")}</option>
                     </select>
                   </div>
 
@@ -326,14 +328,14 @@ const InstituteStaffList = () => {
                       onClick={handleClearFilters}
                       className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      Clear
+                      {t("clear")}
                     </button>
                     <button
                       type="button"
                       onClick={handleApplyFilters}
                       className="flex-1 px-3 py-1.5 text-sm bg-secondary text-white rounded-lg hover:bg-secondary-dark transition-colors"
                     >
-                      Apply
+                      {t("apply")}
                     </button>
                   </div>
                 </div>
@@ -351,11 +353,12 @@ const InstituteStaffList = () => {
     hasActiveFilters,
     programsLoading,
     allProgramsInInstitute,
+    t,
   ]);
 
   return (
     <>
-      <DashboardPageTitle text="Institute Staff" />
+      <DashboardPageTitle text={t("instituteStaff")} />
       <div className="w-full">
         <DataTable
           columns={columns}
@@ -374,7 +377,7 @@ const InstituteStaffList = () => {
           onChangeRowsPerPage={handleRowsPerPageChange}
           progressComponent={<CircleLoader />}
           noDataComponent={
-            <div className="py-8 text-gray-500">No staff members found</div>
+            <div className="py-8 text-gray-500">{t("noStaffMembersFound")}</div>
           }
         />
       </div>

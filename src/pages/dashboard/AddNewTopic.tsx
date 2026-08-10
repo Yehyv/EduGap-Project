@@ -4,8 +4,10 @@ import { useMutation } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import AddOrEditTopic from "@/features/Dashboard/components/AddOrEditTopic";
 import { useParams } from "react-router-dom";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const AddNewTopic = () => {
+  const { t } = useLanguage();
   const { contentId } = useParams();
   const initialValues = {
     contentId: +contentId,
@@ -30,25 +32,23 @@ const AddNewTopic = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Topic created successfully",
+        title: t("success"),
+        text: t("topicCreatedSuccessfully"),
       });
     },
 
     onError: (error: any) => {
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text:
-          error?.response?.data?.message[0] ||
-          "Something went wrong, please try again",
+        title: t("error"),
+        text: error?.response?.data?.message[0] || t("somethingWentWrong"),
       });
     },
   });
 
   return (
     <>
-      <DashboardPageTitle text="Add New Topic" />
+      <DashboardPageTitle text={t("addNewTopic")} />
       <AddOrEditTopic
         initialValues={initialValues}
         isPending={isPending}

@@ -24,7 +24,7 @@ const AddCourseToInstituteProgram = ({
   programId,
 }: AddCourseToProgramProps) => {
   const [currentChoice, setCurrentChoice] = useState<number | null>(null);
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   const { instituteId } = useParams();
   // Fetch all courses
   const { data: allCourses, isLoading: allCoursesLoading } = useQuery({
@@ -52,8 +52,8 @@ const AddCourseToInstituteProgram = ({
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Course Assigned!",
-        text: "The course has been successfully added to the program.",
+        title: t("courseAssigned"),
+        text: t("courseSuccessfullyAddedToProgram"),
       });
       setCurrentChoice(null); // reset selected course
       setReviewModalOpen(false); // close modal
@@ -69,8 +69,8 @@ const AddCourseToInstituteProgram = ({
 
       Swal.fire({
         icon: "error",
-        title: "Failed!",
-        text: err?.response?.data?.message || "Something went wrong.",
+        title: t("failed"),
+        text: err?.response?.data?.message || t("somethingWentWrong"),
       });
     },
   });
@@ -79,8 +79,8 @@ const AddCourseToInstituteProgram = ({
     if (!currentChoice) {
       Swal.fire({
         icon: "warning",
-        title: "No Course Selected",
-        text: "Please select a course to assign.",
+        title: t("noCourseSelected"),
+        text: t("pleaseSelectCourseToAssign"),
       });
       return;
     }
@@ -97,7 +97,7 @@ const AddCourseToInstituteProgram = ({
             <input
               className="border py-3.5 border-[#8A8A8A] w-full h-5 px-2 ps-10 rounded-xl text-sm focus:outline-none"
               type="search"
-              placeholder="Search..."
+              placeholder={t("search")}
               dir={lang === "ar" ? "rtl" : "ltr"}
             />
             <button
@@ -108,11 +108,11 @@ const AddCourseToInstituteProgram = ({
             </button>
           </div>
           <Dialog.Title className={`text-center text-sm m-0 text-secondary`}>
-            Add Course To Program
+            {t("addCourseToProgram")}
           </Dialog.Title>
         </div>
       }
-      headerTitle={"Add Course"}
+      headerTitle={t("addCourse")}
       open={reviewModalOpen}
       onOpenChange={setReviewModalOpen}
     >
@@ -134,7 +134,7 @@ const AddCourseToInstituteProgram = ({
         <CircleLoader />
       ) : (
         (!allCourses?.data || (allCourses.data.length === 0 && !isLoading)) && (
-          <p className="text-center text-gray-400">No Data Available</p>
+          <p className="text-center text-gray-400">{t("noDataAvailable")}</p>
         )
       )}
 
@@ -144,13 +144,13 @@ const AddCourseToInstituteProgram = ({
           disabled={isLoading}
           className="rounded-2xl bg-secondary text-white px-8 cursor-pointer disabled:opacity-50"
         >
-          {isLoading ? "Assigning..." : "Confirm Add"}
+          {isLoading ? t("assigning") : t("confirmAdd")}
         </button>
         <button
           onClick={() => setReviewModalOpen(false)}
           className="rounded-2xl border border-[#808080] text-[#808080] px-8 cursor-pointer"
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </AddModal>

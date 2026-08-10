@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import MyModal from "@/shared/components/ui/MyModal";
 import { AlertTriangle, CheckCircle } from "lucide-react";
 import { fetchActivationReasons } from "../services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 interface StudentStatusModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ const StudentStatusModal = ({
   isActivating,
   withReasons = false,
 }: StudentStatusModalProps) => {
+  const { t } = useLanguage();
   const reasonType = isActivating ? "ACTIVE" : "INACTIVE";
 
   const { data: reasons = [], isLoading: isLoadingReasons } = useQuery({
@@ -33,20 +35,20 @@ const StudentStatusModal = ({
   const validationSchema = withReasons
     ? Yup.object({
         reasonId: Yup.number()
-          .required("Reason is required")
-          .typeError("Reason is required"),
+          .required(t("reasonRequired"))
+          .typeError(t("reasonRequired")),
         note: Yup.string()
           .optional()
           .test(
             "min-if-filled",
-            "Notes must be at least 10 characters",
+            t("notesMinLength"),
             (value) => !value || value.length >= 10,
           ),
       })
     : Yup.object({
         note: Yup.string()
-          .required("Notes is required")
-          .min(10, "Notes must be at least 10 characters"),
+          .required(t("notesRequired"))
+          .min(10, t("notesMinLength")),
       });
 
   const formik = useFormik<{ reasonId: number | ""; note: string }>({
@@ -74,7 +76,7 @@ const StudentStatusModal = ({
 
   const config = isActivating
     ? {
-        title: "Activate User",
+        title: t("activateUser"),
         bgColor: "bg-green-500",
         borderColor: "border-green-200",
         bgLight: "bg-green-50",
@@ -85,13 +87,12 @@ const StudentStatusModal = ({
         buttonActive: "active:bg-green-700",
         focusRing: "focus:ring-green-200",
         selectFocus: "focus:ring-green-200 focus:border-green-400",
-        message:
-          "This action will activate the User's account. They will be able to access the system.",
-        action: "Activate",
+        message: t("activateUserMessage"),
+        action: t("activate"),
         Icon: CheckCircle,
       }
     : {
-        title: "Deactivate User",
+        title: t("deactivateUser"),
         bgColor: "bg-red-500",
         borderColor: "border-red-200",
         bgLight: "bg-red-50",
@@ -102,9 +103,8 @@ const StudentStatusModal = ({
         buttonActive: "active:bg-red-700",
         focusRing: "focus:ring-red-200",
         selectFocus: "focus:ring-red-200 focus:border-red-400",
-        message:
-          "This action will deactivate the User's account. They will not be able to access the system until reactivated.",
-        action: "Deactivate",
+        message: t("deactivateUserMessage"),
+        action: t("deactivate"),
         Icon: AlertTriangle,
       };
 
@@ -133,7 +133,7 @@ const StudentStatusModal = ({
               htmlFor="reasonId"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Reason <span className="text-red-500">*</span>
+              {t("reason")} <span className="text-red-500">*</span>
             </label>
             <select
               id="reasonId"
@@ -149,7 +149,7 @@ const StudentStatusModal = ({
               }`}
             >
               <option value="">
-                {isLoadingReasons ? "Loading reasons..." : "Select a reason"}
+                {isLoadingReasons ? t("loadingReasons") : t("selectAReason")}
               </option>
               {reasons.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -173,11 +173,11 @@ const StudentStatusModal = ({
             className="block text-sm font-medium text-gray-700 mb-2"
           >
             {withReasons
-              ? "Additional Notes"
-              : `Reason for ${isActivating ? "Activation" : "Deactivation"}`}{" "}
+              ? t("additionalNotes")
+              : `${t("reasonFor")} ${isActivating ? t("activation") : t("deactivation")}`}{" "}
             {withReasons ? (
               <span className="text-gray-400 text-xs font-normal">
-                (Optional)
+                ({t("optional")})
               </span>
             ) : (
               <span className="text-red-500">*</span>
@@ -194,8 +194,8 @@ const StudentStatusModal = ({
             }`}
             placeholder={
               withReasons
-                ? "Add any additional notes (optional)..."
-                : "Please provide a detailed reason (minimum 10 characters)..."
+                ? t("additionalNotesPlaceholder")
+                : t("reasonPlaceholder")
             }
             value={formik.values.note}
             onChange={formik.handleChange}
@@ -232,7 +232,7 @@ const StudentStatusModal = ({
             disabled={isLoading}
             className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 active:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cancel
+            {t("cancel")}
           </button>
           <button
             type="submit"
@@ -242,7 +242,7 @@ const StudentStatusModal = ({
             {isLoading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Processing...</span>
+                <span>{t("processing")}</span>
               </>
             ) : (
               config.action
