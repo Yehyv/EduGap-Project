@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { fetchAnnualSettlementDetail } from "@/features/Dashboard/services/dashboardApis";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,78 +45,85 @@ const fadeUp = (delay = 0) => ({
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
-const STATUS_CFG = {
-  PAID: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Paid",
-    Icon: CheckCircle2,
-  },
-  FULLY_PAID: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Fully Paid",
-    Icon: CheckCircle2,
-  },
-  PARTIAL: {
-    class: "bg-blue-50 text-blue-500 border-blue-200",
-    dot: "bg-blue-400",
-    label: "Partially Paid",
-    Icon: Clock,
-  },
-  PARTIALLY_PAID: {
-    class: "bg-blue-50 text-blue-500 border-blue-200",
-    dot: "bg-blue-400",
-    label: "Partially Paid",
-    Icon: Clock,
-  },
-  PENDING: {
-    class: "bg-amber-50 text-amber-600 border-amber-200",
-    dot: "bg-amber-400",
-    label: "Pending",
-    Icon: Clock,
-  },
-  OVERDUE: {
-    class: "bg-red-50 text-red-500 border-red-200",
-    dot: "bg-red-500",
-    label: "Overdue",
-    Icon: AlertCircle,
-  },
-  UPCOMING: {
-    class: "bg-orange-50 text-orange-500 border-orange-200",
-    dot: "bg-orange-400",
-    label: "Upcoming",
-    Icon: Clock,
-  },
-  CLOSED: {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: "Closed",
-    Icon: XCircle,
-  },
-  ACTIVE: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Active",
-    Icon: CheckCircle2,
-  },
-  CONFIRMED: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Confirmed",
-    Icon: CheckCircle2,
-  },
-};
+const useStatusConfig = () => {
+  const { t } = useLanguage();
 
-const getStatusCfg = (s) =>
-  STATUS_CFG[s] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: s,
-    Icon: MinusCircle,
+  const STATUS_CFG = {
+    PAID: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("paid"),
+      Icon: CheckCircle2,
+    },
+    FULLY_PAID: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("fullyPaid"),
+      Icon: CheckCircle2,
+    },
+    PARTIAL: {
+      class: "bg-blue-50 text-blue-500 border-blue-200",
+      dot: "bg-blue-400",
+      label: t("partiallyPaid"),
+      Icon: Clock,
+    },
+    PARTIALLY_PAID: {
+      class: "bg-blue-50 text-blue-500 border-blue-200",
+      dot: "bg-blue-400",
+      label: t("partiallyPaid"),
+      Icon: Clock,
+    },
+    PENDING: {
+      class: "bg-amber-50 text-amber-600 border-amber-200",
+      dot: "bg-amber-400",
+      label: t("pending"),
+      Icon: Clock,
+    },
+    OVERDUE: {
+      class: "bg-red-50 text-red-500 border-red-200",
+      dot: "bg-red-500",
+      label: t("overdue"),
+      Icon: AlertCircle,
+    },
+    UPCOMING: {
+      class: "bg-orange-50 text-orange-500 border-orange-200",
+      dot: "bg-orange-400",
+      label: t("upcoming"),
+      Icon: Clock,
+    },
+    CLOSED: {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: t("closed"),
+      Icon: XCircle,
+    },
+    ACTIVE: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("active"),
+      Icon: CheckCircle2,
+    },
+    CONFIRMED: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("confirmed"),
+      Icon: CheckCircle2,
+    },
   };
 
+  const getStatusCfg = (s) =>
+    STATUS_CFG[s] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: s,
+      Icon: MinusCircle,
+    };
+
+  return getStatusCfg;
+};
+
 const StatusBadge = ({ status }) => {
+  const getStatusCfg = useStatusConfig();
   const cfg = getStatusCfg(status);
   return (
     <span
@@ -133,19 +141,10 @@ const Sk = ({ className }) => (
   <div className={`animate-pulse bg-gray-100 rounded-xl ${className}`} />
 );
 
-// ─── Tab definitions ──────────────────────────────────────────────────────────
-
-const TABS = [
-  "Settlement Summary",
-  "Installments",
-  "Payments",
-  "Documents",
-  "Notes",
-];
-
 // ─── Sub-panels ───────────────────────────────────────────────────────────────
 
 const SettlementSummaryTab = ({ data }) => {
+  const { t } = useLanguage();
   const { contract, contractSummary, collectionProgress } = data;
 
   return (
@@ -158,17 +157,17 @@ const SettlementSummaryTab = ({ data }) => {
         <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
           <FileText size={13} className="text-gray-400" />
           <h3 className="text-sm font-semibold text-gray-800">
-            Contract Information
+            {t("contractInformation")}
           </h3>
         </div>
         <div className="px-5 py-4 flex flex-col gap-0">
           {[
-            ["Plan", data.planName],
-            ["Max Students", data.maxStudentsAllowed?.toLocaleString()],
-            ["Price Per Student", egp(contractSummary.pricePerStudent)],
-            ["Installments", data.paymentSummary?.totalInstallments],
-            ["Start Date", fmtDate(contract.contractStartDate)],
-            ["End Date", fmtDate(contract.contractEndDate)],
+            [t("plan"), data.planName],
+            [t("maxStudents"), data.maxStudentsAllowed?.toLocaleString()],
+            [t("pricePerStudent"), egp(contractSummary.pricePerStudent)],
+            [t("installments"), data.paymentSummary?.totalInstallments],
+            [t("startDate"), fmtDate(contract.contractStartDate)],
+            [t("endDate"), fmtDate(contract.contractEndDate)],
           ].map(([label, value], i) => (
             <div
               key={label}
@@ -189,23 +188,23 @@ const SettlementSummaryTab = ({ data }) => {
         <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
           <TrendingUp size={13} className="text-gray-400" />
           <h3 className="text-sm font-semibold text-gray-800">
-            Financial Summary
+            {t("financialSummary")}
           </h3>
         </div>
         <div className="px-5 py-4 flex flex-col gap-0">
           {[
-            ["Package Amount", egp(contractSummary.packageAmount), false],
+            [t("packageAmount"), egp(contractSummary.packageAmount), false],
             [
-              "Discount",
+              t("discount"),
               `${egp(contractSummary.discountAmount)} (${Math.round((contractSummary.discountAmount / contractSummary.packageAmount) * 100)}%)`,
               false,
             ],
             [
-              "Administrative Fees",
+              t("administrativeFees"),
               egp(contractSummary.administrativeFees),
               false,
             ],
-            ["Tax (14%)", egp(contractSummary.taxAmount), false],
+            [`${t("tax")} (14%)`, egp(contractSummary.taxAmount), false],
           ].map(([label, value], i) => (
             <div
               key={label}
@@ -217,7 +216,7 @@ const SettlementSummaryTab = ({ data }) => {
           ))}
           <div className="flex items-center justify-between py-2.5">
             <p className="text-sm font-bold text-gray-800">
-              Total Contract Value
+              {t("totalContractValue")}
             </p>
             <p className="text-sm font-bold text-gray-800">
               {egp(contractSummary.netAmount)}
@@ -234,7 +233,7 @@ const SettlementSummaryTab = ({ data }) => {
         <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
           <TrendingUp size={13} className="text-gray-400" />
           <h3 className="text-sm font-semibold text-gray-800">
-            Collection Progress
+            {t("collectionProgress")}
           </h3>
           <span className="ms-auto text-xs font-semibold text-gray-500">
             {collectionProgress.percentage}%
@@ -253,19 +252,19 @@ const SettlementSummaryTab = ({ data }) => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div className="flex flex-col gap-0.5">
-              <p className="text-xs text-gray-400">Collected</p>
+              <p className="text-xs text-gray-400">{t("collected")}</p>
               <p className="text-sm font-bold text-green-600">
                 {egp(collectionProgress.collected)}
               </p>
             </div>
             <div className="flex flex-col gap-0.5">
-              <p className="text-xs text-gray-400">Remaining</p>
+              <p className="text-xs text-gray-400">{t("remaining")}</p>
               <p className="text-sm font-bold text-red-500">
                 {egp(collectionProgress.remaining)}
               </p>
             </div>
             <div className="flex flex-col gap-0.5">
-              <p className="text-xs text-gray-400">Progress</p>
+              <p className="text-xs text-gray-400">{t("progress")}</p>
               <p className="text-sm font-bold text-gray-700">
                 {collectionProgress.percentage}%
               </p>
@@ -277,88 +276,28 @@ const SettlementSummaryTab = ({ data }) => {
   );
 };
 
-const InstallmentsTab = ({ installments }) => (
-  <motion.div
-    {...fadeUp(0.05)}
-    className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
-  >
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-100 bg-gray-50/60">
-            {["#", "Due Date", "Amount", "Paid", "Remaining", "Status"].map(
-              (h) => (
-                <th
-                  key={h}
-                  className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap"
-                >
-                  {h}
-                </th>
-              ),
-            )}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {installments.map((inst, i) => (
-            <motion.tr
-              key={inst.id}
-              initial={{ opacity: 0, x: -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.05 + i * 0.05 }}
-              className="hover:bg-gray-50/60 transition-colors"
-            >
-              <td className="px-5 py-3.5 font-semibold text-gray-700">
-                {ordinal(inst.installmentNo)}
-              </td>
-              <td className="px-5 py-3.5 text-gray-600">
-                {fmtDate(inst.dueDate)}
-              </td>
-              <td className="px-5 py-3.5 font-medium text-gray-700">
-                {egp(inst.installmentAmount)}
-              </td>
-              <td className="px-5 py-3.5 font-medium text-green-600">
-                {egp(inst.paidAmount)}
-              </td>
-              <td className="px-5 py-3.5 font-medium text-red-400">
-                {egp(inst.remainingAmount)}
-              </td>
-              <td className="px-5 py-3.5">
-                <StatusBadge status={inst.status} />
-              </td>
-            </motion.tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </motion.div>
-);
-
-const PaymentsTab = ({ payments }) => (
-  <motion.div
-    {...fadeUp(0.05)}
-    className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
-  >
-    {payments.length === 0 ? (
-      <div className="flex flex-col items-center justify-center py-14 gap-2">
-        <CreditCard size={28} className="text-gray-200" />
-        <p className="text-sm text-gray-400">No payments recorded yet.</p>
-      </div>
-    ) : (
+const InstallmentsTab = ({ installments }) => {
+  const { t } = useLanguage();
+  return (
+    <motion.div
+      {...fadeUp(0.05)}
+      className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
+    >
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/60">
               {[
-                "Payment ID",
-                "Date",
-                "Amount",
-                "Method",
-                "Receipt No.",
-                "Status",
+                "#",
+                t("dueDate"),
+                t("amount"),
+                t("paid"),
+                t("remaining"),
+                t("status"),
               ].map((h) => (
                 <th
                   key={h}
-                  className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap"
+                  className="text-start px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap"
                 >
                   {h}
                 </th>
@@ -366,54 +305,131 @@ const PaymentsTab = ({ payments }) => (
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {payments.map((p, i) => (
+            {installments.map((inst, i) => (
               <motion.tr
-                key={p.id}
+                key={inst.id}
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.05 + i * 0.05 }}
                 className="hover:bg-gray-50/60 transition-colors"
               >
-                <td className="px-5 py-3.5 font-mono text-xs text-gray-500">
-                  #{p.paymentId}
+                <td className="px-5 py-3.5 font-semibold text-gray-700">
+                  {ordinal(inst.installmentNo)}
                 </td>
                 <td className="px-5 py-3.5 text-gray-600">
-                  {fmtDate(p.paymentDate)}
+                  {fmtDate(inst.dueDate)}
                 </td>
-                <td className="px-5 py-3.5 font-semibold text-gray-800">
-                  {egp(p.paidAmount)}
+                <td className="px-5 py-3.5 font-medium text-gray-700">
+                  {egp(inst.installmentAmount)}
                 </td>
-                <td className="px-5 py-3.5 text-gray-600 capitalize">
-                  {p.paymentMethod.replace("_", " ")}
+                <td className="px-5 py-3.5 font-medium text-green-600">
+                  {egp(inst.paidAmount)}
                 </td>
-                <td className="px-5 py-3.5 font-mono text-xs text-gray-500">
-                  {p.receiptNo || "—"}
+                <td className="px-5 py-3.5 font-medium text-red-400">
+                  {egp(inst.remainingAmount)}
                 </td>
                 <td className="px-5 py-3.5">
-                  <StatusBadge status={p.status} />
+                  <StatusBadge status={inst.status} />
                 </td>
               </motion.tr>
             ))}
           </tbody>
         </table>
       </div>
-    )}
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
-const PlaceholderTab = ({ icon: Icon, label }) => (
-  <motion.div
-    {...fadeUp(0.05)}
-    className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-2"
-  >
-    <Icon size={28} className="text-gray-200" />
-    <p className="text-sm text-gray-400">No {label.toLowerCase()} available.</p>
-  </motion.div>
-);
+const PaymentsTab = ({ payments }) => {
+  const { t } = useLanguage();
+  return (
+    <motion.div
+      {...fadeUp(0.05)}
+      className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
+    >
+      {payments.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-14 gap-2">
+          <CreditCard size={28} className="text-gray-200" />
+          <p className="text-sm text-gray-400">{t("noPaymentsRecordedYet")}</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/60">
+                {[
+                  t("paymentId"),
+                  t("date"),
+                  t("amount"),
+                  t("method"),
+                  t("receiptNoDot"),
+                  t("status"),
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="text-start px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {payments.map((p, i) => (
+                <motion.tr
+                  key={p.id}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.05 + i * 0.05 }}
+                  className="hover:bg-gray-50/60 transition-colors"
+                >
+                  <td className="px-5 py-3.5 font-mono text-xs text-gray-500">
+                    #{p.paymentId}
+                  </td>
+                  <td className="px-5 py-3.5 text-gray-600">
+                    {fmtDate(p.paymentDate)}
+                  </td>
+                  <td className="px-5 py-3.5 font-semibold text-gray-800">
+                    {egp(p.paidAmount)}
+                  </td>
+                  <td className="px-5 py-3.5 text-gray-600 capitalize">
+                    {p.paymentMethod.replace("_", " ")}
+                  </td>
+                  <td className="px-5 py-3.5 font-mono text-xs text-gray-500">
+                    {p.receiptNo || "—"}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <StatusBadge status={p.status} />
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+const PlaceholderTab = ({ icon: Icon, label }) => {
+  const { t } = useLanguage();
+  return (
+    <motion.div
+      {...fadeUp(0.05)}
+      className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-2"
+    >
+      <Icon size={28} className="text-gray-200" />
+      <p className="text-sm text-gray-400">
+        {t("noXAvailable").replace("{label}", label.toLowerCase())}
+      </p>
+    </motion.div>
+  );
+};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const AnnualSettlementDetailPage = () => {
+  const { t } = useLanguage();
   const { contractId } = useParams();
   const [activeTab, setActiveTab] = useState(0);
 
@@ -444,13 +460,13 @@ const AnnualSettlementDetailPage = () => {
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <AlertCircle size={36} className="text-red-300" />
         <p className="text-sm text-red-400">
-          Failed to load settlement details.
+          {t("failedToLoadSettlementDetails")}
         </p>
         <Link
           to="/dashboard/reports/settlements"
           className="text-sm text-blue-500 hover:underline"
         >
-          Back to Annual Settlement
+          {t("backToAnnualSettlement")}
         </Link>
       </div>
     );
@@ -460,16 +476,16 @@ const AnnualSettlementDetailPage = () => {
 
   // Tab counts
   const tabLabels = [
-    "Settlement Summary",
-    `Installments (${installments?.length ?? 0})`,
-    `Payments (${payments?.length ?? 0})`,
-    "Documents (0)",
-    "Notes",
+    t("settlementSummary"),
+    `${t("installments")} (${installments?.length ?? 0})`,
+    `${t("payments")} (${payments?.length ?? 0})`,
+    `${t("documents")} (0)`,
+    t("notes"),
   ];
 
   return (
     <>
-      <DashboardPageTitle text="Institution Settlement Details" />
+      <DashboardPageTitle text={t("institutionSettlementDetails")} />
 
       <div className="flex flex-col gap-5 pb-8">
         {/* Breadcrumb */}
@@ -481,24 +497,26 @@ const AnnualSettlementDetailPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={13} />
           <Link
             to="/dashboard/reports"
             className="hover:text-gray-600 transition-colors"
           >
-            Reports
+            {t("reports")}
           </Link>
           <ChevronRight size={13} />
           <Link
             to="/dashboard/reports/settlements"
             className="hover:text-gray-600 transition-colors"
           >
-            Annual Settlement
+            {t("annualSettlement")}
           </Link>
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Settlement Details</span>
+          <span className="text-gray-600 font-medium">
+            {t("settlementDetails")}
+          </span>
         </motion.nav>
 
         {/* Back */}
@@ -508,7 +526,7 @@ const AnnualSettlementDetailPage = () => {
             className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <ArrowLeft size={14} />
-            Back
+            {t("back")}
           </Link>
         </motion.div>
 
@@ -526,7 +544,9 @@ const AnnualSettlementDetailPage = () => {
                 {contract.instituteName}
               </h1>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-gray-400">Contract No:</span>
+                <span className="text-xs text-gray-400">
+                  {t("contractNoColon")}
+                </span>
                 <span className="text-xs font-semibold text-gray-600 font-mono">
                   {contract.contractNo}
                 </span>
@@ -548,24 +568,24 @@ const AnnualSettlementDetailPage = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
-              label: "Contract Value",
+              label: t("contractValue"),
               value: egp(summary.totalAmount),
               sub: null,
               color: "",
             },
             {
-              label: "Total Collected",
+              label: t("totalCollected"),
               value: egp(summary.totalPaid),
               sub: `${summary.collectionPercentage}%`,
               color: "text-blue-500",
             },
             {
-              label: "Remaining Amount",
+              label: t("remainingAmount"),
               value: egp(summary.remainingAmount),
               sub: null,
               color: "",
             },
-            { label: "Status", value: null, badge: data.settlementStatus },
+            { label: t("status"), value: null, badge: data.settlementStatus },
           ].map(({ label, value, sub, color, badge }, i) => (
             <motion.div
               key={label}
@@ -611,7 +631,7 @@ const AnnualSettlementDetailPage = () => {
                 {activeTab === i && (
                   <motion.span
                     layoutId="tab-indicator"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-t"
+                    className="absolute bottom-0 start-0 right-0 h-0.5 bg-blue-500 rounded-t"
                   />
                 )}
               </button>
@@ -634,10 +654,18 @@ const AnnualSettlementDetailPage = () => {
                 <PaymentsTab key="payments" payments={payments ?? []} />
               )}
               {activeTab === 3 && (
-                <PlaceholderTab key="docs" icon={FileText} label="Documents" />
+                <PlaceholderTab
+                  key="docs"
+                  icon={FileText}
+                  label={t("documents")}
+                />
               )}
               {activeTab === 4 && (
-                <PlaceholderTab key="notes" icon={StickyNote} label="Notes" />
+                <PlaceholderTab
+                  key="notes"
+                  icon={StickyNote}
+                  label={t("notes")}
+                />
               )}
             </AnimatePresence>
           </div>

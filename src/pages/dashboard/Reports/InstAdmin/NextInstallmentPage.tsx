@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,8 +65,8 @@ async function fetchNextInstallment(
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const egp = (val: number) =>
-  `EGP ${Number(val).toLocaleString("en-EG", {
+const egp = (val: number, t: (key: string) => string) =>
+  `${t("egp")} ${Number(val).toLocaleString("en-EG", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })}`;
@@ -90,6 +91,7 @@ const YearDropdown = ({
   onChange: (y: number) => void;
 }) => {
   const [open, setOpen] = useState(false);
+
   return (
     <div className="relative">
       <button
@@ -103,6 +105,7 @@ const YearDropdown = ({
           className={`text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
       </button>
+
       <AnimatePresence>
         {open && (
           <motion.div
@@ -132,6 +135,7 @@ const YearDropdown = ({
           </motion.div>
         )}
       </AnimatePresence>
+
       {open && (
         <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
       )}
@@ -150,9 +154,11 @@ const Sk = ({ className }: { className?: string }) => (
 const NoContractState = ({
   year,
   onChangeYear,
+  t,
 }: {
   year: number;
   onChangeYear: (y: number) => void;
+  t: (key: string) => string;
 }) => (
   <motion.div
     {...fadeUp(0.05)}
@@ -161,14 +167,17 @@ const NoContractState = ({
     <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
       <FileX size={28} className="text-gray-300" />
     </div>
+
     <div className="flex flex-col items-center gap-1 text-center">
       <p className="text-sm font-semibold text-gray-700">
-        No contract for {year}
+        {t("noContractFor")} {year}
       </p>
+
       <p className="text-xs text-gray-400 max-w-xs">
-        There is no active annual contract for this academic year.
+        {t("noActiveAnnualContractForAcademicYear")}
       </p>
     </div>
+
     <div className="flex items-center gap-2 flex-wrap justify-center">
       {YEARS.filter((y) => y !== year)
         .slice(0, 4)
@@ -179,7 +188,7 @@ const NoContractState = ({
             onClick={() => onChangeYear(y)}
             className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
           >
-            Try {y}
+            {t("try")} {y}
           </button>
         ))}
     </div>
@@ -188,7 +197,7 @@ const NoContractState = ({
 
 // ─── All Paid State ───────────────────────────────────────────────────────────
 
-const AllPaidState = () => (
+const AllPaidState = ({ t }: { t: (key: string) => string }) => (
   <motion.div
     {...fadeUp(0.05)}
     className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
@@ -196,20 +205,23 @@ const AllPaidState = () => (
     <div className="w-16 h-16 rounded-2xl bg-green-50 border border-green-100 flex items-center justify-center">
       <CheckCircle2 size={28} className="text-green-400" />
     </div>
+
     <div className="flex flex-col items-center gap-1 text-center">
       <p className="text-sm font-semibold text-gray-700">
-        All installments paid!
+        {t("allInstallmentsPaid")}
       </p>
+
       <p className="text-xs text-gray-400 max-w-xs">
-        You have no upcoming installments for this academic year. Great job!
+        {t("noUpcomingInstallments")}
       </p>
     </div>
+
     <Link
       to="/dashboard/billing/installments"
       className="h-9 px-5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
     >
       <ListChecks size={14} />
-      View All Installments
+      {t("viewAllInstallments")}
     </Link>
   </motion.div>
 );
@@ -217,6 +229,8 @@ const AllPaidState = () => (
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const NextInstallmentPage = () => {
+  const { t } = useLanguage();
+
   const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
 
   const { data, isLoading, isError } = useQuery({
@@ -237,6 +251,7 @@ const NextInstallmentPage = () => {
       : daysLeft <= 30
         ? "bg-amber-400"
         : "bg-amber-400";
+
   const textColor =
     daysLeft <= 7
       ? "text-red-500"
@@ -246,7 +261,8 @@ const NextInstallmentPage = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Next Installment" />
+      <DashboardPageTitle text={t("nextInstallment")} />
+
       <div className="flex flex-col gap-5">
         {/* ── Breadcrumb + Year ── */}
         <motion.div
@@ -258,11 +274,16 @@ const NextInstallmentPage = () => {
               to="/dashboard/home"
               className="hover:text-gray-600 transition-colors"
             >
-              Dashboard
+              {t("dashboard")}
             </Link>
+
             <ChevronRight size={13} />
-            <span className="text-gray-600 font-medium">Next Installment</span>
+
+            <span className="text-gray-600 font-medium">
+              {t("nextInstallment")}
+            </span>
           </nav>
+
           <YearDropdown value={academicYear} onChange={setAcademicYear} />
         </motion.div>
 
@@ -280,20 +301,25 @@ const NextInstallmentPage = () => {
             className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
           >
             <AlertCircle size={32} className="text-red-300" />
+
             <p className="text-sm text-red-400">
-              Something went wrong. Please try again.
+              {t("somethingWentWrongTryAgain")}
             </p>
           </motion.div>
         )}
 
         {/* ── No contract ── */}
         {!isLoading && !isError && data === null && (
-          <NoContractState year={academicYear} onChangeYear={setAcademicYear} />
+          <NoContractState
+            year={academicYear}
+            onChangeYear={setAcademicYear}
+            t={t}
+          />
         )}
 
         {/* ── No next installment (all paid) ── */}
         {!isLoading && !isError && data && !data.hasNextInstallment && (
-          <AllPaidState />
+          <AllPaidState t={t} />
         )}
 
         {/* ── Main card ── */}
@@ -306,11 +332,13 @@ const NextInstallmentPage = () => {
                 <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-1">
                   <Bell size={26} className="text-amber-500 fill-amber-400" />
                 </div>
+
                 <h2 className="text-lg font-bold text-gray-800">
-                  Next Installment Reminder!
+                  {t("nextInstallmentReminder")}
                 </h2>
+
                 <p className="text-sm text-gray-500">
-                  Your next installment is due soon.
+                  {t("nextInstallmentDueSoon")}
                 </p>
               </div>
 
@@ -320,8 +348,9 @@ const NextInstallmentPage = () => {
                   {/* Installment */}
                   <div className="px-5 py-4 flex flex-col gap-1">
                     <p className="text-xs text-gray-400 font-medium">
-                      Installment
+                      {t("installment")}
                     </p>
+
                     <p className="text-sm font-bold text-gray-800">
                       {inst.label}
                     </p>
@@ -330,8 +359,10 @@ const NextInstallmentPage = () => {
                   {/* Due Date */}
                   <div className="px-5 py-4 flex flex-col gap-1">
                     <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                      <CalendarDays size={10} /> Due Date
+                      <CalendarDays size={10} />
+                      {t("dueDate")}
                     </p>
+
                     <p className="text-sm font-bold text-gray-800">
                       {fmtDate(inst.dueDate)}
                     </p>
@@ -339,9 +370,12 @@ const NextInstallmentPage = () => {
 
                   {/* Amount */}
                   <div className="px-5 py-4 flex flex-col gap-1">
-                    <p className="text-xs text-gray-400 font-medium">Amount</p>
+                    <p className="text-xs text-gray-400 font-medium">
+                      {t("amount")}
+                    </p>
+
                     <p className="text-sm font-bold text-gray-800">
-                      {egp(inst.remainingAmount)}
+                      {egp(inst.remainingAmount, t)}
                     </p>
                   </div>
                 </div>
@@ -350,16 +384,27 @@ const NextInstallmentPage = () => {
               {/* ── Progress bar ── */}
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col gap-3">
                 <p className={`text-sm font-medium ${textColor}`}>
-                  You have <span className="font-bold">{daysLeft} days</span>{" "}
-                  left to pay this installment.
+                  {t("youHave")}{" "}
+                  <span className="font-bold">
+                    {daysLeft} {t("days")}
+                  </span>{" "}
+                  {t("leftToPayInstallment")}
                 </p>
+
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{
-                      width: `${Math.min(progress?.progressPercentage ?? 0, 100)}%`,
+                      width: `${Math.min(
+                        progress?.progressPercentage ?? 0,
+                        100,
+                      )}%`,
                     }}
-                    transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
+                    transition={{
+                      delay: 0.4,
+                      duration: 0.8,
+                      ease: "easeOut",
+                    }}
                     className={`h-full rounded-full ${barColor}`}
                   />
                 </div>
@@ -373,16 +418,17 @@ const NextInstallmentPage = () => {
                     className="h-10 px-7 rounded-xl bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2"
                   >
                     <CreditCard size={14} />
-                    Pay Now
+                    {t("payNow")}
                   </Link>
                 )}
+
                 {actions?.viewInstallments && (
                   <Link
                     to="/dashboard/installment-schedule"
                     className="h-10 px-7 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors flex items-center gap-2"
                   >
                     <ListChecks size={14} />
-                    View Installments
+                    {t("viewInstallments")}
                   </Link>
                 )}
               </div>

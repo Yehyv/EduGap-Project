@@ -5,7 +5,6 @@ import { useLanguage } from "@/shared/localization/useLanguage";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   assignContentToExpert,
-  assignProgramToInstitute,
   getExpertCourses,
 } from "../services/dashboardApis";
 import { useState } from "react";
@@ -22,7 +21,7 @@ const AddCourseToExpert = ({
   setReviewModalOpen,
 }: AddCourseToProgramProps) => {
   const [currentChoice, setCurrentChoice] = useState<number | null>(null);
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const { expertId } = useParams();
 
   // Fetch all courses
@@ -30,6 +29,7 @@ const AddCourseToExpert = ({
     queryKey: ["getAllCourses"],
     queryFn: () => getExpertCourses(),
   });
+
   const queryClient = useQueryClient();
 
   // Mutation
@@ -41,28 +41,33 @@ const AddCourseToExpert = ({
       expertId: number | null;
       contentId: string | undefined;
     }) => assignContentToExpert(expertId, contentId),
+
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Content Assigned!",
-        text: "The content has been successfully assigned to the expert.",
+        title: t("contentAssigned"),
+        text: t("contentAssignedToExpertSuccessfully"),
       });
+
       setCurrentChoice(null);
       setReviewModalOpen(false);
+
       queryClient.invalidateQueries({
         queryKey: ["getExpertCourses"],
       });
+
       queryClient.invalidateQueries({
         queryKey: ["getAllCourses"],
       });
     },
+
     onError: (err: any) => {
       setReviewModalOpen(false);
 
       Swal.fire({
         icon: "error",
-        title: "Failed!",
-        text: err?.response?.data?.message || "Something went wrong.",
+        title: t("failed"),
+        text: err?.response?.data?.message || t("somethingWentWrong"),
       });
     },
   });
@@ -71,9 +76,10 @@ const AddCourseToExpert = ({
     if (!currentChoice) {
       Swal.fire({
         icon: "warning",
-        title: "No Course Selected",
-        text: "Please select a course to assign.",
+        title: t("noCourseSelected"),
+        text: t("pleaseSelectCourseToAssign"),
       });
+
       return;
     }
 
@@ -88,9 +94,10 @@ const AddCourseToExpert = ({
             <input
               className="border py-3.5 border-[#8A8A8A] w-full h-5 px-2 ps-10 rounded-xl text-sm focus:outline-none"
               type="search"
-              placeholder="Search..."
+              placeholder={t("search")}
               dir={lang === "ar" ? "rtl" : "ltr"}
             />
+
             <button
               type="button"
               className="absolute start-2 top-1/2 -translate-y-1/2"
@@ -98,12 +105,13 @@ const AddCourseToExpert = ({
               <SearchIcon className="w-7 h-7" />
             </button>
           </div>
+
           <Dialog.Title className={`text-center text-sm m-0 text-secondary`}>
-            Add Content To Expert
+            {t("addContentToExpert")}
           </Dialog.Title>
         </div>
       }
-      headerTitle={"Add Content To Expert"}
+      headerTitle={t("addContentToExpert")}
       open={reviewModalOpen}
       onOpenChange={setReviewModalOpen}
     >
@@ -122,7 +130,7 @@ const AddCourseToExpert = ({
       </div>
 
       {(!allCourses?.data || allCourses.data.length === 0) && (
-        <p className="text-center text-gray-400">No Data Available</p>
+        <p className="text-center text-gray-400">{t("noDataAvailable")}</p>
       )}
 
       <div className="flex justify-center gap-5 mt-5">
@@ -131,13 +139,14 @@ const AddCourseToExpert = ({
           disabled={isLoading}
           className="rounded-2xl bg-secondary text-white px-8 cursor-pointer disabled:opacity-50"
         >
-          {isLoading ? "Assigning..." : "Confirm Add"}
+          {isLoading ? t("assigning") : t("confirmAdd")}
         </button>
+
         <button
           onClick={() => setReviewModalOpen(false)}
           className="rounded-2xl border border-[#808080] text-[#808080] px-8 cursor-pointer"
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </AddModal>

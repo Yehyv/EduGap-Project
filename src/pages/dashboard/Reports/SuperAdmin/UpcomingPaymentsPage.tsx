@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -134,22 +135,28 @@ const inputCls =
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-const DaysLeftBadge = ({ daysLeft }: { daysLeft: number }) => {
+const DaysLeftBadge = ({
+  daysLeft,
+  t,
+}: {
+  daysLeft: number;
+  t: (k: string) => string;
+}) => {
   if (daysLeft <= 7)
     return (
       <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-red-50 text-red-500 border-red-200">
-        Due Soon
+        {t("dueSoon")}
       </span>
     );
   if (daysLeft <= 30)
     return (
-      <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-amber-50 text-amber-600 border-amber-200">
-        Due Soon
+      <span className="inline-flex text-center items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-amber-50 text-amber-600 border-amber-200">
+        {t("dueSoon")}
       </span>
     );
   return (
-    <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-blue-50 text-blue-500 border-blue-200">
-      Upcoming
+    <span className="inline-flex text-center items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-blue-50 text-blue-500 border-blue-200">
+      {t("upcoming")}
     </span>
   );
 };
@@ -207,19 +214,13 @@ const customStyles = {
   },
 };
 
-// ─── Options ──────────────────────────────────────────────────────────────────
-
-const PLAN_OPTIONS = [
-  { value: "", label: "All Plans" },
-  { value: "1", label: "Starter" },
-  { value: "2", label: "Growth" },
-  { value: "3", label: "Enterprise" },
-  { value: "4", label: "Custom" },
-];
-
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
-const buildColumns = (page: number, limit: number) => [
+const buildColumns = (
+  page: number,
+  limit: number,
+  t: (k: string) => string,
+) => [
   {
     name: "#",
     width: "56px",
@@ -230,7 +231,7 @@ const buildColumns = (page: number, limit: number) => [
     ),
   },
   {
-    name: "Institution",
+    name: t("institution"),
     selector: (row: UpcomingRow) => row.instituteName,
     cell: (row: UpcomingRow) => (
       <span className="font-medium text-gray-800 truncate max-w-[160px] block">
@@ -240,14 +241,14 @@ const buildColumns = (page: number, limit: number) => [
     grow: 2,
   },
   {
-    name: "Contract No.",
+    name: t("contractNo"),
     selector: (row: UpcomingRow) => row.contractNo,
     cell: (row: UpcomingRow) => (
       <span className="font-mono text-xs text-gray-500">{row.contractNo}</span>
     ),
   },
   {
-    name: "Installment No.",
+    name: t("installmentNoDot"),
     selector: (row: UpcomingRow) => row.installmentNo,
     cell: (row: UpcomingRow) => (
       <span className="text-gray-700">{row.installmentNo}</span>
@@ -255,14 +256,14 @@ const buildColumns = (page: number, limit: number) => [
     center: true,
   },
   {
-    name: "Due Date",
+    name: t("dueDate"),
     selector: (row: UpcomingRow) => row.dueDate,
     cell: (row: UpcomingRow) => (
       <span className="text-gray-600">{fmtDate(row.dueDate)}</span>
     ),
   },
   {
-    name: "Installment Amount (EGP)",
+    name: t("installmentAmountEgp"),
     selector: (row: UpcomingRow) => row.installmentAmount,
     cell: (row: UpcomingRow) => (
       <span className="font-semibold text-gray-800">
@@ -272,7 +273,7 @@ const buildColumns = (page: number, limit: number) => [
     right: true,
   },
   {
-    name: "Days Left",
+    name: t("daysLeft"),
     selector: (row: UpcomingRow) => row.daysLeft,
     cell: (row: UpcomingRow) => (
       <span
@@ -290,8 +291,8 @@ const buildColumns = (page: number, limit: number) => [
     center: true,
   },
   {
-    name: "Status",
-    cell: (row: UpcomingRow) => <DaysLeftBadge daysLeft={row.daysLeft} />,
+    name: t("status"),
+    cell: (row: UpcomingRow) => <DaysLeftBadge daysLeft={row.daysLeft} t={t} />,
     center: true,
   },
 ];
@@ -299,6 +300,16 @@ const buildColumns = (page: number, limit: number) => [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const UpcomingPaymentsPage = () => {
+  const { t } = useLanguage();
+
+  const PLAN_OPTIONS = [
+    { value: "", label: t("allPlans") },
+    { value: "1", label: t("starter") },
+    { value: "2", label: t("growth") },
+    { value: "3", label: t("enterprise") },
+    { value: "4", label: t("custom") },
+  ];
+
   const [dueFrom, setDueFrom] = useState(today());
   const [dueTo, setDueTo] = useState(nDaysFromToday(365));
   const [planId, setPlanId] = useState("");
@@ -340,11 +351,11 @@ const UpcomingPaymentsPage = () => {
   };
 
   const summary = data?.summary;
-  const columns = buildColumns(applied.page, applied.limit);
+  const columns = buildColumns(applied.page, applied.limit, t);
 
   return (
     <>
-      <DashboardPageTitle text="Upcoming Payments Report" />
+      <DashboardPageTitle text={t("upcomingPaymentsReport")} />
 
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Breadcrumb ── */}
@@ -356,13 +367,13 @@ const UpcomingPaymentsPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Reports</span>
+          <span className="text-gray-600 font-medium">{t("reports")}</span>
 
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Upcoming</span>
+          <span className="text-gray-600 font-medium">{t("upcoming")}</span>
         </motion.nav>
 
         {/* ── Export ── */}
@@ -378,7 +389,7 @@ const UpcomingPaymentsPage = () => {
             ) : (
               <Download size={14} className="text-gray-400" />
             )}
-            {isExporting ? "Exporting…" : "Export"}
+            {isExporting ? t("exporting") : t("export")}
           </button>
         </motion.div>
 
@@ -391,7 +402,7 @@ const UpcomingPaymentsPage = () => {
             {/* Due From */}
             <div className="flex flex-col gap-1 min-w-[150px]">
               <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                <CalendarDays size={11} /> Due From
+                <CalendarDays size={11} /> {t("dueFrom")}
               </label>
               <input
                 type="date"
@@ -404,7 +415,7 @@ const UpcomingPaymentsPage = () => {
             {/* Due To */}
             <div className="flex flex-col gap-1 min-w-[150px]">
               <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                <CalendarDays size={11} /> Due To
+                <CalendarDays size={11} /> {t("dueTo")}
               </label>
               <input
                 type="date"
@@ -416,7 +427,9 @@ const UpcomingPaymentsPage = () => {
 
             {/* Plan */}
             <div className="flex flex-col gap-1 min-w-[140px]">
-              <label className="text-xs font-medium text-gray-500">Plan</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("plan")}
+              </label>
               <select
                 value={planId}
                 onChange={(e) => setPlanId(e.target.value)}
@@ -442,7 +455,7 @@ const UpcomingPaymentsPage = () => {
               ) : (
                 <Filter size={14} />
               )}
-              Filter
+              {t("filter")}
             </button>
           </div>
         </motion.div>
@@ -471,7 +484,7 @@ const UpcomingPaymentsPage = () => {
                 <div>
                   <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
-                    Upcoming Installments
+                    {t("upcomingInstallments")}
                   </p>
                   <p className="text-2xl font-bold text-gray-800">
                     {summary.upcomingInstallments}
@@ -486,7 +499,7 @@ const UpcomingPaymentsPage = () => {
               >
                 <p className="text-xs text-gray-400 font-medium flex items-center gap-1 mb-1">
                   <TrendingUp size={11} className="text-gray-400" />
-                  Total Due Amount
+                  {t("totalDueAmount")}
                 </p>
                 <p className="text-xl font-bold text-gray-800 leading-tight">
                   {egp(summary.totalDueAmount)}
@@ -504,7 +517,7 @@ const UpcomingPaymentsPage = () => {
                 <div>
                   <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
-                    Next 7 Days
+                    {t("next7Days")}
                   </p>
                   <p className="text-2xl font-bold text-gray-800">
                     {summary.next7Days.count}
@@ -526,7 +539,7 @@ const UpcomingPaymentsPage = () => {
                 <div>
                   <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-                    Next 30 Days
+                    {t("next30Days")}
                   </p>
                   <p className="text-2xl font-bold text-gray-800">
                     {summary.next30Days.count}
@@ -549,7 +562,7 @@ const UpcomingPaymentsPage = () => {
             <div className="flex flex-col items-center justify-center py-16 gap-2">
               <AlertCircle size={28} className="text-red-300" />
               <p className="text-sm text-red-400">
-                Failed to load upcoming payments.
+                {t("failedToLoadUpcomingPayments")}
               </p>
             </div>
           ) : (
@@ -571,7 +584,7 @@ const UpcomingPaymentsPage = () => {
                 <div className="flex flex-col items-center gap-2 py-14">
                   <CalendarClock size={28} className="text-gray-200" />
                   <p className="text-sm text-gray-400">
-                    No upcoming payments found.
+                    {t("noUpcomingPaymentsFound")}
                   </p>
                 </div>
               }

@@ -5,6 +5,7 @@ import {
   fetchContentCompletion,
   fetchProgramCourse,
 } from "../services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -149,6 +150,7 @@ const SkeletonRow = ({ index }: { index: number }) => (
 // ─── Program Course Panel ─────────────────────────────────────────────────────
 
 const ProgramCoursePanel = () => {
+  const { t } = useLanguage();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["program-course-completion"],
     queryFn: fetchProgramCourse,
@@ -169,12 +171,12 @@ const ProgramCoursePanel = () => {
   if (isError)
     return (
       <p className="text-sm text-red-400 py-3">
-        Failed to load: {(error as Error).message}
+        {t("failedToLoadPrefix")} {(error as Error).message}
       </p>
     );
 
   if (!programs.length)
-    return <p className="text-sm text-gray-400 py-3">No data available.</p>;
+    return <p className="text-sm text-gray-400 py-3">{t("noDataAvailable")}</p>;
 
   // Flatten programs → courses with program name as meta
   const rows = programs.flatMap((program) =>
@@ -182,7 +184,7 @@ const ProgramCoursePanel = () => {
       key: `${program.programId}-${course.courseId}`,
       name: course.courseName,
       completion: course.completionPercentage,
-      meta: `${program.programName} · ${course.completedStudentsCount} / ${course.totalStudentsCount} students`,
+      meta: `${program.programName} · ${course.completedStudentsCount} / ${course.totalStudentsCount} ${t("studentsLabel")}`,
     })),
   );
 
@@ -204,6 +206,7 @@ const ProgramCoursePanel = () => {
 // ─── Content Completion Panel ─────────────────────────────────────────────────
 
 const ContentCompletionPanel = () => {
+  const { t } = useLanguage();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["content-completion"],
     queryFn: fetchContentCompletion,
@@ -224,12 +227,12 @@ const ContentCompletionPanel = () => {
   if (isError)
     return (
       <p className="text-sm text-red-400 py-3">
-        Failed to load: {(error as Error).message}
+        {t("failedToLoadPrefix")} {(error as Error).message}
       </p>
     );
 
   if (!contents.length)
-    return <p className="text-sm text-gray-400 py-3">No data available.</p>;
+    return <p className="text-sm text-gray-400 py-3">{t("noDataAvailable")}</p>;
 
   return (
     <div className="flex flex-col gap-4">
@@ -238,7 +241,7 @@ const ContentCompletionPanel = () => {
           key={item.contentId}
           name={item.contentName}
           completion={item.completionPercentage}
-          meta={`${item.completedStudentsCount} / ${item.totalEnrolledStudentsCount} students`}
+          meta={`${item.completedStudentsCount} / ${item.totalEnrolledStudentsCount} ${t("studentsLabel")}`}
           index={index}
         />
       ))}
@@ -246,17 +249,16 @@ const ContentCompletionPanel = () => {
   );
 };
 
-// ─── Tabs config ──────────────────────────────────────────────────────────────
-
-const TABS: { id: TabId; label: string }[] = [
-  { id: "program-course", label: "Course Program" },
-  { id: "content", label: "Content" },
-];
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const CourseCompletion = () => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabId>("program-course");
+
+  const TABS: { id: TabId; label: string }[] = [
+    { id: "program-course", label: t("tabProgramCourse") },
+    { id: "content", label: t("tabContent") },
+  ];
 
   return (
     <div className="rounded-xl bg-white border border-gray-100 shadow-custom overflow-hidden p-5">
@@ -268,11 +270,9 @@ const CourseCompletion = () => {
         className="mb-5"
       >
         <h5 className="text-lg font-semibold text-gray-900 mb-0.5">
-          Completion Overview
+          {t("courseCompletionTitle")}
         </h5>
-        <p className="text-sm text-gray-400">
-          Top performance within the institution.
-        </p>
+        <p className="text-sm text-gray-400">{t("courseCompletionSubtitle")}</p>
       </motion.div>
 
       {/* Tabs */}

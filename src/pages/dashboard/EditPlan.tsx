@@ -21,6 +21,7 @@ import {
   fetchPlanById,
   updateSubscriptionPlan,
 } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,32 +58,16 @@ const EMPTY_FORM: PlanFormData = {
   description: "",
 };
 
-// ─── Validate ─────────────────────────────────────────────────────────────────
-
-const validate = (form: PlanFormData): FormErrors => {
-  const errors: FormErrors = {};
-  if (!form.plan_name.trim()) errors.plan_name = "Plan name is required";
-  if (!form.min_students) errors.min_students = "Min students is required";
-  if (!form.max_students) errors.max_students = "Max students is required";
-  if (Number(form.min_students) >= Number(form.max_students))
-    errors.max_students = "Max must be greater than min";
-  if (!form.default_price_per_student)
-    errors.default_price_per_student = "Price is required";
-  if (!form.administrative_fees)
-    errors.administrative_fees = "Administrative fees is required";
-  if (!form.default_installments_count)
-    errors.default_installments_count = "Installments is required";
-  return errors;
-};
-
 // ─── Toggle ───────────────────────────────────────────────────────────────────
 
 const Toggle = ({
   checked,
   onChange,
+  lang,
 }: {
   checked: boolean;
   onChange: (val: boolean) => void;
+  lang: string;
 }) => (
   <button
     type="button"
@@ -95,7 +80,7 @@ const Toggle = ({
       layout
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
       className="inline-block h-4 w-4 rounded-full bg-white shadow"
-      style={{ x: checked ? 24 : 4 }}
+      style={{ x: checked ? (lang == "en" ? 24 : -24) : 4 }}
     />
   </button>
 );
@@ -192,6 +177,7 @@ const Skeleton = ({ className }: { className?: string }) => (
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const EditSubscriptionPlan = () => {
+  const { t, lang } = useLanguage();
   const { planId } = useParams<{ planId: string }>();
   const navigate = useNavigate();
 
@@ -202,6 +188,23 @@ const EditSubscriptionPlan = () => {
     type: "success" | "error" | "warning";
     message: string;
   } | null>(null);
+
+  // ─── Validate ─────────────────────────────────────────────────────────────
+  const validate = (form: PlanFormData): FormErrors => {
+    const errors: FormErrors = {};
+    if (!form.plan_name.trim()) errors.plan_name = t("editPlanNameRequired");
+    if (!form.min_students) errors.min_students = t("editMinStudentsRequired");
+    if (!form.max_students) errors.max_students = t("editMaxStudentsRequired");
+    if (Number(form.min_students) >= Number(form.max_students))
+      errors.max_students = t("editMaxMustBeGreaterThanMin");
+    if (!form.default_price_per_student)
+      errors.default_price_per_student = t("editPriceRequired");
+    if (!form.administrative_fees)
+      errors.administrative_fees = t("editAdministrativeFeesRequired");
+    if (!form.default_installments_count)
+      errors.default_installments_count = t("editInstallmentsRequired");
+    return errors;
+  };
 
   // ── Fetch existing plan ────────────────────────────────────────────────────
   const {
@@ -259,11 +262,11 @@ const EditSubscriptionPlan = () => {
     mutationFn: (data: Parameters<typeof updateSubscriptionPlan>[1]) =>
       updateSubscriptionPlan(planId!, data),
     onSuccess: () => {
-      showToast("success", "Plan updated successfully!");
+      showToast("success", t("editPlanUpdatedSuccessfully"));
       setTimeout(() => navigate("/dashboard/subscription-plans"), 1500);
     },
     onError: () => {
-      showToast("error", "Failed to update plan. Please try again.");
+      showToast("error", t("editFailedToUpdatePlanTryAgain"));
     },
   });
 
@@ -271,7 +274,7 @@ const EditSubscriptionPlan = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasChanges) {
-      showToast("warning", "No changes made.");
+      showToast("warning", t("editNoChangesMade"));
       return;
     }
     const validationErrors = validate(form);
@@ -321,7 +324,7 @@ const EditSubscriptionPlan = () => {
   if (isError || !planData?.data) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Edit Subscription Plan" />
+        <DashboardPageTitle text={t("editSubscriptionPlan")} />
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -329,13 +332,13 @@ const EditSubscriptionPlan = () => {
         >
           <AlertCircle size={36} className="text-red-300" />
           <p className="text-sm font-medium text-red-400">
-            Failed to load plan. Please try again.
+            {t("editFailedToLoadPlanTryAgain")}
           </p>
           <Link
             to="/dashboard/subscription-plans"
             className="text-sm text-blue-500 hover:underline"
           >
-            Back to Plans
+            {t("editBackToPlans")}
           </Link>
         </motion.div>
       </div>
@@ -351,7 +354,7 @@ const EditSubscriptionPlan = () => {
       </AnimatePresence>
 
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Edit Subscription Plan" />
+        <DashboardPageTitle text={t("editSubscriptionPlan")} />
 
         {/* Breadcrumb */}
         <motion.nav
@@ -363,17 +366,17 @@ const EditSubscriptionPlan = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("editDashboard")}
           </Link>
           <ChevronRight size={14} />
           <Link
             to="/dashboard/subscription-plans"
             className="hover:text-gray-600 transition-colors"
           >
-            Subscription Plans
+            {t("editSubscriptionPlans")}
           </Link>
           <ChevronRight size={14} />
-          <span className="text-gray-600">Edit Plan</span>
+          <span className="text-gray-600">{t("editPlanBreadcrumb")}</span>
         </motion.nav>
 
         {/* Form Card */}
@@ -394,7 +397,7 @@ const EditSubscriptionPlan = () => {
                 className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium overflow-hidden"
               >
                 <AlertCircle size={15} className="flex-shrink-0" />
-                You have unsaved changes
+                {t("editYouHaveUnsavedChanges")}
               </motion.div>
             )}
           </AnimatePresence>
@@ -403,25 +406,26 @@ const EditSubscriptionPlan = () => {
             {/* Row 1 — Name + Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field
-                label="Plan Name"
+                label={t("editPlanName")}
                 required
                 error={errors.plan_name}
                 icon={<Tag size={14} />}
               >
                 <input
                   type="text"
-                  placeholder="Enter plan name"
+                  placeholder={t("editEnterPlanName")}
                   className={inputClass(!!errors.plan_name)}
                   value={form.plan_name}
                   onChange={(e) => set("plan_name", e.target.value)}
                 />
               </Field>
 
-              <Field label="Status" icon={<CheckCircle2 size={14} />}>
+              <Field label={t("editStatus")} icon={<CheckCircle2 size={14} />}>
                 <div className="flex items-center gap-3 h-10">
                   <Toggle
                     checked={form.is_active}
                     onChange={(val) => set("is_active", val)}
+                    lang={lang}
                   />
                   <motion.span
                     key={form.is_active ? "active" : "inactive"}
@@ -431,7 +435,7 @@ const EditSubscriptionPlan = () => {
                       form.is_active ? "text-green-600" : "text-gray-400"
                     }`}
                   >
-                    {form.is_active ? "Active" : "Inactive"}
+                    {form.is_active ? t("editActive") : t("editInactive")}
                   </motion.span>
                 </div>
               </Field>
@@ -440,14 +444,14 @@ const EditSubscriptionPlan = () => {
             {/* Row 2 — Min + Max + Price */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Field
-                label="Min Students"
+                label={t("editMinStudents")}
                 required
                 error={errors.min_students}
                 icon={<Users size={14} />}
               >
                 <input
                   type="number"
-                  placeholder="e.g. 0"
+                  placeholder={t("editEgZero")}
                   className={inputClass(!!errors.min_students)}
                   value={form.min_students}
                   onChange={(e) => set("min_students", e.target.value)}
@@ -456,14 +460,14 @@ const EditSubscriptionPlan = () => {
               </Field>
 
               <Field
-                label="Max Students"
+                label={t("editMaxStudents")}
                 required
                 error={errors.max_students}
                 icon={<Users size={14} />}
               >
                 <input
                   type="number"
-                  placeholder="e.g. 1000"
+                  placeholder={t("editEgOneThousand")}
                   className={inputClass(!!errors.max_students)}
                   value={form.max_students}
                   onChange={(e) => set("max_students", e.target.value)}
@@ -472,14 +476,14 @@ const EditSubscriptionPlan = () => {
               </Field>
 
               <Field
-                label="Price Per Student (EGP)"
+                label={t("editPricePerStudentEGP")}
                 required
                 error={errors.default_price_per_student}
                 icon={<DollarSign size={14} />}
               >
                 <input
                   type="number"
-                  placeholder="e.g. 200"
+                  placeholder={t("editEgTwoHundred")}
                   className={inputClass(!!errors.default_price_per_student)}
                   value={form.default_price_per_student}
                   onChange={(e) =>
@@ -493,14 +497,14 @@ const EditSubscriptionPlan = () => {
             {/* Row 3 — Fees + Installments */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field
-                label="Administrative Fees"
+                label={t("editAdministrativeFees")}
                 required
                 error={errors.administrative_fees}
                 icon={<Receipt size={14} />}
               >
                 <input
                   type="number"
-                  placeholder="e.g. 500"
+                  placeholder={t("editEgFiveHundred")}
                   className={inputClass(!!errors.administrative_fees)}
                   value={form.administrative_fees}
                   onChange={(e) => set("administrative_fees", e.target.value)}
@@ -509,7 +513,7 @@ const EditSubscriptionPlan = () => {
               </Field>
 
               <Field
-                label="Default Installments"
+                label={t("editDefaultInstallments")}
                 required
                 error={errors.default_installments_count}
                 icon={<CalendarDays size={14} />}
@@ -522,7 +526,7 @@ const EditSubscriptionPlan = () => {
                   }
                 >
                   <option value="" disabled>
-                    Select installments
+                    {t("editSelectInstallments")}
                   </option>
                   {INSTALLMENT_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
@@ -534,9 +538,9 @@ const EditSubscriptionPlan = () => {
             </div>
 
             {/* Row 4 — Description */}
-            <Field label="Description" icon={<AlignLeft size={14} />}>
+            <Field label={t("editDescription")} icon={<AlignLeft size={14} />}>
               <textarea
-                placeholder="Enter plan description..."
+                placeholder={t("editEnterPlanDescription")}
                 rows={4}
                 className={`${inputClass()} h-auto py-2.5 resize-none`}
                 value={form.description}
@@ -551,7 +555,7 @@ const EditSubscriptionPlan = () => {
                 className="h-10 px-5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
                 <X size={15} />
-                Cancel
+                {t("editCancel")}
               </Link>
               <motion.button
                 type="submit"
@@ -566,12 +570,12 @@ const EditSubscriptionPlan = () => {
                 {isPending ? (
                   <>
                     <Loader2 size={15} className="animate-spin" />
-                    Saving...
+                    {t("editSaving")}
                   </>
                 ) : (
                   <>
                     <Save size={15} />
-                    Save Changes
+                    {t("editSaveChanges")}
                   </>
                 )}
               </motion.button>

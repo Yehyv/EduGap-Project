@@ -15,22 +15,23 @@ const AddOrEditRegion = ({
   isForEdit = false,
 }) => {
   const { t } = useLanguage();
-  /* ================= COUNTRIES ================= */
-  const { data: countriesData } = useQuery({
+
+  /* ================= CITIES ================= */
+  const { data: citiesData } = useQuery({
     queryKey: ["getCitites"],
     queryFn: getAllCities,
   });
 
-  const countriesOptions = countriesData?.data?.map((c) => ({
+  const citiesOptions = citiesData?.data?.map((c) => ({
     label: c.name,
     value: c.id,
   }));
 
   const topicSchema = Yup.object({
-    cityId: Yup.string().required("City is required"),
+    cityId: Yup.string().required(t("cityRequired")),
     translations: Yup.array().of(
       Yup.object({
-        name: Yup.string().required("Name is required"),
+        name: Yup.string().required(t("nameRequired")),
       }),
     ),
   });
@@ -44,8 +45,8 @@ const AddOrEditRegion = ({
         if (JSON.stringify(initialValues) === JSON.stringify(values)) {
           Swal.fire({
             icon: "warning",
-            title: "Warning",
-            text: "You didn't change the data",
+            title: t("warning"),
+            text: t("noChanges"),
           });
           return;
         }
@@ -63,19 +64,21 @@ const AddOrEditRegion = ({
           <div className="bg-white rounded-xl p-4">
             <div className="grid grid-cols-1 gap-4">
               <TextField
-                label="Name (AR)"
+                label={t("nameAr")}
                 name="translations[0].name"
                 moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
               />
+
               <TextField
-                label="Name (EN)"
+                label={t("nameEn")}
                 name="translations[1].name"
                 moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
               />
+
               <DropdownMenu
                 label={t("city")}
                 name="cityId"
-                options={countriesOptions}
+                options={citiesOptions}
               />
             </div>
           </div>
@@ -86,7 +89,7 @@ const AddOrEditRegion = ({
               type="submit"
               className="hover:bg-secondary-dark text-white px-10 py-1.5 rounded-xl bg-secondary"
             >
-              {isPending ? <ButtonLoader /> : "Save Region"}
+              {isPending ? <ButtonLoader /> : t("saveRegion")}
             </button>
           </div>
         </Form>

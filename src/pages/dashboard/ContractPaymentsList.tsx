@@ -20,6 +20,7 @@ import {
   fetchContracts,
   fetchPaymentsHistory,
 } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,53 +52,15 @@ interface ContractOption {
 
 type StatusFilter = "CONFIRMED" | "CANCELLED" | "REFUNDED" | "ALL";
 
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const STATUS_OPTIONS: { value: StatusFilter; label: string; dot: string }[] = [
-  { value: "ALL", label: "All", dot: "bg-green-500" },
-  { value: "CONFIRMED", label: "Confirmed", dot: "bg-green-500" },
-  { value: "CANCELLED", label: "Cancelled", dot: "bg-blue-400" },
-  { value: "REFUNDED", label: "Refunded", dot: "bg-amber-400" },
-  { value: "PENDING_REVIEW", label: "Pending", dot: "bg-gray-400" },
-];
-
-const statusConfig: Record<
-  string,
-  { class: string; dot: string; label: string }
-> = {
-  CONFIRMED: {
-    class: "bg-green-50 text-green-600 border-green-200 text-nowrap",
-    dot: "bg-green-500",
-    label: "Confirmed",
-  },
-  CANCELLED: {
-    class: "bg-red-50 text-red-500 border-red-200 text-nowrap",
-    dot: "bg-red-400",
-    label: "Cancelled",
-  },
-  REFUNDED: {
-    class: "bg-amber-50 text-amber-600 border-amber-200 text-nowrap",
-    dot: "bg-amber-400",
-    label: "Refunded",
-  },
-};
-
-const getStatusCfg = (status: string) =>
-  statusConfig[status] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: status,
-  };
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const egp = (val: number | string) =>
   `EGP ${Number(val).toLocaleString("en-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const ordinal = (n: number) => {
+const ordinalNum = (n: number) => {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]) + " Payment";
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
 
 // ─── Custom Styles ────────────────────────────────────────────────────────────
@@ -186,6 +149,7 @@ const ContractSelect = ({
   value: ContractOption | null;
   onChange: (c: ContractOption | null) => void;
 }) => {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -238,7 +202,7 @@ const ContractSelect = ({
       >
         <Building2 size={14} />
         <span className="truncate max-w-[140px]">
-          {value ? value.contractNo : "Select Contract"}
+          {value ? value.contractNo : t("selectContract")}
         </span>
         {value ? (
           <X
@@ -274,7 +238,7 @@ const ContractSelect = ({
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search contract or institute..."
+                  placeholder={t("searchContractOrInstitute")}
                   autoFocus
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -289,7 +253,7 @@ const ContractSelect = ({
             <div className="max-h-52 overflow-y-auto py-1">
               {filtered.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-4">
-                  No contracts found
+                  {t("noContractsFound")}
                 </p>
               ) : (
                 filtered.map((c) => (
@@ -338,8 +302,22 @@ const StatusDropdown = ({
   value: StatusFilter;
   onChange: (v: StatusFilter) => void;
 }) => {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const STATUS_OPTIONS: { value: StatusFilter; label: string; dot: string }[] =
+    [
+      { value: "ALL", label: t("all"), dot: "bg-green-500" },
+      { value: "CONFIRMED", label: t("confirmed"), dot: "bg-green-500" },
+      { value: "CANCELLED", label: t("contractCancelled"), dot: "bg-blue-400" },
+      { value: "REFUNDED", label: t("refunded"), dot: "bg-amber-400" },
+      {
+        value: "PENDING_REVIEW",
+        label: t("contractPending"),
+        dot: "bg-gray-400",
+      },
+    ];
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -367,7 +345,7 @@ const StatusDropdown = ({
         )}
         <span>
           {value === "ALL"
-            ? "All Status"
+            ? t("contractAllStatus")
             : STATUS_OPTIONS.find((o) => o.value === value)?.label}
         </span>
         <motion.span
@@ -415,6 +393,38 @@ const StatusDropdown = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const InstallmentsScheduleList = () => {
+  const { t } = useLanguage();
+
+  const statusConfig: Record<
+    string,
+    { class: string; dot: string; label: string }
+  > = {
+    CONFIRMED: {
+      class: "bg-green-50 text-green-600 border-green-200 text-nowrap",
+      dot: "bg-green-500",
+      label: t("confirmed"),
+    },
+    CANCELLED: {
+      class: "bg-red-50 text-red-500 border-red-200 text-nowrap",
+      dot: "bg-red-400",
+      label: t("contractCancelled"),
+    },
+    REFUNDED: {
+      class: "bg-amber-50 text-amber-600 border-amber-200 text-nowrap",
+      dot: "bg-amber-400",
+      label: t("refunded"),
+    },
+  };
+
+  const getStatusCfg = (status: string) =>
+    statusConfig[status] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: status,
+    };
+
+  const ordinal = (n: number) => `${ordinalNum(n)} ${t("payment")}`;
+
   const { contractId: urlContractId } = useParams<{ contractId?: string }>();
 
   // ── All filter state lives in URL search params ────────────────────────────
@@ -516,7 +526,7 @@ const InstallmentsScheduleList = () => {
       center: true,
     },
     {
-      name: "Payment ID",
+      name: t("paymentId"),
       selector: (row: Payment) => row.paymentId,
       cell: (row: Payment) => (
         <Link
@@ -530,7 +540,7 @@ const InstallmentsScheduleList = () => {
       minWidth: "60px",
     },
     {
-      name: "Payment Date",
+      name: t("paymentDate"),
       selector: (row: Payment) => row.paymentDate,
       cell: (row: Payment) => (
         <span className="text-gray-600 font-medium">{row.paymentDate}</span>
@@ -540,7 +550,7 @@ const InstallmentsScheduleList = () => {
       minWidth: "90px",
     },
     {
-      name: "Contract No.",
+      name: t("contractNo"),
       selector: (row: Payment) => Number(row.contractNo),
       cell: (row: Payment) => (
         <span className="font-semibold text-gray-800">
@@ -552,7 +562,7 @@ const InstallmentsScheduleList = () => {
       minWidth: "90px",
     },
     {
-      name: "Installment",
+      name: t("installment"),
       selector: (row: Payment) => Number(row.installment),
       cell: (row: Payment) => (
         <span className="text-gray-800">
@@ -564,7 +574,7 @@ const InstallmentsScheduleList = () => {
       minWidth: "90px",
     },
     {
-      name: "Amount",
+      name: t("amount"),
       selector: (row: Payment) => Number(row.amount),
       cell: (row: Payment) => (
         <span
@@ -578,7 +588,7 @@ const InstallmentsScheduleList = () => {
       minWidth: "160px",
     },
     {
-      name: "Method",
+      name: t("paymentMethod"),
       selector: (row: Payment) => row.paymentMethod,
       cell: (row: Payment) => (
         <span className="text-gray-800">{row.paymentMethod}</span>
@@ -588,7 +598,7 @@ const InstallmentsScheduleList = () => {
       minWidth: "130px",
     },
     {
-      name: "Receipt No.",
+      name: t("receiptNo"),
       selector: (row: Payment) => row.receiptNo,
       cell: (row: Payment) => (
         <span className="text-gray-800">{row.receiptNo}</span>
@@ -598,7 +608,7 @@ const InstallmentsScheduleList = () => {
       minWidth: "160px",
     },
     {
-      name: "Status",
+      name: t("status"),
       cell: (row: Payment) => {
         const cfg = getStatusCfg(row.status);
         return (
@@ -615,12 +625,12 @@ const InstallmentsScheduleList = () => {
       minWidth: "120px",
     },
     {
-      name: "Details",
+      name: t("details"),
       cell: (row: Payment) => (
         <Link
           to={`/dashboard/contract-payments/${row.paymentId}`}
           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          title="View"
+          title={t("view")}
         >
           <Eye size={16} className="text-gray-500" />
         </Link>
@@ -656,7 +666,7 @@ const InstallmentsScheduleList = () => {
           {/* From date */}
           <div className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-gray-200 bg-white text-sm text-gray-500">
             <span className="text-xs text-gray-400 whitespace-nowrap">
-              From
+              {t("from")}
             </span>
             <input
               type="date"
@@ -673,7 +683,9 @@ const InstallmentsScheduleList = () => {
 
           {/* To date */}
           <div className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-gray-200 bg-white text-sm text-gray-500">
-            <span className="text-xs text-gray-400 whitespace-nowrap">To</span>
+            <span className="text-xs text-gray-400 whitespace-nowrap">
+              {t("to")}
+            </span>
             <input
               type="date"
               value={toDate}
@@ -699,7 +711,7 @@ const InstallmentsScheduleList = () => {
                 className="h-9 px-3 rounded-2xl border border-red-200 text-red-500 text-sm hover:bg-red-50 transition-colors flex items-center gap-1.5"
               >
                 <X size={13} />
-                Clear ({activeFilterCount})
+                {t("clear")} ({activeFilterCount})
               </motion.button>
             )}
           </AnimatePresence>
@@ -727,7 +739,7 @@ const InstallmentsScheduleList = () => {
   if (listError) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Payments History" />
+        <DashboardPageTitle text={t("paymentsHistory")} />
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -735,13 +747,13 @@ const InstallmentsScheduleList = () => {
         >
           <XCircle size={36} className="text-red-300" />
           <p className="text-sm font-medium text-red-400">
-            Failed to load payments history.
+            {t("failedToLoadPaymentsHistory")}
           </p>
           <Link
             to="/dashboard/institutions-contracts"
             className="text-sm text-blue-500 hover:underline"
           >
-            Back to Contracts
+            {t("backToContracts")}
           </Link>
         </motion.div>
       </div>
@@ -750,7 +762,7 @@ const InstallmentsScheduleList = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      <DashboardPageTitle text="Payments History" />
+      <DashboardPageTitle text={t("paymentsHistory")} />
 
       {/* Breadcrumb */}
       <motion.nav
@@ -762,23 +774,23 @@ const InstallmentsScheduleList = () => {
           to="/dashboard/home"
           className="hover:text-gray-600 transition-colors"
         >
-          Dashboard
+          {t("dashboard")}
         </Link>
         <ChevronRight size={14} />
-        <span className="text-gray-600">Payments</span>
+        <span className="text-gray-600">{t("payments")}</span>
       </motion.nav>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
-          label="Total Payments"
+          label={t("totalPayments")}
           value={summary ? summary.totalPayments : "-"}
           icon={<Receipt size={20} />}
           borderColor="border-l-blue-400"
           delay={0.05}
         />
         <StatCard
-          label="Current Page Confirmed Net Paid"
+          label={t("currentPageConfirmedNetPaid")}
           value={summary ? egp(summary.currentPageConfirmedNetPaid) : "-"}
           subColor="bg-green-100 text-green-700"
           icon={<TrendingUp size={20} className="text-green-500" />}

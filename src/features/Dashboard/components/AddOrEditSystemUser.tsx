@@ -47,30 +47,24 @@ const AddOrEditSystemUser = ({
 
   const topicSchema = Yup.object({
     full_name: Yup.string()
-      .required("Full name is required")
-      .matches(/^[a-zA-Z\s]+$/, "Full name must contain letters only"),
+      .required(t("fullNameRequired"))
+      .matches(/^[a-zA-Z\s]+$/, t("fullNameLettersOnly")),
 
     email: Yup.string()
-      .required("Email is required")
-      .email("Please enter a valid email address"),
+      .required(t("emailRequired"))
+      .email(t("pleaseEnterValidEmail")),
 
     national_id: Yup.string()
-      .required("National ID is required")
-      .matches(
-        /^[23]\d{13}$/,
-        "National ID must be 14 digits and start with 2 or 3",
-      ),
+      .required(t("nationalIdRequired"))
+      .matches(/^[23]\d{13}$/, t("nationalIdMustBe14Digits")),
 
-    phone_key: Yup.string().required("Country code is required"),
+    phone_key: Yup.string().required(t("countryCodeRequired")),
 
     phone: Yup.string()
-      .required("Phone number is required")
-      .matches(
-        /^01[0-2,5]\d{8}$/,
-        "Please enter a valid Egyptian phone number",
-      ),
+      .required(t("phoneNumberRequired"))
+      .matches(/^01[0-2,5]\d{8}$/, t("pleaseEnterValidEgyptianPhone")),
 
-    roleId: Yup.string().required("Role is required"),
+    roleId: Yup.string().required(t("roleRequired")),
 
     instituteId: Yup.string().when("roleId", {
       is: (roleId) => {
@@ -78,7 +72,7 @@ const AddOrEditSystemUser = ({
         return roleName === "SUPER_ADMIN" || roleName === "ADMIN";
       },
       then: (schema) => schema.optional(),
-      otherwise: (schema) => schema.required("Institute is required"),
+      otherwise: (schema) => schema.required(t("instituteRequired")),
     }),
   });
 
@@ -91,8 +85,8 @@ const AddOrEditSystemUser = ({
         if (JSON.stringify(initialValues) === JSON.stringify(values)) {
           Swal.fire({
             icon: "warning",
-            title: "Warning",
-            text: "You didn't change the data",
+            title: t("warning"),
+            text: t("youDidntChangeTheData"),
           });
           return;
         }
@@ -122,19 +116,19 @@ const AddOrEditSystemUser = ({
             <div className="bg-white rounded-xl p-4">
               <div className="grid grid-cols-1 gap-4">
                 <TextField
-                  label="Full Name"
+                  label={t("fullName")}
                   name="full_name"
                   moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
                   required
                 />
                 <TextField
-                  label="Email"
+                  label={t("email")}
                   name="email"
                   moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
                   required
                 />
                 <TextField
-                  label="National Id"
+                  label={t("nationalId")}
                   name="national_id"
                   moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
                   required
@@ -159,14 +153,14 @@ const AddOrEditSystemUser = ({
                 </div>
                 <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
                   <DropdownMenu
-                    label="Role"
+                    label={t("role")}
                     name="roleId"
                     options={handleRoles}
                     onChange={handleRoleChange}
                     required
                   />
                   <DropdownMenu
-                    label="Institute"
+                    label={t("institute")}
                     name="instituteId"
                     options={handleInstituteData}
                     disabled={isDisabled}
@@ -182,7 +176,7 @@ const AddOrEditSystemUser = ({
                 type="submit"
                 className="hover:bg-secondary-dark text-white px-10 py-1.5 rounded-xl bg-secondary"
               >
-                {isPending ? <ButtonLoader /> : "Save System User"}
+                {isPending ? <ButtonLoader /> : t("saveSystemUser")}
               </button>
             </div>
           </Form>

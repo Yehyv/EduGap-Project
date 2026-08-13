@@ -15,6 +15,7 @@ const AddOrEditCity = ({
   isForEdit = false,
 }) => {
   const { t } = useLanguage();
+
   /* ================= COUNTRIES ================= */
   const { data: countriesData } = useQuery({
     queryKey: ["getCountries"],
@@ -27,10 +28,10 @@ const AddOrEditCity = ({
   }));
 
   const topicSchema = Yup.object({
-    countryId: Yup.string().required("Country is required"),
+    countryId: Yup.string().required(t("country_is_required")),
     translations: Yup.array().of(
       Yup.object({
-        name: Yup.string().required("Name is required"),
+        name: Yup.string().required(t("name_is_required")),
       }),
     ),
   });
@@ -44,8 +45,8 @@ const AddOrEditCity = ({
         if (JSON.stringify(initialValues) === JSON.stringify(values)) {
           Swal.fire({
             icon: "warning",
-            title: "Warning",
-            text: "You didn't change the data",
+            title: t("warning"),
+            text: t("you_didnt_change_the_data"),
           });
           return;
         }
@@ -63,15 +64,17 @@ const AddOrEditCity = ({
           <div className="bg-white rounded-xl p-4">
             <div className="grid grid-cols-1 gap-4">
               <TextField
-                label="Name (AR)"
+                label={t("name_ar")}
                 name="translations[0].name"
                 moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
               />
+
               <TextField
-                label="Name (EN)"
+                label={t("name_en")}
                 name="translations[1].name"
                 moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
               />
+
               <DropdownMenu
                 label={t("country")}
                 name="countryId"
@@ -86,7 +89,7 @@ const AddOrEditCity = ({
               type="submit"
               className="hover:bg-secondary-dark text-white px-10 py-1.5 rounded-xl bg-secondary"
             >
-              {isPending ? <ButtonLoader /> : "Save City"}
+              {isPending ? <ButtonLoader /> : t("save_city")}
             </button>
           </div>
         </Form>

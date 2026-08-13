@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -80,12 +81,15 @@ async function fetchCurrentPlan(
     return res.data.data ?? null;
   } catch (err: any) {
     const messages: string[] = err?.response?.data?.message ?? [];
+
     if (
       messages.some((m) =>
         m.toLowerCase().includes("no active annual contract"),
       )
-    )
+    ) {
       return null;
+    }
+
     throw err;
   }
 }
@@ -97,7 +101,10 @@ async function submitUpgradeRequest(body: UpgradeRequestBody): Promise<void> {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const egp = (val: number) =>
-  `EGP ${Number(val).toLocaleString("en-EG", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  `EGP ${Number(val).toLocaleString("en-EG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 14 },
@@ -123,18 +130,6 @@ const REASONS = [
   "Feature upgrade",
   "Other",
 ];
-
-const validationSchema = Yup.object({
-  requestedPlanId: Yup.number()
-    .min(1, "Please select a plan")
-    .required("Please select a plan"),
-  reason: Yup.string().required("Please select a reason"),
-  additionalStudentsNeeded: Yup.number()
-    .typeError("Enter a valid number")
-    .min(1, "Must be at least 1")
-    .required("This field is required"),
-  message: Yup.string(),
-});
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -166,7 +161,9 @@ const Toast = ({
     ) : (
       <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
     )}
+
     <span className="flex-1">{message}</span>
+
     <button type="button" onClick={onClose}>
       <X size={13} />
     </button>
@@ -183,6 +180,7 @@ const YearDropdown = ({
   onChange: (y: number) => void;
 }) => {
   const [open, setOpen] = useState(false);
+
   return (
     <div className="relative">
       <button
@@ -191,11 +189,15 @@ const YearDropdown = ({
         className="h-8 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors flex items-center gap-1.5"
       >
         {value}
+
         <ChevronDown
           size={12}
-          className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
         />
       </button>
+
       <AnimatePresence>
         {open && (
           <motion.div
@@ -225,6 +227,7 @@ const YearDropdown = ({
           </motion.div>
         )}
       </AnimatePresence>
+
       {open && (
         <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
       )}
@@ -248,6 +251,7 @@ const InfoRow = ({
       <Icon size={9} />
       {label}
     </p>
+
     <p className="text-sm font-bold text-gray-800">{value}</p>
   </div>
 );
@@ -263,13 +267,16 @@ const LeftSidebar = ({
   onYearChange: (y: number) => void;
   selectedPlan: Plan | null;
 }) => {
+  const { t } = useLanguage();
+
   const { data: currentData, isLoading } = useQuery({
     queryKey: ["current-plan-for-upgrade", academicYear],
     queryFn: () => fetchCurrentPlan(academicYear),
     retry: false,
   });
 
-  // Once user picks a plan from the dropdown, show that; otherwise show the current plan from API
+  // Once user picks a plan from the dropdown, show that;
+  // otherwise show the current plan from API
   if (selectedPlan) {
     return (
       <motion.div
@@ -279,50 +286,65 @@ const LeftSidebar = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/60">
           <div className="flex items-center gap-2">
             <TrendingUp size={13} className="text-gray-400" />
+
             <h3 className="text-sm font-semibold text-gray-800">
-              Selected Plan
+              {t("selected-plan")}
             </h3>
           </div>
         </div>
+
         <div className="px-5 py-5 flex flex-col gap-4">
           <div className="flex flex-col gap-0.5">
-            <p className="text-xs text-gray-400 font-medium">Plan Name</p>
+            <p className="text-xs text-gray-400 font-medium">
+              {t("plan-name")}
+            </p>
+
             <p className="text-base font-bold text-gray-800">
               {selectedPlan.plan_name}
             </p>
           </div>
+
           {selectedPlan.description && (
             <>
               <div className="border-t border-gray-50" />
+
               <p className="text-xs text-gray-500 leading-relaxed">
                 {selectedPlan.description}
               </p>
             </>
           )}
+
           <div className="border-t border-gray-50" />
+
           <InfoRow
             icon={Users}
-            label="Max Students"
+            label={t("max-students")}
             value={selectedPlan.max_students.toLocaleString()}
           />
+
           <div className="border-t border-gray-50" />
+
           <InfoRow
             icon={DollarSign}
-            label="Price Per Student"
+            label={t("price-per-student")}
             value={egp(selectedPlan.default_price_per_student)}
           />
+
           <div className="border-t border-gray-50" />
+
           <InfoRow
             icon={ListChecks}
-            label="Installments"
+            label={t("installments")}
             value={selectedPlan.default_installments_count}
           />
+
           {selectedPlan.administrative_fees > 0 && (
             <>
               <div className="border-t border-gray-50" />
+
               <InfoRow
                 icon={DollarSign}
-                label="Admin Fees"
+                label={t("admin-fees")}
                 value={egp(selectedPlan.administrative_fees)}
               />
             </>
@@ -340,8 +362,12 @@ const LeftSidebar = ({
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/60">
         <div className="flex items-center gap-2">
           <Sparkles size={13} className="text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-800">Current Plan</h3>
+
+          <h3 className="text-sm font-semibold text-gray-800">
+            {t("current-plan")}
+          </h3>
         </div>
+
         <YearDropdown value={academicYear} onChange={onYearChange} />
       </div>
 
@@ -358,8 +384,11 @@ const LeftSidebar = ({
         {!isLoading && !currentData && (
           <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
             <TrendingUp size={22} className="text-gray-200" />
+
             <p className="text-xs text-gray-400">
-              No active contract for {academicYear}.
+              {t("no-active-contract-for-year", {
+                year: academicYear,
+              })}
             </p>
           </div>
         )}
@@ -367,11 +396,15 @@ const LeftSidebar = ({
         {!isLoading && currentData && (
           <>
             <div className="flex flex-col gap-0.5">
-              <p className="text-xs text-gray-400 font-medium">Plan Name</p>
+              <p className="text-xs text-gray-400 font-medium">
+                {t("plan-name")}
+              </p>
+
               <div className="flex items-center gap-2">
                 <p className="text-base font-bold text-gray-800">
                   {currentData.currentPlan.planName}
                 </p>
+
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
                   {currentData.currentPlan.label}
                 </span>
@@ -379,27 +412,34 @@ const LeftSidebar = ({
             </div>
 
             <div className="border-t border-gray-50" />
+
             <InfoRow
               icon={Users}
-              label="Max Students"
+              label={t("max-students")}
               value={currentData.students.maxStudents.toLocaleString()}
             />
+
             <div className="border-t border-gray-50" />
+
             <InfoRow
               icon={Users}
-              label="Added Students"
+              label={t("added-students")}
               value={currentData.students.addedStudents.toLocaleString()}
             />
+
             <div className="border-t border-gray-50" />
+
             <InfoRow
               icon={DollarSign}
-              label="Contract Value"
+              label={t("contract-value")}
               value={egp(currentData.financial.contractValue)}
             />
+
             <div className="border-t border-gray-50" />
+
             <InfoRow
               icon={ListChecks}
-              label="Installments"
+              label={t("installments")}
               value={currentData.financial.totalInstallments}
             />
 
@@ -407,19 +447,28 @@ const LeftSidebar = ({
             <div className="flex flex-col gap-1.5 pt-1">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] text-gray-400 font-medium">
-                  Student Usage
+                  {t("student-usage")}
                 </p>
+
                 <p className="text-[11px] font-semibold text-gray-600">
                   {currentData.students.usedPercentage}%
                 </p>
               </div>
+
               <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{
-                    width: `${Math.min(currentData.students.usedPercentage, 100)}%`,
+                    width: `${Math.min(
+                      currentData.students.usedPercentage,
+                      100,
+                    )}%`,
                   }}
-                  transition={{ delay: 0.4, duration: 0.6, ease: "easeOut" }}
+                  transition={{
+                    delay: 0.4,
+                    duration: 0.6,
+                    ease: "easeOut",
+                  }}
                   className="h-full bg-blue-500 rounded-full"
                 />
               </div>
@@ -434,9 +483,13 @@ const LeftSidebar = ({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const UpgradePlanPage = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
+
   const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
+
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -444,6 +497,7 @@ const UpgradePlanPage = () => {
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
+
     setTimeout(() => setToast(null), 4500);
   };
 
@@ -458,15 +512,19 @@ const UpgradePlanPage = () => {
 
   const { mutate, isPending } = useMutation({
     mutationFn: submitUpgradeRequest,
+
     onSuccess: () => {
-      showToast("success", "Upgrade request submitted successfully!");
+      showToast("success", t("upgrade-request-submitted-successfully"));
+
       setTimeout(() => navigate("/dashboard/home"), 1800);
     },
+
     onError: (err: any) => {
       const msg =
         err?.response?.data?.message?.[0] ??
         err?.response?.data?.message ??
-        "Failed to submit request.";
+        t("failed-to-submit-request");
+
       showToast("error", typeof msg === "string" ? msg : JSON.stringify(msg));
     },
   });
@@ -483,7 +541,8 @@ const UpgradePlanPage = () => {
         )}
       </AnimatePresence>
 
-      <DashboardPageTitle text="Request Plan Upgrade" />
+      <DashboardPageTitle text={t("request-plan-upgrade")} />
+
       <div className="flex flex-col gap-5 pb-8">
         {/* Breadcrumb */}
         <motion.nav
@@ -494,15 +553,20 @@ const UpgradePlanPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
+
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Request Upgrade</span>
+
+          <span className="text-gray-600 font-medium">
+            {t("request-upgrade")}
+          </span>
         </motion.nav>
 
         {plansLoading && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <Sk className="h-64" />
+
             <div className="lg:col-span-2">
               <Sk className="h-80" />
             </div>
@@ -515,8 +579,9 @@ const UpgradePlanPage = () => {
             className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
           >
             <AlertCircle size={32} className="text-red-300" />
+
             <p className="text-sm text-red-400">
-              Failed to load plans. Please try again.
+              {t("failed-to-load-plans-please-try-again")}
             </p>
           </motion.div>
         )}
@@ -529,7 +594,20 @@ const UpgradePlanPage = () => {
               additionalStudentsNeeded: "" as unknown as number,
               message: "",
             }}
-            validationSchema={validationSchema}
+            validationSchema={Yup.object({
+              requestedPlanId: Yup.number()
+                .min(1, t("please-select-a-plan"))
+                .required(t("please-select-a-plan")),
+
+              reason: Yup.string().required(t("please-select-a-reason")),
+
+              additionalStudentsNeeded: Yup.number()
+                .typeError(t("enter-a-valid-number"))
+                .min(1, t("must-be-at-least-1"))
+                .required(t("this-field-is-required")),
+
+              message: Yup.string(),
+            })}
             onSubmit={(values) => {
               mutate({
                 requestedPlanId: Number(values.requestedPlanId),
@@ -560,18 +638,25 @@ const UpgradePlanPage = () => {
                       {/* Select New Plan */}
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-gray-700">
-                          Select New Plan{" "}
+                          {t("select-new-plan")}{" "}
                           <span className="text-red-500">*</span>
                         </label>
+
                         <Field
                           as="select"
                           name="requestedPlanId"
-                          className={`${inputCls(!!(errors.requestedPlanId && touched.requestedPlanId))} appearance-none`}
+                          className={`${inputCls(
+                            !!(
+                              errors.requestedPlanId && touched.requestedPlanId
+                            ),
+                          )} appearance-none`}
                           onChange={(
                             e: React.ChangeEvent<HTMLSelectElement>,
                           ) => {
                             const id = Number(e.target.value);
+
                             setFieldValue("requestedPlanId", id);
+
                             setSelectedPlan(
                               id > 0
                                 ? (plans.find((p) => p.id === id) ?? null)
@@ -579,14 +664,16 @@ const UpgradePlanPage = () => {
                             );
                           }}
                         >
-                          <option value={0}>Select a plan…</option>
+                          <option value={0}>{t("select-a-plan")}</option>
+
                           {plans.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.plan_name} ({p.max_students.toLocaleString()}{" "}
-                              Students)
+                              {t("students")})
                             </option>
                           ))}
                         </Field>
+
                         <ErrorMessage name="requestedPlanId">
                           {(msg) => (
                             <p className={errMsg}>
@@ -600,21 +687,36 @@ const UpgradePlanPage = () => {
                       {/* Reason */}
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-gray-700">
-                          Reason for Upgrade{" "}
+                          {t("reason-for-upgrade")}{" "}
                           <span className="text-red-500">*</span>
                         </label>
+
                         <Field
                           as="select"
                           name="reason"
-                          className={`${inputCls(!!(errors.reason && touched.reason))} appearance-none`}
+                          className={`${inputCls(
+                            !!(errors.reason && touched.reason),
+                          )} appearance-none`}
                         >
-                          <option value="">Select a reason…</option>
+                          <option value="">{t("select-a-reason")}</option>
+
                           {REASONS.map((r) => (
                             <option key={r} value={r}>
-                              {r}
+                              {t(
+                                r === "Need to add more students"
+                                  ? "need-to-add-more-students"
+                                  : r === "Current plan is insufficient"
+                                    ? "current-plan-is-insufficient"
+                                    : r === "Business growth"
+                                      ? "business-growth"
+                                      : r === "Feature upgrade"
+                                        ? "feature-upgrade"
+                                        : "other",
+                              )}
                             </option>
                           ))}
                         </Field>
+
                         <ErrorMessage name="reason">
                           {(msg) => (
                             <p className={errMsg}>
@@ -628,13 +730,14 @@ const UpgradePlanPage = () => {
                       {/* Additional Students */}
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-gray-700">
-                          Additional Students Needed{" "}
+                          {t("additional-students-needed")}{" "}
                           <span className="text-red-500">*</span>
                         </label>
+
                         <Field
                           type="number"
                           name="additionalStudentsNeeded"
-                          placeholder="e.g. 3000"
+                          placeholder={t("e-g-3000")}
                           min={1}
                           className={inputCls(
                             !!(
@@ -643,6 +746,7 @@ const UpgradePlanPage = () => {
                             ),
                           )}
                         />
+
                         <ErrorMessage name="additionalStudentsNeeded">
                           {(msg) => (
                             <p className={errMsg}>
@@ -656,16 +760,19 @@ const UpgradePlanPage = () => {
                       {/* Message */}
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-gray-700">
-                          Message{" "}
+                          {t("message")}{" "}
                           <span className="text-xs text-gray-400 font-normal">
-                            (Optional)
+                            ({t("optional")})
                           </span>
                         </label>
+
                         <Field
                           as="textarea"
                           name="message"
                           rows={4}
-                          placeholder="e.g. We are growing and need to increase our student limit."
+                          placeholder={t(
+                            "e-g-we-are-growing-and-need-to-increase-our-student-limit",
+                          )}
                           className={`${inputCls()} h-auto py-2.5 resize-none`}
                         />
                       </div>
@@ -677,8 +784,9 @@ const UpgradePlanPage = () => {
                         to="/dashboard/home"
                         className="h-10 px-6 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-2"
                       >
-                        <X size={14} /> Cancel
+                        <X size={14} /> {t("cancel")}
                       </Link>
+
                       <button
                         type="submit"
                         disabled={isPending}
@@ -687,11 +795,11 @@ const UpgradePlanPage = () => {
                         {isPending ? (
                           <>
                             <Loader2 size={14} className="animate-spin" />{" "}
-                            Submitting…
+                            {t("submitting")}
                           </>
                         ) : (
                           <>
-                            <TrendingUp size={14} /> Submit Request
+                            <TrendingUp size={14} /> {t("submit-request")}
                           </>
                         )}
                       </button>

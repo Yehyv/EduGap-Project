@@ -29,6 +29,7 @@ import {
   createContractPayment,
 } from "@/features/Dashboard/services/dashboardApis";
 import { dashboardApi } from "@/shared/services/dashboardApi";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,46 +64,6 @@ interface InstallmentDetail {
 
 type PaymentType = "full" | "partial";
 
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const statusConfig: Record<
-  string,
-  { class: string; dot: string; label: string }
-> = {
-  PAID: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Paid",
-  },
-  PARTIAL: {
-    class: "bg-blue-50 text-blue-500 border-blue-200",
-    dot: "bg-blue-400",
-    label: "Partial",
-  },
-  PENDING: {
-    class: "bg-amber-50 text-amber-600 border-amber-200",
-    dot: "bg-amber-400",
-    label: "Pending",
-  },
-  UPCOMING: {
-    class: "bg-orange-50 text-orange-500 border-orange-200",
-    dot: "bg-orange-400",
-    label: "Upcoming",
-  },
-  OVERDUE: {
-    class: "bg-red-50 text-red-500 border-red-200",
-    dot: "bg-red-500",
-    label: "Overdue",
-  },
-};
-
-const getStatusCfg = (s: string) =>
-  statusConfig[s] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: s,
-  };
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const egp = (val: number | string) =>
@@ -119,15 +80,6 @@ const ordinal = (n: number) => {
   const v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
-
-// ─── Payment methods ──────────────────────────────────────────────────────────
-
-const PAYMENT_METHODS = [
-  { value: "BANK_TRANSFER", label: "Bank Transfer" },
-  { value: "CASH", label: "Cash" },
-  { value: "CHEQUE", label: "Cheque" },
-  { value: "ONLINE", label: "Online" },
-];
 
 const uploadReceiptImage = async (
   paymentId: number,
@@ -254,83 +206,86 @@ const PaymentTypeToggle = ({
   value: PaymentType;
   onChange: (v: PaymentType) => void;
   remaining: number;
-}) => (
-  <div className="flex flex-col gap-1.5">
-    <FieldLabel required>
-      <SplitSquareHorizontal size={14} className="text-gray-400" />
-      Payment Type
-    </FieldLabel>
-    <div className="grid grid-cols-2 gap-2">
-      <button
-        type="button"
-        onClick={() => onChange("full")}
-        className={`relative flex flex-col items-start gap-1 px-4 py-3 rounded-xl border-2 transition-all text-left ${
-          value === "full"
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
-        }`}
-      >
-        <div className="flex items-center justify-between w-full">
-          <span
-            className={`text-sm font-semibold ${value === "full" ? "text-blue-700" : "text-gray-700"}`}
-          >
-            Full Payment
-          </span>
-          <span
-            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-              value === "full"
-                ? "border-blue-500 bg-blue-500"
-                : "border-gray-300"
-            }`}
-          >
-            {value === "full" && (
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-            )}
-          </span>
-        </div>
-        <span
-          className={`text-xs font-medium ${value === "full" ? "text-blue-600" : "text-gray-400"}`}
+}) => {
+  const { t } = useLanguage();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <FieldLabel required>
+        <SplitSquareHorizontal size={14} className="text-gray-400" />
+        {t("paymentType")}
+      </FieldLabel>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onChange("full")}
+          className={`relative flex flex-col items-start gap-1 px-4 py-3 rounded-xl border-2 transition-all text-left ${
+            value === "full"
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+          }`}
         >
-          {egp(remaining)}
-        </span>
-      </button>
+          <div className="flex items-center justify-between w-full">
+            <span
+              className={`text-sm font-semibold ${value === "full" ? "text-blue-700" : "text-gray-700"}`}
+            >
+              {t("fullPayment")}
+            </span>
+            <span
+              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                value === "full"
+                  ? "border-blue-500 bg-blue-500"
+                  : "border-gray-300"
+              }`}
+            >
+              {value === "full" && (
+                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+              )}
+            </span>
+          </div>
+          <span
+            className={`text-xs font-medium ${value === "full" ? "text-blue-600" : "text-gray-400"}`}
+          >
+            {egp(remaining)}
+          </span>
+        </button>
 
-      <button
-        type="button"
-        onClick={() => onChange("partial")}
-        className={`relative flex flex-col items-start gap-1 px-4 py-3 rounded-xl border-2 transition-all text-left ${
-          value === "partial"
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
-        }`}
-      >
-        <div className="flex items-center justify-between w-full">
-          <span
-            className={`text-sm font-semibold ${value === "partial" ? "text-blue-700" : "text-gray-700"}`}
-          >
-            Partial Payment
-          </span>
-          <span
-            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-              value === "partial"
-                ? "border-blue-500 bg-blue-500"
-                : "border-gray-300"
-            }`}
-          >
-            {value === "partial" && (
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-            )}
-          </span>
-        </div>
-        <span
-          className={`text-xs ${value === "partial" ? "text-blue-500" : "text-gray-400"}`}
+        <button
+          type="button"
+          onClick={() => onChange("partial")}
+          className={`relative flex flex-col items-start gap-1 px-4 py-3 rounded-xl border-2 transition-all text-left ${
+            value === "partial"
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+          }`}
         >
-          Custom amount
-        </span>
-      </button>
+          <div className="flex items-center justify-between w-full">
+            <span
+              className={`text-sm font-semibold ${value === "partial" ? "text-blue-700" : "text-gray-700"}`}
+            >
+              {t("partialPayment")}
+            </span>
+            <span
+              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                value === "partial"
+                  ? "border-blue-500 bg-blue-500"
+                  : "border-gray-300"
+              }`}
+            >
+              {value === "partial" && (
+                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+              )}
+            </span>
+          </div>
+          <span
+            className={`text-xs ${value === "partial" ? "text-blue-500" : "text-gray-400"}`}
+          >
+            {t("customAmount")}
+          </span>
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ─── Receipt Image Upload ─────────────────────────────────────────────────────
 
@@ -355,15 +310,16 @@ const ReceiptImageUpload = ({
   onRemove: () => void;
   isUploading?: boolean;
 }) => {
+  const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const validate = (f: File): string | null => {
     if (!ACCEPTED_IMAGE_TYPES.includes(f.type))
-      return "Only JPG, PNG, or WebP images are accepted.";
+      return t("onlyJpgPngWebpAccepted");
     if (f.size > MAX_FILE_SIZE_MB * 1024 * 1024)
-      return `Image must be smaller than ${MAX_FILE_SIZE_MB}MB.`;
+      return `${t("imageMustBeSmallerThan")} ${MAX_FILE_SIZE_MB}MB.`;
     return null;
   };
 
@@ -398,9 +354,9 @@ const ReceiptImageUpload = ({
     <div className="flex flex-col gap-1.5">
       <FieldLabel>
         <ImageIcon size={14} className="text-gray-400" />
-        Receipt Image
+        {t("receiptImage")}
         <span className="ml-1 text-[10px] font-normal text-gray-400">
-          (optional · JPG, PNG, WebP · max {MAX_FILE_SIZE_MB}MB)
+          ({t("optionalJpgPngWebpMax")} {MAX_FILE_SIZE_MB}MB)
         </span>
       </FieldLabel>
 
@@ -441,7 +397,7 @@ const ReceiptImageUpload = ({
                   className="h-7 px-2.5 rounded-md border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <Upload size={11} />
-                  Change
+                  {t("change")}
                 </button>
                 {/* Remove button */}
                 <button
@@ -466,7 +422,7 @@ const ReceiptImageUpload = ({
                 >
                   <Loader2 size={20} className="animate-spin text-blue-500" />
                   <p className="text-xs font-medium text-blue-600">
-                    Uploading receipt…
+                    {t("uploadingReceiptEllipsis")}
                   </p>
                 </motion.div>
               )}
@@ -506,12 +462,10 @@ const ReceiptImageUpload = ({
               <p
                 className={`text-xs font-medium ${dragOver ? "text-blue-600" : "text-gray-500"}`}
               >
-                {dragOver
-                  ? "Drop image here"
-                  : "Click to upload or drag & drop"}
+                {dragOver ? t("dropImageHere") : t("clickToUploadOrDragDrop")}
               </p>
               <p className="text-[10px] text-gray-400 mt-0.5">
-                JPG, PNG, WebP up to {MAX_FILE_SIZE_MB}MB
+                {t("jpgPngWebpUpTo")} {MAX_FILE_SIZE_MB}MB
               </p>
             </div>
           </motion.div>
@@ -548,6 +502,54 @@ const ReceiptImageUpload = ({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const RecordPaymentPage = () => {
+  const { t } = useLanguage();
+
+  // ─── Status config ──────────────────────────────────────────────────────
+  const statusConfig: Record<
+    string,
+    { class: string; dot: string; label: string }
+  > = {
+    PAID: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("paid"),
+    },
+    PARTIAL: {
+      class: "bg-blue-50 text-blue-500 border-blue-200",
+      dot: "bg-blue-400",
+      label: t("partial"),
+    },
+    PENDING: {
+      class: "bg-amber-50 text-amber-600 border-amber-200",
+      dot: "bg-amber-400",
+      label: t("contractPending"),
+    },
+    UPCOMING: {
+      class: "bg-orange-50 text-orange-500 border-orange-200",
+      dot: "bg-orange-400",
+      label: t("upcoming"),
+    },
+    OVERDUE: {
+      class: "bg-red-50 text-red-500 border-red-200",
+      dot: "bg-red-500",
+      label: t("overdue"),
+    },
+  };
+
+  const getStatusCfg = (s: string) =>
+    statusConfig[s] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: s,
+    };
+
+  const PAYMENT_METHODS = [
+    { value: "BANK_TRANSFER", label: t("bankTransfer") },
+    { value: "CASH", label: t("cash") },
+    { value: "CHEQUE", label: t("cheque") },
+    { value: "ONLINE", label: t("online") },
+  ];
+
   const { installmentId } = useParams<{ installmentId: string }>();
   const navigate = useNavigate();
   const lastSubmittedValues = useRef<typeof initialValues | null>(null);
@@ -611,7 +613,7 @@ const RecordPaymentPage = () => {
         } catch (uploadErr: unknown) {
           const msg =
             (uploadErr as Error)?.message ??
-            "Payment saved, but receipt upload failed.";
+            t("paymentSavedReceiptUploadFailed");
           showToast("error", msg);
           setIsUploadingReceipt(false);
           setTimeout(
@@ -657,7 +659,7 @@ const RecordPaymentPage = () => {
     onError: (error: unknown) => {
       const msg =
         (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message ?? "Failed to record payment. Please try again.";
+          ?.data?.message ?? t("failedToRecordPaymentTryAgain");
       showToast("error", msg);
     },
   });
@@ -680,17 +682,17 @@ const RecordPaymentPage = () => {
   if (isError || !installment) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Record Payment" />
+        <DashboardPageTitle text={t("recordPayment")} />
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <AlertCircle size={36} className="text-red-300" />
           <p className="text-sm text-red-400">
-            Failed to load installment data.
+            {t("failedToLoadInstallmentData")}
           </p>
           <Link
             to="/dashboard/institutions-contracts"
             className="text-sm text-blue-500 hover:underline"
           >
-            Back to Contracts
+            {t("backToContracts")}
           </Link>
         </div>
       </div>
@@ -705,22 +707,22 @@ const RecordPaymentPage = () => {
         )
       : 0;
 
-  const installmentLabel = `${ordinal(installment.installmentNo)} Installment — Due: ${fmtDate(installment.dueDate)} — Remaining: ${egp(installment.remainingAmount)}`;
+  const installmentLabel = `${ordinal(installment.installmentNo)} ${t("installmentDueRemaining")} ${fmtDate(installment.dueDate)} — ${t("remaining")}: ${egp(installment.remainingAmount)}`;
 
   const buildValidation = (type: PaymentType, remaining: number) =>
     Yup.object({
-      paymentDate: Yup.string().required("Payment date is required"),
-      paymentMethod: Yup.string().required("Payment method is required"),
+      paymentDate: Yup.string().required(t("paymentDateRequired")),
+      paymentMethod: Yup.string().required(t("paymentMethodRequired")),
       paidAmount:
         type === "partial"
           ? Yup.number()
-              .typeError("Enter a valid amount")
-              .min(0.01, "Amount must be greater than 0")
+              .typeError(t("enterValidAmount"))
+              .min(0.01, t("amountMustBeGreaterThanZero"))
               .max(
                 remaining,
-                `Cannot exceed remaining balance of ${egp(remaining)}`,
+                `${t("cannotExceedRemainingBalance")} ${egp(remaining)}`,
               )
-              .required("Amount is required")
+              .required(t("amountRequired"))
           : Yup.number().required(),
       receiptNo: Yup.string(),
       notes: Yup.string(),
@@ -743,18 +745,19 @@ const RecordPaymentPage = () => {
     if (isPending)
       return (
         <>
-          <Loader2 size={15} className="animate-spin" /> Saving…
+          <Loader2 size={15} className="animate-spin" /> {t("savingEllipsis")}
         </>
       );
     if (isUploadingReceipt)
       return (
         <>
-          <Loader2 size={15} className="animate-spin" /> Uploading receipt…
+          <Loader2 size={15} className="animate-spin" />{" "}
+          {t("uploadingReceiptEllipsis")}
         </>
       );
     return (
       <>
-        <CreditCard size={15} /> Save Payment
+        <CreditCard size={15} /> {t("savePayment")}
       </>
     );
   };
@@ -772,7 +775,7 @@ const RecordPaymentPage = () => {
       </AnimatePresence>
 
       <div className="flex flex-col gap-5 pb-8">
-        <DashboardPageTitle text="Record Payment" />
+        <DashboardPageTitle text={t("recordPayment")} />
 
         {/* Breadcrumb */}
         <motion.nav
@@ -784,24 +787,24 @@ const RecordPaymentPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={14} />
           <Link
             to={`/dashboard/installments`}
             className="hover:text-gray-600 transition-colors"
           >
-            Installments
+            {t("installments")}
           </Link>
           <ChevronRight size={14} />
           <Link
             to={`/dashboard/installments/${installmentId}`}
             className="hover:text-gray-600 transition-colors"
           >
-            Installment Details
+            {t("installmentDetails")}
           </Link>
           <ChevronRight size={14} />
-          <span className="text-gray-600">Record Payment</span>
+          <span className="text-gray-600">{t("recordPayment")}</span>
         </motion.nav>
 
         <Formik
@@ -837,27 +840,32 @@ const RecordPaymentPage = () => {
                   <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
                     <Building2 size={15} className="text-gray-400" />
                     <h3 className="text-sm font-semibold text-gray-800">
-                      Payment Information
+                      {t("paymentInformation")}
                     </h3>
                   </div>
 
                   <div className="px-5 py-5 flex flex-col gap-3.5">
                     <InfoRow
-                      label="Contract No."
+                      label={t("contractNo")}
                       value={installment.contractNo}
                     />
                     <div className="border-t border-gray-50" />
                     <InfoRow
-                      label="Institute"
+                      label={t("institute")}
                       value={installment.instituteName}
                     />
                     <div className="border-t border-gray-50" />
-                    <InfoRow label="Year" value={installment.year} />
+                    <InfoRow
+                      label={t("contractYear")}
+                      value={installment.year}
+                    />
                     <div className="border-t border-gray-50" />
 
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col gap-0.5">
-                        <p className="text-xs text-gray-400">Installment</p>
+                        <p className="text-xs text-gray-400">
+                          {t("installment")}
+                        </p>
                         <p className="text-sm font-semibold text-gray-800">
                           {ordinal(installment.installmentNo)}
                         </p>
@@ -874,28 +882,28 @@ const RecordPaymentPage = () => {
 
                     <div className="border-t border-gray-50" />
                     <InfoRow
-                      label="Due Date"
+                      label={t("dueDate")}
                       value={fmtDate(installment.dueDate)}
                     />
                     <div className="border-t border-gray-50" />
                     <InfoRow
-                      label="Installment Amount"
+                      label={t("installmentAmount")}
                       value={egp(installment.installmentAmount)}
                     />
                     <div className="border-t border-gray-50" />
                     <InfoRow
-                      label="Percentage"
+                      label={t("percentage")}
                       value={`${installment.installmentPercentage}%`}
                     />
                     <div className="border-t border-gray-50" />
                     <InfoRow
-                      label="Paid Amount"
+                      label={t("paidAmount")}
                       value={egp(installment.paidAmount)}
                       highlight="green"
                     />
                     <div className="border-t border-gray-50" />
                     <InfoRow
-                      label="Remaining Amount"
+                      label={t("remainingAmount")}
                       value={egp(installment.remainingAmount)}
                       highlight={
                         installment.remainingAmount > 0 ? "red" : undefined
@@ -905,7 +913,9 @@ const RecordPaymentPage = () => {
                     {/* Progress bar */}
                     <div className="flex flex-col gap-1.5 pt-1">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-400">Paid Progress</p>
+                        <p className="text-xs text-gray-400">
+                          {t("paidProgress")}
+                        </p>
                         <p className="text-xs font-semibold text-gray-600">
                           {paidPct}%
                         </p>
@@ -931,8 +941,8 @@ const RecordPaymentPage = () => {
                           className="text-amber-500 flex-shrink-0 mt-0.5"
                         />
                         <p className="text-xs text-amber-700">
-                          This installment already has{" "}
-                          {installment.paymentsCount} recorded payment
+                          {t("thisInstallmentAlreadyHas")}{" "}
+                          {installment.paymentsCount} {t("recordedPayment")}
                           {installment.paymentsCount > 1 ? "s" : ""}.
                         </p>
                       </div>
@@ -945,7 +955,7 @@ const RecordPaymentPage = () => {
                           className="text-green-500 flex-shrink-0 mt-0.5"
                         />
                         <p className="text-xs text-green-700">
-                          This installment is fully paid.
+                          {t("thisInstallmentIsFullyPaid")}
                         </p>
                       </div>
                     )}
@@ -963,7 +973,7 @@ const RecordPaymentPage = () => {
                     <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
                       <CreditCard size={15} className="text-gray-400" />
                       <h3 className="text-sm font-semibold text-gray-800">
-                        Record Payment
+                        {t("recordPayment")}
                       </h3>
                     </div>
 
@@ -972,7 +982,7 @@ const RecordPaymentPage = () => {
                       <div className="flex flex-col gap-1.5">
                         <FieldLabel>
                           <Hash size={14} className="text-gray-400" />
-                          Installment
+                          {t("installment")}
                         </FieldLabel>
                         <div className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm text-gray-700 bg-gray-50 flex items-center cursor-not-allowed select-none truncate">
                           {installmentLabel}
@@ -997,7 +1007,7 @@ const RecordPaymentPage = () => {
                         <div className="flex flex-col gap-1.5">
                           <FieldLabel required>
                             <CalendarDays size={14} className="text-gray-400" />
-                            Payment Date
+                            {t("paymentDate")}
                           </FieldLabel>
                           <Field
                             type="date"
@@ -1019,7 +1029,7 @@ const RecordPaymentPage = () => {
                         <div className="flex flex-col gap-1.5">
                           <FieldLabel required>
                             <Banknote size={14} className="text-gray-400" />
-                            Payment Method
+                            {t("paymentMethod")}
                           </FieldLabel>
                           <Field
                             as="select"
@@ -1048,7 +1058,7 @@ const RecordPaymentPage = () => {
                         <div className="flex flex-col gap-1.5">
                           <FieldLabel required>
                             <DollarSign size={14} className="text-gray-400" />
-                            Amount (EGP)
+                            {t("amountEGP")}
                           </FieldLabel>
 
                           <AnimatePresence mode="wait">
@@ -1062,7 +1072,7 @@ const RecordPaymentPage = () => {
                               >
                                 <span>{egp(installment.remainingAmount)}</span>
                                 <span className="text-[10px] font-medium text-green-500 bg-green-100 px-1.5 py-0.5 rounded">
-                                  Full
+                                  {t("full")}
                                 </span>
                               </motion.div>
                             ) : (
@@ -1076,7 +1086,7 @@ const RecordPaymentPage = () => {
                                 <Field
                                   type="number"
                                   name="paidAmount"
-                                  placeholder={`Max ${egp(installment.remainingAmount)}`}
+                                  placeholder={`${t("max")} ${egp(installment.remainingAmount)}`}
                                   min={0.01}
                                   max={installment.remainingAmount}
                                   step={0.01}
@@ -1086,7 +1096,7 @@ const RecordPaymentPage = () => {
                                 />
                                 {!errors.paidAmount && (
                                   <p className="text-[11px] text-gray-400 flex items-center gap-1">
-                                    Max:{" "}
+                                    {t("max")}:{" "}
                                     <span className="font-medium text-gray-500">
                                       {egp(installment.remainingAmount)}
                                     </span>
@@ -1109,7 +1119,7 @@ const RecordPaymentPage = () => {
                         <div className="flex flex-col gap-1.5">
                           <FieldLabel>
                             <Receipt size={14} className="text-gray-400" />
-                            Receipt No.
+                            {t("receiptNo")}
                           </FieldLabel>
                           <Field
                             type="text"
@@ -1135,13 +1145,13 @@ const RecordPaymentPage = () => {
                       <div className="flex flex-col gap-1.5">
                         <FieldLabel>
                           <FileText size={14} className="text-gray-400" />
-                          Notes
+                          {t("notes")}
                         </FieldLabel>
                         <Field
                           as="textarea"
                           name="notes"
                           rows={3}
-                          placeholder="e.g. Full payment for 2nd installment"
+                          placeholder={t("egFullPaymentFor2ndInstallment")}
                           className={`${inputCls()} h-auto py-2.5 resize-none`}
                         />
                       </div>
@@ -1159,12 +1169,12 @@ const RecordPaymentPage = () => {
                               className="rounded-xl border border-blue-100 bg-blue-50 overflow-hidden"
                             >
                               <p className="px-4 py-2.5 text-xs font-semibold text-blue-700 border-b border-blue-100">
-                                Payment Summary
+                                {t("paymentSummary")}
                               </p>
                               <div className="px-4 py-3 grid grid-cols-3 gap-3">
                                 <div className="flex flex-col gap-0.5">
                                   <p className="text-[10px] text-blue-500 font-semibold uppercase tracking-wide">
-                                    Paying now
+                                    {t("payingNow")}
                                   </p>
                                   <p className="text-xs font-semibold text-blue-700">
                                     {egp(Number(values.paidAmount))}
@@ -1172,7 +1182,7 @@ const RecordPaymentPage = () => {
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                   <p className="text-[10px] text-blue-500 font-semibold uppercase tracking-wide">
-                                    Still remaining
+                                    {t("stillRemaining")}
                                   </p>
                                   <p className="text-xs font-semibold text-red-500">
                                     {egp(
@@ -1183,7 +1193,7 @@ const RecordPaymentPage = () => {
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                   <p className="text-[10px] text-blue-500 font-semibold uppercase tracking-wide">
-                                    Coverage
+                                    {t("coverage")}
                                   </p>
                                   <p className="text-xs font-semibold text-gray-700">
                                     {Math.round(
@@ -1213,8 +1223,7 @@ const RecordPaymentPage = () => {
                               className="text-green-500 flex-shrink-0 mt-0.5"
                             />
                             <p className="text-xs text-green-700">
-                              This installment is fully paid. Any new payment
-                              will be recorded as additional.
+                              {t("fullyPaidNewPaymentNotice")}
                             </p>
                           </motion.div>
                         )}
@@ -1229,7 +1238,7 @@ const RecordPaymentPage = () => {
                       className="h-10 px-5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
                     >
                       <X size={15} />
-                      Cancel
+                      {t("cancel")}
                     </Link>
                     <motion.button
                       type="submit"

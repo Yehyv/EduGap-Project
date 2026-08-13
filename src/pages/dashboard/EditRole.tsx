@@ -7,8 +7,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import AddOrEditRole from "@/features/Dashboard/components/AddOrEditRole";
 import { useParams } from "react-router-dom";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const EditRole = () => {
+  const { t } = useLanguage();
   const { roleId } = useParams();
   const { data } = useQuery({
     queryKey: ["findOneRole"],
@@ -28,8 +30,8 @@ const EditRole = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Role updated successfully",
+        title: t("success"),
+        text: t("roleUpdatedSuccessfully"),
       });
       queryClient.invalidateQueries({ queryKey: ["findOneRole"] });
     },
@@ -37,17 +39,18 @@ const EditRole = () => {
     onError: (error: any) => {
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: t("error"),
         text:
-          error?.response?.data?.message[0] ||
-          "Something went wrong, please try again",
+          error?.response?.data?.message[0] || t("somethingWentWrongTryAgain"),
       });
     },
   });
 
   return (
     <>
-      <DashboardPageTitle text={`Edit Role ${data?.data.role_title ?? ""}`} />
+      <DashboardPageTitle
+        text={`${t("editRole")} ${data?.data.role_title ?? ""}`}
+      />
       <AddOrEditRole
         initialValues={initialValues}
         isPending={isPending}

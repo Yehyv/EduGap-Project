@@ -16,6 +16,7 @@ import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { RolesList as RoleType } from "@/features/Dashboard/types/dashboardTypes";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 /* ------------------ styles ------------------ */
 const customStyles = {
@@ -37,82 +38,84 @@ const customStyles = {
   },
 };
 
-/* ------------------ columns ------------------ */
-const columns = [
-  {
-    name: "Num",
-    selector: (_: unknown, index: number) => index + 1,
-    width: "60px",
-    center: true,
-  },
-  {
-    name: "Title",
-    selector: (row: RoleType) => row.role_title,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Created At",
-    selector: (row: RoleType) => row.created_at,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Updated At",
-    selector: (row: RoleType) => row.updated_at,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Is Active",
-    selector: (row: RoleType) => (
-      <ActiveStatusButton
-        isActive={row?.is_active}
-        itemId={row?.id}
-        itemName={row?.role_title}
-        activateApi={roleActiveToggle}
-        deactivateApi={roleActiveToggle}
-        refetchKey={["getRolesList"]}
-        showModal={false}
-        onError={(error, isActivating) => {
-          console.error(
-            `Failed to ${isActivating ? "activate" : "deactivate"}:`,
-            error,
-          );
-        }}
-      />
-    ),
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Edit",
-    cell: (row: RoleType) => (
-      <Link to={`/dashboard/roles/edit-role/${row.id}`}>
-        <EditIcon />
-      </Link>
-    ),
-    button: true,
-    center: true,
-  },
-  {
-    name: "Delete",
-    style: { justifyContent: "center" },
-    cell: (row: RoleType) => (
-      <DeleteButton
-        deleteApi={() => deleteRole(row.id)}
-        successMessage="تم حذف الصلاحية بنجاح"
-        errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getRolesList"
-      />
-    ),
-    ignoreRowClick: true,
-    button: true,
-    minWidth: "60px",
-  },
-];
-
 const RolesList = () => {
+  const { t } = useLanguage();
+
+  /* ------------------ columns ------------------ */
+  const columns = [
+    {
+      name: t("num"),
+      selector: (_: unknown, index: number) => index + 1,
+      width: "60px",
+      center: true,
+    },
+    {
+      name: t("title"),
+      selector: (row: RoleType) => row.role_title,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("createdAt"),
+      selector: (row: RoleType) => row.created_at,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("updatedAt"),
+      selector: (row: RoleType) => row.updated_at,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("isActive"),
+      selector: (row: RoleType) => (
+        <ActiveStatusButton
+          isActive={row?.is_active}
+          itemId={row?.id}
+          itemName={row?.role_title}
+          activateApi={roleActiveToggle}
+          deactivateApi={roleActiveToggle}
+          refetchKey={["getRolesList"]}
+          showModal={false}
+          onError={(error, isActivating) => {
+            console.error(
+              `Failed to ${isActivating ? "activate" : "deactivate"}:`,
+              error,
+            );
+          }}
+        />
+      ),
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("edit"),
+      cell: (row: RoleType) => (
+        <Link to={`/dashboard/roles/edit-role/${row.id}`}>
+          <EditIcon />
+        </Link>
+      ),
+      button: true,
+      center: true,
+    },
+    {
+      name: t("delete"),
+      style: { justifyContent: "center" },
+      cell: (row: RoleType) => (
+        <DeleteButton
+          deleteApi={() => deleteRole(row.id)}
+          successMessage="تم حذف الصلاحية بنجاح"
+          errorMessage="حدث خطأ أثناء الحذف"
+          refetchFunction="getRolesList"
+        />
+      ),
+      ignoreRowClick: true,
+      button: true,
+      minWidth: "60px",
+    },
+  ];
+
   /* ------------------ pagination state ------------------ */
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -128,6 +131,7 @@ const RolesList = () => {
   /* ------------------ filtering ------------------ */
   const filteredItems = useMemo(() => {
     if (!data?.data?.items) return [];
+
     return data.data.items.filter((item: RoleType) =>
       item.role_title?.toLowerCase().includes(filterText.toLowerCase()),
     );
@@ -139,7 +143,7 @@ const RolesList = () => {
       <div className="relative">
         <input
           type="text"
-          placeholder="Search by title"
+          placeholder={t("searchByTitle")}
           className="border border-[#ACACAC] h-9 px-10 rounded-2xl text-sm"
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
@@ -151,7 +155,7 @@ const RolesList = () => {
 
       <div className="border border-[#ACACAC] h-9 px-4 rounded-2xl flex items-center gap-1 text-sm">
         <FilterIcon />
-        Filter
+        {t("filter")}
       </div>
     </div>
   );
@@ -169,12 +173,12 @@ const RolesList = () => {
   return (
     <>
       <DashboardPageTitle
-        text="Roles"
+        text={t("roles")}
         button
         buttonText={
           <Link to="/dashboard/roles/add-new-role" className="center">
             <PlusIcon className="mt-1.5 h-8" />
-            <span className="me-4 text-white">Add New Role</span>
+            <span className="me-4 text-white">{t("addNewRole")}</span>
           </Link>
         }
       />

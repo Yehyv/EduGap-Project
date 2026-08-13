@@ -12,11 +12,11 @@ import {
   AlertCircle,
   XCircle,
   MinusCircle,
-  ArrowRight,
   Building2,
 } from "lucide-react";
 import { fetchAnnualSettlementDashboard } from "@/features/Dashboard/services/dashboardApis";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -31,67 +31,6 @@ const fadeUp = (delay = 0) => ({
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] },
 });
-
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const STATUS_CFG = {
-  FULLY_PAID: {
-    label: "Fully Paid",
-    color: "#22c55e",
-    bg: "bg-green-50",
-    text: "text-green-600",
-    border: "border-green-200",
-    dot: "bg-green-500",
-    Icon: CheckCircle2,
-  },
-  PARTIALLY_PAID: {
-    label: "Partially Paid",
-    color: "#f59e0b",
-    bg: "bg-amber-50",
-    text: "text-amber-600",
-    border: "border-amber-200",
-    dot: "bg-amber-400",
-    Icon: Clock,
-  },
-  OVERDUE: {
-    label: "Overdue",
-    color: "#ef4444",
-    bg: "bg-red-50",
-    text: "text-red-500",
-    border: "border-red-200",
-    dot: "bg-red-500",
-    Icon: AlertCircle,
-  },
-  PENDING: {
-    label: "Not Due",
-    color: "#6b7280",
-    bg: "bg-gray-50",
-    text: "text-gray-500",
-    border: "border-gray-200",
-    dot: "bg-gray-400",
-    Icon: MinusCircle,
-  },
-  CLOSED: {
-    label: "Closed",
-    color: "#3b82f6",
-    bg: "bg-blue-50",
-    text: "text-blue-500",
-    border: "border-blue-200",
-    dot: "bg-blue-400",
-    Icon: XCircle,
-  },
-};
-
-const getCfg = (status) =>
-  STATUS_CFG[status] ?? {
-    label: status,
-    color: "#9ca3af",
-    bg: "bg-gray-50",
-    text: "text-gray-500",
-    border: "border-gray-200",
-    dot: "bg-gray-400",
-    Icon: MinusCircle,
-  };
 
 // ─── Summary Card ─────────────────────────────────────────────────────────────
 
@@ -114,7 +53,7 @@ const SummaryCard = ({ label, value, sub, subColor, delay }) => (
 
 // ─── Overview Card ────────────────────────────────────────────────────────────
 
-const OverviewCard = ({ status, count, percentage, delay }) => {
+const OverviewCard = ({ status, count, percentage, delay, getCfg }) => {
   const cfg = getCfg(status);
   return (
     <motion.div
@@ -168,7 +107,67 @@ const YEARS = [2026, 2025, 2024, 2023, 2022];
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const AnnualSettlementDashboard = () => {
+  const { t } = useLanguage();
   const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
+
+  const STATUS_CFG = {
+    FULLY_PAID: {
+      label: t("fullyPaid"),
+      color: "#22c55e",
+      bg: "bg-green-50",
+      text: "text-green-600",
+      border: "border-green-200",
+      dot: "bg-green-500",
+      Icon: CheckCircle2,
+    },
+    PARTIALLY_PAID: {
+      label: t("partiallyPaid"),
+      color: "#f59e0b",
+      bg: "bg-amber-50",
+      text: "text-amber-600",
+      border: "border-amber-200",
+      dot: "bg-amber-400",
+      Icon: Clock,
+    },
+    OVERDUE: {
+      label: t("overdue"),
+      color: "#ef4444",
+      bg: "bg-red-50",
+      text: "text-red-500",
+      border: "border-red-200",
+      dot: "bg-red-500",
+      Icon: AlertCircle,
+    },
+    PENDING: {
+      label: t("notDue"),
+      color: "#6b7280",
+      bg: "bg-gray-50",
+      text: "text-gray-500",
+      border: "border-gray-200",
+      dot: "bg-gray-400",
+      Icon: MinusCircle,
+    },
+    CLOSED: {
+      label: t("closed"),
+      color: "#3b82f6",
+      bg: "bg-blue-50",
+      text: "text-blue-500",
+      border: "border-blue-200",
+      dot: "bg-blue-400",
+      Icon: XCircle,
+    },
+  };
+
+  const getCfg = (status) =>
+    STATUS_CFG[status] ?? {
+      label: status,
+      color: "#9ca3af",
+      bg: "bg-gray-50",
+      text: "text-gray-500",
+      border: "border-gray-200",
+      dot: "bg-gray-400",
+      Icon: MinusCircle,
+    };
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["annual-settlement-dashboard", academicYear],
@@ -202,7 +201,7 @@ const AnnualSettlementDashboard = () => {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <AlertCircle size={36} className="text-red-300" />
-        <p className="text-sm text-red-400">Failed to load dashboard data.</p>
+        <p className="text-sm text-red-400">{t("failedToLoadDashboardData")}</p>
       </div>
     );
   }
@@ -216,6 +215,7 @@ const AnnualSettlementDashboard = () => {
     .map((s) => ({
       ...s,
       color: getCfg(s.status).color,
+      label: getCfg(s.status).label,
     }));
 
   // Overview order matches screenshot
@@ -223,7 +223,7 @@ const AnnualSettlementDashboard = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Annual Settlements Dashboard" />
+      <DashboardPageTitle text={t("annualSettlementsDashboard")} />
 
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Breadcrumb + Year ── */}
@@ -236,12 +236,14 @@ const AnnualSettlementDashboard = () => {
               to="/dashboard/home"
               className="hover:text-gray-600 transition-colors"
             >
-              Dashboard
+              {t("dashboard")}
             </Link>
             <ChevronRight size={13} />
-            <div className="text-gray-600 ">Reports</div>
+            <div className="text-gray-600 ">{t("reports")}</div>
             <ChevronRight size={13} />
-            <span className="text-gray-600 font-medium">Annual Settlement</span>
+            <span className="text-gray-600 font-medium">
+              {t("annualSettlement")}
+            </span>
           </nav>
 
           {/* Year selector */}
@@ -261,24 +263,24 @@ const AnnualSettlementDashboard = () => {
         {/* ── Summary Cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <SummaryCard
-            label="Total Contracts"
+            label={t("totalContracts")}
             value={summary.totalContracts}
             delay={0.05}
           />
           <SummaryCard
-            label="Total Contract Value"
+            label={t("totalContractValue")}
             value={egp(summary.totalContractValue)}
             delay={0.1}
           />
           <SummaryCard
-            label="Total Collected"
+            label={t("totalCollected")}
             value={egp(summary.totalCollected)}
             sub={`${summary.collectedPercentage}%`}
             subColor="text-blue-500"
             delay={0.15}
           />
           <SummaryCard
-            label="Total Remaining"
+            label={t("totalRemaining")}
             value={egp(summary.totalRemaining)}
             sub={`${summary.remainingPercentage}%`}
             subColor="text-red-400"
@@ -294,15 +296,11 @@ const AnnualSettlementDashboard = () => {
           <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
             <FileText size={14} className="text-gray-400" />
             <h3 className="text-sm font-semibold text-gray-800">
-              Settlement Overview
+              {t("settlementOverview")}
             </h3>
           </div>
           <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
             {overviewOrder.map((status, i) => {
-              const key =
-                status === "PENDING"
-                  ? "pending"
-                  : status.toLowerCase().replace("_", "");
               // map status key to overview object key
               const overviewKeyMap = {
                 FULLY_PAID: "fullyPaid",
@@ -319,6 +317,7 @@ const AnnualSettlementDashboard = () => {
                   count={item.count}
                   percentage={item.percentage}
                   delay={0.28 + i * 0.05}
+                  getCfg={getCfg}
                 />
               );
             })}
@@ -335,7 +334,7 @@ const AnnualSettlementDashboard = () => {
             <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
               <TrendingUp size={14} className="text-gray-400" />
               <h3 className="text-sm font-semibold text-gray-800">
-                Settlement by Status
+                {t("settlementByStatus")}
               </h3>
             </div>
             <div className="p-5 flex items-center gap-4">
@@ -378,7 +377,9 @@ const AnnualSettlementDashboard = () => {
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center py-8 gap-2">
                   <MinusCircle size={28} className="text-gray-200" />
-                  <p className="text-xs text-gray-400">No data available</p>
+                  <p className="text-xs text-gray-400">
+                    {t("noDataAvailable")}
+                  </p>
                 </div>
               )}
             </div>
@@ -393,7 +394,7 @@ const AnnualSettlementDashboard = () => {
               <div className="flex items-center gap-2">
                 <AlertCircle size={14} className="text-red-400" />
                 <h3 className="text-sm font-semibold text-gray-800">
-                  Top Overdue Institutions
+                  {t("topOverdueInstitutions")}
                 </h3>
               </div>
             </div>
@@ -402,10 +403,10 @@ const AnnualSettlementDashboard = () => {
               {/* Header row */}
               <div className="grid grid-cols-2 px-5 py-2.5">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                  Institution
+                  {t("institution")}
                 </p>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide text-right">
-                  Overdue Amount
+                  {t("overdueAmount")}
                 </p>
               </div>
 
@@ -413,7 +414,7 @@ const AnnualSettlementDashboard = () => {
                 <div className="flex flex-col items-center justify-center py-10 gap-2">
                   <CheckCircle2 size={28} className="text-green-200" />
                   <p className="text-xs text-gray-400">
-                    No overdue institutions
+                    {t("noOverdueInstitutions")}
                   </p>
                 </div>
               ) : (

@@ -28,6 +28,7 @@ import {
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import { Link } from "react-router-dom";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
@@ -94,14 +95,6 @@ async function exportYearlyRevenue(filters: YearlyFilters): Promise<Blob> {
 }
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
-
-const PLAN_OPTIONS = [
-  { label: "All Plans", value: "" },
-  { label: "Starter Plan", value: "1" },
-  { label: "Growth Plan", value: "2" },
-  { label: "Enterprise Plan", value: "3" },
-  { label: "Custom Plan", value: "4" },
-];
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - 2 + i);
@@ -194,18 +187,18 @@ function BarTooltip({ active, payload, label }: any) {
 
 // ─── CUSTOM PIE TOOLTIP ───────────────────────────────────────────────────────
 
-function PieTooltip({ active, payload }: any) {
+function PieTooltip({ active, payload, t }: any) {
   if (!active || !payload?.length) return null;
   const d = payload[0];
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 text-sm">
       <p className="font-semibold text-slate-700 mb-1">{d.name}</p>
       <p className="text-slate-500">
-        Revenue:{" "}
+        {t("yearlyRevenueTooltipRevenue")}{" "}
         <span className="font-semibold text-slate-700">{fmtFull(d.value)}</span>
       </p>
       <p className="text-slate-500">
-        Share:{" "}
+        {t("yearlyRevenueTooltipShare")}{" "}
         <span className="font-semibold text-slate-700">
           {d.payload.percentage?.toFixed(1)}%
         </span>
@@ -269,6 +262,7 @@ function ActiveShape(props: any) {
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function YearlyRevenuePage() {
+  const { t } = useLanguage();
   const [year, setYear] = useState(CURRENT_YEAR);
   const [planId, setPlanId] = useState("");
   const [activeFilters, setActiveFilters] = useState<YearlyFilters>({
@@ -277,6 +271,14 @@ export default function YearlyRevenuePage() {
   });
   const [exporting, setExporting] = useState(false);
   const [activePieIndex, setActivePieIndex] = useState(0);
+
+  const PLAN_OPTIONS = [
+    { label: t("planAll"), value: "" },
+    { label: t("planStarter"), value: "1" },
+    { label: t("planGrowth"), value: "2" },
+    { label: t("planEnterprise"), value: "3" },
+    { label: t("planCustom"), value: "4" },
+  ];
 
   const { data, isFetching, isError } = useQuery({
     queryKey: ["yearly-revenue", activeFilters],
@@ -309,25 +311,25 @@ export default function YearlyRevenuePage() {
 
   const statCards = [
     {
-      label: "Total Revenue",
+      label: t("yearlyRevenueStatTotalRevenue"),
       value: summary ? fmtFull(summary.totalRevenue) : "—",
       icon: <TrendingUp size={20} className="text-blue-600" />,
       accent: "bg-blue-50",
     },
     {
-      label: "Total Collected",
+      label: t("yearlyRevenueStatTotalCollected"),
       value: summary ? fmtFull(summary.totalCollected) : "—",
       icon: <Wallet size={20} className="text-emerald-600" />,
       accent: "bg-emerald-50",
     },
     {
-      label: "Total Remaining",
+      label: t("yearlyRevenueStatTotalRemaining"),
       value: summary ? fmtFull(summary.totalRemaining) : "—",
       icon: <Clock size={20} className="text-amber-600" />,
       accent: "bg-amber-50",
     },
     {
-      label: "Collection %",
+      label: t("yearlyRevenueStatCollectionPercentage"),
       value: summary ? `${summary.collectionPercentage.toFixed(1)}%` : "—",
       icon: <Percent size={20} className="text-violet-600" />,
       accent: "bg-violet-50",
@@ -336,7 +338,7 @@ export default function YearlyRevenuePage() {
 
   return (
     <>
-      <DashboardPageTitle text="Yearly Revenue Report" />
+      <DashboardPageTitle text={t("yearlyRevenuePageTitle")} />
       <div>
         <div className="max-w-7xl mx-auto space-y-6">
           {/* ── Breadcrumb ── */}
@@ -348,12 +350,16 @@ export default function YearlyRevenuePage() {
               to="/dashboard/home"
               className="hover:text-gray-600 transition-colors"
             >
-              Dashboard
+              {t("dashboardBreadcrumb")}
             </Link>
             <ChevronRight size={13} />
-            <span className="text-gray-600 font-medium">Reports</span>
+            <span className="text-gray-600 font-medium">
+              {t("reportsBreadcrumb")}
+            </span>
             <ChevronRight size={13} />
-            <span className="text-gray-600 font-medium">Yearly Revenue</span>
+            <span className="text-gray-600 font-medium">
+              {t("yearlyRevenueBreadcrumb")}
+            </span>
           </motion.nav>
 
           {/* Filter Bar */}
@@ -367,7 +373,7 @@ export default function YearlyRevenuePage() {
             {/* Year */}
             <div className="flex flex-col gap-1 min-w-[120px]">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Year
+                {t("yearLabel")}
               </label>
               <select
                 value={year}
@@ -385,7 +391,7 @@ export default function YearlyRevenuePage() {
             {/* Plan */}
             <div className="flex flex-col gap-1 min-w-[160px] flex-1">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Plan
+                {t("planLabel")}
               </label>
               <select
                 value={planId}
@@ -405,7 +411,7 @@ export default function YearlyRevenuePage() {
               className="h-9 px-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
             >
               <Filter size={13} />
-              Filter
+              {t("filterLabel")}
             </button>
 
             <button
@@ -418,7 +424,7 @@ export default function YearlyRevenuePage() {
               ) : (
                 <Download size={13} />
               )}
-              {exporting ? "Exporting…" : "Export"}
+              {exporting ? t("exportingLabel") : t("exportLabel")}
             </button>
           </motion.div>
 
@@ -431,7 +437,7 @@ export default function YearlyRevenuePage() {
                 exit={{ opacity: 0 }}
                 className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 text-sm font-medium"
               >
-                Failed to load data. Please try again.
+                {t("errorFailedToLoad")}
               </motion.div>
             )}
           </AnimatePresence>
@@ -455,10 +461,10 @@ export default function YearlyRevenuePage() {
             >
               <div className="mb-4">
                 <h2 className="text-base font-bold text-slate-800">
-                  Revenue Overview (EGP)
+                  {t("yearlyRevenueChartOverviewTitle")}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Monthly contract value vs collected
+                  {t("yearlyRevenueChartOverviewSubtitle")}
                 </p>
               </div>
 
@@ -501,14 +507,14 @@ export default function YearlyRevenuePage() {
                     />
                     <Bar
                       dataKey="contractValue"
-                      name="Contract Value"
+                      name={t("yearlyRevenueChartContractValue")}
                       fill="#bfdbfe"
                       radius={[4, 4, 0, 0]}
                       maxBarSize={28}
                     />
                     <Bar
                       dataKey="collected"
-                      name="Collected"
+                      name={t("yearlyRevenueChartCollected")}
                       fill="#10b981"
                       radius={[4, 4, 0, 0]}
                       maxBarSize={28}
@@ -528,10 +534,10 @@ export default function YearlyRevenuePage() {
             >
               <div className="mb-4">
                 <h2 className="text-base font-bold text-slate-800">
-                  Revenue by Plan
+                  {t("yearlyRevenueChartByPlanTitle")}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Distribution across plans
+                  {t("yearlyRevenueChartByPlanSubtitle")}
                 </p>
               </div>
 
@@ -545,7 +551,7 @@ export default function YearlyRevenuePage() {
                     <TrendingUp size={28} className="text-slate-200" />
                   </div>
                   <p className="text-sm text-slate-400">
-                    No plan data available
+                    {t("yearlyRevenueChartNoPlanData")}
                   </p>
                 </div>
               ) : (
@@ -571,7 +577,7 @@ export default function YearlyRevenuePage() {
                           />
                         ))}
                       </Pie>
-                      <Tooltip content={<PieTooltip />} />
+                      <Tooltip content={<PieTooltip t={t} />} />
                     </PieChart>
                   </ResponsiveContainer>
 

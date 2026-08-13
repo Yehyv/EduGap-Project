@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -128,20 +129,31 @@ const inputCls =
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<string, { cls: string; label: string }> = {
-  OVERDUE: { cls: "bg-red-50 text-red-500 border-red-200", label: "Overdue" },
-  PENDING: {
-    cls: "bg-amber-50 text-amber-600 border-amber-200",
-    label: "Pending",
-  },
-  PARTIAL: {
-    cls: "bg-blue-50 text-blue-500 border-blue-200",
-    label: "Partial",
-  },
-  PAID: { cls: "bg-green-50 text-green-600 border-green-200", label: "Paid" },
-};
-
-const StatusBadge = ({ status }: { status: string }) => {
+const StatusBadge = ({
+  status,
+  t,
+}: {
+  status: string;
+  t: (k: string) => string;
+}) => {
+  const STATUS_CFG: Record<string, { cls: string; label: string }> = {
+    OVERDUE: {
+      cls: "bg-red-50 text-red-500 border-red-200",
+      label: t("overdue"),
+    },
+    PENDING: {
+      cls: "bg-amber-50 text-amber-600 border-amber-200",
+      label: t("pending"),
+    },
+    PARTIAL: {
+      cls: "bg-blue-50 text-blue-500 border-blue-200",
+      label: t("partial"),
+    },
+    PAID: {
+      cls: "bg-green-50 text-green-600 border-green-200",
+      label: t("paid"),
+    },
+  };
   const cfg = STATUS_CFG[status] ?? {
     cls: "bg-gray-100 text-gray-500 border-gray-200",
     label: status,
@@ -211,29 +223,12 @@ const customStyles = {
   },
 };
 
-// ─── Options ──────────────────────────────────────────────────────────────────
-
-const PLAN_OPTIONS = [
-  { value: "", label: "All Plans" },
-  { value: "1", label: "Starter" },
-  { value: "2", label: "Growth" },
-  { value: "3", label: "Enterprise" },
-  { value: "4", label: "Custom" },
-];
-
-const OVERDUE_DAYS_OPTIONS = [
-  { value: "", label: "All" },
-  { value: "30", label: "30+ Days" },
-  { value: "60", label: "60+ Days" },
-  { value: "90", label: "90+ Days" },
-  { value: "120", label: "120+ Days" },
-];
-
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
 const buildColumns = (
   page: number,
   limit: number,
+  t: (k: string) => string,
 ): TableColumn<OverdueRow>[] => [
   {
     name: "#",
@@ -245,7 +240,7 @@ const buildColumns = (
     ),
   },
   {
-    name: "Institution",
+    name: t("institution"),
     selector: (row) => row.instituteName,
     cell: (row) => (
       <span className="font-medium text-gray-800 truncate max-w-[160px] block">
@@ -255,27 +250,27 @@ const buildColumns = (
     grow: 2,
   },
   {
-    name: "Contract No.",
+    name: t("contractNo"),
     selector: (row) => row.contractNo,
     cell: (row) => (
       <span className="font-mono text-xs text-gray-500">{row.contractNo}</span>
     ),
   },
   {
-    name: "Installment No.",
+    name: t("installmentNoDot"),
     selector: (row) => row.installmentNo,
     cell: (row) => <span className="text-gray-700">{row.installmentNo}</span>,
     center: true,
   },
   {
-    name: "Due Date",
+    name: t("dueDate"),
     selector: (row) => row.dueDate,
     cell: (row) => (
       <span className="text-gray-600">{fmtDate(row.dueDate)}</span>
     ),
   },
   {
-    name: "Overdue Days",
+    name: t("overdueDays"),
     selector: (row) => row.overdueDays,
     cell: (row) => (
       <span
@@ -293,7 +288,7 @@ const buildColumns = (
     center: true,
   },
   {
-    name: "Overdue Amount (EGP)",
+    name: t("overdueAmountEgp"),
     selector: (row) => row.overdueAmount,
     cell: (row) => (
       <span className="font-semibold text-gray-800">
@@ -303,8 +298,8 @@ const buildColumns = (
     right: true,
   },
   {
-    name: "Status",
-    cell: (row) => <StatusBadge status={row.status} />,
+    name: t("status"),
+    cell: (row) => <StatusBadge status={row.status} t={t} />,
     center: true,
   },
 ];
@@ -312,6 +307,24 @@ const buildColumns = (
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const OverdueInstallmentsPage = () => {
+  const { t } = useLanguage();
+
+  const PLAN_OPTIONS = [
+    { value: "", label: t("allPlans") },
+    { value: "1", label: t("starter") },
+    { value: "2", label: t("growth") },
+    { value: "3", label: t("enterprise") },
+    { value: "4", label: t("custom") },
+  ];
+
+  const OVERDUE_DAYS_OPTIONS = [
+    { value: "", label: t("all") },
+    { value: "30", label: `30+ ${t("daysLower")}` },
+    { value: "60", label: `60+ ${t("daysLower")}` },
+    { value: "90", label: `90+ ${t("daysLower")}` },
+    { value: "120", label: `120+ ${t("daysLower")}` },
+  ];
+
   const [asOfDate, setAsOfDate] = useState(today());
   const [planId, setPlanId] = useState("");
   const [overdueDays, setOverdueDays] = useState("");
@@ -353,11 +366,11 @@ const OverdueInstallmentsPage = () => {
   };
 
   const summary = data?.summary;
-  const columns = buildColumns(applied.page, applied.limit);
+  const columns = buildColumns(applied.page, applied.limit, t);
 
   return (
     <>
-      <DashboardPageTitle text="Overdue Installments Report" />
+      <DashboardPageTitle text={t("overdueInstallmentsReport")} />
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Breadcrumb ── */}
         <motion.nav
@@ -368,13 +381,13 @@ const OverdueInstallmentsPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Reports</span>
+          <span className="text-gray-600 font-medium">{t("reports")}</span>
 
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Overdue</span>
+          <span className="text-gray-600 font-medium">{t("overdue")}</span>
         </motion.nav>
 
         {/* ── Export ── */}
@@ -390,7 +403,7 @@ const OverdueInstallmentsPage = () => {
             ) : (
               <Download size={14} className="text-gray-400" />
             )}
-            {isExporting ? "Exporting…" : "Export"}
+            {isExporting ? t("exporting") : t("export")}
           </button>
         </motion.div>
 
@@ -402,7 +415,7 @@ const OverdueInstallmentsPage = () => {
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1 min-w-[150px]">
               <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                <CalendarDays size={11} /> As Of Date
+                <CalendarDays size={11} /> {t("asOfDate")}
               </label>
               <input
                 type="date"
@@ -413,7 +426,9 @@ const OverdueInstallmentsPage = () => {
             </div>
 
             <div className="flex flex-col gap-1 min-w-[140px]">
-              <label className="text-xs font-medium text-gray-500">Plan</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("plan")}
+              </label>
               <select
                 value={planId}
                 onChange={(e) => setPlanId(e.target.value)}
@@ -429,7 +444,7 @@ const OverdueInstallmentsPage = () => {
 
             <div className="flex flex-col gap-1 min-w-[140px]">
               <label className="text-xs font-medium text-gray-500">
-                Overdue Days
+                {t("overdueDays")}
               </label>
               <select
                 value={overdueDays}
@@ -455,7 +470,7 @@ const OverdueInstallmentsPage = () => {
               ) : (
                 <Filter size={14} />
               )}
-              Filter
+              {t("filter")}
             </button>
           </div>
         </motion.div>
@@ -483,7 +498,7 @@ const OverdueInstallmentsPage = () => {
                 <div>
                   <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
-                    Overdue Contracts
+                    {t("overdueContracts")}
                   </p>
                   <p className="text-2xl font-bold text-gray-800">
                     {summary.overdueContracts}
@@ -501,7 +516,7 @@ const OverdueInstallmentsPage = () => {
                 <div>
                   <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-                    Overdue Installments
+                    {t("overdueInstallments")}
                   </p>
                   <p className="text-2xl font-bold text-gray-800">
                     {summary.overdueInstallments}
@@ -514,7 +529,7 @@ const OverdueInstallmentsPage = () => {
                 className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
               >
                 <p className="text-xs text-gray-400 font-medium mb-1">
-                  Total Overdue Amount
+                  {t("totalOverdueAmount")}
                 </p>
                 <p className="text-2xl font-bold text-gray-800">
                   {egp(summary.totalOverdueAmount)}
@@ -533,7 +548,7 @@ const OverdueInstallmentsPage = () => {
             <div className="flex flex-col items-center justify-center py-16 gap-2">
               <AlertCircle size={28} className="text-red-300" />
               <p className="text-sm text-red-400">
-                Failed to load overdue data.
+                {t("failedToLoadOverdueData")}
               </p>
             </div>
           ) : (
@@ -555,7 +570,7 @@ const OverdueInstallmentsPage = () => {
                 <div className="flex flex-col items-center gap-2 py-14">
                   <FileWarning size={28} className="text-gray-200" />
                   <p className="text-sm text-gray-400">
-                    No overdue installments found.
+                    {t("noOverdueInstallmentsFound")}
                   </p>
                 </div>
               }

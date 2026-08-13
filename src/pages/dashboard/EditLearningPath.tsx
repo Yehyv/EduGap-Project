@@ -75,7 +75,7 @@ const EditLearningPath = () => {
   return (
     <>
       <DashboardPageTitle
-        text={`Edit Learning Path ${learningPathDataEn?.title ?? ""}`}
+        text={`${t("editLearningPath")} ${learningPathDataEn?.title ?? ""}`}
       />
 
       <Formik

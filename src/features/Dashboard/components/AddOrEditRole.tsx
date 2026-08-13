@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 import DropdownMenu from "@/shared/components/ui/DropdownMenu";
 import { useQuery } from "@tanstack/react-query";
 import { getRoleCategories } from "../services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const AddOrEditRole = ({
   initialValues,
@@ -13,9 +14,10 @@ const AddOrEditRole = ({
   isPending,
   isForEdit = false,
 }) => {
+  const { t } = useLanguage();
   const topicSchema = Yup.object({
-    role_title: Yup.string().required("Role title is required"),
-    role_category: Yup.string().required("Role category is required"),
+    role_title: Yup.string().required(t("roleTitleRequired")),
+    role_category: Yup.string().required(t("roleCategoryRequired")),
   });
   const { data } = useQuery({
     queryKey: ["getRoleCategories"],
@@ -32,8 +34,8 @@ const AddOrEditRole = ({
         if (JSON.stringify(initialValues) === JSON.stringify(values)) {
           Swal.fire({
             icon: "warning",
-            title: "Warning",
-            text: "You didn't change the data",
+            title: t("warning"),
+            text: t("youDidntChangeTheData"),
           });
           return;
         }
@@ -51,12 +53,12 @@ const AddOrEditRole = ({
           <div className="bg-white rounded-xl p-4">
             <div className="grid grid-cols-1 gap-4">
               <TextField
-                label="Role Title"
+                label={t("roleTitle")}
                 name="role_title"
                 moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
               />
               <DropdownMenu
-                label={"Category"}
+                label={t("category")}
                 name="role_category"
                 options={handleRoleCategoires}
               />
@@ -69,7 +71,7 @@ const AddOrEditRole = ({
               type="submit"
               className="hover:bg-secondary-dark text-white px-10 py-1.5 rounded-xl bg-secondary"
             >
-              {isPending ? <ButtonLoader /> : "Save Role"}
+              {isPending ? <ButtonLoader /> : t("saveRole")}
             </button>
           </div>
         </Form>

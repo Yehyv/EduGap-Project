@@ -7,15 +7,12 @@ import {
   Building2,
   FileText,
   Receipt,
-  Info,
   X,
   Save,
   Loader2,
   AlertCircle,
   CheckCircle2,
   CalendarDays,
-  BadgeAlert,
-  RefreshCw,
 } from "lucide-react";
 
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
@@ -26,40 +23,7 @@ import {
   editContract,
 } from "@/features/Dashboard/services/dashboardApis";
 import { formatDate } from "@/shared/utils/globals";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface InstituteOption {
-  id: number;
-  name: string;
-  disabled: boolean;
-  hasActiveContract: boolean;
-  activeContract: null | { id: number; contractNo: string };
-}
-
-interface PlanOption {
-  id: number;
-  name: string;
-  minStudents: number;
-  maxStudents: number;
-  defaultPricePerStudent: number;
-  defaultInstallmentsCount: number;
-  administrativeFees: number;
-}
-
-interface ContractCalculation {
-  maxStudentsAllowed: number;
-  pricePerStudent: number;
-  packageAmount: number;
-  discountType: string;
-  discountValue: number;
-  discountAmount: number;
-  amountAfterDiscount: number;
-  administrativeFees: number;
-  taxPercentage: number;
-  taxBase: number;
-  taxAmount: number;
-  totalAmount: number;
-}
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 type DiscountType = "PERCENTAGE" | "FIXED";
 
@@ -220,6 +184,7 @@ const SummaryRow = ({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const EditAnnualContract = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { contractId } = useParams();
 
@@ -348,7 +313,7 @@ const EditAnnualContract = () => {
       resetCalculation();
       return;
     }
-    const t = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       calculate({
         maxStudentsAllowed: Number(maxStudentsAllowed),
         pricePerStudent: Number(pricePerStudent),
@@ -358,7 +323,7 @@ const EditAnnualContract = () => {
         taxPercentage: Number(taxPercentage) || 0,
       });
     }, 500);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timeoutId);
   }, [
     maxStudentsAllowed,
     pricePerStudent,
@@ -368,18 +333,6 @@ const EditAnnualContract = () => {
     taxPercentage,
     canCalculate,
   ]);
-
-  // ── Handlers ──────────────────────────────────────────────────────────────
-  const handleYearChange = (y: string) => {
-    setAcademicYear(y);
-    setInstituteId("");
-    setPlanId("");
-    setMaxStudentsAllowed("");
-    setPricePerStudent("");
-    setInstallmentsCount("");
-    setAdministrativeFees("0");
-    resetCalculation();
-  };
 
   const handlePlanChange = (id: string) => {
     setPlanId(id);
@@ -393,34 +346,32 @@ const EditAnnualContract = () => {
   };
 
   const selectedPlan = plans.find((p) => String(p.id) === planId) ?? null;
-  const selectedInstitute =
-    institutes.find((i) => String(i.id) === instituteId) ?? null;
 
   // ── Validation ────────────────────────────────────────────────────────────
   const validate = (): boolean => {
     const errs: FormErrors = {};
-    if (!instituteId) errs.instituteId = "Please select an institute";
-    if (!planId) errs.planId = "Please select a plan";
+    if (!instituteId) errs.instituteId = t("pleaseSelectInstitute");
+    if (!planId) errs.planId = t("pleaseSelectPlan");
 
     if (!maxStudentsAllowed || Number(maxStudentsAllowed) <= 0) {
-      errs.maxStudentsAllowed = "Max students must be greater than 0";
+      errs.maxStudentsAllowed = t("maxStudentsGreaterThanZero");
     } else if (selectedPlan) {
       const val = Number(maxStudentsAllowed);
       if (val < selectedPlan.minStudents) {
-        errs.maxStudentsAllowed = `Minimum allowed is ${selectedPlan.minStudents.toLocaleString()} students`;
+        errs.maxStudentsAllowed = `${t("minimumAllowedIs")} ${selectedPlan.minStudents.toLocaleString()} ${t("studentsLower")}`;
       } else if (val > selectedPlan.maxStudents) {
-        errs.maxStudentsAllowed = `Maximum allowed is ${selectedPlan.maxStudents.toLocaleString()} students`;
+        errs.maxStudentsAllowed = `${t("maximumAllowedIs")} ${selectedPlan.maxStudents.toLocaleString()} ${t("studentsLower")}`;
       }
     }
 
-    if (!contractStartDate) errs.contractStartDate = "Start date is required";
-    if (!contractEndDate) errs.contractEndDate = "End date is required";
+    if (!contractStartDate) errs.contractStartDate = t("startDateRequired");
+    if (!contractEndDate) errs.contractEndDate = t("endDateRequired");
     if (
       contractStartDate &&
       contractEndDate &&
       contractStartDate >= contractEndDate
     ) {
-      errs.contractEndDate = "End date must be after start date";
+      errs.contractEndDate = t("endDateAfterStartDate");
     }
 
     setErrors(errs);
@@ -436,11 +387,11 @@ const EditAnnualContract = () => {
   const { mutate: submitUpdate, isPending } = useMutation({
     mutationFn: editContract,
     onSuccess: () => {
-      showToast("success", "Contract updated successfully!");
+      showToast("success", t("contractUpdatedSuccessfully"));
       setTimeout(() => navigate("/dashboard/institutions-contracts"), 1500);
     },
     onError: () => {
-      showToast("error", "Failed to update contract. Please try again.");
+      showToast("error", t("failedToUpdateContractTryAgain"));
     },
   });
 
@@ -448,10 +399,7 @@ const EditAnnualContract = () => {
     if (!validate()) return;
 
     if (!hasChanges()) {
-      showToast(
-        "error",
-        "No changes detected. Please modify something before updating.",
-      );
+      showToast("error", t("noChangesDetected"));
       return;
     }
 
@@ -482,7 +430,7 @@ const EditAnnualContract = () => {
       </AnimatePresence>
 
       <div className="flex flex-col gap-5 pb-8">
-        <DashboardPageTitle text="Edit Annual Contract" showBack />
+        <DashboardPageTitle text={t("editAnnualContract")} showBack />
 
         {/* Breadcrumb */}
         <motion.nav
@@ -494,17 +442,17 @@ const EditAnnualContract = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={14} />
           <Link
             to="/dashboard/institutions-contracts"
             className="hover:text-gray-600 transition-colors"
           >
-            Contracts
+            {t("contracts")}
           </Link>
           <ChevronRight size={14} />
-          <span className="text-gray-600">Edit Contract</span>
+          <span className="text-gray-600">{t("editContract")}</span>
         </motion.nav>
 
         {/* Totals strip */}
@@ -517,22 +465,22 @@ const EditAnnualContract = () => {
             >
               {[
                 {
-                  label: "Total Institutes",
+                  label: t("totalInstitutes"),
                   value: totals.totalInstitutes,
                   color: "bg-blue-50 text-secondary",
                 },
                 {
-                  label: "Available",
+                  label: t("available"),
                   value: totals.availableInstitutes,
                   color: "bg-green-50 text-green-600",
                 },
                 {
-                  label: "With Active Contract",
+                  label: t("withActiveContract"),
                   value: totals.institutesWithActiveContract,
                   color: "bg-amber-50 text-amber-600",
                 },
                 {
-                  label: "Active Plans",
+                  label: t("activePlans"),
                   value: totals.activePlans,
                   color: "bg-violet-50 text-violet-600",
                 },
@@ -562,11 +510,11 @@ const EditAnnualContract = () => {
             {/* Section 1 */}
             <SectionCard
               number={1}
-              title="Select Institute & Year"
+              title={t("selectInstituteAndYear")}
               icon={<Building2 size={15} />}
               delay={0.1}
             >
-              <Field label="Academic Year" required>
+              <Field label={t("academicYear")} required>
                 <div className="relative">
                   <select
                     className={`${selectClass()} disabled:bg-gray-200 !cursor-not-allowed`}
@@ -586,12 +534,12 @@ const EditAnnualContract = () => {
                 </div>
               </Field>
 
-              <Field label="Institute" required error={errors.instituteId}>
+              <Field label={t("institute")} required error={errors.instituteId}>
                 <div className="relative">
                   {optionsLoading ? (
                     <div className="h-10 flex items-center px-3 border border-gray-200 rounded-lg gap-2 text-sm text-gray-400">
-                      <Loader2 size={14} className="animate-spin" /> Loading
-                      institutes...
+                      <Loader2 size={14} className="animate-spin" />{" "}
+                      {t("loadingInstitutes")}
                     </div>
                   ) : (
                     <select
@@ -599,7 +547,7 @@ const EditAnnualContract = () => {
                       value={instituteId}
                       disabled
                     >
-                      <option value="">Select Institute</option>
+                      <option value="">{t("selectInstitute")}</option>
                       {institutes.map((inst) => (
                         <option
                           key={inst.id}
@@ -608,7 +556,7 @@ const EditAnnualContract = () => {
                         >
                           {inst.name}
                           {inst.hasActiveContract
-                            ? " (Has Active Contract)"
+                            ? ` (${t("hasActiveContract")})`
                             : ""}
                         </option>
                       ))}
@@ -625,16 +573,16 @@ const EditAnnualContract = () => {
             {/* Section 2 - Plan */}
             <SectionCard
               number={2}
-              title="Select Plan"
+              title={t("selectPlan")}
               icon={<FileText size={15} />}
               delay={0.18}
             >
-              <Field label="Select Plan" required error={errors.planId}>
+              <Field label={t("selectPlan")} required error={errors.planId}>
                 <div className="relative">
                   {optionsLoading ? (
                     <div className="h-10 flex items-center px-3 border border-gray-200 rounded-lg gap-2 text-sm text-gray-400">
-                      <Loader2 size={14} className="animate-spin" /> Loading
-                      plans...
+                      <Loader2 size={14} className="animate-spin" />{" "}
+                      {t("loadingPlans")}
                     </div>
                   ) : (
                     <select
@@ -645,11 +593,11 @@ const EditAnnualContract = () => {
                         setErrors((p) => ({ ...p, planId: undefined }));
                       }}
                     >
-                      <option value="">Select plan</option>
+                      <option value="">{t("selectPlanPlaceholder")}</option>
                       {plans.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} ({p.minStudents.toLocaleString()} –{" "}
-                          {p.maxStudents.toLocaleString()} students)
+                          {p.maxStudents.toLocaleString()} {t("studentsLower")})
                         </option>
                       ))}
                     </select>
@@ -664,26 +612,26 @@ const EditAnnualContract = () => {
               {selectedPlan && (
                 <motion.div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
                   <p className="text-xs font-semibold text-blue-700 mb-2">
-                    Plan Defaults (editable below)
+                    {t("planDefaultsEditable")}
                   </p>
                   <div className="grid grid-cols-2 gap-1.5 text-xs text-secondary">
                     <span>
-                      Range:{" "}
+                      {t("range")}:{" "}
                       <strong>
                         {selectedPlan.minStudents.toLocaleString()} –{" "}
                         {selectedPlan.maxStudents.toLocaleString()}
                       </strong>
                     </span>
                     <span>
-                      Price/Student:{" "}
+                      {t("pricePerStudent")}:{" "}
                       <strong>EGP {selectedPlan.defaultPricePerStudent}</strong>
                     </span>
                     <span>
-                      Installments:{" "}
+                      {t("installments")}:{" "}
                       <strong>{selectedPlan.defaultInstallmentsCount}</strong>
                     </span>
                     <span>
-                      Admin Fees:{" "}
+                      {t("adminFees")}:{" "}
                       <strong>EGP {selectedPlan.administrativeFees}</strong>
                     </span>
                   </div>
@@ -693,12 +641,12 @@ const EditAnnualContract = () => {
               {planId && (
                 <motion.div className="flex flex-col gap-3 pt-1 border-t border-gray-100">
                   <p className="text-xs font-semibold text-gray-600 pt-1">
-                    Pricing (used for calculation)
+                    {t("pricingUsedForCalculation")}
                   </p>
 
                   <div className="grid grid-cols-2 gap-3">
                     <Field
-                      label="Max Students Allowed"
+                      label={t("maxStudentsAllowed")}
                       required
                       error={errors.maxStudentsAllowed}
                     >
@@ -709,7 +657,7 @@ const EditAnnualContract = () => {
                         onChange={(e) => setMaxStudentsAllowed(e.target.value)}
                       />
                     </Field>
-                    <Field label="Price Per Student (EGP)">
+                    <Field label={t("pricePerStudentEgp")}>
                       <input
                         type="number"
                         className={inputClass()}
@@ -720,7 +668,7 @@ const EditAnnualContract = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Administrative Fees">
+                    <Field label={t("administrativeFees")}>
                       <input
                         type="number"
                         className={inputClass()}
@@ -728,7 +676,7 @@ const EditAnnualContract = () => {
                         onChange={(e) => setAdministrativeFees(e.target.value)}
                       />
                     </Field>
-                    <Field label="Installments Count">
+                    <Field label={t("installmentsCount")}>
                       <input
                         type="number"
                         className={inputClass()}
@@ -741,7 +689,7 @@ const EditAnnualContract = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Discount Type">
+                    <Field label={t("discountType")}>
                       <select
                         className={selectClass()}
                         value={discountType}
@@ -749,12 +697,14 @@ const EditAnnualContract = () => {
                           setDiscountType(e.target.value as DiscountType)
                         }
                       >
-                        <option value="PERCENTAGE">Percentage (%)</option>
-                        <option value="FIXED">Fixed Amount</option>
+                        <option value="PERCENTAGE">
+                          {t("percentageOption")}
+                        </option>
+                        <option value="FIXED">{t("fixedAmount")}</option>
                       </select>
                     </Field>
                     <Field
-                      label={`Discount Value ${discountType === "PERCENTAGE" ? "(%)" : "(EGP)"}`}
+                      label={`${t("discountValue")} ${discountType === "PERCENTAGE" ? "(%)" : "(EGP)"}`}
                     >
                       <input
                         type="number"
@@ -766,7 +716,7 @@ const EditAnnualContract = () => {
                     </Field>
                   </div>
 
-                  <Field label="Tax Percentage (%)">
+                  <Field label={t("taxPercentage")}>
                     <input
                       type="number"
                       className={inputClass()}
@@ -783,13 +733,13 @@ const EditAnnualContract = () => {
             {/* Section 3 */}
             <SectionCard
               number={3}
-              title="Contract Dates & Notes"
+              title={t("contractDatesAndNotes")}
               icon={<CalendarDays size={15} />}
               delay={0.26}
             >
               <div className="grid grid-cols-2 gap-3">
                 <Field
-                  label="Start Date"
+                  label={t("startDate")}
                   required
                   error={errors.contractStartDate}
                 >
@@ -800,7 +750,11 @@ const EditAnnualContract = () => {
                     onChange={(e) => setContractStartDate(e.target.value)}
                   />
                 </Field>
-                <Field label="End Date" required error={errors.contractEndDate}>
+                <Field
+                  label={t("endDate")}
+                  required
+                  error={errors.contractEndDate}
+                >
                   <input
                     type="date"
                     className={inputClass(!!errors.contractEndDate)}
@@ -809,10 +763,10 @@ const EditAnnualContract = () => {
                   />
                 </Field>
               </div>
-              <Field label="Notes">
+              <Field label={t("notes")}>
                 <textarea
                   rows={3}
-                  placeholder="Add any notes..."
+                  placeholder={t("addAnyNotes")}
                   className={`${inputClass()} h-auto py-2.5 resize-none`}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -823,12 +777,11 @@ const EditAnnualContract = () => {
 
           {/* Right Column - Summary */}
           <motion.div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden sticky top-5">
-            {/* Summary content - same as your original */}
             <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
               <div className="flex items-center gap-2">
                 <Receipt size={16} className="text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-800">
-                  Contract Summary
+                  {t("contractSummary")}
                 </h3>
               </div>
             </div>
@@ -838,55 +791,55 @@ const EditAnnualContract = () => {
                 <div className="flex flex-col items-center justify-center py-10 gap-2 text-gray-300">
                   <Receipt size={32} />
                   <p className="text-sm text-gray-400 text-center">
-                    Select a plan and enter student count to see the summary
+                    {t("selectPlanAndEnterStudentCount")}
                   </p>
                 </div>
               ) : (
                 <>
                   <SummaryRow
-                    label="Max Students"
+                    label={t("maxStudents")}
                     value={calc ? String(calc.maxStudentsAllowed) : "-"}
                     loading={isCalculating}
                   />
                   <SummaryRow
-                    label="Price Per Student (EGP)"
+                    label={t("pricePerStudentEgp")}
                     value={calc ? egp(calc.pricePerStudent) : "-"}
                     loading={isCalculating}
                   />
                   <SummaryRow
-                    label="Package Amount"
+                    label={t("packageAmount")}
                     value={calc ? egp(calc.packageAmount) : "-"}
                     loading={isCalculating}
                   />
                   <SummaryRow
-                    label={`Discount (${calc?.discountType === "PERCENTAGE" ? `${calc.discountValue}%` : `EGP ${calc?.discountValue ?? 0}`})`}
+                    label={`${t("discount")} (${calc?.discountType === "PERCENTAGE" ? `${calc.discountValue}%` : `EGP ${calc?.discountValue ?? 0}`})`}
                     value={calc ? egp(calc.discountAmount) : "-"}
                     loading={isCalculating}
                   />
                   <SummaryRow
-                    label="Amount After Discount"
+                    label={t("amountAfterDiscount")}
                     value={calc ? egp(calc.amountAfterDiscount) : "-"}
                     loading={isCalculating}
                   />
                   <SummaryRow
-                    label="Administrative Fees"
+                    label={t("administrativeFees")}
                     value={calc ? egp(calc.administrativeFees) : "-"}
                     loading={isCalculating}
                   />
                   <SummaryRow
-                    label="Tax Base"
+                    label={t("taxBase")}
                     value={calc ? egp(calc.taxBase) : "-"}
                     loading={isCalculating}
                   />
                   <SummaryRow
-                    label={`Tax (${taxPercentage}%)`}
+                    label={`${t("tax")} (${taxPercentage}%)`}
                     value={calc ? egp(calc.taxAmount) : "-"}
                     loading={isCalculating}
                   />
 
                   <div className="flex items-center justify-between py-3 mt-1 bg-blue-50 -mx-5 px-5 border-t border-blue-100">
                     <span className="text-sm font-bold text-gray-900">
-                      Total Amount (EGP)
+                      {t("totalAmountEgp")}
                     </span>
                     <motion.span className="text-base font-bold text-secondary">
                       {calc ? egp(calc.totalAmount) : "EGP 0.00"}
@@ -904,7 +857,7 @@ const EditAnnualContract = () => {
             to="/dashboard/institutions-contracts"
             className="h-10 px-6 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
-            <X size={15} /> Cancel
+            <X size={15} /> {t("cancel")}
           </Link>
           <button
             onClick={handleSubmit}
@@ -914,12 +867,12 @@ const EditAnnualContract = () => {
             {isPending ? (
               <>
                 <Loader2 size={15} className="animate-spin" />
-                Updating...
+                {t("updating")}
               </>
             ) : (
               <>
                 <Save size={15} />
-                Update Contract
+                {t("updateContract")}
               </>
             )}
           </button>

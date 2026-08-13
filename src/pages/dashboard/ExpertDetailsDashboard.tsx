@@ -21,12 +21,14 @@ const ExpertDetailsDashboard = () => {
   const { t } = useLanguage();
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const queryClient = useQueryClient();
+
   /* ================= QUERY ================= */
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["expertDetailsFroDashboard", expertId],
     queryFn: () => getExpertDetailsForDashboard(expertId ?? ""),
     enabled: !!expertId,
   });
+
   const {
     data: expertCoursesData,
     isLoading: expertCoursesDataLoading,
@@ -46,8 +48,8 @@ const ExpertDetailsDashboard = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Deleted",
-        text: "Content Unassigned successfully",
+        title: t("deleted"),
+        text: t("contentUnassignedSuccessfully"),
         timer: 1500,
         showConfirmButton: false,
       });
@@ -59,21 +61,21 @@ const ExpertDetailsDashboard = () => {
     onError: () => {
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Something went wrong",
+        title: t("error"),
+        text: t("somethingWentWrong"),
       });
     },
   });
 
   const handleUnAssignCourseFromExpert = (contentId: number) => {
     Swal.fire({
-      title: "Are you sure?",
-      text: "This action cannot be undone",
+      title: t("areYouSure"),
+      text: t("actionCannotBeUndone"),
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it",
+      confirmButtonText: t("yesDeleteIt"),
     }).then((result) => {
       if (result.isConfirmed) {
         deleteContent(contentId);
@@ -88,7 +90,7 @@ const ExpertDetailsDashboard = () => {
   if (isError)
     return (
       <ErrorMessage
-        message={error?.message ?? "Error While Fetching Expert Data"}
+        message={error?.message ?? t("errorWhileFetchingExpertData")}
       />
     );
 
@@ -134,13 +136,15 @@ const ExpertDetailsDashboard = () => {
             <h6 className="text-[#444444] text-sm">{t("expert_name")}</h6>
             <p>{expert?.user.full_name || "-"}</p>
           </div>
+
           <div className="row-span-3">
             <h6 className="text-[#444444] text-sm mb-3">{t("expertImage")}</h6>
+
             {expert?.image && (
               <img
                 className="max-h-50 rounded-2xl"
                 src={expert.image}
-                alt="expert"
+                alt={t("expertImage")}
               />
             )}
           </div>
@@ -173,35 +177,45 @@ const ExpertDetailsDashboard = () => {
       >
         <AddIcon className="h-6" />
         <span className="inline-block me-4 text-secondary">
-          Assign Content To Expert
+          {t("assignContentToExpert")}
         </span>
       </button>
+
       {/* ================= Expert Courses ================= */}
       <div className="bg-white rounded-lg px-3 py-1 mt-3">
         <div className="flex justify-between border-b border-[#ACACAC] py-2">
-          <h5 className="text-secondary font-bold">Expert Training Courses </h5>
+          <h5 className="text-secondary font-bold">
+            {t("expertTrainingCourses")}
+          </h5>
         </div>
+
         {expertCoursesIsError && (
           <p className="text-gray-400 text-center mt-4">
             {expertCoursesError.message}
           </p>
         )}
+
         {expertCoursesData?.data?.length == 0 && (
           <p className="text-gray-400 text-center mt-4">
-            No Courses Available{" "}
+            {t("noCoursesAvailable")}
           </p>
         )}
+
         {expertCoursesDataLoading ? (
           <CircleLoader />
         ) : (
           <div className="py-4">
             {expertCoursesData?.data.map((d, index) => (
-              <div className="flex justify-between mb-4">
+              <div className="flex justify-between mb-4" key={d.id}>
                 <div>
                   <span>{index + 1} - </span>
                   <span>{d.name}</span>
                 </div>
-                <button onClick={() => handleUnAssignCourseFromExpert(d.id)}>
+
+                <button
+                  onClick={() => handleUnAssignCourseFromExpert(d.id)}
+                  disabled={isDeleting}
+                >
                   <DeleteIcon />
                 </button>
               </div>

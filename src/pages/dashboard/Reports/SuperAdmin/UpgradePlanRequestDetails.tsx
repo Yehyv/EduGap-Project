@@ -23,6 +23,7 @@ import {
   approveUpgradeRequest,
   rejectUpgradeRequest,
 } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,36 +46,6 @@ interface UpgradeRequest {
   createdAt: string;
   updatedAt: string;
 }
-
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const statusConfig: Record<
-  string,
-  { class: string; dot: string; label: string }
-> = {
-  PENDING: {
-    class: "bg-amber-50 text-amber-600 border-amber-200",
-    dot: "bg-amber-400",
-    label: "Pending",
-  },
-  APPROVED: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Approved",
-  },
-  REJECTED: {
-    class: "bg-red-50 text-red-500 border-red-200",
-    dot: "bg-red-400",
-    label: "Rejected",
-  },
-};
-
-const getStatusCfg = (status: string) =>
-  statusConfig[status] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: status,
-  };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -120,6 +91,37 @@ const DetailRow = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const UpgradePlanRequestDetails = () => {
+  const { t } = useLanguage();
+
+  // ─── Status config ──────────────────────────────────────────────────────
+  const statusConfig: Record<
+    string,
+    { class: string; dot: string; label: string }
+  > = {
+    PENDING: {
+      class: "bg-amber-50 text-amber-600 border-amber-200",
+      dot: "bg-amber-400",
+      label: t("contractPending"),
+    },
+    APPROVED: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("approved"),
+    },
+    REJECTED: {
+      class: "bg-red-50 text-red-500 border-red-200",
+      dot: "bg-red-400",
+      label: t("rejected"),
+    },
+  };
+
+  const getStatusCfg = (status: string) =>
+    statusConfig[status] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: status,
+    };
+
   const { requestId: id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
 
@@ -175,7 +177,7 @@ const UpgradePlanRequestDetails = () => {
   if (isError || !request) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Upgrade Request Details" />
+        <DashboardPageTitle text={t("upgradeRequestDetails")} />
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -183,13 +185,13 @@ const UpgradePlanRequestDetails = () => {
         >
           <XCircle size={36} className="text-red-300" />
           <p className="text-sm font-medium text-red-400">
-            Failed to load this request.
+            {t("failedToLoadThisRequest")}
           </p>
           <Link
             to="/dashboard/upgrade-plan-requests"
             className="text-sm text-blue-500 hover:underline"
           >
-            Back to Requests
+            {t("backToRequests")}
           </Link>
         </motion.div>
       </div>
@@ -201,7 +203,7 @@ const UpgradePlanRequestDetails = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      <DashboardPageTitle text="Upgrade Request Details" />
+      <DashboardPageTitle text={t("upgradeRequestDetails")} />
 
       {/* Breadcrumb */}
       <motion.nav
@@ -213,14 +215,14 @@ const UpgradePlanRequestDetails = () => {
           to="/dashboard/home"
           className="hover:text-gray-600 transition-colors"
         >
-          Dashboard
+          {t("dashboard")}
         </Link>
         <ChevronRight size={14} />
         <Link
           to="/dashboard/upgrade-plan-requests"
           className="hover:text-gray-600 transition-colors"
         >
-          Plan Upgrade Requests
+          {t("planUpgradeRequests")}
         </Link>
         <ChevronRight size={14} />
         <span className="text-gray-600">#{request.id}</span>
@@ -242,7 +244,7 @@ const UpgradePlanRequestDetails = () => {
               {request.instituteName}
             </p>
             <p className="text-xs text-gray-400">
-              Institute ID #{request.instituteId}
+              {t("instituteId")} #{request.instituteId}
             </p>
           </div>
         </div>
@@ -265,28 +267,30 @@ const UpgradePlanRequestDetails = () => {
           {/* Plan change */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              Plan Change
+              {t("planChange")}
             </p>
             <div className="flex items-center gap-4 bg-gray-50 rounded-xl p-4">
               <div className="flex-1 text-center">
-                <p className="text-xs text-gray-400 mb-1">Current Plan</p>
+                <p className="text-xs text-gray-400 mb-1">{t("currentPlan")}</p>
                 <p className="text-base font-bold text-gray-700">
                   {request.currentPlanName}
                 </p>
                 <p className="text-[11px] text-gray-400">
-                  Plan ID #{request.currentPlanId}
+                  {t("planId")} #{request.currentPlanId}
                 </p>
               </div>
               <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                 <ArrowUpRight size={18} className="text-blue-600" />
               </div>
               <div className="flex-1 text-center">
-                <p className="text-xs text-gray-400 mb-1">Requested Plan</p>
+                <p className="text-xs text-gray-400 mb-1">
+                  {t("requestedPlan")}
+                </p>
                 <p className="text-base font-bold text-blue-600">
                   {request.requestedPlanName}
                 </p>
                 <p className="text-[11px] text-gray-400">
-                  Plan ID #{request.requestedPlanId}
+                  {t("planId")} #{request.requestedPlanId}
                 </p>
               </div>
             </div>
@@ -295,22 +299,25 @@ const UpgradePlanRequestDetails = () => {
           {/* Details grid */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              Request Details
+              {t("requestDetails")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <DetailRow icon={<Hash size={16} />} label="Current Contract ID">
+              <DetailRow
+                icon={<Hash size={16} />}
+                label={t("currentContractId")}
+              >
                 #{request.currentContractId}
               </DetailRow>
               <DetailRow
                 icon={<Users size={16} />}
-                label="Additional Students Needed"
+                label={t("additionalStudentsNeeded")}
               >
                 {request.additionalStudentsNeeded.toLocaleString()}
               </DetailRow>
-              <DetailRow icon={<Calendar size={16} />} label="Submitted On">
+              <DetailRow icon={<Calendar size={16} />} label={t("submittedOn")}>
                 {fmtDate(request.createdAt)}
               </DetailRow>
-              <DetailRow icon={<Calendar size={16} />} label="Last Updated">
+              <DetailRow icon={<Calendar size={16} />} label={t("lastUpdated")}>
                 {fmtDate(request.updatedAt)}
               </DetailRow>
             </div>
@@ -319,7 +326,7 @@ const UpgradePlanRequestDetails = () => {
           {/* Reason */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-              Reason
+              {t("reason")}
             </p>
             <div className="flex items-start gap-2 bg-gray-50 rounded-lg p-3.5">
               <FileText
@@ -333,7 +340,7 @@ const UpgradePlanRequestDetails = () => {
           {/* Message */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-              Message from Institute
+              {t("messageFromInstitute")}
             </p>
             <div className="flex items-start gap-2 bg-gray-50 rounded-lg p-3.5">
               <MessageSquare
@@ -353,7 +360,7 @@ const UpgradePlanRequestDetails = () => {
           className="rounded-xl border border-gray-100 shadow-sm bg-white p-6 flex flex-col gap-5 h-fit"
         >
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            Review
+            {t("review")}
           </p>
 
           {!isPending ? (
@@ -367,15 +374,18 @@ const UpgradePlanRequestDetails = () => {
                     <XCircle size={16} className="text-red-400" />
                   )
                 }
-                label="Reviewed By"
+                label={t("reviewedBy")}
               >
                 {request.reviewedBy ?? "—"}
               </DetailRow>
-              <DetailRow icon={<Clock size={16} />} label="Reviewed At">
+              <DetailRow icon={<Clock size={16} />} label={t("reviewedAt")}>
                 {fmtDate(request.reviewedAt)}
               </DetailRow>
               {request.reviewNotes && (
-                <DetailRow icon={<StickyNote size={16} />} label="Review Notes">
+                <DetailRow
+                  icon={<StickyNote size={16} />}
+                  label={t("reviewNotes")}
+                >
                   <span className="font-normal text-gray-600">
                     {request.reviewNotes}
                   </span>
@@ -389,10 +399,10 @@ const UpgradePlanRequestDetails = () => {
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
                   <StickyNote size={13} className="text-gray-400" />
-                  Review Notes
+                  {t("reviewNotes")}
                   <span className="text-red-400 font-bold">*</span>
                   <span className="text-gray-400 font-normal ml-0.5">
-                    (required for rejection)
+                    ({t("requiredForRejection")})
                   </span>
                 </label>
                 <textarea
@@ -403,7 +413,7 @@ const UpgradePlanRequestDetails = () => {
                     if (notesError && e.target.value.trim())
                       setNotesError(false);
                   }}
-                  placeholder="Add review notes here…"
+                  placeholder={t("addReviewNotesHere")}
                   className={`w-full px-3 py-2.5 rounded-lg border text-sm text-gray-700 bg-white
                     focus:outline-none focus:ring-2 transition-colors resize-none
                     ${
@@ -415,7 +425,7 @@ const UpgradePlanRequestDetails = () => {
                 {notesError && (
                   <p className="text-xs text-red-500 flex items-center gap-1">
                     <XCircle size={11} />
-                    Review notes are required when rejecting.
+                    {t("reviewNotesRequiredWhenRejecting")}
                   </p>
                 )}
               </div>
@@ -432,7 +442,7 @@ const UpgradePlanRequestDetails = () => {
                   ) : (
                     <CheckCircle2 size={15} />
                   )}
-                  Approve Request
+                  {t("approveRequest")}
                 </button>
 
                 <button
@@ -445,13 +455,13 @@ const UpgradePlanRequestDetails = () => {
                   ) : (
                     <XCircle size={15} />
                   )}
-                  Reject Request
+                  {t("rejectRequest")}
                 </button>
               </div>
 
               {mutation.isError && (
                 <p className="text-xs text-red-500 text-center">
-                  Failed to submit review. Please try again.
+                  {t("failedToSubmitReviewTryAgain")}
                 </p>
               )}
             </>

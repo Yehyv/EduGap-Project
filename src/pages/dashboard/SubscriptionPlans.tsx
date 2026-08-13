@@ -12,14 +12,12 @@ import {
   Search,
   SlidersHorizontal,
   Eye,
-  Pencil,
   Loader2,
   Check,
 } from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import PlusIcon from "@/assets/svgs/PlusIcon.svg?react";
 import {
-  deleteInstitute,
   deletePlan,
   fetchPlans,
   fetchPlansCount,
@@ -31,6 +29,7 @@ import {
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
 import EditIcon from "@/assets/svgs/EditDashboardIcon.svg?react";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,165 +83,165 @@ const customStyles = {
   },
 };
 
-// ─── Badge helper ─────────────────────────────────────────────────────────────
-
-const getBadge = (plan: SubscriptionPlan) => {
-  if (plan.max_students <= 100)
-    return { label: "Basic", color: "bg-blue-100 text-blue-600" };
-  if (plan.max_students <= 1000)
-    return { label: "Popular", color: "bg-green-100 text-green-600" };
-  if (plan.max_students <= 5000)
-    return { label: "Enterprise", color: "bg-orange-100 text-orange-600" };
-  return { label: "Custom", color: "bg-purple-100 text-purple-600" };
-};
-
-// ─── Filter options ───────────────────────────────────────────────────────────
-
-const FILTER_OPTIONS: { value: ActiveFilter; label: string; dot: string }[] = [
-  { value: "all", label: "All Plans", dot: "bg-gray-400" },
-  { value: "active", label: "Active", dot: "bg-green-500" },
-  { value: "inactive", label: "Inactive", dot: "bg-gray-400" },
-];
-
-// ─── Columns ──────────────────────────────────────────────────────────────────
-
-const buildColumns = () => [
-  {
-    name: "#",
-    selector: (_: unknown, index: number) => index + 1,
-    width: "60px",
-    center: true,
-  },
-  {
-    name: "Plan Name",
-    cell: (row: SubscriptionPlan) => {
-      const badge = getBadge(row);
-      return (
-        <div className="flex flex-col items-center gap-0.5 py-1">
-          <span className="font-semibold text-gray-800 text-sm">
-            {row.plan_name}
-          </span>
-          <span
-            className={`text-[11px] font-medium px-2 py-0.5 rounded-full w-fit ${badge.color}`}
-          >
-            {badge.label}
-          </span>
-        </div>
-      );
-    },
-    sortable: false,
-    minWidth: "160px",
-    ignoreRowClick: true,
-  },
-  {
-    name: "Min Students",
-    selector: (row: SubscriptionPlan) => row.min_students,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Max Students",
-    selector: (row: SubscriptionPlan) => row.max_students,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Price Per Student (EGP)",
-    selector: (row: SubscriptionPlan) => row.default_price_per_student,
-    sortable: true,
-    center: true,
-    minWidth: "180px",
-  },
-  {
-    name: "Administrative Fees",
-    selector: (row: SubscriptionPlan) => row.administrative_fees,
-    sortable: true,
-    center: true,
-    minWidth: "180px",
-  },
-  {
-    name: "Installments",
-    selector: (row: SubscriptionPlan) => row.default_installments_count,
-    sortable: true,
-    center: true,
-  },
-
-  {
-    name: "Institutes",
-    selector: (row: SubscriptionPlan) => row.institutesCount,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Status",
-    cell: (row: SubscriptionPlan) => (
-      <ActiveStatusButton
-        itemId={row.id ?? ""}
-        activateApi={() => planActivateToggle(row.id ?? "")}
-        deactivateApi={() => planActivateToggle(row.id ?? "")}
-        isActive={row.is_active ?? false}
-        refetchKey={[
-          "subscription-plans",
-          "totalActivePlans",
-          "totalInActivePlans",
-        ]}
-        showModal={false}
-      />
-    ),
-
-    sortable: false,
-    ignoreRowClick: true,
-    center: true,
-  },
-  {
-    name: "Edit",
-    cell: (row: SubscriptionPlan) => (
-      <Link
-        to={`/dashboard/subscription-plans/edit/${row.id}`}
-        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-        title="Edit"
-      >
-        <EditIcon />
-      </Link>
-    ),
-    ignoreRowClick: true,
-    center: true,
-    minWidth: "50px",
-  },
-  {
-    name: "Delete",
-    cell: (row: SubscriptionPlan) => (
-      <DeleteButton
-        deleteApi={() => deletePlan(row.id)}
-        successMessage="Plan has been deleted successfully"
-        errorMessage="An error occurred while deleting the plan"
-        refetchFunction="subscription-plans"
-      />
-    ),
-    ignoreRowClick: true,
-    center: true,
-    minWidth: "50px",
-  },
-  {
-    name: "View",
-    cell: (row: SubscriptionPlan) => (
-      <Link
-        to={`/dashboard/subscription-plans/${row.id}`}
-        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-        title="View"
-      >
-        <Eye size={25} className="text-gray-500" />
-      </Link>
-    ),
-    ignoreRowClick: true,
-    center: true,
-    minWidth: "50px",
-  },
-];
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const SubscriptionPlans = () => {
+  const { t } = useLanguage();
+
+  // ─── Badge helper ───────────────────────────────────────────────────────────
+  const getBadge = (plan: SubscriptionPlan) => {
+    if (plan.max_students <= 100)
+      return { label: t("basic"), color: "bg-blue-100 text-blue-600" };
+    if (plan.max_students <= 1000)
+      return { label: t("popular"), color: "bg-green-100 text-green-600" };
+    if (plan.max_students <= 5000)
+      return { label: t("enterprise"), color: "bg-orange-100 text-orange-600" };
+    return { label: t("custom"), color: "bg-purple-100 text-purple-600" };
+  };
+
+  // ─── Filter options ─────────────────────────────────────────────────────────
+  const FILTER_OPTIONS: { value: ActiveFilter; label: string; dot: string }[] =
+    [
+      { value: "all", label: t("allPlans"), dot: "bg-gray-400" },
+      { value: "active", label: t("active"), dot: "bg-green-500" },
+      { value: "inactive", label: t("inactive"), dot: "bg-gray-400" },
+    ];
+
+  // ─── Columns ────────────────────────────────────────────────────────────────
+  const buildColumns = () => [
+    {
+      name: "#",
+      selector: (_: unknown, index: number) => index + 1,
+      width: "60px",
+      center: true,
+    },
+    {
+      name: t("planName"),
+      cell: (row: SubscriptionPlan) => {
+        const badge = getBadge(row);
+        return (
+          <div className="flex flex-col items-center gap-0.5 py-1">
+            <span className="font-semibold text-gray-800 text-sm">
+              {row.plan_name}
+            </span>
+            <span
+              className={`text-[11px] font-medium px-2 py-0.5 rounded-full w-fit ${badge.color}`}
+            >
+              {badge.label}
+            </span>
+          </div>
+        );
+      },
+      sortable: false,
+      minWidth: "160px",
+      ignoreRowClick: true,
+    },
+    {
+      name: t("minStudents"),
+      selector: (row: SubscriptionPlan) => row.min_students,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("maxStudents"),
+      selector: (row: SubscriptionPlan) => row.max_students,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("pricePerStudentEGP"),
+      selector: (row: SubscriptionPlan) => row.default_price_per_student,
+      sortable: true,
+      center: true,
+      minWidth: "180px",
+    },
+    {
+      name: t("administrativeFees"),
+      selector: (row: SubscriptionPlan) => row.administrative_fees,
+      sortable: true,
+      center: true,
+      minWidth: "180px",
+    },
+    {
+      name: t("installments"),
+      selector: (row: SubscriptionPlan) => row.default_installments_count,
+      sortable: true,
+      center: true,
+    },
+
+    {
+      name: t("institutes"),
+      selector: (row: SubscriptionPlan) => row.institutesCount,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("status"),
+      cell: (row: SubscriptionPlan) => (
+        <ActiveStatusButton
+          itemId={row.id ?? ""}
+          activateApi={() => planActivateToggle(row.id ?? "")}
+          deactivateApi={() => planActivateToggle(row.id ?? "")}
+          isActive={row.is_active ?? false}
+          refetchKey={[
+            "subscription-plans",
+            "totalActivePlans",
+            "totalInActivePlans",
+          ]}
+          showModal={false}
+        />
+      ),
+
+      sortable: false,
+      ignoreRowClick: true,
+      center: true,
+    },
+    {
+      name: t("edit"),
+      cell: (row: SubscriptionPlan) => (
+        <Link
+          to={`/dashboard/subscription-plans/edit/${row.id}`}
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          title={t("edit")}
+        >
+          <EditIcon />
+        </Link>
+      ),
+      ignoreRowClick: true,
+      center: true,
+      minWidth: "50px",
+    },
+    {
+      name: t("delete"),
+      cell: (row: SubscriptionPlan) => (
+        <DeleteButton
+          deleteApi={() => deletePlan(row.id)}
+          successMessage={t("planDeletedSuccessfully")}
+          errorMessage={t("errorWhileDeletingPlan")}
+          refetchFunction="subscription-plans"
+        />
+      ),
+      ignoreRowClick: true,
+      center: true,
+      minWidth: "50px",
+    },
+    {
+      name: t("view"),
+      cell: (row: SubscriptionPlan) => (
+        <Link
+          to={`/dashboard/subscription-plans/${row.id}`}
+          className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          title={t("view")}
+        >
+          <Eye size={25} className="text-gray-500" />
+        </Link>
+      ),
+      ignoreRowClick: true,
+      center: true,
+      minWidth: "50px",
+    },
+  ];
+
   const [filterText, setFilterText] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -322,28 +321,28 @@ const SubscriptionPlans = () => {
 
   const STATS = [
     {
-      label: "Total Plans",
+      label: t("totalPlans"),
       value: totalPlans,
       bg: "bg-blue-50",
       iconBg: "bg-blue-500",
       icon: <LayoutGrid size={20} color="white" />,
     },
     {
-      label: "Active Plans",
+      label: t("activePlans"),
       value: activePlans,
       bg: "bg-green-50",
       iconBg: "bg-green-500",
       icon: <CheckCircle2 size={20} color="white" />,
     },
     {
-      label: "Inactive Plans",
+      label: t("inactivePlans"),
       value: inactivePlans,
       bg: "bg-orange-50",
       iconBg: "bg-orange-400",
       icon: <XCircle size={20} color="white" />,
     },
     {
-      label: "Institutes Using Plans",
+      label: t("institutesUsingPlans"),
       value: totalInstitutes,
       bg: "bg-violet-50",
       iconBg: "bg-violet-500",
@@ -368,7 +367,7 @@ const SubscriptionPlans = () => {
       <div className="relative">
         <input
           type="text"
-          placeholder="Search by title"
+          placeholder={t("searchByTitle")}
           className="border border-gray-200 h-9 px-10 rounded-2xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
@@ -390,7 +389,7 @@ const SubscriptionPlans = () => {
           }`}
         >
           <SlidersHorizontal size={15} />
-          <span>{isFiltered ? currentOption.label : "Filter"}</span>
+          <span>{isFiltered ? currentOption.label : t("filter")}</span>
           {/* Animated chevron */}
           <motion.svg
             animate={{ rotate: dropdownOpen ? 180 : 0 }}
@@ -415,7 +414,7 @@ const SubscriptionPlans = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="absolute end-0 mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden"
+              className="absolute end-0 mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg z-50"
             >
               <div className="py-1.5">
                 {FILTER_OPTIONS.map((option) => (
@@ -444,7 +443,7 @@ const SubscriptionPlans = () => {
   return (
     <div className="flex flex-col gap-5">
       <DashboardPageTitle
-        text="Subscription Plans List"
+        text={t("subscriptionPlansList")}
         button
         buttonText={
           <Link
@@ -452,7 +451,7 @@ const SubscriptionPlans = () => {
             className="flex items-center"
           >
             <PlusIcon className="mt-1.5 h-8" />
-            <span className="me-4 text-white">Add New Plan</span>
+            <span className="me-4 text-white">{t("addNewPlan")}</span>
           </Link>
         }
       />
@@ -496,17 +495,17 @@ const SubscriptionPlans = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
-        className="rounded-xl border border-gray-100 shadow-sm overflow-hidden bg-white"
+        className="rounded-xl border border-gray-100 shadow-sm bg-white"
       >
         {isLoading ? (
           <div className="flex items-center justify-center py-16 text-gray-400 gap-2">
             <Loader2 size={20} className="animate-spin" />
-            <span className="text-sm">Loading plans...</span>
+            <span className="text-sm">{t("loadingPlans")}</span>
           </div>
         ) : isError ? (
           <div className="flex items-center justify-center py-16 text-red-400 gap-2">
             <XCircle size={20} />
-            <span className="text-sm">Failed to load plans. Try again.</span>
+            <span className="text-sm">{t("failedToLoadPlansTryAgain")}</span>
           </div>
         ) : (
           <DataTable

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
   FileSpreadsheet,
-  FileText,
   Download,
   Loader2,
   Info,
@@ -13,6 +12,7 @@ import {
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
@@ -37,51 +37,6 @@ interface ExportParams {
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
-const REPORT_TYPES = [
-  {
-    value: "COLLECTION_SUMMARY",
-    label: "Collection Summary Report",
-    description:
-      "This report will include summary of collections, contract values, remaining amounts and collection percentage.",
-  },
-  {
-    value: "DISCOUNT_TAX",
-    label: "Discount & Tax Report",
-    description:
-      "This report will include all applied discounts and taxes across contracts for the selected period.",
-  },
-  {
-    value: "ADMINISTRATIVE_FEES",
-    label: "Administrative Fees Report",
-    description:
-      "This report will include administrative fees per plan, average fees per contract and percentage of total contract value.",
-  },
-  {
-    value: "YEARLY_REVENUE",
-    label: "Yearly Revenue Report",
-    description:
-      "This report will include monthly revenue overview showing contract values versus collected amounts per plan.",
-  },
-  {
-    value: "OVERDUE_INSTALLMENTS",
-    label: "Overdue Installments Report",
-    description:
-      "This report will include all overdue installments with aging analysis and outstanding balances.",
-  },
-  {
-    value: "UPCOMING_PAYMENTS",
-    label: "Upcoming Payments Report",
-    description:
-      "This report will include scheduled upcoming payments and installments due within the selected date range.",
-  },
-  {
-    value: "PAYMENT_PERCENTAGE",
-    label: "Payment Percentage Report",
-    description:
-      "This report will include payment completion rates and percentages per plan and contract type.",
-  },
-];
-
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - 2 + i);
 
@@ -96,6 +51,46 @@ const fadeUp = (delay = 0) => ({
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function FinancialReportsExportPage() {
+  const { t } = useLanguage();
+
+  const REPORT_TYPES = [
+    {
+      value: "COLLECTION_SUMMARY",
+      label: t("reportTypeCollectionSummary"),
+      description: t("reportTypeCollectionSummaryDesc"),
+    },
+    {
+      value: "DISCOUNT_TAX",
+      label: t("reportTypeDiscountTax"),
+      description: t("reportTypeDiscountTaxDesc"),
+    },
+    {
+      value: "ADMINISTRATIVE_FEES",
+      label: t("reportTypeAdministrativeFees"),
+      description: t("reportTypeAdministrativeFeesDesc"),
+    },
+    {
+      value: "YEARLY_REVENUE",
+      label: t("reportTypeYearlyRevenue"),
+      description: t("reportTypeYearlyRevenueDesc"),
+    },
+    {
+      value: "OVERDUE_INSTALLMENTS",
+      label: t("reportTypeOverdueInstallments"),
+      description: t("reportTypeOverdueInstallmentsDesc"),
+    },
+    {
+      value: "UPCOMING_PAYMENTS",
+      label: t("reportTypeUpcomingPayments"),
+      description: t("reportTypeUpcomingPaymentsDesc"),
+    },
+    {
+      value: "PAYMENT_PERCENTAGE",
+      label: t("reportTypePaymentPercentage"),
+      description: t("reportTypePaymentPercentageDesc"),
+    },
+  ];
+
   const [reportType, setReportType] = useState("COLLECTION_SUMMARY");
   const [format, setFormat] = useState<"EXCEL" | "PDF">("EXCEL");
   const [year, setYear] = useState(CURRENT_YEAR);
@@ -109,7 +104,7 @@ export default function FinancialReportsExportPage() {
 
   const selectedReport = useMemo(
     () => REPORT_TYPES.find((r) => r.value === reportType)!,
-    [reportType],
+    [reportType, t],
   );
 
   const showToast = (type: "success" | "error", msg: string) => {
@@ -134,9 +129,9 @@ export default function FinancialReportsExportPage() {
       a.download = `${reportType.toLowerCase().replace(/_/g, "-")}-${year}.${ext}`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast("success", "Report exported successfully.");
+      showToast("success", t("exportSuccessToast"));
     } catch {
-      showToast("error", "Export failed. Please try again.");
+      showToast("error", t("exportErrorToast"));
     } finally {
       setExporting(false);
     }
@@ -152,7 +147,7 @@ export default function FinancialReportsExportPage() {
 
   return (
     <>
-      <DashboardPageTitle text="Export Finacial Reports" />
+      <DashboardPageTitle text={t("exportReportsPageTitle")} />
       <div>
         <div className="mx-auto space-y-5">
           {/* ── Breadcrumb ── */}
@@ -164,13 +159,15 @@ export default function FinancialReportsExportPage() {
               to="/dashboard/home"
               className="hover:text-gray-600 transition-colors"
             >
-              Dashboard
+              {t("dashboardBreadcrumb")}
             </Link>
             <ChevronRight size={13} />
-            <span className="text-gray-600 font-medium">Reports</span>
+            <span className="text-gray-600 font-medium">
+              {t("reportsBreadcrumb")}
+            </span>
             <ChevronRight size={13} />
             <span className="text-gray-600 font-medium">
-              Export Finacial Reports
+              {t("exportReportsBreadcrumb")}
             </span>
           </motion.nav>
 
@@ -184,7 +181,7 @@ export default function FinancialReportsExportPage() {
           >
             <Info size={16} className="text-blue-500 shrink-0" />
             <p className="text-sm text-blue-700 font-medium">
-              Export your financial reports in different formats.
+              {t("exportReportsInfoBanner")}
             </p>
           </motion.div>
 
@@ -203,7 +200,8 @@ export default function FinancialReportsExportPage() {
                 {/* Report Type */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-semibold text-slate-700">
-                    Report Type <span className="text-red-400">*</span>
+                    {t("reportTypeLabel")}{" "}
+                    <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <select
@@ -235,7 +233,7 @@ export default function FinancialReportsExportPage() {
                 {/* Format */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-semibold text-slate-700">
-                    Format <span className="text-red-400">*</span>
+                    {t("formatLabel")} <span className="text-red-400">*</span>
                   </label>
                   <div className="flex items-center gap-3 h-10">
                     {/* Excel */}
@@ -263,7 +261,7 @@ export default function FinancialReportsExportPage() {
                             : "text-slate-400"
                         }
                       />
-                      Excel (.xlsx)
+                      {t("formatExcel")}
                     </button>
 
                     {/* PDF */}
@@ -289,7 +287,7 @@ export default function FinancialReportsExportPage() {
                           format === "PDF" ? "text-red-500" : "text-slate-400"
                         }
                       />
-                      PDF (.pdf)
+                      {t("formatPdf")}
                     </button> */}
                   </div>
                 </div>
@@ -300,7 +298,7 @@ export default function FinancialReportsExportPage() {
                 {/* Year */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-semibold text-slate-700">
-                    Year <span className="text-red-400">*</span>
+                    {t("yearLabel")} <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <select
@@ -337,7 +335,7 @@ export default function FinancialReportsExportPage() {
                 {/* From Date */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-semibold text-slate-700">
-                    From Date
+                    {t("fromDateLabel")}
                   </label>
                   <div className="relative">
                     <input
@@ -352,7 +350,7 @@ export default function FinancialReportsExportPage() {
                 {/* To Date */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-semibold text-slate-700">
-                    To Date
+                    {t("toDateLabel")}
                   </label>
                   <div className="relative">
                     <input
@@ -376,7 +374,7 @@ export default function FinancialReportsExportPage() {
                   className="rounded-xl border border-slate-200 bg-slate-50 p-5"
                 >
                   <h3 className="text-sm font-bold text-slate-700 mb-2">
-                    Report Preview
+                    {t("reportPreviewTitle")}
                   </h3>
                   <p className="text-sm text-slate-500 leading-relaxed">
                     {selectedReport.description}
@@ -391,7 +389,7 @@ export default function FinancialReportsExportPage() {
                 onClick={handleCancel}
                 className="h-10 px-5 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 transition-colors"
               >
-                Cancel
+                {t("cancelLabel")}
               </button>
               <button
                 onClick={handleExport}
@@ -403,7 +401,7 @@ export default function FinancialReportsExportPage() {
                 ) : (
                   <Download size={14} />
                 )}
-                {exporting ? "Exporting…" : "Export Report"}
+                {exporting ? t("exportingLabel") : t("exportReportButton")}
               </button>
             </div>
           </motion.div>

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Building2, Users, BookOpen } from "lucide-react";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { Institute } from "./types";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 interface InstitutesTabProps {
   institutes: Institute[];
@@ -9,6 +10,8 @@ interface InstitutesTabProps {
 }
 
 const InstitutesTab = ({ institutes, isLoading }: InstitutesTabProps) => {
+  const { t } = useLanguage();
+
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -24,15 +27,15 @@ const InstitutesTab = ({ institutes, isLoading }: InstitutesTabProps) => {
       <div className="flex gap-2 items-center mb-6">
         <Building2 className="w-6 h-6 text-secondary" />
         <h5 className="text-lg font-semibold text-secondary">
-          المعاهد المشاركة في البرنامج
+          {t("institutesParticipatingInProgram")}
         </h5>
       </div>
 
       {institutes.length > 0 ? (
         <>
           <p className="text-gray-600 mb-6">
-            يتم تقديم هذا البرنامج من خلال {institutes.length}{" "}
-            {institutes.length === 1 ? "معهد" : "معاهد"}
+            {t("thisProgramIsOfferedThrough")} {institutes.length}{" "}
+            {institutes.length === 1 ? t("institute") : t("institutesPlural")}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -72,8 +75,8 @@ const InstitutesTab = ({ institutes, isLoading }: InstitutesTabProps) => {
                           <span>
                             {institute.coursesCount}{" "}
                             {institute.coursesCount === 1
-                              ? "Course"
-                              : "Courses"}
+                              ? t("course")
+                              : t("courses")}
                           </span>
                         </div>
 
@@ -82,8 +85,8 @@ const InstitutesTab = ({ institutes, isLoading }: InstitutesTabProps) => {
                           <span>
                             {institute.studentsCount}{" "}
                             {institute.studentsCount === 1
-                              ? "Student"
-                              : "Students"}
+                              ? t("student")
+                              : t("students")}
                           </span>
                         </div>
                       </div>
@@ -115,10 +118,10 @@ const InstitutesTab = ({ institutes, isLoading }: InstitutesTabProps) => {
         <div className="text-center py-12">
           <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-400 text-lg mb-2">
-            لا توجد معاهد مرتبطة بهذا البرنامج
+            {t("noInstitutesLinkedToProgram")}
           </p>
           <p className="text-gray-400 text-sm">
-            سيتم عرض المعاهد هنا عند إضافتها للبرنامج
+            {t("institutesWillAppearHereWhenAdded")}
           </p>
         </div>
       )}

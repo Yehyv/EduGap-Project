@@ -17,6 +17,7 @@ import type {
   User,
 } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -42,106 +43,111 @@ const customStyles = {
   },
 };
 
-const columns = [
-  {
-    name: "Num",
-    selector: (_: ProgramsForAdmin, index: number) => index + 1,
-    sortable: false,
-    width: "60px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Photo",
-    selector: (row: ProgramsForAdmin) => (
-      <img src={row.name} alt={row.name} className="w-12 h-12 rounded-full" />
-    ),
-    sortable: false,
-    minWidth: "80px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Name",
-    selector: (row: ProgramsForAdmin) => (
-      <Link className="underline text-sm" to={`/dashboard/programs/${row.id}`}>
-        {row?.name}
-      </Link>
-    ),
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Created At",
-    selector: (row: ProgramsForAdmin) => row?.createdAt ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Courses Count",
-    selector: (row: ProgramsForAdmin) => row?.courses_count ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-
-  {
-    name: "Is Active",
-    style: { justifyContent: "center" },
-    cell: (row: ProgramsForAdmin) => {
-      const isActive = row?.isActive;
-      return (
-        <button
-          className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
-            isActive
-              ? "border-green-500 text-green-500"
-              : "border-red-500 text-red-500"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-          <span
-            className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
-              isActive ? " bg-green-500" : " bg-red-500"
-            }`}
-          ></span>
-        </button>
-      );
-    },
-    sortable: true,
-  },
-
-  {
-    name: "Edit",
-    style: { justifyContent: "center" },
-    cell: (row: User) => (
-      <Link
-        to={`/dashboard/programs/edit/${row.id}`}
-        className="cursor-pointer"
-      >
-        <EditIcon />
-      </Link>
-    ),
-    ignoreRowClick: true,
-    allowOverflow: true,
-    button: true,
-    minWidth: "50px",
-  },
-  {
-    name: "Delete",
-    style: { justifyContent: "center" },
-    cell: (row: User) => (
-      <DeleteButton
-        deleteApi={() => deleteProgram(row.id)}
-        successMessage="تم حذف البرنامج بنجاح"
-        errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getProgramsForAdmin"
-      />
-    ),
-    ignoreRowClick: true,
-    allowOverflow: true,
-    button: true,
-    minWidth: "60px",
-  },
-];
-
 const AdminProgramsList = () => {
+  const { t } = useLanguage();
+
+  const columns = [
+    {
+      name: t("num"),
+      selector: (_: ProgramsForAdmin, index: number) => index + 1,
+      sortable: false,
+      width: "60px",
+      style: { justifyContent: "center" },
+    },
+    {
+      name: t("photo"),
+      selector: (row: ProgramsForAdmin) => (
+        <img src={row.name} alt={row.name} className="w-12 h-12 rounded-full" />
+      ),
+      sortable: false,
+      minWidth: "80px",
+      style: { justifyContent: "center" },
+    },
+    {
+      name: t("name"),
+      selector: (row: ProgramsForAdmin) => (
+        <Link
+          className="underline text-sm"
+          to={`/dashboard/programs/${row.id}`}
+        >
+          {row?.name}
+        </Link>
+      ),
+      sortable: true,
+      style: { justifyContent: "center" },
+    },
+    {
+      name: t("createdAt"),
+      selector: (row: ProgramsForAdmin) => row?.createdAt ?? "-",
+      sortable: true,
+      style: { justifyContent: "center" },
+    },
+    {
+      name: t("coursesCount"),
+      selector: (row: ProgramsForAdmin) => row?.courses_count ?? "-",
+      sortable: true,
+      style: { justifyContent: "center" },
+    },
+
+    {
+      name: t("isActive"),
+      style: { justifyContent: "center" },
+      cell: (row: ProgramsForAdmin) => {
+        const isActive = row?.isActive;
+        return (
+          <button
+            className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
+              isActive
+                ? "border-green-500 text-green-500"
+                : "border-red-500 text-red-500"
+            }`}
+          >
+            {isActive ? t("active") : t("inactive")}
+            <span
+              className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
+                isActive ? " bg-green-500" : " bg-red-500"
+              }`}
+            ></span>
+          </button>
+        );
+      },
+      sortable: true,
+    },
+
+    {
+      name: t("edit"),
+      style: { justifyContent: "center" },
+      cell: (row: User) => (
+        <Link
+          to={`/dashboard/programs/edit/${row.id}`}
+          className="cursor-pointer"
+        >
+          <EditIcon />
+        </Link>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+      minWidth: "50px",
+    },
+    {
+      name: t("delete"),
+      style: { justifyContent: "center" },
+      cell: (row: User) => (
+        <DeleteButton
+          deleteApi={() => deleteProgram(row.id)}
+          successMessage={t("programDeletedSuccessfully")}
+          errorMessage={t("errorOccurredDuringDeletion")}
+          refetchFunction="getProgramsForAdmin"
+        />
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+      minWidth: "60px",
+    },
+  ];
+
   const { data: studentsData, isLoading } = useQuery({
     queryKey: ["getProgramsForAdmin"],
     queryFn: () => getProgramsForAdmin(),
@@ -162,7 +168,7 @@ const AdminProgramsList = () => {
         <div className="relative w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Search by name"
+            placeholder={t("searchByName")}
             className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
@@ -176,22 +182,22 @@ const AdminProgramsList = () => {
         </div>
         <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm focus:outline-none">
           <FilterIcon />
-          <span>Filter</span>
+          <span>{t("filter")}</span>
         </div>
       </div>
     );
-  }, [filterText]);
+  }, [filterText, t]);
 
   return (
     <>
       <DashboardPageTitle
-        text="Programs"
+        text={t("programs")}
         button
         buttonText={
           <Link to={"/dashboard/programs/add"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
             <span className="inline-block me-4 text-white">
-              Add New Program
+              {t("addNewProgram")}
             </span>
           </Link>
         }

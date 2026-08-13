@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
-  Printer,
   ChevronDown,
   Building2,
   CalendarDays,
@@ -36,6 +35,7 @@ import {
   closeContract,
   fetchContractById,
 } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,110 +183,118 @@ const ConfirmDialog = ({
   isPending: boolean;
   onConfirm: () => void;
   onCancel: () => void;
-}) => (
-  <AnimatePresence>
-    {open && (
-      <>
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/30 z-40 backdrop-blur-sm"
-          onClick={onCancel}
-        />
-        {/* Dialog */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 8 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        >
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-sm p-6 flex flex-col gap-4">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">{icon}</div>
-              <div>
-                <h3 className="text-base font-bold text-gray-900">{title}</h3>
-                <p className="text-sm text-gray-500 mt-1">{description}</p>
+}) => {
+  const { t } = useLanguage();
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/30 z-40 backdrop-blur-sm"
+            onClick={onCancel}
+          />
+          {/* Dialog */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-sm p-6 flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">{icon}</div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">{title}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{description}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end pt-1">
+                <button
+                  onClick={onCancel}
+                  disabled={isPending}
+                  className="h-9 px-4 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  {t("cancel")}
+                </button>
+                <motion.button
+                  whileTap={{ scale: isPending ? 1 : 0.97 }}
+                  onClick={onConfirm}
+                  disabled={isPending}
+                  className={`h-9 px-4 rounded-lg text-white text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed ${confirmClass}`}
+                >
+                  {isPending ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : null}
+                  {isPending ? t("processing") : confirmLabel}
+                </motion.button>
               </div>
             </div>
-            <div className="flex gap-2 justify-end pt-1">
-              <button
-                onClick={onCancel}
-                disabled={isPending}
-                className="h-9 px-4 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <motion.button
-                whileTap={{ scale: isPending ? 1 : 0.97 }}
-                onClick={onConfirm}
-                disabled={isPending}
-                className={`h-9 px-4 rounded-lg text-white text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed ${confirmClass}`}
-              >
-                {isPending ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : null}
-                {isPending ? "Processing..." : confirmLabel}
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-      </>
-    )}
-  </AnimatePresence>
-);
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
-const statusConfig: Record<
-  string,
-  { class: string; dot: string; label: string }
-> = {
-  ACTIVE: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Active",
-  },
-  DRAFT: {
-    class: "bg-blue-50 text-secondary border-blue-200",
-    dot: "bg-blue-400",
-    label: "Draft",
-  },
-  CLOSED: {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: "Closed",
-  },
-  PENDING: {
-    class: "bg-amber-50 text-amber-600 border-amber-200",
-    dot: "bg-amber-400",
-    label: "Pending",
-  },
-  PAID: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Paid",
-  },
-  OVERDUE: {
-    class: "bg-red-50 text-red-500 border-red-200",
-    dot: "bg-red-500",
-    label: "Overdue",
-  },
-  CONFIRMED: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Confirmed",
-  },
-};
-
-const getStatusCfg = (status: string) =>
-  statusConfig[status] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: status,
+const useStatusConfig = () => {
+  const { t } = useLanguage();
+  const statusConfig: Record<
+    string,
+    { class: string; dot: string; label: string }
+  > = {
+    ACTIVE: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("active"),
+    },
+    DRAFT: {
+      class: "bg-blue-50 text-secondary border-blue-200",
+      dot: "bg-blue-400",
+      label: t("draft"),
+    },
+    CLOSED: {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: t("closed"),
+    },
+    PENDING: {
+      class: "bg-amber-50 text-amber-600 border-amber-200",
+      dot: "bg-amber-400",
+      label: t("pending"),
+    },
+    PAID: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("paid"),
+    },
+    OVERDUE: {
+      class: "bg-red-50 text-red-500 border-red-200",
+      dot: "bg-red-500",
+      label: t("overdue"),
+    },
+    CONFIRMED: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("confirmed"),
+    },
   };
+
+  const getStatusCfg = (status: string) =>
+    statusConfig[status] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: status,
+    };
+
+  return getStatusCfg;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -401,6 +409,8 @@ const Skeleton = ({ className }: { className?: string }) => (
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const AnnualContractDetails = () => {
+  const { t } = useLanguage();
+  const getStatusCfg = useStatusConfig();
   const { contractId } = useParams<{ contractId: string }>();
   const queryClient = useQueryClient();
 
@@ -430,25 +440,25 @@ const AnnualContractDetails = () => {
     // Extract API error message
     const apiMessage = (error as { response?: { data?: { message?: string } } })
       ?.response?.data?.message;
-    showToast("error", apiMessage ?? "Something went wrong. Please try again.");
+    showToast("error", apiMessage ?? t("somethingWentWrongTryAgain"));
   };
   const { mutate: mutateCancelContract, isPending: isCancelling } = useMutation(
     {
       mutationFn: () => cancelContract(contractId!),
-      onSuccess: () => onSuccess("Contract cancelled successfully."),
+      onSuccess: () => onSuccess(t("contractCancelledSuccessfully")),
       onError,
     },
   );
   const { mutate: mutateCloseContract, isPending: isClosing } = useMutation({
     mutationFn: () => closeContract(contractId!),
-    onSuccess: () => onSuccess("Contract closed successfully."),
+    onSuccess: () => onSuccess(t("contractClosedSuccessfully")),
     onError,
   });
 
   const { mutate: mutateActivateContract, isPending: isActivating } =
     useMutation({
       mutationFn: () => activateContract(contractId!),
-      onSuccess: () => onSuccess("Contract activated successfully."),
+      onSuccess: () => onSuccess(t("contractActivatedSuccessfully")),
       onError,
     });
   const isAnyPending = isCancelling || isClosing || isActivating;
@@ -460,26 +470,23 @@ const AnnualContractDetails = () => {
   };
   const confirmConfig = {
     cancel: {
-      title: "Cancel Contract",
-      description:
-        "Are you sure you want to cancel this contract? This action may not be reversible.",
-      confirmLabel: "Yes, Cancel",
+      title: t("cancelContract"),
+      description: t("cancelContractConfirmMessage"),
+      confirmLabel: t("yesCancel"),
       confirmClass: "bg-red-500 hover:bg-red-600",
       icon: <XCircle size={22} className="text-red-400" />,
     },
     close: {
-      title: "Close Contract",
-      description:
-        "Are you sure you want to close this contract? It will be marked as closed.",
-      confirmLabel: "Yes, Close",
+      title: t("closeContract"),
+      description: t("closeContractConfirmMessage"),
+      confirmLabel: t("yesClose"),
       confirmClass: "bg-gray-700 hover:bg-gray-800",
       icon: <Lock size={22} className="text-gray-400" />,
     },
     activate: {
-      title: "Activate Contract",
-      description:
-        "Are you sure you want to activate this contract? It will become active immediately.",
-      confirmLabel: "Yes, Activate",
+      title: t("activateContract"),
+      description: t("activateContractConfirmMessage"),
+      confirmLabel: t("yesActivate"),
       confirmClass: "bg-green-500 hover:bg-green-600",
       icon: <Unlock size={22} className="text-green-500" />,
     },
@@ -507,7 +514,7 @@ const AnnualContractDetails = () => {
 
     if (status === "DRAFT" || status === "ACTIVE") {
       items.push({
-        label: "Cancel Contract",
+        label: t("cancelContract"),
         icon: <XCircle size={14} />,
         action: () => {
           setMoreOpen(false);
@@ -519,7 +526,7 @@ const AnnualContractDetails = () => {
 
     if (status === "ACTIVE") {
       items.push({
-        label: "Close Contract",
+        label: t("closeContract"),
         icon: <Lock size={14} />,
         action: () => {
           setMoreOpen(false);
@@ -531,7 +538,7 @@ const AnnualContractDetails = () => {
 
     if (status === "DRAFT" || status === "CLOSED" || status === "CANCELLED") {
       items.push({
-        label: "Activate Contract",
+        label: t("activateContract"),
         icon: <Unlock size={14} />,
         action: () => {
           setMoreOpen(false);
@@ -577,7 +584,7 @@ const AnnualContractDetails = () => {
   if (isError || !contract) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Annual Contract Details" />
+        <DashboardPageTitle text={t("annualContractDetails")} />
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -585,13 +592,13 @@ const AnnualContractDetails = () => {
         >
           <AlertCircle size={36} className="text-red-300" />
           <p className="text-sm font-medium text-red-400">
-            Failed to load contract. Please try again.
+            {t("failedToLoadContractTryAgain")}
           </p>
           <Link
             to="/dashboard/institutions-contracts"
             className="text-sm text-secondary hover:underline"
           >
-            Back to Contracts
+            {t("backToContracts")}
           </Link>
         </motion.div>
       </div>
@@ -604,31 +611,31 @@ const AnnualContractDetails = () => {
   const TABS = [
     {
       key: "info",
-      label: "Contract Info",
+      label: t("contractInfo"),
       icon: <FileCheck2 size={14} />,
       count: undefined,
     },
     {
       key: "installments",
-      label: "Installments",
+      label: t("installments"),
       icon: <CreditCard size={14} />,
       count: contract.tabs.installments,
     },
     {
       key: "payments",
-      label: "Payments",
+      label: t("payments"),
       icon: <DollarSign size={14} />,
       count: contract.tabs.payments,
     },
     {
       key: "students",
-      label: "Students",
+      label: t("students"),
       icon: <GraduationCap size={14} />,
       count: contract.tabs.students,
     },
     {
       key: "documents",
-      label: "Documents",
+      label: t("documents"),
       icon: <FolderOpen size={14} />,
       count: contract.tabs.documents,
     },
@@ -663,7 +670,7 @@ const AnnualContractDetails = () => {
       <div className="flex flex-col gap-5 pb-8">
         {/* Page Title */}
         <div className="flex items-center justify-between gap-4">
-          <DashboardPageTitle text="Annual Contract Details" />
+          <DashboardPageTitle text={t("annualContractDetails")} />
           <div className="flex items-center gap-2">
             {/* More dropdown */}
             <div className="relative" ref={moreRef}>
@@ -676,7 +683,7 @@ const AnnualContractDetails = () => {
                 {isAnyPending ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : null}
-                More
+                {t("more")}
                 <motion.span
                   animate={{ rotate: moreOpen ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
@@ -692,7 +699,7 @@ const AnnualContractDetails = () => {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6, scale: 0.97 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1.5 overflow-hidden"
+                    className="absolute end-0 mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1.5 overflow-hidden"
                   >
                     {menuItems?.map((item) => (
                       <button
@@ -708,14 +715,14 @@ const AnnualContractDetails = () => {
                       to={`/dashboard/institutions-contracts/edit/${contractId}`}
                       className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 text-secondary hover:bg-secondary/10`}
                     >
-                      <Pencil size={14} /> Edit
+                      <Pencil size={14} /> {t("edit")}
                     </Link>
 
                     <Link
                       to={`/dashboard/institutions-contracts/${contractId}/generate-installment`}
                       className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 text-secondary hover:bg-secondary/10`}
                     >
-                      <Plus size={14} /> Generate Installment
+                      <Plus size={14} /> {t("generateInstallment")}
                     </Link>
                   </motion.div>
                 )}
@@ -734,17 +741,17 @@ const AnnualContractDetails = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={14} />
           <Link
             to="/dashboard/institutions-contracts"
             className="hover:text-gray-600 transition-colors"
           >
-            Contracts
+            {t("contracts")}
           </Link>
           <ChevronRight size={14} />
-          <span className="text-gray-600">Contract Details</span>
+          <span className="text-gray-600">{t("contractDetails")}</span>
         </motion.nav>
 
         {/* Header Card */}
@@ -765,7 +772,7 @@ const AnnualContractDetails = () => {
                 </h2>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-sm text-gray-400">
-                    Contract #{contract.header.contractNo}
+                    {t("contract")} #{contract.header.contractNo}
                   </span>
                   <span
                     className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${headerStatusCfg.class}`}
@@ -781,21 +788,21 @@ const AnnualContractDetails = () => {
 
             <div className="flex flex-wrap items-center gap-6 text-sm">
               <div>
-                <p className="text-xs text-gray-400">Year</p>
+                <p className="text-xs text-gray-400">{t("year")}</p>
                 <p className="font-bold text-gray-800 text-base">
                   {contract.header.academicYear}
                 </p>
               </div>
               <div className="w-px h-8 bg-gray-100" />
               <div>
-                <p className="text-xs text-gray-400">Plan</p>
+                <p className="text-xs text-gray-400">{t("plan")}</p>
                 <p className="font-bold text-gray-800">
                   {contract.header.plan.name}
                 </p>
               </div>
               <div className="w-px h-8 bg-gray-100" />
               <div>
-                <p className="text-xs text-gray-400">Max Students</p>
+                <p className="text-xs text-gray-400">{t("maxStudents")}</p>
                 <p className="font-bold text-gray-800">
                   {contract.header.maxStudents.toLocaleString()}
                 </p>
@@ -806,26 +813,26 @@ const AnnualContractDetails = () => {
           {/* Settlement strip */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5 pt-5 border-t border-gray-50">
             <StatCard
-              label="Total Amount"
+              label={t("totalAmount")}
               value={egp(contract.settlement.totalAmount)}
               color="bg-blue-50 border-blue-100"
               icon={<Receipt size={18} className="text-secondary" />}
               delay={0.12}
             />
             <StatCard
-              label="Total Paid"
+              label={t("totalPaid")}
               value={egp(contract.settlement.totalPaid)}
-              sub={`${contract.settlement.paymentPercentage}% paid`}
+              sub={`${contract.settlement.paymentPercentage}% ${t("paidLower")}`}
               color="bg-green-50 border-green-100"
               icon={<CheckCircle2 size={18} className="text-green-500" />}
               delay={0.16}
             />
             <StatCard
-              label="Remaining"
+              label={t("remaining")}
               value={egp(contract.settlement.totalRemaining)}
               sub={
                 contract.settlement.overdueInstallments > 0
-                  ? `${contract.settlement.overdueInstallments} overdue`
+                  ? `${contract.settlement.overdueInstallments} ${t("overdueLower")}`
                   : undefined
               }
               color={
@@ -846,9 +853,9 @@ const AnnualContractDetails = () => {
               delay={0.2}
             />
             <StatCard
-              label="Students"
+              label={t("students")}
               value={`${contract.studentsUsage.addedStudents} / ${contract.studentsUsage.maxStudentsAllowed}`}
-              sub={`${contract.studentsUsage.remainingStudents} remaining`}
+              sub={`${contract.studentsUsage.remainingStudents} ${t("remainingLower")}`}
               color="bg-violet-50 border-violet-100"
               icon={<Users size={18} className="text-violet-400" />}
               delay={0.24}
@@ -856,7 +863,7 @@ const AnnualContractDetails = () => {
           </div>
         </motion.div>
 
-        {/* Tabs — keep exactly as you had them, no changes needed */}
+        {/* Tabs */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -903,7 +910,7 @@ const AnnualContractDetails = () => {
             ))}
           </div>
 
-          {/* Tab content — keep exactly as you had */}
+          {/* Tab content */}
           <div className="p-6">
             <AnimatePresence mode="wait">
               {activeTab === "info" && (
@@ -915,56 +922,56 @@ const AnnualContractDetails = () => {
                   transition={{ duration: 0.22 }}
                 >
                   <p className="text-sm font-semibold text-gray-800 mb-4">
-                    Contract Information
+                    {t("contractInformation")}
                   </p>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12">
                     <div>
                       <InfoRow
-                        label="Price Per Student (EGP)"
+                        label={t("pricePerStudentEgp")}
                         value={egp(info.pricePerStudent)}
                         delay={0.05}
                       />
                       <InfoRow
-                        label="Package Amount"
+                        label={t("packageAmount")}
                         value={egp(info.packageAmount)}
                         delay={0.08}
                       />
                       <InfoRow
-                        label={`Discount (${info.discountType === "PERCENTAGE" ? `${info.discountValue}%` : "Fixed"})`}
+                        label={`${t("discount")} (${info.discountType === "PERCENTAGE" ? `${info.discountValue}%` : t("fixed")})`}
                         value={egp(info.discountAmount)}
                         delay={0.11}
                       />
                       <InfoRow
-                        label="Amount After Discount"
+                        label={t("amountAfterDiscount")}
                         value={egp(info.amountAfterDiscount)}
                         delay={0.14}
                       />
                       <InfoRow
-                        label="Administrative Fees"
+                        label={t("administrativeFees")}
                         value={egp(info.administrativeFees)}
                         delay={0.17}
                       />
                     </div>
                     <div>
                       <InfoRow
-                        label={`Tax (${info.taxPercentage}%)`}
+                        label={`${t("tax")} (${info.taxPercentage}%)`}
                         value={egp(info.taxAmount)}
                         delay={0.05}
                       />
                       <InfoRow
-                        label="Total Amount"
+                        label={t("totalAmount")}
                         value={egp(info.totalAmount)}
                         bold
                         delay={0.08}
                       />
                       <InfoRow
-                        label="Installments Count"
+                        label={t("installmentsCount")}
                         value={String(info.installmentsCount)}
                         delay={0.11}
                       />
                       {info.notes && (
                         <InfoRow
-                          label="Notes"
+                          label={t("notes")}
                           value={info.notes}
                           delay={0.14}
                         />
@@ -979,28 +986,28 @@ const AnnualContractDetails = () => {
                   >
                     <MetaCard
                       icon={<CalendarDays size={16} />}
-                      label="Start Date"
+                      label={t("startDate")}
                       value={fmtDate(info.startDate)}
                       delay={0.32}
                     />
                     <div className="w-px h-10 bg-gray-100 hidden sm:block" />
                     <MetaCard
                       icon={<CalendarDays size={16} />}
-                      label="End Date"
+                      label={t("endDate")}
                       value={fmtDate(info.endDate)}
                       delay={0.36}
                     />
                     <div className="w-px h-10 bg-gray-100 hidden sm:block" />
                     <MetaCard
                       icon={<UserCircle size={16} />}
-                      label="Created By"
+                      label={t("createdBy")}
                       value={info.createdBy.fullName}
                       delay={0.4}
                     />
                     <div className="w-px h-10 bg-gray-100 hidden sm:block" />
                     <MetaCard
                       icon={<Clock size={16} />}
-                      label="Created At"
+                      label={t("createdAt")}
                       value={fmtDateTime(info.createdAt)}
                       delay={0.44}
                     />
@@ -1017,13 +1024,13 @@ const AnnualContractDetails = () => {
                   transition={{ duration: 0.22 }}
                 >
                   <p className="text-sm font-semibold text-gray-800 mb-4">
-                    Installments
+                    {t("installments")}
                   </p>
                   {contract.installments.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-300">
                       <CreditCard size={36} />
                       <p className="text-sm text-gray-400">
-                        No installments yet
+                        {t("noInstallmentsYet")}
                       </p>
                     </div>
                   ) : (
@@ -1052,20 +1059,22 @@ const AnnualContractDetails = () => {
                                   {egp(inst.installmentAmount)}
                                 </p>
                                 <p className="text-xs text-gray-400">
-                                  Due: {fmtDate(inst.dueDate)}
+                                  {t("due")}: {fmtDate(inst.dueDate)}
                                 </p>
                               </div>
                             </Link>
                             <div className="flex items-center gap-4 text-sm">
                               <div className="text-right">
-                                <p className="text-xs text-gray-400">Paid</p>
+                                <p className="text-xs text-gray-400">
+                                  {t("paid")}
+                                </p>
                                 <p className="font-semibold text-green-600">
                                   {egp(inst.paidAmount)}
                                 </p>
                               </div>
                               <div className="text-right">
                                 <p className="text-xs text-gray-400">
-                                  Remaining
+                                  {t("remaining")}
                                 </p>
                                 <p
                                   className={`font-semibold ${inst.remainingAmount > 0 ? "text-red-500" : "text-gray-400"}`}
@@ -1090,7 +1099,7 @@ const AnnualContractDetails = () => {
                               </span>
                               <div className="text-right">
                                 <Link
-                                  title="Edit"
+                                  title={t("edit")}
                                   to={`/dashboard/installments/edit/${inst?.id}`}
                                   className="text-secondary "
                                 >
@@ -1115,12 +1124,14 @@ const AnnualContractDetails = () => {
                   transition={{ duration: 0.22 }}
                 >
                   <p className="text-sm font-semibold text-gray-800 mb-4">
-                    Payments
+                    {t("payments")}
                   </p>
                   {contract.payments.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-300">
                       <DollarSign size={36} />
-                      <p className="text-sm text-gray-400">No payments yet</p>
+                      <p className="text-sm text-gray-400">
+                        {t("noPaymentsYet")}
+                      </p>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">
@@ -1149,20 +1160,24 @@ const AnnualContractDetails = () => {
                                   {egp(pay.paidAmount)}
                                 </p>
                                 <p className="text-xs text-gray-400">
-                                  {fmtDate(pay.paymentDate)} · Receipt:{" "}
+                                  {fmtDate(pay.paymentDate)} · {t("receipt")}:{" "}
                                   {pay.receiptNo}
                                 </p>
                               </div>
                             </Link>
                             <div className="flex items-center gap-4 text-sm">
                               <div className="text-right">
-                                <p className="text-xs text-gray-400">Method</p>
+                                <p className="text-xs text-gray-400">
+                                  {t("method")}
+                                </p>
                                 <p className="font-medium text-gray-700 text-xs">
                                   {pay.paymentMethod.replace("_", " ")}
                                 </p>
                               </div>
                               <div className="text-right">
-                                <p className="text-xs text-gray-400">By</p>
+                                <p className="text-xs text-gray-400">
+                                  {t("by")}
+                                </p>
                                 <p className="font-medium text-gray-700 text-xs">
                                   {pay.createdBy.fullName}
                                 </p>
@@ -1195,7 +1210,7 @@ const AnnualContractDetails = () => {
                   <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-300">
                     <GraduationCap size={36} />
                     <p className="text-sm text-gray-400">
-                      No students added yet
+                      {t("noStudentsAddedYet")}
                     </p>
                   </div>
                 </motion.div>
@@ -1211,7 +1226,9 @@ const AnnualContractDetails = () => {
                 >
                   <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-300">
                     <FolderOpen size={36} />
-                    <p className="text-sm text-gray-400">No documents yet</p>
+                    <p className="text-sm text-gray-400">
+                      {t("noDocumentsYet")}
+                    </p>
                   </div>
                 </motion.div>
               )}

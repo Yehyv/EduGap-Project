@@ -36,7 +36,7 @@ const EditProgramDetails = () => {
         Yup.object({
           languageId: Yup.number().required(),
           name: Yup.string().required(t("nameRequired")),
-          description: Yup.string().required("Description Required"),
+          description: Yup.string().required(t("descriptionRequired")),
         }),
       ),
   });
@@ -48,9 +48,9 @@ const EditProgramDetails = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Program added successfully",
-        confirmButtonText: "OK",
+        title: t("success"),
+        text: t("programAddedSuccessfully"),
+        confirmButtonText: t("ok"),
       });
       queryClient.invalidateQueries({ queryKey: ["programDetails"] });
     },
@@ -58,11 +58,10 @@ const EditProgramDetails = () => {
     onError: (error: any) => {
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: t("error"),
         text:
-          error?.response?.data?.message[0] ||
-          "Something went wrong, please try again",
-        confirmButtonText: "OK",
+          error?.response?.data?.message[0] || t("somethingWentWrongTryAgain"),
+        confirmButtonText: t("ok"),
       });
     },
   });
@@ -88,12 +87,12 @@ const EditProgramDetails = () => {
   if (error)
     return (
       <ErrorMessage
-        message={error.message || "Error while get program details"}
+        message={error.message || t("errorWhileGettingProgramDetails")}
       />
     );
   return (
     <>
-      <DashboardPageTitle text={"Edit Program Details"} />
+      <DashboardPageTitle text={t("editProgramDetails")} />
 
       <ProgramDetailsForm
         addProgramMutation={editProgramMutation}

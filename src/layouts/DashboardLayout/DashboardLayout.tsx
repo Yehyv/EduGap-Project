@@ -163,7 +163,7 @@ const DashboardLayout = () => {
             <button
               onClick={() => setCollapsed((v) => !v)}
               className="flex absolute -end-3 top-12 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm items-center justify-center text-gray-400 hover:text-secondary hover:border-secondary transition-colors z-10"
-              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={collapsed ? t("expandSidebar") : t("collapseSidebar")}
             >
               {collapsed ? (
                 <PanelLeftOpen size={13} />
@@ -248,90 +248,92 @@ const DashboardLayout = () => {
 
           {isInstAdmin && (
             <>
-              <h5 className="text-[#575757] my-2 mx-2 text-sm">Billing</h5>
+              <h5 className="text-[#575757] my-2 mx-2 text-sm">
+                {t("billing")}
+              </h5>
 
               <NavLink
                 to="/dashboard/billing-dashboard"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title="Billing Dashboard"
+                title={t("billingDashboard")}
               >
                 <LayoutDashboardIcon className="flex-shrink-0 text-[#ACACAC]" />
-                {!collapsed && <span>Billing Dashboard</span>}
+                {!collapsed && <span>{t("billingDashboard")}</span>}
               </NavLink>
 
               <NavLink
                 to="/dashboard/my-contract"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title="My Contract"
+                title={t("myContract")}
               >
                 <FileText className="flex-shrink-0 text-[#ACACAC]" />
-                {!collapsed && <span>My Contract</span>}
+                {!collapsed && <span>{t("myContract")}</span>}
               </NavLink>
 
               <NavLink
                 to="/dashboard/my-plan"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title="My Plan"
+                title={t("myPlan")}
               >
                 <Package className="flex-shrink-0 text-[#ACACAC]" />
-                {!collapsed && <span>My Plan</span>}
+                {!collapsed && <span>{t("myPlan")}</span>}
               </NavLink>
               <NavLink
                 to="/dashboard/installment-schedule"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title="Installment Schedule"
+                title={t("installmentSchedule")}
               >
                 <CalendarRange className="flex-shrink-0 text-[#ACACAC]" />
-                {!collapsed && <span>Installment Schedule</span>}
+                {!collapsed && <span>{t("installmentSchedule")}</span>}
               </NavLink>
               <NavLink
                 to="/dashboard/payments-history"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title="Installment Schedule"
+                title={t("paymentsHistory")}
               >
                 <History className="flex-shrink-0 text-[#ACACAC]" />
-                {!collapsed && <span>Payments History</span>}
+                {!collapsed && <span>{t("paymentsHistory")}</span>}
               </NavLink>
               <NavLink
                 to="/dashboard/next-installment"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title="Installment Schedule"
+                title={t("nextInstallment")}
               >
                 <CalendarClockIcon className="flex-shrink-0 text-[#ACACAC]" />
-                {!collapsed && <span>Next Installment</span>}
+                {!collapsed && <span>{t("nextInstallment")}</span>}
               </NavLink>
               <NavLink
                 to="/dashboard/settlement-summary"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title="Installment Schedule"
+                title={t("settlementSummary")}
               >
                 <Calculator className="flex-shrink-0 text-[#ACACAC]" />
-                {!collapsed && <span>Settlement Summary</span>}
+                {!collapsed && <span>{t("settlementSummary")}</span>}
               </NavLink>
               <NavLink
                 to="/dashboard/payment-proof"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title="Installment Schedule"
+                title={t("paymentProof")}
               >
                 <Receipt className="flex-shrink-0 text-[#ACACAC]" />
-                {!collapsed && <span>Payment Proof</span>}
+                {!collapsed && <span>{t("paymentProof")}</span>}
               </NavLink>
               <NavLink
                 to="/dashboard/upgrade-plan"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title="Installment Schedule"
+                title={t("upgradePlan")}
               >
                 <TrendingUp className="flex-shrink-0 text-[#ACACAC]" />
-                {!collapsed && <span>Upgrade Plan</span>}
+                {!collapsed && <span>{t("upgradePlan")}</span>}
               </NavLink>
             </>
           )}
@@ -467,10 +469,10 @@ const DashboardLayout = () => {
                 to="/dashboard/upgrade-plan-requests"
                 className={navLinkClass}
                 onClick={() => setOpen(false)}
-                title={collapsed ? t("payments") : undefined}
+                title={collapsed ? t("planUpgradeRequests") : undefined}
               >
                 <ArrowUpCircle className="text-[#ACACAC] flex-shrink-0" />
-                {!collapsed && <span>Upgrade Plan Requests</span>}
+                {!collapsed && <span>{t("planUpgradeRequests")}</span>}
               </NavLink>
 
               {/* ── Reports accordion ── */}
@@ -481,7 +483,7 @@ const DashboardLayout = () => {
                     to="/dashboard/reports/settlements"
                     className={navLinkClass}
                     onClick={() => setOpen(false)}
-                    title="Reports"
+                    title={t("reports")}
                   >
                     <BarChart2 className="text-[#ACACAC] flex-shrink-0" />
                   </NavLink>
@@ -489,7 +491,7 @@ const DashboardLayout = () => {
                     to="/dashboard/reports/collections"
                     className={navLinkClass}
                     onClick={() => setOpen(false)}
-                    title="Collections"
+                    title={t("collections")}
                   >
                     <BadgeDollarSignIcon className="text-[#ACACAC] flex-shrink-0" />
                   </NavLink>
@@ -497,7 +499,7 @@ const DashboardLayout = () => {
                     to="/dashboard/reports/overdue"
                     className={navLinkClass}
                     onClick={() => setOpen(false)}
-                    title="Overdue"
+                    title={t("overdue")}
                   >
                     <ClockAlert className="text-[#ACACAC] flex-shrink-0" />
                   </NavLink>
@@ -505,7 +507,7 @@ const DashboardLayout = () => {
                     to="/dashboard/reports/upcoming"
                     className={navLinkClass}
                     onClick={() => setOpen(false)}
-                    title="Upcoming"
+                    title={t("upcoming")}
                   >
                     <CalendarClock className="text-[#ACACAC] flex-shrink-0" />
                   </NavLink>
@@ -513,7 +515,7 @@ const DashboardLayout = () => {
                     to="/dashboard/reports/payment-percentage"
                     className={navLinkClass}
                     onClick={() => setOpen(false)}
-                    title="Payment Percentage"
+                    title={t("paymentPercentage")}
                   >
                     <PieChart className="text-[#ACACAC] flex-shrink-0" />
                   </NavLink>
@@ -521,7 +523,7 @@ const DashboardLayout = () => {
                     to="/dashboard/reports/discount-tax-report"
                     className={navLinkClass}
                     onClick={() => setOpen(false)}
-                    title="Discount & Tax"
+                    title={t("discountAndTax")}
                   >
                     <Tag className="text-[#ACACAC] flex-shrink-0" />
                   </NavLink>
@@ -529,7 +531,7 @@ const DashboardLayout = () => {
                     to="/dashboard/reports/administrative-fees"
                     className={navLinkClass}
                     onClick={() => setOpen(false)}
-                    title="Administrative Fees"
+                    title={t("administrativeFees")}
                   >
                     <FileCog className="text-[#ACACAC] flex-shrink-0" />
                   </NavLink>
@@ -537,7 +539,7 @@ const DashboardLayout = () => {
                     to="/dashboard/reports/yearly-revenue"
                     className={navLinkClass}
                     onClick={() => setOpen(false)}
-                    title="Yearly Revenue"
+                    title={t("yearlyRevenue")}
                   >
                     <TrendingUp className="text-[#ACACAC] flex-shrink-0" />
                   </NavLink>
@@ -545,7 +547,7 @@ const DashboardLayout = () => {
                     to="/dashboard/reports/financial-reports-export"
                     className={navLinkClass}
                     onClick={() => setOpen(false)}
-                    title="Export Financial Reports"
+                    title={t("exportFinancialReports")}
                   >
                     <Download className="text-[#ACACAC] flex-shrink-0" />
                   </NavLink>
@@ -567,7 +569,7 @@ const DashboardLayout = () => {
                       className={`flex-shrink-0 ${isReportsActive ? "text-secondary" : "text-[#ACACAC]"}`}
                       size={18}
                     />
-                    <span className="flex-1 text-left">Reports</span>
+                    <span className="flex-1 text-start">{t("reports")}</span>
                     <span
                       className="transition-transform duration-200"
                       style={{
@@ -607,7 +609,7 @@ const DashboardLayout = () => {
                           size={13}
                           className="flex-shrink-0 text-[#ACACAC]"
                         />
-                        <span>Annual Settlement</span>
+                        <span>{t("annualSettlement")}</span>
                       </NavLink>
                       <NavLink
                         to="/dashboard/reports/collections"
@@ -625,7 +627,7 @@ const DashboardLayout = () => {
                           size={13}
                           className="flex-shrink-0 text-[#ACACAC]"
                         />
-                        <span>Collections Summary</span>
+                        <span>{t("collectionsSummary")}</span>
                       </NavLink>
                       <NavLink
                         to="/dashboard/reports/overdue"
@@ -643,7 +645,7 @@ const DashboardLayout = () => {
                           size={13}
                           className="flex-shrink-0 text-[#ACACAC]"
                         />
-                        <span>Collection Overdue</span>
+                        <span>{t("collectionOverdue")}</span>
                       </NavLink>
                       <NavLink
                         to="/dashboard/reports/upcoming"
@@ -661,7 +663,7 @@ const DashboardLayout = () => {
                           size={13}
                           className="flex-shrink-0 text-[#ACACAC]"
                         />
-                        <span>Collection Upcoming</span>
+                        <span>{t("collectionUpcoming")}</span>
                       </NavLink>
                       <NavLink
                         to="/dashboard/reports/payment-percentage"
@@ -679,7 +681,7 @@ const DashboardLayout = () => {
                           size={13}
                           className="flex-shrink-0 text-[#ACACAC]"
                         />
-                        <span>Payment Percentage</span>
+                        <span>{t("paymentPercentage")}</span>
                       </NavLink>
 
                       <NavLink
@@ -698,7 +700,7 @@ const DashboardLayout = () => {
                           size={13}
                           className="flex-shrink-0 text-[#ACACAC]"
                         />
-                        <span>Discount & Tax</span>
+                        <span>{t("discountAndTax")}</span>
                       </NavLink>
                       <NavLink
                         to="/dashboard/reports/administrative-fees"
@@ -716,7 +718,7 @@ const DashboardLayout = () => {
                           size={13}
                           className="flex-shrink-0 text-[#ACACAC]"
                         />
-                        <span>Administrative Fees</span>
+                        <span>{t("administrativeFees")}</span>
                       </NavLink>
                       <NavLink
                         to="/dashboard/reports/yearly-revenue"
@@ -734,7 +736,7 @@ const DashboardLayout = () => {
                           size={13}
                           className="flex-shrink-0 text-[#ACACAC]"
                         />
-                        <span>Yearly Revenue</span>
+                        <span>{t("yearlyRevenue")}</span>
                       </NavLink>
                       <NavLink
                         to="/dashboard/reports/financial-reports-export"
@@ -752,7 +754,7 @@ const DashboardLayout = () => {
                           size={13}
                           className="flex-shrink-0 text-[#ACACAC]"
                         />
-                        <span>Financial Reports Export</span>
+                        <span>{t("financialReportsExport")}</span>
                       </NavLink>
                     </div>
                   </div>

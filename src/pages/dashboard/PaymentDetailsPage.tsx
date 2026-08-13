@@ -28,6 +28,7 @@ import {
   fetchPaymentDetails,
   approvePayment,
 } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,114 +70,6 @@ interface PaymentDetail {
   createdAt: string;
   updatedAt: string;
 }
-
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const paymentStatusConfig: Record<
-  string,
-  { class: string; dot: string; label: string; icon: React.ReactNode }
-> = {
-  CONFIRMED: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Confirmed",
-    icon: <BadgeCheck size={13} className="text-green-500" />,
-  },
-  PENDING_REVIEW: {
-    class: "bg-amber-50 text-amber-600 border-amber-200",
-    dot: "bg-amber-400",
-    label: "Pending",
-    icon: <Clock size={13} className="text-amber-500" />,
-  },
-  CANCELLED: {
-    class: "bg-red-50 text-red-500 border-red-200",
-    dot: "bg-red-500",
-    label: "Cancelled",
-    icon: <XCircle size={13} className="text-red-500" />,
-  },
-  REVERSED: {
-    class: "bg-purple-50 text-purple-500 border-purple-200",
-    dot: "bg-purple-400",
-    label: "Reversed",
-    icon: <RefreshCw size={13} className="text-purple-400" />,
-  },
-};
-
-const installmentStatusConfig: Record<
-  string,
-  { class: string; dot: string; label: string }
-> = {
-  PAID: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Paid",
-  },
-  PARTIAL: {
-    class: "bg-blue-50 text-blue-500 border-blue-200",
-    dot: "bg-blue-400",
-    label: "Partial",
-  },
-  PENDING_REVIEW: {
-    class: "bg-amber-50 text-amber-600 border-amber-200",
-    dot: "bg-amber-400",
-    label: "Pending",
-  },
-  UPCOMING: {
-    class: "bg-orange-50 text-orange-500 border-orange-200",
-    dot: "bg-orange-400",
-    label: "Upcoming",
-  },
-  OVERDUE: {
-    class: "bg-red-50 text-red-500 border-red-200",
-    dot: "bg-red-500",
-    label: "Overdue",
-  },
-};
-
-const getPaymentStatusCfg = (s: string) =>
-  paymentStatusConfig[s] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: s,
-    icon: null,
-  };
-
-const getInstallmentStatusCfg = (s: string) =>
-  installmentStatusConfig[s] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: s,
-  };
-
-// ─── Payment method labels ────────────────────────────────────────────────────
-
-const PAYMENT_METHOD_LABELS: Record<
-  string,
-  { label: string; icon: React.ReactNode }
-> = {
-  BANK_TRANSFER: {
-    label: "Bank Transfer",
-    icon: <Landmark size={13} className="text-blue-400" />,
-  },
-  CASH: {
-    label: "Cash",
-    icon: <DollarSign size={13} className="text-green-400" />,
-  },
-  CHEQUE: {
-    label: "Cheque",
-    icon: <FileText size={13} className="text-amber-400" />,
-  },
-  ONLINE: {
-    label: "Online",
-    icon: <CreditCard size={13} className="text-purple-400" />,
-  },
-};
-
-const getMethodInfo = (m: string) =>
-  PAYMENT_METHOD_LABELS[m] ?? {
-    label: m,
-    icon: <Banknote size={13} className="text-gray-400" />,
-  };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -294,6 +187,7 @@ const ApprovePanel = ({
   paymentId: string;
   onSuccess: () => void;
 }) => {
+  const { t } = useLanguage();
   const [notes, setNotes] = useState("");
   const [confirmed, setConfirmed] = useState(false);
 
@@ -321,10 +215,10 @@ const ApprovePanel = ({
           <CheckCircle2 size={22} className="text-green-500" />
         </div>
         <p className="text-sm font-semibold text-green-600">
-          Payment Approved!
+          {t("paymentApproved")}
         </p>
         <p className="text-xs text-gray-400 text-center">
-          The payment has been confirmed successfully.
+          {t("paymentConfirmedSuccessfully")}
         </p>
       </motion.div>
     );
@@ -336,14 +230,14 @@ const ApprovePanel = ({
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
           <StickyNote size={12} className="text-gray-400" />
-          Review Notes
-          <span className="text-gray-400 font-normal">(optional)</span>
+          {t("reviewNotes")}
+          <span className="text-gray-400 font-normal">({t("optional")})</span>
         </label>
         <textarea
           rows={3}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Add any notes about this approval…"
+          placeholder={t("addNotesAboutApproval")}
           className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-700 bg-white
             focus:outline-none focus:ring-2 focus:ring-green-100 focus:border-green-400
             transition-colors resize-none"
@@ -364,9 +258,7 @@ const ApprovePanel = ({
               className="text-amber-500 flex-shrink-0 mt-0.5"
             />
             <p className="text-xs text-amber-700 leading-relaxed">
-              Are you sure? This will confirm the payment and update the
-              installment balance. Click <strong>Approve</strong> again to
-              proceed.
+              {t("approvePaymentConfirmMessage")}
             </p>
           </motion.div>
         )}
@@ -375,7 +267,7 @@ const ApprovePanel = ({
       {/* Error */}
       {isError && (
         <p className="text-xs text-red-500 text-center flex items-center justify-center gap-1">
-          <XCircle size={12} /> Failed to approve. Please try again.
+          <XCircle size={12} /> {t("failedToApproveTryAgain")}
         </p>
       )}
 
@@ -393,12 +285,12 @@ const ApprovePanel = ({
       >
         {isPending ? (
           <>
-            <Loader2 size={15} className="animate-spin" /> Approving…
+            <Loader2 size={15} className="animate-spin" /> {t("approving")}
           </>
         ) : (
           <>
             <CheckCircle2 size={15} />{" "}
-            {confirmed ? "Confirm Approval" : "Approve Payment"}
+            {confirmed ? t("confirmApproval") : t("approvePayment")}
           </>
         )}
       </button>
@@ -409,10 +301,115 @@ const ApprovePanel = ({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const PaymentDetailsPage = () => {
+  const { t } = useLanguage();
   const { paymentId } = useParams<{ paymentId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [imgModalOpen, setImgModalOpen] = useState(false);
+
+  const paymentStatusConfig: Record<
+    string,
+    { class: string; dot: string; label: string; icon: React.ReactNode }
+  > = {
+    CONFIRMED: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("confirmed"),
+      icon: <BadgeCheck size={13} className="text-green-500" />,
+    },
+    PENDING_REVIEW: {
+      class: "bg-amber-50 text-amber-600 border-amber-200",
+      dot: "bg-amber-400",
+      label: t("pending"),
+      icon: <Clock size={13} className="text-amber-500" />,
+    },
+    CANCELLED: {
+      class: "bg-red-50 text-red-500 border-red-200",
+      dot: "bg-red-500",
+      label: t("cancelled"),
+      icon: <XCircle size={13} className="text-red-500" />,
+    },
+    REVERSED: {
+      class: "bg-purple-50 text-purple-500 border-purple-200",
+      dot: "bg-purple-400",
+      label: t("reversed"),
+      icon: <RefreshCw size={13} className="text-purple-400" />,
+    },
+  };
+
+  const installmentStatusConfig: Record<
+    string,
+    { class: string; dot: string; label: string }
+  > = {
+    PAID: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("paid"),
+    },
+    PARTIAL: {
+      class: "bg-blue-50 text-blue-500 border-blue-200",
+      dot: "bg-blue-400",
+      label: t("partial"),
+    },
+    PENDING_REVIEW: {
+      class: "bg-amber-50 text-amber-600 border-amber-200",
+      dot: "bg-amber-400",
+      label: t("pending"),
+    },
+    UPCOMING: {
+      class: "bg-orange-50 text-orange-500 border-orange-200",
+      dot: "bg-orange-400",
+      label: t("upcoming"),
+    },
+    OVERDUE: {
+      class: "bg-red-50 text-red-500 border-red-200",
+      dot: "bg-red-500",
+      label: t("overdue"),
+    },
+  };
+
+  const getPaymentStatusCfg = (s: string) =>
+    paymentStatusConfig[s] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: s,
+      icon: null,
+    };
+
+  const getInstallmentStatusCfg = (s: string) =>
+    installmentStatusConfig[s] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: s,
+    };
+
+  const PAYMENT_METHOD_LABELS: Record<
+    string,
+    { label: string; icon: React.ReactNode }
+  > = {
+    BANK_TRANSFER: {
+      label: t("bankTransfer"),
+      icon: <Landmark size={13} className="text-blue-400" />,
+    },
+    CASH: {
+      label: t("cash"),
+      icon: <DollarSign size={13} className="text-green-400" />,
+    },
+    CHEQUE: {
+      label: t("cheque"),
+      icon: <FileText size={13} className="text-amber-400" />,
+    },
+    ONLINE: {
+      label: t("online"),
+      icon: <CreditCard size={13} className="text-purple-400" />,
+    },
+  };
+
+  const getMethodInfo = (m: string) =>
+    PAYMENT_METHOD_LABELS[m] ?? {
+      label: m,
+      icon: <Banknote size={13} className="text-gray-400" />,
+    };
 
   const {
     data: payment,
@@ -450,17 +447,17 @@ const PaymentDetailsPage = () => {
   if (isError || !payment) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Payment Details" />
+        <DashboardPageTitle text={t("paymentDetails")} />
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <AlertCircle size={36} className="text-red-300" />
           <p className="text-sm text-red-400">
-            Failed to load payment details.
+            {t("failedToLoadPaymentDetails")}
           </p>
           <button
             onClick={() => navigate(-1)}
             className="text-sm text-blue-500 hover:underline"
           >
-            Go Back
+            {t("goBack")}
           </button>
         </div>
       </div>
@@ -483,8 +480,6 @@ const PaymentDetailsPage = () => {
         )
       : 0;
 
-  console.log(`${import.meta.env.VITE_BASE_URL}${payment?.receiptFile}`);
-
   return (
     <>
       {/* Receipt image modal */}
@@ -506,7 +501,7 @@ const PaymentDetailsPage = () => {
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-800">
-                  Receipt Image
+                  {t("receiptImage")}
                 </p>
                 <button
                   onClick={() => setImgModalOpen(false)}
@@ -526,7 +521,7 @@ const PaymentDetailsPage = () => {
       </AnimatePresence>
 
       <div className="flex flex-col gap-5 pb-8">
-        <DashboardPageTitle text="Payment Details" />
+        <DashboardPageTitle text={t("paymentDetails")} />
 
         {/* Breadcrumb */}
         <motion.nav
@@ -538,24 +533,24 @@ const PaymentDetailsPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={14} />
           <Link
             to="/dashboard/contract-payments"
             className="hover:text-gray-600 transition-colors"
           >
-            Payments
+            {t("payments")}
           </Link>
           <ChevronRight size={14} />
-          <span className="text-gray-600">Payment Details</span>
+          <span className="text-gray-600">{t("paymentDetails")}</span>
         </motion.nav>
 
         <Link
           to={`/dashboard/contract-payments/${paymentId}/cancel`}
           className="flex ms-auto text-white bg-red-500 px-6 py-1.5 rounded-xl font-bold"
         >
-          Cancel / Reverse
+          {t("cancelOrReverse")}
         </Link>
 
         {/* Header summary bar */}
@@ -570,13 +565,13 @@ const PaymentDetailsPage = () => {
               <CreditCard size={18} className="text-secondary" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Payment ID</p>
+              <p className="text-xs text-gray-400">{t("paymentId")}</p>
               <p className="text-sm font-bold text-gray-800">#{payment?.id}</p>
             </div>
           </div>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="text-center sm:text-right">
-              <p className="text-xs text-gray-400">Amount</p>
+              <p className="text-xs text-gray-400">{t("amount")}</p>
               <p className="text-lg font-bold text-gray-900">
                 {egp(payment.amount)}
               </p>
@@ -585,7 +580,7 @@ const PaymentDetailsPage = () => {
             <StatusBadge cfg={paymentStatusCfg} />
             {payment.isReversal && (
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-purple-50 text-purple-600 border-purple-200">
-                <RefreshCw size={11} /> Reversal
+                <RefreshCw size={11} /> {t("reversal")}
               </span>
             )}
           </div>
@@ -598,30 +593,30 @@ const PaymentDetailsPage = () => {
             {/* Installment info */}
             <SectionCard
               icon={<Hash size={15} />}
-              title="Installment"
+              title={t("installment")}
               badge={<StatusBadge cfg={installmentStatusCfg} />}
               delay={0.06}
             >
               <div className="flex flex-col">
                 <DetailRow
-                  label="Installment No."
+                  label={t("installmentNoDot")}
                   value={ordinal(payment?.installment?.installmentNo)}
                 />
                 <DetailRow
-                  label="Due Date"
+                  label={t("dueDate")}
                   value={fmtDate(payment?.installment?.dueDate)}
                 />
                 <DetailRow
-                  label="Total Amount"
+                  label={t("totalAmount")}
                   value={egp(payment?.installment?.installmentAmount)}
                 />
                 <DetailRow
-                  label="Paid Amount"
+                  label={t("paidAmount")}
                   value={egp(payment?.installment?.paidAmount)}
                   highlight="green"
                 />
                 <DetailRow
-                  label="Remaining"
+                  label={t("remaining")}
                   value={egp(payment?.installment?.remainingAmount)}
                   highlight={
                     payment?.installment?.remainingAmount > 0
@@ -631,7 +626,7 @@ const PaymentDetailsPage = () => {
                 />
                 <div className="flex flex-col gap-1.5 pt-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-400">Paid Progress</p>
+                    <p className="text-xs text-gray-400">{t("paidProgress")}</p>
                     <p className="text-xs font-semibold text-gray-600">
                       {installmentPaidPct}%
                     </p>
@@ -657,28 +652,31 @@ const PaymentDetailsPage = () => {
             {/* Contract info */}
             <SectionCard
               icon={<Building2 size={15} />}
-              title="Contract"
+              title={t("contract")}
               delay={0.1}
             >
               <div className="flex flex-col">
-                <DetailRow label="Contract ID" value={payment.contractId} />
+                <DetailRow label={t("contractId")} value={payment.contractId} />
                 <DetailRow
-                  label="Contract No."
+                  label={t("contractNo")}
                   value={payment.contractNo ?? "—"}
                 />
-                <DetailRow label="Institute ID" value={payment.instituteId} />
+                <DetailRow
+                  label={t("instituteId")}
+                  value={payment.instituteId}
+                />
               </div>
             </SectionCard>
 
             {/* Audit */}
             <SectionCard
               icon={<Clock size={15} />}
-              title="Audit Trail"
+              title={t("auditTrail")}
               delay={0.14}
             >
               <div className="flex flex-col">
                 <DetailRow
-                  label="Created By"
+                  label={t("createdBy")}
                   valueNode={
                     <div className="flex items-center gap-1.5">
                       <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
@@ -691,16 +689,16 @@ const PaymentDetailsPage = () => {
                   }
                 />
                 <DetailRow
-                  label="Created At"
+                  label={t("createdAt")}
                   value={fmtDateTime(payment.createdAt)}
                 />
                 <DetailRow
-                  label="Updated At"
+                  label={t("updatedAt")}
                   value={fmtDateTime(payment.updatedAt)}
                 />
                 {payment.cancelledBy && (
                   <DetailRow
-                    label="Cancelled By"
+                    label={t("cancelledBy")}
                     valueNode={
                       <div className="flex items-center gap-1.5">
                         <div className="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center">
@@ -715,7 +713,7 @@ const PaymentDetailsPage = () => {
                 )}
                 {payment.cancelledAt && (
                   <DetailRow
-                    label="Cancelled At"
+                    label={t("cancelledAt")}
                     value={fmtDateTime(payment.cancelledAt)}
                   />
                 )}
@@ -728,21 +726,21 @@ const PaymentDetailsPage = () => {
             {/* Payment details */}
             <SectionCard
               icon={<CreditCard size={15} />}
-              title="Payment Details"
+              title={t("paymentDetails")}
               delay={0.08}
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
                 <div className="flex flex-col">
                   <DetailRow
-                    label="Payment ID"
+                    label={t("paymentId")}
                     value={`#${payment.paymentId}`}
                   />
                   <DetailRow
-                    label="Payment Date"
+                    label={t("paymentDate")}
                     value={fmtDate(payment.paymentDate)}
                   />
                   <DetailRow
-                    label="Method"
+                    label={t("method")}
                     valueNode={
                       <div className="flex items-center gap-1.5">
                         {methodInfo.icon}
@@ -753,36 +751,36 @@ const PaymentDetailsPage = () => {
                     }
                   />
                   <DetailRow
-                    label="Receipt No."
+                    label={t("receiptNoDot")}
                     value={payment.receiptNo ?? "—"}
                     highlight={payment.receiptNo ? "blue" : undefined}
                   />
                 </div>
                 <div className="flex flex-col">
                   <DetailRow
-                    label="Amount"
+                    label={t("amount")}
                     value={egp(payment.amount)}
                     highlight="green"
                   />
                   <DetailRow
-                    label="Paid Amount"
+                    label={t("paidAmount")}
                     value={egp(payment.paidAmount)}
                     highlight="green"
                   />
                   <DetailRow
-                    label="Status"
+                    label={t("status")}
                     valueNode={<StatusBadge cfg={paymentStatusCfg} />}
                   />
                   <DetailRow
-                    label="Reversal"
+                    label={t("reversal")}
                     valueNode={
                       payment.isReversal ? (
                         <span className="text-xs font-semibold text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
-                          Yes
+                          {t("yes")}
                         </span>
                       ) : (
                         <span className="text-xs font-semibold text-gray-400">
-                          No
+                          {t("no")}
                         </span>
                       )
                     }
@@ -795,10 +793,10 @@ const PaymentDetailsPage = () => {
             {isPendingPayment && (
               <SectionCard
                 icon={<CheckCircle2 size={15} className="text-green-500" />}
-                title="Approve Payment"
+                title={t("approvePayment")}
                 badge={
                   <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Clock size={9} /> Awaiting Approval
+                    <Clock size={9} /> {t("awaitingApproval")}
                   </span>
                 }
                 delay={0.1}
@@ -813,7 +811,7 @@ const PaymentDetailsPage = () => {
             {/* Notes */}
             <SectionCard
               icon={<FileText size={15} />}
-              title="Notes"
+              title={t("notes")}
               delay={0.12}
             >
               {payment.notes ? (
@@ -822,7 +820,7 @@ const PaymentDetailsPage = () => {
                 </p>
               ) : (
                 <p className="text-sm text-gray-400 italic">
-                  No notes recorded for this payment.
+                  {t("noNotesRecordedForPayment")}
                 </p>
               )}
             </SectionCard>
@@ -831,7 +829,7 @@ const PaymentDetailsPage = () => {
             {payment.cancelReason && (
               <SectionCard
                 icon={<XCircle size={15} />}
-                title="Cancellation Reason"
+                title={t("cancellationReason")}
                 delay={0.14}
               >
                 <div className="flex items-start gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg">
@@ -847,10 +845,10 @@ const PaymentDetailsPage = () => {
             {/* Receipt image */}
             <SectionCard
               icon={<ImageIcon size={15} />}
-              title="Receipt Image"
+              title={t("receiptImage")}
               badge={
                 <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                  {payment.receiptFile ? "Attached" : "Not attached"}
+                  {payment.receiptFile ? t("attached") : t("notAttached")}
                 </span>
               }
               delay={0.16}
@@ -869,7 +867,7 @@ const PaymentDetailsPage = () => {
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                     <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-white bg-black/50 px-3 py-1.5 rounded-full">
-                      Click to enlarge
+                      {t("clickToEnlarge")}
                     </span>
                   </div>
                 </motion.div>
@@ -879,7 +877,7 @@ const PaymentDetailsPage = () => {
                     <ImageIcon size={16} className="text-gray-300" />
                   </div>
                   <p className="text-xs text-gray-400">
-                    No receipt image was attached to this payment.
+                    {t("noReceiptImageAttached")}
                   </p>
                 </div>
               )}
@@ -898,7 +896,7 @@ const PaymentDetailsPage = () => {
             onClick={() => navigate(-1)}
             className="h-10 px-5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
-            <ArrowLeft size={15} /> Back
+            <ArrowLeft size={15} /> {t("back")}
           </button>
         </motion.div>
       </div>

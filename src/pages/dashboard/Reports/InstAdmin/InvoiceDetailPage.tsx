@@ -1,76 +1,126 @@
-import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import {
-  ChevronRight,
-  Download,
-  FileSpreadsheet,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  BookOpen,
-  Loader2,
-} from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import {
+  ChevronDown,
+  Building2,
+  AlertCircle,
+  FileX,
+  Info,
+  ChevronRight,
+  ListChecks,
+} from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
-import Logo from "@/assets/svgs/EduGapWithShadow.svg?react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface InvoiceData {
-  invoice: {
-    invoiceNo: string;
-    contractNo: string;
+interface MyContractData {
+  contractId: number;
+  instituteId: number;
+  academicYear: number;
+  planId: number;
+  planName: string;
+  maxStudentsAllowed: number;
+  addedStudents: number;
+  remainingStudents: number;
+  totalAmount: number;
+  totalPaid: number;
+  totalRemaining: number;
+  paymentPercentage: number;
+  contractStatus: string;
+  settlementStatus: string;
+  overdueInstallments: number;
+  contract: {
     contractId: number;
-    installmentId: number;
-    installmentNo: number;
-    invoiceDate: string;
-    dueDate: string;
-    status: string;
-    amount: number;
-    paidAmount: number;
-    remainingAmount: number;
-  };
-  billTo: {
+    contractNo: string;
     instituteId: number;
     instituteName: string;
+    academicYear: number;
+    planId: number;
+    planName: string;
+    status: string;
+    contractStartDate: string;
+    contractEndDate: string;
   };
-  items: {
-    description: string;
-    amount: number;
+  contractSummary: {
+    maxStudentsAllowed: number;
+    addedStudents: number;
+    remainingStudents: number;
+    pricePerStudent: number;
+    packageAmount: number;
+    discountAmount: number;
+    amountAfterDiscount: number;
+    administrativeFees: number;
+    taxAmount: number;
+    netAmount: number;
+  };
+  paymentSummary: {
+    totalInstallments: number;
+    paidInstallments: number;
+    partialInstallments: number;
+    pendingInstallments: number;
+    overdueInstallments: number;
+    lastPaymentDate: string | null;
+    lastPaymentAmount: number | null;
+    lastPaymentMethod: string | null;
+  };
+  collectionProgress: {
+    percentage: number;
+    collected: number;
+    remaining: number;
+  };
+  installments: {
+    id: number;
+    installmentId: number;
+    installmentNo: number;
+    dueDate: string;
+    installmentAmount: number;
+    paidAmount: number;
+    remainingAmount: number;
+    status: string;
   }[];
-  total: number;
+  payments: {
+    id: number;
+    paymentId: number;
+    installmentId: number;
+    paymentDate: string;
+    paidAmount: number;
+    paymentMethod: string;
+    receiptNo: string | null;
+    status: string;
+    createdAt: string;
+  }[];
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 
-async function fetchInvoice(invoiceId: string): Promise<InvoiceData> {
-  const res = await dashboardApi.get(
-    `/annual-settlements/institute/invoices/${invoiceId}`,
-  );
-  return res.data.data;
-}
-
-async function downloadInvoicePdf(invoiceId: string): Promise<void> {
-  const res = await dashboardApi.get(
-    `/annual-settlements/institute/invoices/${invoiceId}/download`,
-    { responseType: "blob" },
-  );
-  const url = window.URL.createObjectURL(new Blob([res.data]));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `invoice-${invoiceId}.pdf`;
-  a.click();
-  window.URL.revokeObjectURL(url);
+async function fetchMyContract(
+  academicYear: number,
+): Promise<MyContractData | null> {
+  try {
+    const res = await dashboardApi.get(
+      `/annual-settlements/institute/current?academicYear=${academicYear}`,
+    );
+    return res.data.data ?? null;
+  } catch (err: any) {
+    const messages: string[] = err?.response?.data?.message ?? [];
+    const isNoContract = messages.some((m: string) =>
+      m.toLowerCase().includes("no active annual contract"),
+    );
+    if (isNoContract) return null;
+    throw err;
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const egp = (val: number) =>
-  `${Number(val).toLocaleString("en-EG", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  `EGP ${Number(val).toLocaleString("en-EG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   })}`;
 
 const fmtDate = (iso: string) => iso?.split("T")[0] ?? iso;
@@ -83,44 +133,50 @@ const fadeUp = (delay = 0) => ({
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<
-  string,
-  { cls: string; label: string; Icon: React.ElementType }
-> = {
-  PAID: {
+const STATUS_CFG: Record<string, { cls: string; labelKey: string }> = {
+  ACTIVE: {
     cls: "bg-green-50 text-green-600 border-green-200",
-    label: "Paid",
-    Icon: CheckCircle2,
+    labelKey: "active",
+  },
+  CLOSED: {
+    cls: "bg-gray-100 text-gray-500 border-gray-200",
+    labelKey: "closed",
   },
   PENDING: {
     cls: "bg-amber-50 text-amber-600 border-amber-200",
-    label: "Pending",
-    Icon: Clock,
+    labelKey: "pending",
   },
   OVERDUE: {
     cls: "bg-red-50 text-red-500 border-red-200",
-    label: "Overdue",
-    Icon: AlertCircle,
+    labelKey: "overdue",
   },
-  CANCELLED: {
-    cls: "bg-gray-100 text-gray-500 border-gray-200",
-    label: "Cancelled",
-    Icon: XCircle,
+  PAID: {
+    cls: "bg-green-50 text-green-600 border-green-200",
+    labelKey: "paid",
+  },
+  PARTIALLY_PAID: {
+    cls: "bg-blue-50 text-blue-500 border-blue-200",
+    labelKey: "partiallyPaid",
+  },
+  CONFIRMED: {
+    cls: "bg-green-50 text-green-600 border-green-200",
+    labelKey: "confirmed",
   },
 };
 
 const StatusBadge = ({ status }: { status: string }) => {
+  const { t } = useLanguage();
+
   const cfg = STATUS_CFG[status] ?? {
     cls: "bg-gray-100 text-gray-500 border-gray-200",
-    label: status,
-    Icon: Clock,
+    labelKey: "",
   };
+
   return (
     <span
-      className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.cls}`}
+      className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border ${cfg.cls}`}
     >
-      <cfg.Icon size={11} />
-      {cfg.label}
+      {cfg.labelKey ? t(cfg.labelKey) : status}
     </span>
   );
 };
@@ -128,296 +184,431 @@ const StatusBadge = ({ status }: { status: string }) => {
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 const Sk = ({ className }: { className?: string }) => (
-  <div className={`animate-pulse bg-gray-100 rounded-lg ${className}`} />
+  <div className={`animate-pulse bg-gray-100 rounded-xl ${className}`} />
 );
 
-// ─── Sidebar Info Row ─────────────────────────────────────────────────────────
+// ─── Info Row ─────────────────────────────────────────────────────────────────
 
-const SideRow = ({
+const InfoRow = ({
   label,
   value,
-  badge,
+  bold,
+  valueColor,
 }: {
   label: string;
-  value?: string;
-  badge?: React.ReactNode;
+  value: string | number;
+  bold?: boolean;
+  valueColor?: string;
 }) => (
-  <div className="flex flex-col gap-0.5">
-    <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">
+  <div className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+    <p
+      className={`text-sm ${bold ? "font-bold text-gray-800" : "text-gray-500"}`}
+    >
       {label}
     </p>
-    {badge ?? <p className="text-sm font-bold text-gray-800">{value}</p>}
+    <p
+      className={`text-sm ${bold ? "font-bold text-gray-800" : "font-semibold text-gray-800"} ${valueColor ?? ""}`}
+    >
+      {value}
+    </p>
   </div>
 );
 
+// ─── Year Dropdown ────────────────────────────────────────────────────────────
+
+const YEARS = [2027, 2026, 2025, 2024, 2023, 2022];
+
+const YearDropdown = ({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (y: number) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="h-9 px-4 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
+      >
+        {value}
+        <ChevronDown
+          size={14}
+          className={`text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 mt-1.5 w-32 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-20"
+          >
+            {YEARS.map((y) => (
+              <button
+                key={y}
+                type="button"
+                onClick={() => {
+                  onChange(y);
+                  setOpen(false);
+                }}
+                className={`w-full px-4 py-2.5 text-sm text-left transition-colors
+                  ${
+                    y === value
+                      ? "bg-blue-50 text-blue-600 font-semibold"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+              >
+                {y}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {open && (
+        <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+      )}
+    </div>
+  );
+};
+
+// ─── No Contract state ────────────────────────────────────────────────────────
+
+const NoContractState = ({
+  year,
+  onChangeYear,
+}: {
+  year: number;
+  onChangeYear: (y: number) => void;
+}) => {
+  const { t } = useLanguage();
+
+  return (
+    <motion.div
+      {...fadeUp(0.05)}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
+    >
+      <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+        <FileX size={28} className="text-gray-300" />
+      </div>
+
+      <div className="flex flex-col items-center gap-1 text-center">
+        <p className="text-sm font-semibold text-gray-700">
+          {t("noContractFoundFor")} {year}
+        </p>
+
+        <p className="text-xs text-gray-400 max-w-xs">
+          {t("noActiveAnnualContractForYear")}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        {YEARS.filter((y) => y !== year)
+          .slice(0, 4)
+          .map((y) => (
+            <button
+              key={y}
+              type="button"
+              onClick={() => onChangeYear(y)}
+              className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+            >
+              {t("try")} {y}
+            </button>
+          ))}
+      </div>
+    </motion.div>
+  );
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const InvoiceDetailPage = () => {
-  const { invoiceId } = useParams<{ invoiceId: string }>();
-  const [isDownloading, setIsDownloading] = useState(false);
+const MyContractPage = () => {
+  const { t } = useLanguage();
+
+  const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["invoice", invoiceId],
-    queryFn: () => fetchInvoice(invoiceId!),
-    enabled: !!invoiceId,
+    queryKey: ["my-contract", academicYear],
+    queryFn: () => fetchMyContract(academicYear),
+    retry: false,
   });
-
-  const handleDownloadPdf = async () => {
-    if (!invoiceId) return;
-    setIsDownloading(true);
-    try {
-      await downloadInvoicePdf(invoiceId);
-    } catch (e) {
-      console.error("Download failed", e);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   return (
     <>
-      <DashboardPageTitle text="Invoice Details" />
-      <div className="flex flex-col gap-5 pb-8">
-        {/* ── Breadcrumb ── */}
-        <motion.nav
-          {...fadeUp(0)}
-          className="flex items-center gap-1.5 text-sm text-gray-400"
-        >
-          <Link
-            to="/dashboard/home"
-            className="hover:text-gray-600 transition-colors"
-          >
-            Dashboard
-          </Link>
-          <ChevronRight size={13} />
-          <Link
-            to="/dashboard/payments-history"
-            className="hover:text-gray-600 transition-colors"
-          >
-            Payments History
-          </Link>
-          <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Invoice Details</span>
-        </motion.nav>
+      <DashboardPageTitle text={t("myContract")} />
 
+      {/* ── Breadcrumb ── */}
+      <motion.nav className="flex items-center gap-1.5 text-sm text-gray-400 mb-4">
+        <Link
+          to="/dashboard/home"
+          className="hover:text-gray-600 transition-colors"
+        >
+          {t("dashboard")}
+        </Link>
+
+        <ChevronRight size={13} />
+
+        <span className="text-gray-600 font-medium">{t("myContract")}</span>
+      </motion.nav>
+
+      <div className="flex flex-col gap-5 pb-8">
         {/* ── Loading ── */}
         {isLoading && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-            <Sk className="h-64" />
-            <div className="lg:col-span-3">
-              <Sk className="h-64" />
-            </div>
+          <div className="flex flex-col gap-5">
+            <Sk className="h-24" />
+            <Sk className="h-72" />
+            <Sk className="h-16" />
           </div>
         )}
 
-        {/* ── Error ── */}
+        {/* ── Real error ── */}
         {isError && !isLoading && (
           <motion.div
             {...fadeUp(0.05)}
             className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
           >
             <AlertCircle size={32} className="text-red-300" />
+
             <p className="text-sm text-red-400">
-              Failed to load invoice. Please try again.
+              {t("somethingWentWrongTryAgain")}
             </p>
-            <Link
-              to="/dashboard/billing/invoices"
-              className="text-sm text-blue-500 hover:underline"
-            >
-              Back to Invoices
-            </Link>
           </motion.div>
         )}
 
+        {/* ── No contract ── */}
+        {!isLoading && !isError && data === null && (
+          <NoContractState year={academicYear} onChangeYear={setAcademicYear} />
+        )}
+
         {/* ── Content ── */}
-        {!isLoading && !isError && data && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
-            {/* ── Left sidebar ── */}
-            <motion.div
-              {...fadeUp(0.06)}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-            >
-              <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
-                <BookOpen size={13} className="text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-800">
-                  Invoice Info
-                </h3>
-              </div>
+        {!isLoading &&
+          !isError &&
+          data &&
+          (() => {
+            const {
+              contract,
+              contractSummary,
+              paymentSummary,
+              collectionProgress,
+            } = data;
 
-              <div className="px-5 py-5 flex flex-col gap-4">
-                <SideRow label="Invoice No." value={data.invoice.invoiceNo} />
-                <div className="border-t border-gray-50" />
-                <SideRow label="Contract No." value={data.invoice.contractNo} />
-                <div className="border-t border-gray-50" />
-                <SideRow
-                  label="Invoice Date"
-                  value={fmtDate(data.invoice.invoiceDate)}
-                />
-                <div className="border-t border-gray-50" />
-                <SideRow
-                  label="Due Date"
-                  value={fmtDate(data.invoice.dueDate)}
-                />
-                <div className="border-t border-gray-50" />
-                <SideRow
-                  label="Status"
-                  badge={<StatusBadge status={data.invoice.status} />}
-                />
-                <div className="border-t border-gray-50" />
-                <SideRow
-                  label="Amount"
-                  value={`EGP ${egp(data.invoice.amount)}`}
-                />
-                <div className="border-t border-gray-50" />
-                <div className="flex flex-col gap-0.5">
-                  <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">
-                    Description
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {data.items[0]?.description ?? "—"}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+            return (
+              <>
+                {/* ── Contract header card ── */}
+                <motion.div
+                  {...fadeUp(0.06)}
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                    {/* Icon */}
+                    <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Building2 size={20} className="text-gray-400" />
+                    </div>
 
-            {/* ── Right: invoice document ── */}
-            <motion.div
-              {...fadeUp(0.1)}
-              className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-            >
-              {/* Invoice document area */}
-              <div className="px-8 py-8 flex flex-col gap-7">
-                {/* ── Invoice header ── */}
-                <div className="flex items-start justify-between">
-                  {/* Logo + brand */}
-                  <div className="flex items-center gap-2.5">
-                    <Logo />
-                  </div>
-
-                  {/* INVOICE label */}
-                  <h1 className="text-2xl font-extrabold text-gray-800 tracking-widest uppercase">
-                    INVOICE
-                  </h1>
-                </div>
-
-                {/* ── Meta row ── */}
-                <div className="flex items-start justify-between gap-6">
-                  {/* Bill To */}
-                  <div className="flex flex-col gap-1">
-                    <p className="text-xs text-gray-400 font-medium">Bill To</p>
-                    <p className="text-sm font-bold text-gray-800">
-                      {data.billTo.instituteName}
-                    </p>
-                  </div>
-
-                  {/* Invoice details */}
-                  <div className="flex flex-col gap-1.5 text-right">
-                    {[
-                      { label: "Invoice No.", value: data.invoice.invoiceNo },
-                      {
-                        label: "Invoice Date.",
-                        value: fmtDate(data.invoice.invoiceDate),
-                      },
-                      {
-                        label: "Due Date.",
-                        value: fmtDate(data.invoice.dueDate),
-                      },
-                    ].map(({ label, value }) => (
-                      <div
-                        key={label}
-                        className="flex items-center gap-6 justify-end"
-                      >
-                        <p className="text-xs text-gray-400 w-24 text-right">
-                          {label}
-                        </p>
-                        <p className="text-xs font-semibold text-gray-700 w-24 text-right">
-                          {value}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* ── Divider ── */}
-                <div className="border-t border-gray-100" />
-
-                {/* ── Items table ── */}
-                <div className="flex flex-col gap-0">
-                  {/* Header */}
-                  <div className="grid grid-cols-2 pb-2 border-b border-gray-200">
-                    <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                      Description
-                    </p>
-                    <p className="text-xs font-bold text-gray-700 uppercase tracking-wide text-right">
-                      Amount (EGP)
-                    </p>
-                  </div>
-
-                  {/* Rows */}
-                  {data.items.map((item, i) => (
-                    <div
-                      key={i}
-                      className="grid grid-cols-2 py-3.5 border-b border-gray-50"
-                    >
-                      <p className="text-sm text-gray-700">
-                        {item.description}
+                    {/* Contract No + Status */}
+                    <div className="flex flex-col gap-1 flex-1 min-w-0">
+                      <p className="text-xs text-gray-400 font-medium">
+                        {t("contractNo")}
                       </p>
-                      <p className="text-sm text-gray-700 text-right">
-                        {egp(item.amount)}
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-lg font-bold text-gray-800 font-mono">
+                          {contract.contractNo}
+                        </p>
+
+                        <StatusBadge status={contract.status} />
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="hidden sm:block w-px h-12 bg-gray-100" />
+
+                    {/* Academic Year */}
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      <p className="text-xs text-gray-400 font-medium">
+                        {t("academicYear")}
+                      </p>
+
+                      <p className="text-lg font-bold text-gray-800">
+                        {contract.academicYear}
                       </p>
                     </div>
-                  ))}
 
-                  {/* Total row */}
-                  <div className="grid grid-cols-2 pt-3.5">
-                    <p className="text-sm font-bold text-gray-800">Total</p>
-                    <p className="text-sm font-bold text-gray-800 text-right">
-                      {egp(data.total)}
+                    {/* Divider */}
+                    <div className="hidden sm:block w-px h-12 bg-gray-100" />
+
+                    {/* Plan */}
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      <p className="text-xs text-gray-400 font-medium">
+                        {t("plan")}
+                      </p>
+
+                      <p className="text-lg font-bold text-gray-800">
+                        {contract.planName}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* ── Contract Information + Financial Summary ── */}
+                <motion.div
+                  {...fadeUp(0.1)}
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 bg-gray-50/60">
+                    <p className="text-sm font-semibold text-gray-800">
+                      {t("contractInformation")}
                     </p>
                   </div>
-                </div>
 
-                {/* ── Divider ── */}
-                <div className="border-t border-gray-100" />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+                    {/* Left — contract details */}
+                    <div className="px-6 py-4">
+                      <InfoRow
+                        label={t("startDate")}
+                        value={fmtDate(contract.contractStartDate)}
+                      />
 
-                {/* ── Thank you ── */}
-                <p className="text-sm text-gray-400 text-center">
-                  Thank you for your business!
-                </p>
-              </div>
+                      <InfoRow
+                        label={t("endDate")}
+                        value={fmtDate(contract.contractEndDate)}
+                      />
 
-              {/* ── Download actions ── */}
-              <div className="flex items-center justify-center gap-3 px-8 py-5 border-t border-gray-100 bg-gray-50/60">
-                {/* Download PDF */}
-                <button
-                  type="button"
-                  onClick={handleDownloadPdf}
-                  disabled={isDownloading}
-                  className="h-10 px-6 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                      <InfoRow
+                        label={t("maxStudents")}
+                        value={contractSummary.maxStudentsAllowed.toLocaleString()}
+                      />
+
+                      <InfoRow
+                        label={t("pricePerStudent")}
+                        value={egp(contractSummary.pricePerStudent)}
+                      />
+
+                      <InfoRow
+                        label={t("installments")}
+                        value={paymentSummary.totalInstallments}
+                      />
+
+                      <InfoRow
+                        label={t("tax14")}
+                        value={egp(contractSummary.taxAmount)}
+                      />
+
+                      <InfoRow
+                        label={t("administrativeFees")}
+                        value={egp(contractSummary.administrativeFees)}
+                      />
+                    </div>
+
+                    {/* Right — financial summary */}
+                    <div className="px-6 py-4">
+                      <InfoRow
+                        label={t("contractValue")}
+                        value={egp(contractSummary.packageAmount)}
+                      />
+
+                      <InfoRow
+                        label={t("discount")}
+                        value={
+                          contractSummary.discountAmount > 0
+                            ? `- ${egp(contractSummary.discountAmount)}`
+                            : "EGP 0"
+                        }
+                        valueColor="text-blue-500"
+                      />
+
+                      <InfoRow
+                        label={t("totalContractValue")}
+                        value={egp(contractSummary.netAmount)}
+                        bold
+                      />
+
+                      <InfoRow
+                        label={t("totalPaid")}
+                        value={egp(data.totalPaid)}
+                        valueColor="text-green-600"
+                      />
+
+                      <InfoRow
+                        label={t("remainingAmount")}
+                        value={egp(data.totalRemaining)}
+                        valueColor="text-red-400"
+                      />
+
+                      <div className="flex items-center justify-between py-2.5">
+                        <p className="text-sm text-gray-500">
+                          {t("paymentPercentage")}
+                        </p>
+
+                        <div className="flex items-center gap-3">
+                          <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{
+                                width: `${Math.min(
+                                  collectionProgress.percentage,
+                                  100,
+                                )}%`,
+                              }}
+                              transition={{
+                                delay: 0.5,
+                                duration: 0.7,
+                                ease: "easeOut",
+                              }}
+                              className="h-full bg-blue-500 rounded-full"
+                            />
+                          </div>
+
+                          <p className="text-sm font-semibold text-gray-800">
+                            {collectionProgress.percentage}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* ── Info notice + View Installments ── */}
+                <motion.div
+                  {...fadeUp(0.16)}
+                  className="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                 >
-                  {isDownloading ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Download size={14} />
-                  )}
-                  {isDownloading ? "Downloading…" : "Download PDF"}
-                </button>
+                  <div className="flex items-start gap-2.5">
+                    <Info
+                      size={15}
+                      className="text-blue-400 flex-shrink-0 mt-0.5"
+                    />
 
-                {/* Download Excel — placeholder (no endpoint provided) */}
-                <button
-                  type="button"
-                  className="h-10 px-6 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors flex items-center gap-2"
-                >
-                  <FileSpreadsheet size={14} className="text-green-500" />
-                  Download Excel
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+                    <p className="text-sm text-secondary">
+                      {t("canAddStudentsUntilPlanLimit")}{" "}
+                      <span className="font-semibold">
+                        {contractSummary.remainingStudents.toLocaleString()}{" "}
+                        {t("spotsRemaining")}
+                      </span>
+                    </p>
+                  </div>
+
+                  <Link
+                    to={`/dashboard/installment-schedule`}
+                    className="h-9 px-5 rounded-lg bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2 flex-shrink-0"
+                  >
+                    <ListChecks size={14} />
+                    {t("viewInstallments")}
+                  </Link>
+                </motion.div>
+              </>
+            );
+          })()}
       </div>
     </>
   );
 };
 
-export default InvoiceDetailPage;
+export default MyContractPage;

@@ -1,4 +1,5 @@
 import type { TabType } from "./types";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 interface ProgramTabsProps {
   activeTab: TabType;
@@ -13,6 +14,8 @@ const ProgramTabs = ({
   coursesCount,
   institutesCount,
 }: ProgramTabsProps) => {
+  const { t } = useLanguage();
+
   const tabClass = (tab: TabType) =>
     `rounded-lg border flex-1 py-2.5 px-4 cursor-pointer transition-all font-medium ${
       activeTab === tab
@@ -26,21 +29,21 @@ const ProgramTabs = ({
         className={tabClass("information")}
         onClick={() => onTabChange("information")}
       >
-        Information
+        {t("information")}
       </button>
 
       <button
         className={tabClass("courses")}
         onClick={() => onTabChange("courses")}
       >
-        Courses ({coursesCount})
+        {t("courses")} ({coursesCount})
       </button>
 
       <button
         className={tabClass("institutes")}
         onClick={() => onTabChange("institutes")}
       >
-        Institutes ({institutesCount})
+        {t("institutes")} ({institutesCount})
       </button>
     </div>
   );

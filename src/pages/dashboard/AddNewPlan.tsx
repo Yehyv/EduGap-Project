@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import { createSubscriptionPlan } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,24 +53,6 @@ const INITIAL_FORM: PlanFormData = {
   default_installments_count: "",
   is_active: true,
   description: "",
-};
-
-// ─── Validate ─────────────────────────────────────────────────────────────────
-
-const validate = (form: PlanFormData): FormErrors => {
-  const errors: FormErrors = {};
-  if (!form.plan_name.trim()) errors.plan_name = "Plan name is required";
-  if (!form.min_students) errors.min_students = "Min students is required";
-  if (!form.max_students) errors.max_students = "Max students is required";
-  if (Number(form.min_students) >= Number(form.max_students))
-    errors.max_students = "Max must be greater than min";
-  if (!form.default_price_per_student)
-    errors.default_price_per_student = "Price is required";
-  if (!form.administrative_fees)
-    errors.administrative_fees = "Administrative fees is required";
-  if (!form.default_installments_count)
-    errors.default_installments_count = "Installments is required";
-  return errors;
 };
 
 // ─── Field ────────────────────────────────────────────────────────────────────
@@ -154,6 +137,7 @@ const Toast = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const AddSubscriptionPlan = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [form, setForm] = useState<PlanFormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -161,6 +145,23 @@ const AddSubscriptionPlan = () => {
     type: "success" | "error";
     message: string;
   } | null>(null);
+
+  // ─── Validate ─────────────────────────────────────────────────────────────
+  const validate = (form: PlanFormData): FormErrors => {
+    const errors: FormErrors = {};
+    if (!form.plan_name.trim()) errors.plan_name = t("planNameRequired");
+    if (!form.min_students) errors.min_students = t("minStudentsRequired");
+    if (!form.max_students) errors.max_students = t("maxStudentsRequired");
+    if (Number(form.min_students) >= Number(form.max_students))
+      errors.max_students = t("maxMustBeGreaterThanMin");
+    if (!form.default_price_per_student)
+      errors.default_price_per_student = t("priceRequired");
+    if (!form.administrative_fees)
+      errors.administrative_fees = t("administrativeFeesRequired");
+    if (!form.default_installments_count)
+      errors.default_installments_count = t("installmentsRequired");
+    return errors;
+  };
 
   const set = (key: keyof PlanFormData, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -178,11 +179,11 @@ const AddSubscriptionPlan = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: createSubscriptionPlan,
     onSuccess: () => {
-      showToast("success", "Subscription plan created successfully!");
+      showToast("success", t("subscriptionPlanCreatedSuccessfully"));
       setTimeout(() => navigate("/dashboard/subscription-plans"), 1500);
     },
     onError: () => {
-      showToast("error", "Failed to create plan. Please try again.");
+      showToast("error", t("failedToCreatePlanTryAgain"));
     },
   });
 
@@ -213,7 +214,7 @@ const AddSubscriptionPlan = () => {
       </AnimatePresence>
 
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Add Subscription Plan" />
+        <DashboardPageTitle text={t("addSubscriptionPlan")} />
 
         {/* Breadcrumb */}
         <motion.nav
@@ -225,17 +226,17 @@ const AddSubscriptionPlan = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={14} />
           <Link
             to="/dashboard/subscription-plans"
             className="hover:text-gray-600 transition-colors"
           >
-            Subscription Plans
+            {t("subscriptionPlans")}
           </Link>
           <ChevronRight size={14} />
-          <span className="text-gray-600">Add New Plan</span>
+          <span className="text-gray-600">{t("addNewPlan")}</span>
         </motion.nav>
 
         {/* Form Card */}
@@ -249,14 +250,14 @@ const AddSubscriptionPlan = () => {
             {/* Row 1 — Plan Name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field
-                label="Plan Name"
+                label={t("planName")}
                 required
                 error={errors.plan_name}
                 icon={<Tag size={14} />}
               >
                 <input
                   type="text"
-                  placeholder="Enter plan name"
+                  placeholder={t("enterPlanName")}
                   className={inputClass(!!errors.plan_name)}
                   value={form.plan_name}
                   onChange={(e) => set("plan_name", e.target.value)}
@@ -267,14 +268,14 @@ const AddSubscriptionPlan = () => {
             {/* Row 2 — Students + Price */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Field
-                label="Min Students"
+                label={t("minStudents")}
                 required
                 error={errors.min_students}
                 icon={<Users size={14} />}
               >
                 <input
                   type="number"
-                  placeholder="e.g. 0"
+                  placeholder={t("egZero")}
                   className={inputClass(!!errors.min_students)}
                   value={form.min_students}
                   onChange={(e) => set("min_students", e.target.value)}
@@ -283,14 +284,14 @@ const AddSubscriptionPlan = () => {
               </Field>
 
               <Field
-                label="Max Students"
+                label={t("maxStudents")}
                 required
                 error={errors.max_students}
                 icon={<Users size={14} />}
               >
                 <input
                   type="number"
-                  placeholder="e.g. 1000"
+                  placeholder={t("egOneThousand")}
                   className={inputClass(!!errors.max_students)}
                   value={form.max_students}
                   onChange={(e) => set("max_students", e.target.value)}
@@ -299,14 +300,14 @@ const AddSubscriptionPlan = () => {
               </Field>
 
               <Field
-                label="Price Per Student (EGP)"
+                label={t("pricePerStudentEGP")}
                 required
                 error={errors.default_price_per_student}
                 icon={<DollarSign size={14} />}
               >
                 <input
                   type="number"
-                  placeholder="e.g. 200"
+                  placeholder={t("egTwoHundred")}
                   className={inputClass(!!errors.default_price_per_student)}
                   value={form.default_price_per_student}
                   onChange={(e) =>
@@ -320,14 +321,14 @@ const AddSubscriptionPlan = () => {
             {/* Row 3 — Fees + Installments */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field
-                label="Administrative Fees"
+                label={t("administrativeFees")}
                 required
                 error={errors.administrative_fees}
                 icon={<Receipt size={14} />}
               >
                 <input
                   type="number"
-                  placeholder="e.g. 500"
+                  placeholder={t("egFiveHundred")}
                   className={inputClass(!!errors.administrative_fees)}
                   value={form.administrative_fees}
                   onChange={(e) => set("administrative_fees", e.target.value)}
@@ -336,7 +337,7 @@ const AddSubscriptionPlan = () => {
               </Field>
 
               <Field
-                label="Default Installments"
+                label={t("defaultInstallments")}
                 required
                 error={errors.default_installments_count}
                 icon={<CalendarDays size={14} />}
@@ -349,7 +350,7 @@ const AddSubscriptionPlan = () => {
                   }
                 >
                   <option value="" disabled>
-                    Select installments
+                    {t("selectInstallments")}
                   </option>
                   {INSTALLMENT_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
@@ -361,9 +362,9 @@ const AddSubscriptionPlan = () => {
             </div>
 
             {/* Row 4 — Description */}
-            <Field label="Description" icon={<AlignLeft size={14} />}>
+            <Field label={t("description")} icon={<AlignLeft size={14} />}>
               <textarea
-                placeholder="Enter plan description..."
+                placeholder={t("enterPlanDescription")}
                 rows={4}
                 className={`${inputClass()} h-auto py-2.5 resize-none`}
                 value={form.description}
@@ -378,7 +379,7 @@ const AddSubscriptionPlan = () => {
                 className="h-10 px-5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
                 <X size={15} />
-                Cancel
+                {t("cancel")}
               </Link>
               <motion.button
                 type="submit"
@@ -389,12 +390,12 @@ const AddSubscriptionPlan = () => {
                 {isPending ? (
                   <>
                     <Loader2 size={15} className="animate-spin" />
-                    Saving...
+                    {t("saving")}
                   </>
                 ) : (
                   <>
                     <Save size={15} />
-                    Save Plan
+                    {t("savePlan")}
                   </>
                 )}
               </motion.button>

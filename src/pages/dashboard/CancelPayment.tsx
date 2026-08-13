@@ -27,6 +27,7 @@ import {
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import { fetchPaymentDetails } from "@/features/Dashboard/services/dashboardApis";
 import { dashboardApi } from "@/shared/services/dashboardApi";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,88 +49,13 @@ interface PaymentDetail {
   notes: string | null;
 }
 
-// ─── Cancel reasons ───────────────────────────────────────────────────────────
-
-const CANCEL_REASONS = [
-  "Incorrect Amount",
-  "Duplicate Payment",
-  "Payment Made by Mistake",
-  "Customer Request",
-  "Other",
-];
-
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const paymentStatusConfig: Record<
-  string,
-  { class: string; dot: string; label: string; icon: React.ReactNode }
-> = {
-  CONFIRMED: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Confirmed",
-    icon: <BadgeCheck size={12} />,
-  },
-  PENDING: {
-    class: "bg-amber-50 text-amber-600 border-amber-200",
-    dot: "bg-amber-400",
-    label: "Pending",
-    icon: <Clock size={12} />,
-  },
-  CANCELLED: {
-    class: "bg-red-50 text-red-500 border-red-200",
-    dot: "bg-red-500",
-    label: "Cancelled",
-    icon: <XCircle size={12} />,
-  },
-  REVERSED: {
-    class: "bg-purple-50 text-purple-500 border-purple-200",
-    dot: "bg-purple-400",
-    label: "Reversed",
-    icon: <RefreshCw size={12} />,
-  },
-};
-
-const getStatusCfg = (s: string) =>
-  paymentStatusConfig[s] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: s,
-    icon: null,
-  };
-
-// ─── Payment method labels ────────────────────────────────────────────────────
-
-const METHOD_LABELS: Record<string, { label: string; icon: React.ReactNode }> =
-  {
-    BANK_TRANSFER: {
-      label: "Bank Transfer",
-      icon: <Landmark size={13} className="text-blue-400" />,
-    },
-    CASH: {
-      label: "Cash",
-      icon: <DollarSign size={13} className="text-green-400" />,
-    },
-    CHEQUE: {
-      label: "Cheque",
-      icon: <FileText size={13} className="text-amber-400" />,
-    },
-    ONLINE: {
-      label: "Online",
-      icon: <CreditCard size={13} className="text-purple-400" />,
-    },
-  };
-
-const getMethodInfo = (m: string) =>
-  METHOD_LABELS[m] ?? {
-    label: m,
-    icon: <Banknote size={13} className="text-gray-400" />,
-  };
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const egp = (val: number | string) =>
-  `EGP ${Number(val).toLocaleString("en-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `EGP ${Number(val).toLocaleString("en-EG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
 const fmtDate = (iso: string) => iso?.split("T")[0] ?? iso;
 
@@ -161,6 +87,7 @@ const InfoRow = ({
       {icon && <span className="text-gray-300">{icon}</span>}
       {label}
     </p>
+
     {valueNode ?? (
       <p className="text-sm font-semibold text-gray-800">{value ?? "—"}</p>
     )}
@@ -192,12 +119,16 @@ const Toast = ({
     ) : (
       <AlertCircle size={17} className="text-red-500 flex-shrink-0" />
     )}
+
     <span className="flex-1">{message}</span>
+
     <button onClick={onClose}>
       <X size={14} />
     </button>
   </motion.div>
 );
+
+// ─── Cancel API ───────────────────────────────────────────────────────────────
 
 const cancelPayment = async (
   paymentId: string,
@@ -206,12 +137,11 @@ const cancelPayment = async (
   try {
     const res = await dashboardApi.patch(
       `/contract-payments/${paymentId}/cancel`,
-      { cancelReason }, // 👈 body
+      { cancelReason },
     );
 
     return res.data;
   } catch (error: any) {
-    // Axios error handling
     const message =
       error?.response?.data?.message || "Failed to cancel payment.";
 
@@ -222,6 +152,8 @@ const cancelPayment = async (
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const CancelPaymentPage = () => {
+  const { t } = useLanguage();
+
   const { paymentId } = useParams<{ paymentId: string }>();
   const navigate = useNavigate();
 
@@ -229,15 +161,130 @@ const CancelPaymentPage = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [reasonError, setReasonError] = useState(false);
+
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
+  // ─── Cancel reasons ────────────────────────────────────────────────────────
+
+  const CANCEL_REASONS = [
+    {
+      value: "Incorrect Amount",
+      label: t("incorrectAmount"),
+    },
+    {
+      value: "Duplicate Payment",
+      label: t("duplicatePayment"),
+    },
+    {
+      value: "Payment Made by Mistake",
+      label: t("paymentMadeByMistake"),
+    },
+    {
+      value: "Customer Request",
+      label: t("customerRequest"),
+    },
+    {
+      value: "Other",
+      label: t("other"),
+    },
+  ];
+
+  // ─── Status config ─────────────────────────────────────────────────────────
+
+  const paymentStatusConfig: Record<
+    string,
+    {
+      class: string;
+      dot: string;
+      label: string;
+      icon: React.ReactNode;
+    }
+  > = {
+    CONFIRMED: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("confirmed"),
+      icon: <BadgeCheck size={12} />,
+    },
+
+    PENDING: {
+      class: "bg-amber-50 text-amber-600 border-amber-200",
+      dot: "bg-amber-400",
+      label: t("pending"),
+      icon: <Clock size={12} />,
+    },
+
+    CANCELLED: {
+      class: "bg-red-50 text-red-500 border-red-200",
+      dot: "bg-red-500",
+      label: t("cancelled"),
+      icon: <XCircle size={12} />,
+    },
+
+    REVERSED: {
+      class: "bg-purple-50 text-purple-500 border-purple-200",
+      dot: "bg-purple-400",
+      label: t("reversed"),
+      icon: <RefreshCw size={12} />,
+    },
+  };
+
+  const getStatusCfg = (s: string) =>
+    paymentStatusConfig[s] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: s,
+      icon: null,
+    };
+
+  // ─── Payment method labels ────────────────────────────────────────────────
+
+  const METHOD_LABELS: Record<
+    string,
+    {
+      label: string;
+      icon: React.ReactNode;
+    }
+  > = {
+    BANK_TRANSFER: {
+      label: t("bankTransfer"),
+      icon: <Landmark size={13} className="text-blue-400" />,
+    },
+
+    CASH: {
+      label: t("cash"),
+      icon: <DollarSign size={13} className="text-green-400" />,
+    },
+
+    CHEQUE: {
+      label: t("cheque"),
+      icon: <FileText size={13} className="text-amber-400" />,
+    },
+
+    ONLINE: {
+      label: t("online"),
+      icon: <CreditCard size={13} className="text-purple-400" />,
+    },
+  };
+
+  const getMethodInfo = (m: string) =>
+    METHOD_LABELS[m] ?? {
+      label: m,
+      icon: <Banknote size={13} className="text-gray-400" />,
+    };
+
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
-    setTimeout(() => setToast(null), 4500);
+
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
   };
+
+  // ─── Payment query ─────────────────────────────────────────────────────────
 
   const {
     data: payment,
@@ -249,14 +296,22 @@ const CancelPaymentPage = () => {
     enabled: !!paymentId,
   });
 
+  // ─── Mutation ──────────────────────────────────────────────────────────────
+
   const { mutate, isPending } = useMutation({
     mutationFn: () => cancelPayment(paymentId!, selectedReason),
+
     onSuccess: () => {
-      showToast("success", "Payment cancelled successfully.");
-      setTimeout(() => navigate(-1), 1600);
+      showToast("success", t("paymentCancelledSuccess"));
+
+      setTimeout(() => {
+        navigate(-1);
+      }, 1600);
     },
+
     onError: (err: unknown) => {
-      const msg = (err as Error)?.message ?? "Failed to cancel payment.";
+      const msg = (err as Error)?.message ?? t("failedCancelPayment");
+
       showToast("error", msg);
     },
   });
@@ -266,16 +321,19 @@ const CancelPaymentPage = () => {
       setReasonError(true);
       return;
     }
+
     setReasonError(false);
     mutate();
   };
 
-  // ── Loading ────────────────────────────────────────────────────────────────
+  // ─── Loading ───────────────────────────────────────────────────────────────
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-5 pb-8">
         <Skeleton className="h-10 w-56" />
         <Skeleton className="h-4 w-72" />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <Skeleton className="h-80" />
           <Skeleton className="h-80" />
@@ -284,20 +342,23 @@ const CancelPaymentPage = () => {
     );
   }
 
+  // ─── Error ─────────────────────────────────────────────────────────────────
+
   if (isError || !payment) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Cancel Payment" />
+        <DashboardPageTitle text={t("cancelPayment")} />
+
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <AlertCircle size={36} className="text-red-300" />
-          <p className="text-sm text-red-400">
-            Failed to load payment details.
-          </p>
+
+          <p className="text-sm text-red-400">{t("failedLoadPayment")}</p>
+
           <button
             onClick={() => navigate(-1)}
             className="text-sm text-blue-500 hover:underline"
           >
-            Go Back
+            {t("goBack")}
           </button>
         </div>
       </div>
@@ -309,6 +370,7 @@ const CancelPaymentPage = () => {
 
   return (
     <>
+      {/* Toast */}
       <AnimatePresence>
         {toast && (
           <Toast
@@ -320,7 +382,7 @@ const CancelPaymentPage = () => {
       </AnimatePresence>
 
       <div className="flex flex-col gap-5 pb-8">
-        <DashboardPageTitle text="Cancel Payment" />
+        <DashboardPageTitle text={t("cancelPayment")} />
 
         {/* Breadcrumb */}
         <motion.nav
@@ -332,24 +394,30 @@ const CancelPaymentPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
+
           <ChevronRight size={14} />
+
           <Link
             to="/dashboard/contract-payments"
             className="hover:text-gray-600 transition-colors"
           >
-            Payments
+            {t("payments")}
           </Link>
+
           <ChevronRight size={14} />
+
           <Link
             to={`/dashboard/payments/${paymentId}`}
             className="hover:text-gray-600 transition-colors"
           >
-            Payment Details
+            {t("paymentDetails")}
           </Link>
+
           <ChevronRight size={14} />
-          <span className="text-gray-600">Cancel Payment</span>
+
+          <span className="text-gray-600">{t("cancelPayment")}</span>
         </motion.nav>
 
         {/* Warning banner */}
@@ -363,19 +431,21 @@ const CancelPaymentPage = () => {
             size={16}
             className="text-red-400 flex-shrink-0 mt-0.5"
           />
+
           <div>
             <p className="text-sm font-semibold text-red-700">
-              This action cannot be undone
+              {t("cannotUndo")}
             </p>
+
             <p className="text-xs text-red-500 mt-0.5">
-              Cancelling this payment will reverse its effect on the installment
-              balance. Please select a reason before proceeding.
+              {t("cancelPaymentWarning")}
             </p>
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
           {/* ── Left — Payment Information ─────────────────────────────── */}
+
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -384,77 +454,88 @@ const CancelPaymentPage = () => {
           >
             <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
               <Building2 size={15} className="text-gray-400" />
+
               <h3 className="text-sm font-semibold text-gray-800">
-                Payment Information
+                {t("paymentInformation")}
               </h3>
             </div>
 
             <div className="px-5 py-5 flex flex-col gap-4">
               <InfoRow
                 icon={<Hash size={11} />}
-                label="Payment ID"
+                label={t("paymentId")}
                 value={`PAY-${String(payment.id).padStart(4, "0")}`}
               />
+
               <div className="border-t border-gray-50" />
 
               <InfoRow
                 icon={<Building2 size={11} />}
-                label="Contract No."
+                label={t("contractNo")}
                 value={
                   payment.contractNo ??
                   `CON-${String(payment.contractId).padStart(3, "0")}`
                 }
               />
+
               <div className="border-t border-gray-50" />
 
               <InfoRow
                 icon={<Hash size={11} />}
-                label="Installment"
-                value={`${ordinal(payment.installment.installmentNo)} Installment`}
+                label={t("installment")}
+                value={`${ordinal(
+                  payment?.installment?.installmentNo,
+                )} ${t("installment")}`}
               />
+
               <div className="border-t border-gray-50" />
 
               <InfoRow
                 icon={<CalendarDays size={11} />}
-                label="Payment Date"
-                value={fmtDate(payment.paymentDate)}
+                label={t("paymentDate")}
+                value={fmtDate(payment?.paymentDate)}
               />
+
               <div className="border-t border-gray-50" />
 
               <InfoRow
                 icon={<DollarSign size={11} />}
-                label="Amount (EGP)"
+                label={t("amountEGP")}
                 valueNode={
                   <p className="text-sm font-bold text-gray-900">
-                    {egp(payment.amount)}
+                    {egp(payment?.amount)}
                   </p>
                 }
               />
+
               <div className="border-t border-gray-50" />
 
               <InfoRow
                 icon={<Banknote size={11} />}
-                label="Payment Method"
+                label={t("paymentMethod")}
                 valueNode={
                   <div className="flex items-center gap-1.5">
-                    {methodInfo.icon}
+                    {methodInfo?.icon}
+
                     <span className="text-sm font-semibold text-gray-800">
-                      {methodInfo.label}
+                      {methodInfo?.label}
                     </span>
                   </div>
                 }
               />
+
               <div className="border-t border-gray-50" />
 
               <InfoRow
                 icon={<Receipt size={11} />}
-                label="Receipt No."
+                label={t("receiptNo")}
                 value={payment.receiptNo ?? "—"}
               />
+
               <div className="border-t border-gray-50" />
 
               <InfoRow
-                label="Status"
+                label={t("status")}
                 valueNode={
                   <span
                     className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${statusCfg.class}`}
@@ -468,6 +549,7 @@ const CancelPaymentPage = () => {
           </motion.div>
 
           {/* ── Right — Cancel / Reverse Form ──────────────────────────── */}
+
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -476,20 +558,22 @@ const CancelPaymentPage = () => {
           >
             <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
               <XCircle size={15} className="text-gray-400" />
+
               <h3 className="text-sm font-semibold text-gray-800">
-                Cancel / Reverse Payment
+                {t("cancelReversePayment")}
               </h3>
             </div>
 
             <div className="px-5 py-5 flex flex-col gap-5">
               {/* Reason dropdown */}
+
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                  Reason for Cancellation
+                  {t("reasonForCancellation")}
+
                   <span className="text-red-500">*</span>
                 </label>
 
-                {/* Custom dropdown */}
                 <div className="relative">
                   <button
                     type="button"
@@ -502,9 +586,16 @@ const CancelPaymentPage = () => {
                           : "border-gray-200 focus:ring-blue-100 bg-white text-gray-400 hover:border-gray-300"
                     } ${selectedReason ? "text-gray-800" : ""}`}
                   >
-                    <span>{selectedReason || "Select Reason"}</span>
+                    <span>
+                      {CANCEL_REASONS.find(
+                        (reason) => reason.value === selectedReason,
+                      )?.label || t("selectReason")}
+                    </span>
+
                     <motion.span
-                      animate={{ rotate: dropdownOpen ? 180 : 0 }}
+                      animate={{
+                        rotate: dropdownOpen ? 180 : 0,
+                      }}
                       transition={{ duration: 0.18 }}
                     >
                       <ChevronDown size={15} className="text-gray-400" />
@@ -514,13 +605,24 @@ const CancelPaymentPage = () => {
                   <AnimatePresence>
                     {dropdownOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        initial={{
+                          opacity: 0,
+                          y: -6,
+                          scale: 0.98,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          scale: 1,
+                        }}
+                        exit={{
+                          opacity: 0,
+                          y: -6,
+                          scale: 0.98,
+                        }}
                         transition={{ duration: 0.15 }}
                         className="absolute z-20 top-full mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
                       >
-                        {/* "Select Reason" placeholder item */}
                         <button
                           type="button"
                           onClick={() => {
@@ -529,26 +631,27 @@ const CancelPaymentPage = () => {
                           }}
                           className="w-full px-4 py-2.5 text-sm text-left text-gray-400 hover:bg-gray-50 border-b border-gray-100 transition-colors"
                         >
-                          Select Reason
+                          {t("selectReason")}
                         </button>
 
                         {CANCEL_REASONS.map((reason) => (
                           <button
-                            key={reason}
+                            key={reason.value}
                             type="button"
                             onClick={() => {
-                              setSelectedReason(reason);
+                              setSelectedReason(reason.value);
                               setDropdownOpen(false);
                               setReasonError(false);
                             }}
                             className={`w-full px-4 py-2.5 text-sm text-left transition-colors flex items-center justify-between ${
-                              selectedReason === reason
+                              selectedReason === reason.value
                                 ? "bg-blue-50 text-blue-700 font-medium"
                                 : "text-gray-700 hover:bg-gray-50"
                             }`}
                           >
-                            {reason}
-                            {selectedReason === reason && (
+                            {reason.label}
+
+                            {selectedReason === reason.value && (
                               <CheckCircle2
                                 size={14}
                                 className="text-blue-500 flex-shrink-0"
@@ -564,63 +667,98 @@ const CancelPaymentPage = () => {
                 <AnimatePresence>
                   {reasonError && (
                     <motion.p
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
+                      initial={{
+                        opacity: 0,
+                        y: -4,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        y: -4,
+                      }}
                       className="text-xs text-red-500 flex items-center gap-1 mt-0.5"
                     >
                       <AlertCircle size={11} />
-                      Please select a reason for cancellation.
+                      {t("selectReasonError")}
                     </motion.p>
                   )}
                 </AnimatePresence>
               </div>
 
               {/* Additional notes */}
+
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
                   <FileText size={14} className="text-gray-400" />
-                  Additional Notes
+
+                  {t("additionalNotes")}
+
                   <span className="text-xs font-normal text-gray-400">
-                    (optional)
+                    ({t("optional")})
                   </span>
                 </label>
+
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
-                  placeholder="Enter additional notes (optional)"
+                  placeholder={t("enterAdditionalNotes")}
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-700 bg-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors placeholder:text-gray-400"
                 />
               </div>
 
               {/* Confirmation hint */}
+
               <AnimatePresence>
                 {selectedReason && (
                   <motion.div
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 4 }}
+                    initial={{
+                      opacity: 0,
+                      y: 4,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: 4,
+                    }}
                     className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg"
                   >
                     <TriangleAlert
                       size={13}
                       className="text-amber-500 flex-shrink-0 mt-0.5"
                     />
+
                     <p className="text-xs text-amber-700">
-                      You are about to cancel payment{" "}
-                      <span className="font-semibold">#{payment.id}</span> of{" "}
+                      {t("cancelConfirmation")}{" "}
+                      <span className="font-semibold">#{payment.id}</span>{" "}
+                      {t("of")}{" "}
                       <span className="font-semibold">
                         {egp(payment.amount)}
                       </span>{" "}
-                      with reason:{" "}
-                      <span className="font-semibold">"{selectedReason}"</span>.
+                      {t("withReason")}{" "}
+                      <span className="font-semibold">
+                        "
+                        {
+                          CANCEL_REASONS.find(
+                            (reason) => reason.value === selectedReason,
+                          )?.label
+                        }
+                        "
+                      </span>
+                      .
                     </p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* Actions */}
+
               <div className="flex items-center justify-between pt-1">
                 <button
                   type="button"
@@ -629,23 +767,28 @@ const CancelPaymentPage = () => {
                   className="h-10 px-5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   <X size={15} />
-                  Cancel
+                  {t("cancel")}
                 </button>
 
                 <motion.button
                   type="button"
                   onClick={handleSubmit}
                   disabled={isPending}
-                  whileTap={{ scale: isPending ? 1 : 0.97 }}
+                  whileTap={{
+                    scale: isPending ? 1 : 0.97,
+                  }}
                   className="h-10 px-6 rounded-lg bg-red-500 hover:bg-red-600 disabled:opacity-70 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors flex items-center gap-2"
                 >
                   {isPending ? (
                     <>
-                      <Loader2 size={15} className="animate-spin" /> Processing…
+                      <Loader2 size={15} className="animate-spin" />
+
+                      {t("processing")}
                     </>
                   ) : (
                     <>
-                      <XCircle size={15} /> Reverse Payment
+                      <XCircle size={15} />
+                      {t("reversePayment")}
                     </>
                   )}
                 </motion.button>

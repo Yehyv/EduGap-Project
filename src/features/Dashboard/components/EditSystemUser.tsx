@@ -9,9 +9,11 @@ import AddOrEditSystemUser from "@/features/Dashboard/components/AddOrEditSystem
 import { useParams } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ErrorMessage from "@/shared/components/ErrorMessage";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const EditSystemUser = () => {
   const { systemUserId } = useParams();
+  const { t } = useLanguage();
   const { data, isLoading, error } = useQuery({
     queryKey: ["findOneSystemUser", systemUserId],
     queryFn: () => findOneSystemUser(systemUserId ?? ""),
@@ -44,9 +46,7 @@ const EditSystemUser = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text:
-          error?.response?.data?.message[0] ||
-          "Something went wrong, please try again",
+        text: error?.response?.data?.message[0] || t("somethingWentWrong"),
       });
     },
   });
@@ -54,9 +54,7 @@ const EditSystemUser = () => {
 
   return (
     <>
-      <DashboardPageTitle
-        text={`Edit System User ${data?.data.full_name ?? ""}`}
-      />
+      <DashboardPageTitle text={`${t("edit")} ${data?.data.full_name ?? ""}`} />
       {isLoading ? (
         <CircleLoader />
       ) : (

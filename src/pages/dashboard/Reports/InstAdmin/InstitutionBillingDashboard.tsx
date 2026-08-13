@@ -10,12 +10,12 @@ import {
   AlertCircle,
   Sparkles,
   TrendingUp,
-  ArrowRight,
   FileX,
   ChevronRight,
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -98,39 +98,6 @@ const fadeUp = (delay = 0) => ({
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] },
 });
-
-// ─── Status badge ─────────────────────────────────────────────────────────────
-
-const STATUS_CFG: Record<string, { cls: string; label: string }> = {
-  ACTIVE: {
-    cls: "bg-green-50 text-green-600 border-green-200",
-    label: "Active",
-  },
-  CLOSED: { cls: "bg-gray-100 text-gray-500 border-gray-200", label: "Closed" },
-  PENDING: {
-    cls: "bg-amber-50 text-amber-600 border-amber-200",
-    label: "Pending",
-  },
-  OVERDUE: { cls: "bg-red-50 text-red-500 border-red-200", label: "Overdue" },
-  PARTIAL: {
-    cls: "bg-blue-50 text-blue-500 border-blue-200",
-    label: "Partial",
-  },
-};
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const cfg = STATUS_CFG[status] ?? {
-    cls: "bg-gray-100 text-gray-500 border-gray-200",
-    label: status,
-  };
-  return (
-    <span
-      className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.cls}`}
-    >
-      {cfg.label}
-    </span>
-  );
-};
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -229,43 +196,84 @@ const NoContractState = ({
 }: {
   year: number;
   onChangeYear: (y: number) => void;
-}) => (
-  <motion.div
-    {...fadeUp(0.05)}
-    className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
-  >
-    <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-      <FileX size={28} className="text-gray-300" />
-    </div>
-    <div className="flex flex-col items-center gap-1 text-center">
-      <p className="text-sm font-semibold text-gray-700">
-        No contract found for {year}
-      </p>
-      <p className="text-xs text-gray-400 max-w-xs">
-        There is no active annual contract for this academic year. Try selecting
-        a different year.
-      </p>
-    </div>
-    <div className="flex items-center gap-2 flex-wrap justify-center">
-      {YEARS.filter((y) => y !== year)
-        .slice(0, 4)
-        .map((y) => (
-          <button
-            key={y}
-            type="button"
-            onClick={() => onChangeYear(y)}
-            className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-          >
-            Try {y}
-          </button>
-        ))}
-    </div>
-  </motion.div>
-);
+}) => {
+  const { t } = useLanguage();
+  return (
+    <motion.div
+      {...fadeUp(0.05)}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
+    >
+      <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+        <FileX size={28} className="text-gray-300" />
+      </div>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <p className="text-sm font-semibold text-gray-700">
+          {t("noContractFoundFor")} {year}
+        </p>
+        <p className="text-xs text-gray-400 max-w-xs">
+          {t("noActiveAnnualContractMessage")}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        {YEARS.filter((y) => y !== year)
+          .slice(0, 4)
+          .map((y) => (
+            <button
+              key={y}
+              type="button"
+              onClick={() => onChangeYear(y)}
+              className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+            >
+              {t("try")} {y}
+            </button>
+          ))}
+      </div>
+    </motion.div>
+  );
+};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const InstitutionBillingDashboard = () => {
+  const { t } = useLanguage();
+
+  const STATUS_CFG: Record<string, { cls: string; label: string }> = {
+    ACTIVE: {
+      cls: "bg-green-50 text-green-600 border-green-200",
+      label: t("contractActive"),
+    },
+    CLOSED: {
+      cls: "bg-gray-100 text-gray-500 border-gray-200",
+      label: t("contractClosed"),
+    },
+    PENDING: {
+      cls: "bg-amber-50 text-amber-600 border-amber-200",
+      label: t("contractPending"),
+    },
+    OVERDUE: {
+      cls: "bg-red-50 text-red-500 border-red-200",
+      label: t("overdue"),
+    },
+    PARTIAL: {
+      cls: "bg-blue-50 text-blue-500 border-blue-200",
+      label: t("partial"),
+    },
+  };
+
+  const StatusBadge = ({ status }: { status: string }) => {
+    const cfg = STATUS_CFG[status] ?? {
+      cls: "bg-gray-100 text-gray-500 border-gray-200",
+      label: status,
+    };
+    return (
+      <span
+        className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.cls}`}
+      >
+        {cfg.label}
+      </span>
+    );
+  };
+
   const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
 
   const { data, isLoading, isError } = useQuery({
@@ -280,17 +288,19 @@ const InstitutionBillingDashboard = () => {
   return (
     <>
       {/* ── Page header ── */}
-      <DashboardPageTitle text="Institution Billing Dashboard" />
+      <DashboardPageTitle text={t("institutionBillingDashboard")} />
       {/* ── Breadcrumb ── */}
       <motion.nav className="flex items-center gap-1.5 text-sm text-gray-400 mb-4">
         <Link
           to="/dashboard/home"
           className="hover:text-gray-600 transition-colors"
         >
-          Dashboard
+          {t("dashboard")}
         </Link>
         <ChevronRight size={13} />
-        <span className="text-gray-600 font-medium">Billing Dashboard</span>
+        <span className="text-gray-600 font-medium">
+          {t("billingDashboard")}
+        </span>
       </motion.nav>
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Loading ── */}
@@ -313,7 +323,7 @@ const InstitutionBillingDashboard = () => {
           >
             <AlertCircle size={32} className="text-red-300" />
             <p className="text-sm text-red-400">
-              Something went wrong. Please try again.
+              {t("somethingWentWrongTryAgain")}
             </p>
           </motion.div>
         )}
@@ -334,13 +344,15 @@ const InstitutionBillingDashboard = () => {
               <div className="flex items-center gap-2 px-6 py-3.5 border-b border-gray-100 bg-gray-50/60">
                 <Sparkles size={13} className="text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-800">
-                  Current Plan
+                  {t("currentPlan")}
                 </h3>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
                 <div className="px-6 py-5 flex flex-col gap-2">
-                  <p className="text-xs text-gray-400 font-medium">Plan</p>
+                  <p className="text-xs text-gray-400 font-medium">
+                    {t("plan")}
+                  </p>
                   <p className="text-lg font-bold text-gray-800 leading-tight">
                     {data.currentPlan.planName}
                   </p>
@@ -351,7 +363,7 @@ const InstitutionBillingDashboard = () => {
 
                 <div className="px-6 py-5 flex flex-col gap-1">
                   <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                    <Users size={11} /> Max Students
+                    <Users size={11} /> {t("maxStudents")}
                   </p>
                   <p className="text-2xl font-bold text-gray-800">
                     {data.students.maxStudents.toLocaleString()}
@@ -360,7 +372,7 @@ const InstitutionBillingDashboard = () => {
 
                 <div className="px-6 py-5 flex flex-col gap-1">
                   <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                    <Users size={11} /> Added Students
+                    <Users size={11} /> {t("addedStudents")}
                   </p>
                   <p className="text-2xl font-bold text-gray-800">
                     {data.students.addedStudents.toLocaleString()}
@@ -372,7 +384,7 @@ const InstitutionBillingDashboard = () => {
 
                 <div className="px-6 py-5 flex flex-col gap-1">
                   <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                    <Users size={11} /> Remaining Students
+                    <Users size={11} /> {t("remainingStudents")}
                   </p>
                   <p className="text-2xl font-bold text-gray-800">
                     {data.students.remainingStudents.toLocaleString()}
@@ -392,28 +404,28 @@ const InstitutionBillingDashboard = () => {
               <div className="flex items-center gap-2 px-6 py-3.5 border-b border-gray-100 bg-gray-50/60">
                 <FileText size={13} className="text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-800">
-                  Contract Summary
+                  {t("contractSummary")}
                 </h3>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
                 <div className="px-6 py-5">
-                  <InfoCell label="Contract No.">
+                  <InfoCell label={t("contractNo")}>
                     {data.contract.contractNo}
                   </InfoCell>
                 </div>
                 <div className="px-6 py-5">
-                  <InfoCell label="Start Date">
+                  <InfoCell label={t("startDate")}>
                     {fmtDate(data.contract.startDate)}
                   </InfoCell>
                 </div>
                 <div className="px-6 py-5">
-                  <InfoCell label="End Date">
+                  <InfoCell label={t("endDate")}>
                     {fmtDate(data.contract.endDate)}
                   </InfoCell>
                 </div>
                 <div className="px-6 py-5">
-                  <InfoCell label="Status">
+                  <InfoCell label={t("status")}>
                     <StatusBadge status={data.contract.status} />
                   </InfoCell>
                 </div>
@@ -421,12 +433,12 @@ const InstitutionBillingDashboard = () => {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 border-t border-gray-100">
                 <div className="px-6 py-5">
-                  <InfoCell label="Contract Value">
+                  <InfoCell label={t("contractValue")}>
                     {egp(data.financial.contractValue)}
                   </InfoCell>
                 </div>
                 <div className="px-6 py-5">
-                  <InfoCell label="Total Paid">
+                  <InfoCell label={t("totalPaid")}>
                     <span className="flex items-baseline gap-2">
                       {egp(data.financial.totalPaid)}
                       <span className="text-xs font-semibold text-blue-500">
@@ -436,7 +448,7 @@ const InstitutionBillingDashboard = () => {
                   </InfoCell>
                 </div>
                 <div className="px-6 py-5">
-                  <InfoCell label="Remaining Amount">
+                  <InfoCell label={t("remainingAmount")}>
                     <span className="flex items-baseline gap-2">
                       {egp(data.financial.remainingAmount)}
                       <span className="text-xs font-semibold text-red-400">
@@ -446,7 +458,7 @@ const InstitutionBillingDashboard = () => {
                   </InfoCell>
                 </div>
                 <div className="px-6 py-5">
-                  <InfoCell label="Total Installments">
+                  <InfoCell label={t("totalInstallments")}>
                     {data.financial.totalInstallments}
                   </InfoCell>
                 </div>
@@ -497,11 +509,11 @@ const InstitutionBillingDashboard = () => {
                 </div>
                 <div className="flex flex-col gap-1">
                   <p className="text-sm font-semibold text-gray-800">
-                    Payment Percentage
+                    {t("paymentPercentage")}
                   </p>
                   <p className="text-3xl font-bold text-gray-800">{paidPct}%</p>
                   <p className="text-xs text-gray-400">
-                    of total contract value
+                    {t("ofTotalContractValue")}
                   </p>
                 </div>
               </div>
@@ -511,21 +523,23 @@ const InstitutionBillingDashboard = () => {
                 <div className="flex items-center gap-2">
                   <CalendarDays size={14} className="text-gray-400" />
                   <p className="text-sm font-semibold text-gray-800">
-                    Next Installment
+                    {t("nextInstallment")}
                   </p>
                 </div>
 
                 {data.nextInstallment ? (
                   <>
                     <div className="flex flex-col gap-0.5">
-                      <p className="text-xs text-gray-400">Due Date</p>
+                      <p className="text-xs text-gray-400">{t("dueDate")}</p>
                       <p className="text-sm font-semibold text-gray-800">
                         {fmtDate(data.nextInstallment.dueDate)}
                       </p>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex flex-col gap-0.5">
-                        <p className="text-xs text-gray-400">Amount Due</p>
+                        <p className="text-xs text-gray-400">
+                          {t("amountDue")}
+                        </p>
                         <p className="text-lg font-bold text-gray-800">
                           {egp(data.nextInstallment.remainingAmount)}
                         </p>
@@ -543,7 +557,7 @@ const InstitutionBillingDashboard = () => {
                   <div className="flex flex-col items-center justify-center flex-1 py-4 gap-2">
                     <TrendingUp size={24} className="text-green-200" />
                     <p className="text-xs text-gray-400">
-                      No upcoming installments.
+                      {t("noUpcomingInstallments")}
                     </p>
                   </div>
                 )}

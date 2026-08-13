@@ -18,6 +18,7 @@ import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { CountriesTypes } from "@/features/Dashboard/types/dashboardTypes";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 /* ------------------ table styles ------------------ */
 const customStyles = {
@@ -42,33 +43,36 @@ const customStyles = {
 /* ------------------ tabs config ------------------ */
 const TABS = {
   countries: {
-    label: "Countries",
+    label: "countries",
     queryKey: "getAllCountries",
     queryFn: getAllCountries,
-    addText: "Add New Country",
+    addText: "add_new_country",
     link: "/dashboard/location/add-new-country",
     deleteFn: deleteCountry,
   },
   cities: {
-    label: "Cities",
+    label: "cities",
     queryKey: "getAllCities",
     queryFn: getAllCities,
-    addText: "Add New City",
+    addText: "add_new_city",
     link: "/dashboard/location/add-new-city",
     deleteFn: deleteCity,
   },
   regions: {
-    label: "Regions",
+    label: "regions",
     queryKey: "getAllRegions",
     queryFn: getAllRegions,
-    addText: "Add New Region",
+    addText: "add_new_region",
     link: "/dashboard/location/add-new-region",
     deleteFn: deleteRegion,
   },
 };
 
 const Locations = () => {
+  const { t } = useLanguage();
+
   const [activeTab, setActiveTab] = useState<keyof typeof TABS>("countries");
+
   const [filterText, setFilterText] = useState("");
 
   const currentTab = TABS[activeTab];
@@ -82,6 +86,7 @@ const Locations = () => {
   /* ------------------ filter ------------------ */
   const filteredItems = useMemo(() => {
     if (!data?.data) return [];
+
     return data.data.filter((item: CountriesTypes) =>
       item.name?.toLowerCase().includes(filterText.toLowerCase()),
     );
@@ -91,31 +96,31 @@ const Locations = () => {
   const columns = useMemo(
     () => [
       {
-        name: "Num",
+        name: t("num"),
         selector: (_: unknown, index: number) => index + 1,
         width: "60px",
         style: { justifyContent: "center" },
       },
       {
-        name: "Name",
+        name: t("name"),
         selector: (row: CountriesTypes) => row?.name,
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
-        name: "Created At",
+        name: t("created_at"),
         selector: (row: CountriesTypes) => row?.createdAt,
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
-        name: "Created By",
+        name: t("created_by"),
         selector: (row: CountriesTypes) => row?.createdBy?.name,
         sortable: true,
         style: { justifyContent: "center" },
       },
       {
-        name: "Edit",
+        name: t("edit"),
         cell: (row: CountriesTypes) => (
           <Link to={`/dashboard/location/${activeTab}/${row.id}`}>
             <EditIcon />
@@ -124,19 +129,21 @@ const Locations = () => {
         button: true,
       },
       {
-        name: "Delete",
+        name: t("delete"),
         cell: (row: CountriesTypes) => (
           <DeleteButton
             deleteApi={() => currentTab.deleteFn(row.id)}
-            successMessage={`${currentTab.label} deleted successfully`}
-            errorMessage="حدث خطأ أثناء الحذف"
+            successMessage={`${t(currentTab.label)} ${t(
+              "deleted_successfully",
+            )}`}
+            errorMessage={t("error_occurred_while_deleting")}
             refetchFunction={currentTab.queryKey}
           />
         ),
         button: true,
       },
     ],
-    [currentTab, activeTab],
+    [currentTab, activeTab, t],
   );
 
   /* ------------------ search header ------------------ */
@@ -145,11 +152,12 @@ const Locations = () => {
       <div className="relative">
         <input
           type="text"
-          placeholder="Search by name"
+          placeholder={t("search_by_name")}
           className="border border-[#ACACAC] h-9 px-10 rounded-2xl text-sm"
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
         />
+
         <span className="absolute start-2 top-1/2 -translate-y-1/2">
           <SearchIcon />
         </span>
@@ -157,7 +165,7 @@ const Locations = () => {
 
       <div className="border border-[#ACACAC] h-9 px-4 rounded-2xl flex items-center gap-1 text-sm text-gray-500">
         <FilterIcon />
-        Filter
+        {t("filter")}
       </div>
     </div>
   );
@@ -166,12 +174,13 @@ const Locations = () => {
     <>
       {/* Page Title */}
       <DashboardPageTitle
-        text="Locations"
+        text={t("locations")}
         button
         buttonText={
           <Link to={currentTab.link} className="center">
             <PlusIcon className="mt-1.5 h-8 -ms-2" />
-            <span className="text-white">{currentTab.addText}</span>
+
+            <span className="text-white">{t(currentTab.addText)}</span>
           </Link>
         }
       />
@@ -188,7 +197,7 @@ const Locations = () => {
                 : "bg-gray-100 text-gray-600"
             }`}
           >
-            {tab.label}
+            {t(tab.label)}
           </button>
         ))}
       </div>

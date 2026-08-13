@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,7 +5,6 @@ import {
   ChevronRight,
   Building2,
   CalendarDays,
-  DollarSign,
   Receipt,
   CreditCard,
   Eye,
@@ -16,58 +14,13 @@ import {
   XCircle,
   CheckCircle2,
   Clock,
-  Hash,
   Percent,
   FileText,
   Banknote,
 } from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import { fetchInstallmentDetails } from "@/features/Dashboard/services/dashboardApis";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Payment {
-  id: number;
-  payment_date: string;
-  paid_amount: string;
-  payment_method: string;
-  receipt_no: string;
-  receipt_file: string | null;
-  notes: string | null;
-  status: string;
-  cancel_reason: string | null;
-  cancelled_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface InstallmentDetailsResponse {
-  contract: {
-    id: number;
-    contractNo: string;
-    institute: {
-      id: number;
-      logo: string | null;
-      email: string;
-      phone: string;
-      is_active: number;
-    };
-    year: number;
-  };
-  installment: {
-    id: number;
-    installmentNo: number;
-    dueDate: string;
-    installmentPercentage: number;
-    installmentAmount: number;
-    paidAmount: number;
-    remainingAmount: number;
-    paidPercentage: number;
-    status: string;
-    notes: string | null;
-  };
-  payments: Payment[];
-}
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -135,7 +88,7 @@ const egp = (val: number | string) =>
     maximumFractionDigits: 2,
   })}`;
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-CA"); // YYYY-MM-DD format matching screenshot
+const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-CA");
 
 const fmtPaymentMethod = (method: string) =>
   method.replace(/_/g, " ")?.replace(/\b\w/g, (c) => c.toUpperCase());
@@ -203,6 +156,7 @@ const customStyles = {
 const InstallmentDetails = () => {
   const { installmentId } = useParams<{ installmentId: string }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["installment-details", installmentId],
@@ -233,21 +187,24 @@ const InstallmentDetails = () => {
   if (isError || !data) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Installment Details" />
+        <DashboardPageTitle text={t("Installment Details")} />
+
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center justify-center py-20 gap-3"
         >
           <XCircle size={36} className="text-red-300" />
+
           <p className="text-sm font-medium text-red-400">
-            Failed to load installment details. Please try again.
+            {t("Failed to load installment details. Please try again.")}
           </p>
+
           <button
             onClick={() => navigate(-1)}
             className="text-sm text-blue-500 hover:underline"
           >
-            Go Back
+            {t("Go Back")}
           </button>
         </motion.div>
       </div>
@@ -260,7 +217,7 @@ const InstallmentDetails = () => {
 
   return (
     <div className="flex flex-col gap-5 pb-8">
-      <DashboardPageTitle text="Installment Details" />
+      <DashboardPageTitle text={t("Installment Details")} />
 
       {/* Breadcrumb */}
       <motion.nav
@@ -272,17 +229,21 @@ const InstallmentDetails = () => {
           to="/dashboard/home"
           className="hover:text-gray-600 transition-colors"
         >
-          Dashboard
+          {t("Dashboard")}
         </Link>
+
         <ChevronRight size={14} />
+
         <Link
           to={`/dashboard/installments`}
           className="hover:text-gray-600 transition-colors"
         >
-          Installments
+          {t("Installments")}
         </Link>
+
         <ChevronRight size={14} />
-        <span className="text-gray-600">Installment Details</span>
+
+        <span className="text-gray-600">{t("Installment Details")}</span>
       </motion.nav>
 
       {/* Contract context strip */}
@@ -296,21 +257,29 @@ const InstallmentDetails = () => {
           <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
             <Building2 size={18} className="text-blue-500" />
           </div>
+
           <div>
-            <p className="text-xs text-gray-400">Contract</p>
+            <p className="text-xs text-gray-400">{t("Contract")}</p>
+
             <p className="text-sm font-semibold text-gray-800">
               {data?.contractNo}
             </p>
           </div>
         </div>
+
         <div className="w-px h-8 bg-gray-100 hidden sm:block" />
+
         <div>
-          <p className="text-xs text-gray-400">Year</p>
+          <p className="text-xs text-gray-400">{t("Year")}</p>
+
           <p className="text-sm font-semibold text-gray-800">{data.year}</p>
         </div>
+
         <div className="w-px h-8 bg-gray-100 hidden sm:block" />
+
         <div>
-          <p className="text-xs text-gray-400">Installment</p>
+          <p className="text-xs text-gray-400">{t("Installment")}</p>
+
           <p className="text-sm font-semibold text-gray-800">
             {ordinal(data?.installmentNo)}
           </p>
@@ -326,41 +295,43 @@ const InstallmentDetails = () => {
       >
         <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 bg-gray-50/60">
           <Receipt size={15} className="text-gray-400" />
+
           <h3 className="text-sm font-semibold text-gray-800">
-            Installment Summary
+            {t("Installment Summary")}
           </h3>
         </div>
 
         <div className="px-6 py-5 flex flex-col gap-6">
           {/* Row 1 — Installment No / Due Date / Amount / Status */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
-            <SummaryField label="Installment No." delay={0.12}>
+            <SummaryField label={t("Installment No.")} delay={0.12}>
               <p className="text-sm font-bold text-gray-800">
                 {data?.installmentNo}
               </p>
             </SummaryField>
 
-            <SummaryField label="Due Date" delay={0.15}>
+            <SummaryField label={t("Due Date")} delay={0.15}>
               <div className="flex items-center gap-1.5">
                 <CalendarDays size={13} className="text-gray-400" />
+
                 <p className="text-sm font-semibold text-gray-800">
                   {data?.dueDate}
                 </p>
               </div>
             </SummaryField>
 
-            <SummaryField label="Installment Amount" delay={0.18}>
+            <SummaryField label={t("Installment Amount")} delay={0.18}>
               <p className="text-sm font-bold text-gray-800">
                 {egp(data?.installmentAmount)}
               </p>
             </SummaryField>
 
-            <SummaryField label="Status" delay={0.21}>
+            <SummaryField label={t("Status")} delay={0.21}>
               <span
                 className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border w-fit ${statusCfg.class}`}
               >
                 {statusCfg.icon}
-                {statusCfg.label}
+                {t(statusCfg.label)}
               </span>
             </SummaryField>
           </div>
@@ -370,23 +341,26 @@ const InstallmentDetails = () => {
 
           {/* Row 2 — Paid / Remaining / Percentage / Notes */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
-            <SummaryField label="Paid Amount" delay={0.24}>
+            <SummaryField label={t("Paid Amount")} delay={0.24}>
               <p className="text-sm font-bold text-green-600">
                 {egp(data?.paidAmount)}
               </p>
             </SummaryField>
 
-            <SummaryField label="Remaining Amount" delay={0.27}>
+            <SummaryField label={t("Remaining Amount")} delay={0.27}>
               <p
-                className={`text-sm font-bold ${data?.remainingAmount > 0 ? "text-red-500" : "text-gray-400"}`}
+                className={`text-sm font-bold ${
+                  data?.remainingAmount > 0 ? "text-red-500" : "text-gray-400"
+                }`}
               >
                 {egp(data?.remainingAmount)}
               </p>
             </SummaryField>
 
-            <SummaryField label="Installment %" delay={0.33}>
+            <SummaryField label={t("Installment %")} delay={0.33}>
               <div className="flex items-center gap-1">
                 <Percent size={13} className="text-gray-400" />
+
                 <p className="text-sm font-semibold text-gray-800">
                   {data?.installmentPercentage}%
                 </p>
@@ -407,8 +381,10 @@ const InstallmentDetails = () => {
                   size={14}
                   className="text-gray-400 flex-shrink-0 mt-0.5"
                 />
+
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Notes</p>
+                  <p className="text-xs text-gray-400 mb-0.5">{t("Notes")}</p>
+
                   <p className="text-sm text-gray-700">{data?.notes}</p>
                 </div>
               </motion.div>
@@ -426,9 +402,11 @@ const InstallmentDetails = () => {
       >
         <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 bg-gray-50/60">
           <Banknote size={15} className="text-gray-400" />
+
           <h3 className="text-sm font-semibold text-gray-800">
-            Payments Against This Installment
+            {t("Payments Against This Installment")}
           </h3>
+
           {payments.length > 0 && (
             <span className="ml-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-600">
               {payments.length}
@@ -443,7 +421,10 @@ const InstallmentDetails = () => {
             className="flex flex-col items-center justify-center py-14 gap-2 text-gray-300"
           >
             <CreditCard size={32} />
-            <p className="text-sm text-gray-400">No payments recorded yet</p>
+
+            <p className="text-sm text-gray-400">
+              {t("No payments recorded yet")}
+            </p>
           </motion.div>
         ) : (
           <div className="overflow-x-auto">
@@ -464,55 +445,67 @@ const InstallmentDetails = () => {
                       key={h}
                       className="px-4 py-3 text-center text-xs font-bold text-gray-500 whitespace-nowrap"
                     >
-                      {h}
+                      {t(h)}
                     </th>
                   ))}
                 </tr>
               </thead>
+
               <tbody>
                 {payments.map((pay, i) => {
                   const cfg = getStatusCfg(pay.status);
+
                   return (
                     <motion.tr
                       key={pay.id}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.06, duration: 0.25 }}
+                      transition={{
+                        delay: i * 0.06,
+                        duration: 0.25,
+                      }}
                       className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-4 py-3.5 text-center text-sm text-gray-500">
                         {i + 1}
                       </td>
+
                       <td className="px-4 py-3.5 text-center text-sm font-medium text-gray-700 whitespace-nowrap">
                         {fmtDate(pay.paymentDate)}
                       </td>
+
                       <td className="px-4 py-3.5 text-center text-sm font-semibold text-green-600 whitespace-nowrap">
                         {egp(pay.paidAmount)}
                       </td>
+
                       <td className="px-4 py-3.5 text-center text-sm text-gray-700 whitespace-nowrap">
                         {fmtPaymentMethod(pay?.paymentMethod)}
                       </td>
+
                       <td className="px-4 py-3.5 text-center">
                         <span className="text-xs font-mono font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
                           {pay.receiptNo}
                         </span>
                       </td>
+
                       <td className="px-4 py-3.5 text-center text-sm text-gray-500 max-w-[140px] truncate">
                         {pay.notes ?? "-"}
                       </td>
+
                       <td className="px-4 py-3.5 text-center">
                         <span
                           className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.class}`}
                         >
                           {cfg.icon}
-                          {cfg.label}
+                          {t(cfg.label)}
                         </span>
                       </td>
+
                       <td className="px-4 py-3.5 text-center">
                         <Link
                           to={`/dashboard/contract-payments/${pay.id}`}
                           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors inline-flex"
-                          title="View Payment"
+                          title={t("View Payment")}
                         >
                           <Eye size={15} className="text-gray-500" />
                         </Link>
@@ -538,7 +531,7 @@ const InstallmentDetails = () => {
           className="h-9 px-4 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
         >
           <ArrowLeft size={15} />
-          Back to Installments
+          {t("Back to Installments")}
         </button>
 
         <motion.button
@@ -549,7 +542,7 @@ const InstallmentDetails = () => {
           className="h-9 px-5 rounded-lg bg-secondary text-white text-sm font-semibold hover:bg-secondary/90 transition-colors flex items-center gap-2"
         >
           <Plus size={15} />
-          Add Payment
+          {t("Add Payment")}
         </motion.button>
       </motion.div>
     </div>

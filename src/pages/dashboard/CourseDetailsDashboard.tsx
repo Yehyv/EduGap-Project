@@ -53,11 +53,13 @@ const CourseDetailsDashboard = () => {
   if (isLoading) return <CircleLoader />;
 
   if (isError) {
-    return <ErrorMessage message={error?.message ?? "Error fetching course"} />;
+    return (
+      <ErrorMessage message={error?.message ?? t("errorFetchingCourse")} />
+    );
   }
 
   if (!courseData) {
-    return <ErrorMessage message="Course not found" />;
+    return <ErrorMessage message={t("courseNotFound")} />;
   }
 
   const tabClass = (tab: TabType) =>
@@ -103,7 +105,7 @@ const CourseDetailsDashboard = () => {
           className={tabClass("programs")}
           onClick={() => setActiveTab("programs")}
         >
-          Programs
+          {t("programs")}
         </button>
       </div>
 
@@ -151,6 +153,7 @@ const DataTab = ({
             <h6 className="text-sm font-bold text-gray-700 mb-3">
               {t("fieldImage")}
             </h6>
+
             {courseData.image && (
               <img
                 className="max-h-64 rounded-xl shadow-md object-cover"
@@ -169,6 +172,7 @@ const DataTab = ({
             <h6 className="text-sm font-bold text-gray-700 mb-2">
               {t("fieldWhatToLearn")}
             </h6>
+
             <ul className="list-disc ps-5 space-y-1">
               {courseDataEn?.whatToLearn?.split(",").map((item, index) => (
                 <li key={index} className="text-gray-600">
@@ -182,6 +186,7 @@ const DataTab = ({
             label={t("fieldCreatedAt")}
             value={courseData?.createdAt ?? ""}
           />
+
           <DataField
             label={t("fieldCreatedBy")}
             value={courseData?.createdBy?.name ?? ""}
@@ -191,11 +196,12 @@ const DataTab = ({
 
       <div className="bg-white rounded-lg p-6 shadow-sm">
         <h5 className="text-lg font-semibold text-secondary border-b border-gray-200 pb-3 mb-4">
-          {t("courseDataTitle")} (Arabic)
+          {t("courseDataTitle")} ({t("arabic")})
         </h5>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <DataField label={t("fieldName")} value={courseDataAr?.name} />
+
           <DataField
             label={t("fieldDescription")}
             value={courseDataAr?.description}
@@ -205,6 +211,7 @@ const DataTab = ({
             <h6 className="text-sm font-bold text-gray-700 mb-2">
               {t("fieldWhatToLearn")}
             </h6>
+
             <ul className="list-disc ps-5 space-y-1">
               {courseDataAr?.whatToLearn?.split(",").map((item, index) => (
                 <li key={index} className="text-gray-600">
@@ -231,26 +238,27 @@ const ProgramsTab = ({ courseId }: ProgramsTabProps) => {
     enabled: !!courseId,
   });
 
+  const { t } = useLanguage();
+
   const programs: ProgramInCourse[] = data?.data?.data ?? [];
 
   if (isLoading) return <CircleLoader />;
 
-  if (isError) return <ErrorMessage message="Error loading programs" />;
+  if (isError) return <ErrorMessage message={t("errorOccurred")} />;
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex gap-2 items-center mb-6">
         <FolderOpen className="w-6 h-6 text-secondary" />
+
         <h5 className="text-lg font-semibold text-secondary">
-          Programs Using This Course
+          {t("programsUsingThisCourse")}
         </h5>
       </div>
 
       {programs.length > 0 ? (
         <>
-          <p className="text-gray-600 mb-6">
-            This course is included in the following programs:
-          </p>
+          <p className="text-gray-600 mb-6">{t("courseIncludedInPrograms")}</p>
 
           <div className="space-y-3">
             {programs.map((program, index) => (
@@ -291,11 +299,11 @@ const ProgramsTab = ({ courseId }: ProgramsTabProps) => {
       ) : (
         <div className="text-center py-12">
           <FolderOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-400 mb-2">
-            This course is not part of any program yet
-          </p>
+
+          <p className="text-gray-400 mb-2">{t("courseNotPartOfProgram")}</p>
+
           <p className="text-sm text-gray-500">
-            Add this course to a program to get started
+            {t("addCourseToProgramToGetStarted")}
           </p>
         </div>
       )}

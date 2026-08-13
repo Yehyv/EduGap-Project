@@ -26,6 +26,7 @@ import {
   planActivateToggle,
 } from "@/features/Dashboard/services/dashboardApis";
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,18 +59,6 @@ interface InstituteEntry {
   academicYear: number;
   contractStatus: string;
 }
-
-// ─── Badge helper ─────────────────────────────────────────────────────────────
-
-const getBadge = (plan: PlanDetails) => {
-  if (plan.max_students <= 100)
-    return { label: "Basic", color: "bg-blue-100 text-blue-600" };
-  if (plan.max_students <= 1000)
-    return { label: "Popular", color: "bg-green-100 text-green-600" };
-  if (plan.max_students <= 5000)
-    return { label: "Enterprise", color: "bg-orange-100 text-orange-600" };
-  return { label: "Custom", color: "bg-purple-100 text-purple-600" };
-};
 
 // ─── Contract status badge ────────────────────────────────────────────────────
 
@@ -121,7 +110,19 @@ const Skeleton = ({ className }: { className?: string }) => (
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const PlanDetailsPage = () => {
+  const { t } = useLanguage();
   const { planId } = useParams<{ planId: string }>();
+
+  // ─── Badge helper ───────────────────────────────────────────────────────────
+  const getBadge = (plan: PlanDetails) => {
+    if (plan.max_students <= 100)
+      return { label: t("basic"), color: "bg-blue-100 text-blue-600" };
+    if (plan.max_students <= 1000)
+      return { label: t("popular"), color: "bg-green-100 text-green-600" };
+    if (plan.max_students <= 5000)
+      return { label: t("enterprise"), color: "bg-orange-100 text-orange-600" };
+    return { label: t("custom"), color: "bg-purple-100 text-purple-600" };
+  };
 
   const {
     data: planData,
@@ -171,7 +172,7 @@ const PlanDetailsPage = () => {
   if (isError || !plan) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Plan Details" />
+        <DashboardPageTitle text={t("planDetails")} />
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -179,13 +180,13 @@ const PlanDetailsPage = () => {
         >
           <AlertCircle size={36} className="text-red-300" />
           <p className="text-sm font-medium text-red-400">
-            Failed to load plan details. Please try again.
+            {t("failedToLoadPlanDetailsTryAgain")}
           </p>
           <Link
             to="/dashboard/subscription-plans"
             className="text-sm text-blue-500 hover:underline"
           >
-            Back to Plans
+            {t("backToPlans")}
           </Link>
         </motion.div>
       </div>
@@ -195,7 +196,7 @@ const PlanDetailsPage = () => {
   return (
     <div className="flex flex-col gap-5">
       <DashboardPageTitle
-        text="Plan Details"
+        text={t("planDetails")}
         button
         buttonText={
           <Link
@@ -203,7 +204,7 @@ const PlanDetailsPage = () => {
             className="flex items-center gap-2 p-1.5"
           >
             <Pencil size={15} color="white" />
-            <span className="me-2 text-white">Edit Plan</span>
+            <span className="me-2 text-white">{t("editPlan")}</span>
           </Link>
         }
       />
@@ -219,17 +220,17 @@ const PlanDetailsPage = () => {
           to="/dashboard/home"
           className="hover:text-gray-600 transition-colors"
         >
-          Dashboard
+          {t("dashboard")}
         </Link>
         <ChevronRight size={14} />
         <Link
           to="/dashboard/subscription-plans"
           className="hover:text-gray-600 transition-colors"
         >
-          Subscription Plans
+          {t("subscriptionPlans")}
         </Link>
         <ChevronRight size={14} />
-        <span className="text-gray-600">Plan Details</span>
+        <span className="text-gray-600">{t("planDetails")}</span>
       </motion.nav>
 
       {/* Main Card */}
@@ -262,12 +263,12 @@ const PlanDetailsPage = () => {
                 </span>
               </div>
               <p className="text-sm text-gray-400">
-                Institutes Using This Plan
+                {t("institutesUsingThisPlan")}
               </p>
               <div className="flex items-center gap-1.5">
                 <Building2 size={14} className="text-gray-500" />
                 <p className="text-sm font-semibold text-gray-700">
-                  {plan.institutesCount} Institutes
+                  {plan.institutesCount} {t("institutes")}
                 </p>
               </div>
             </div>
@@ -289,38 +290,38 @@ const PlanDetailsPage = () => {
           <div className="px-6 py-5 flex flex-col">
             <DetailRow
               icon={<Users size={16} />}
-              label="Min Students"
+              label={t("minStudents")}
               value={plan.min_students}
               delay={0.15}
             />
             <DetailRow
               icon={<Users size={16} />}
-              label="Max Students"
+              label={t("maxStudents")}
               value={plan.max_students}
               delay={0.2}
             />
             <DetailRow
               icon={<DollarSign size={16} />}
-              label="Price Per Student (EGP)"
+              label={t("pricePerStudentEGP")}
               value={plan.default_price_per_student}
               delay={0.25}
             />
             <DetailRow
               icon={<Receipt size={16} />}
-              label="Administrative Fees"
+              label={t("administrativeFees")}
               value={plan.administrative_fees}
               delay={0.3}
             />
             <DetailRow
               icon={<CalendarDays size={16} />}
-              label="Default Installments"
+              label={t("defaultInstallments")}
               value={plan.default_installments_count}
               delay={0.35}
             />
             <DetailRow
               icon={<Activity size={16} />}
-              label="Status"
-              value={plan.is_active ? "Active" : "Inactive"}
+              label={t("status")}
+              value={plan.is_active ? t("active") : t("inactive")}
               delay={0.4}
             />
 
@@ -333,7 +334,7 @@ const PlanDetailsPage = () => {
             >
               <div className="flex items-center gap-2 mb-1.5">
                 <AlignLeft size={16} className="text-gray-400" />
-                <p className="text-sm text-gray-500">Description</p>
+                <p className="text-sm text-gray-500">{t("description")}</p>
               </div>
               <p className="text-sm text-gray-700 leading-relaxed ps-6">
                 {plan.description}
@@ -350,7 +351,7 @@ const PlanDetailsPage = () => {
               transition={{ delay: 0.25, duration: 0.35 }}
             >
               <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                Plan Info
+                {t("planInfo")}
               </h3>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
@@ -358,7 +359,7 @@ const PlanDetailsPage = () => {
                     <UserCircle size={18} className="text-blue-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Created By</p>
+                    <p className="text-xs text-gray-400">{t("createdBy")}</p>
                     <p className="text-sm font-semibold text-gray-800">
                       {plan.createdBy.full_name}
                     </p>
@@ -370,7 +371,7 @@ const PlanDetailsPage = () => {
                     <Hash size={18} className="text-purple-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Plan ID</p>
+                    <p className="text-xs text-gray-400">{t("planId")}</p>
                     <p className="text-sm font-semibold text-gray-800">
                       #{plan.id}
                     </p>
@@ -382,7 +383,7 @@ const PlanDetailsPage = () => {
                     <CalendarDays size={18} className="text-green-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Created At</p>
+                    <p className="text-xs text-gray-400">{t("createdAt")}</p>
                     <p className="text-sm font-semibold text-gray-800">
                       {new Date(plan.created_at).toLocaleDateString("en-GB", {
                         day: "2-digit",
@@ -398,7 +399,7 @@ const PlanDetailsPage = () => {
                     <CalendarDays size={18} className="text-orange-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Last Updated</p>
+                    <p className="text-xs text-gray-400">{t("lastUpdated")}</p>
                     <p className="text-sm font-semibold text-gray-800">
                       {new Date(plan.updated_at).toLocaleDateString("en-GB", {
                         day: "2-digit",
@@ -419,7 +420,7 @@ const PlanDetailsPage = () => {
             >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-800">
-                  Institutes Using This Plan
+                  {t("institutesUsingThisPlan")}
                 </h3>
                 <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                   {institutes.length}
@@ -435,7 +436,9 @@ const PlanDetailsPage = () => {
               ) : institutes.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 gap-2 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                   <Building2 size={24} className="text-gray-300" />
-                  <p className="text-sm text-gray-400">No institutes yet</p>
+                  <p className="text-sm text-gray-400">
+                    {t("noInstitutesYet")}
+                  </p>
                 </div>
               ) : (
                 <AnimatePresence>
@@ -466,7 +469,7 @@ const PlanDetailsPage = () => {
                                 className="text-gray-400 flex-shrink-0"
                               />
                               <span className="text-[11px] text-gray-400">
-                                Contract #{inst.latestContractId} ·{" "}
+                                {t("contract")} #{inst.latestContractId} ·{" "}
                                 {inst.academicYear}
                               </span>
                             </div>

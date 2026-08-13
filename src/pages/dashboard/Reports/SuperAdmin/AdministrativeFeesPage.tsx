@@ -6,6 +6,7 @@ import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTit
 import { ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
@@ -83,14 +84,6 @@ async function exportAdministrativeFees(filters: FeeFilters): Promise<Blob> {
 }
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
-
-const PLAN_OPTIONS = [
-  { label: "All Plans", value: "" },
-  { label: "Starter Plan", value: "1" },
-  { label: "Growth Plan", value: "2" },
-  { label: "Enterprise Plan", value: "3" },
-  { label: "Custom Plan", value: "4" },
-];
 
 const fmt = (n: number) =>
   `EGP ${n.toLocaleString("en-EG", { minimumFractionDigits: 0 })}`;
@@ -200,7 +193,7 @@ function RowNumber({ row, rows }: { row: FeeRow; rows: FeeRow[] }) {
 export default function AdministrativeFeesPage() {
   const yearStart = `${new Date().getFullYear()}-01-01`;
   const today = new Date().toISOString().slice(0, 10);
-
+  const { t } = useLanguage();
   const [fromDate, setFromDate] = useState(yearStart);
   const [toDate, setToDate] = useState(today);
   const [planId, setPlanId] = useState("");
@@ -214,6 +207,14 @@ export default function AdministrativeFeesPage() {
     limit: 10,
   });
   const [exporting, setExporting] = useState(false);
+
+  const PLAN_OPTIONS = [
+    { label: t("administrativeFeesPlanAll"), value: "" },
+    { label: t("administrativeFeesPlanStarter"), value: "1" },
+    { label: t("administrativeFeesPlanGrowth"), value: "2" },
+    { label: t("administrativeFeesPlanEnterprise"), value: "3" },
+    { label: t("administrativeFeesPlanCustom"), value: "4" },
+  ];
 
   const { data, isFetching, isError } = useQuery({
     queryKey: ["administrative-fees", activeFilters],
@@ -258,38 +259,38 @@ export default function AdministrativeFeesPage() {
 
   const columns = [
     {
-      name: "#",
+      name: t("administrativeFeesColumnNumber"),
       width: "60px",
       center: true,
       cell: (row) => <RowNumber row={row} rows={rows} />,
     },
     {
-      name: "Plan",
+      name: t("administrativeFeesColumnPlan"),
       selector: (row) => row.planName,
       sortable: true,
     },
     {
-      name: "Contracts",
+      name: t("administrativeFeesColumnContracts"),
       selector: (row) => row.contracts,
       sortable: true,
       center: true,
     },
     {
-      name: "Administrative Fees (EGP)",
+      name: t("administrativeFeesColumnAdministrativeFees"),
       selector: (row) => row.administrativeFees,
       sortable: true,
       right: true,
       cell: (row) => fmt(row.administrativeFees),
     },
     {
-      name: "Avg. Fee per Contract (EGP)",
+      name: t("administrativeFeesColumnAvgFeePerContract"),
       selector: (row) => row.averageFeePerContract,
       sortable: true,
       right: true,
       cell: (row) => fmt(row.averageFeePerContract),
     },
     {
-      name: "% of Contract Value",
+      name: t("administrativeFeesColumnPercentContractValue"),
       selector: (row) => row.percentageOfContractValue,
       sortable: true,
       right: true,
@@ -299,7 +300,7 @@ export default function AdministrativeFeesPage() {
 
   return (
     <>
-      <DashboardPageTitle text="Administrative Fees Report" />
+      <DashboardPageTitle text={t("administrativeFeesPageTitle")} />
       <div className=" bg-slate-50">
         <div className="max-w-6xl mx-auto space-y-5">
           {/* ── Breadcrumb ── */}
@@ -311,13 +312,15 @@ export default function AdministrativeFeesPage() {
               to="/dashboard/home"
               className="hover:text-gray-600 transition-colors"
             >
-              Dashboard
+              {t("administrativeFeesBreadcrumbDashboard")}
             </Link>
             <ChevronRight size={13} />
-            <span className="text-gray-600 font-medium">Reports</span>
+            <span className="text-gray-600 font-medium">
+              {t("administrativeFeesBreadcrumbReports")}
+            </span>
             <ChevronRight size={13} />
             <span className="text-gray-600 font-medium">
-              Administrative Fees
+              {t("administrativeFeesBreadcrumbAdministrativeFees")}
             </span>
           </motion.nav>
 
@@ -325,7 +328,7 @@ export default function AdministrativeFeesPage() {
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                From Date
+                {t("administrativeFeesFilterFromDate")}
               </label>
               <input
                 type="date"
@@ -337,7 +340,7 @@ export default function AdministrativeFeesPage() {
 
             <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                To Date
+                {t("administrativeFeesFilterToDate")}
               </label>
               <input
                 type="date"
@@ -349,7 +352,7 @@ export default function AdministrativeFeesPage() {
 
             <div className="flex flex-col gap-1 flex-1 min-w-[150px]">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Plan
+                {t("administrativeFeesFilterPlan")}
               </label>
               <select
                 value={planId}
@@ -378,7 +381,7 @@ export default function AdministrativeFeesPage() {
               >
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
-              Filter
+              {t("administrativeFeesFilterButton")}
             </button>
 
             <button
@@ -398,32 +401,34 @@ export default function AdministrativeFeesPage() {
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              {exporting ? "Exporting…" : "Export"}
+              {exporting
+                ? t("administrativeFeesExporting")
+                : t("administrativeFeesExport")}
             </button>
           </div>
 
           {isError ? (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 text-sm font-medium">
-              Failed to load data. Please try again.
+              {t("administrativeFeesErrorFailedToLoad")}
             </div>
           ) : (
             <>
               {/* Summary Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                  label="Total Administrative Fees"
+                  label={t("administrativeFeesSummaryTotalFees")}
                   value={summary ? fmt(summary.totalAdministrativeFees) : "—"}
                 />
                 <StatCard
-                  label="Contracts Included"
+                  label={t("administrativeFeesSummaryContractsIncluded")}
                   value={summary ? String(summary.contractsIncluded) : "—"}
                 />
                 <StatCard
-                  label="Avg. Fee per Contract"
+                  label={t("administrativeFeesSummaryAvgFeePerContract")}
                   value={summary ? fmt(summary.averageFeePerContract) : "—"}
                 />
                 <StatCard
-                  label="% of Total Value"
+                  label={t("administrativeFeesSummaryPercentOfTotalValue")}
                   value={
                     summary
                       ? `${summary.percentageOfTotalValue.toFixed(2)}%`
@@ -459,7 +464,7 @@ export default function AdministrativeFeesPage() {
                   customStyles={customTableStyles}
                   noDataComponent={
                     <div className="py-12 text-slate-400 text-sm">
-                      No results found.
+                      {t("administrativeFeesNoResults")}
                     </div>
                   }
                   highlightOnHover

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,6 +91,8 @@ const YearDropdown = ({
   onChange: (y: number) => void;
 }) => {
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
+
   return (
     <div className="relative">
       <button
@@ -153,46 +156,53 @@ const NoContractState = ({
 }: {
   year: number;
   onChangeYear: (y: number) => void;
-}) => (
-  <motion.div
-    {...fadeUp(0.05)}
-    className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
-  >
-    <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-      <FileX size={28} className="text-gray-300" />
-    </div>
-    <div className="flex flex-col items-center gap-1 text-center">
-      <p className="text-sm font-semibold text-gray-700">
-        No settlement data for {year}
-      </p>
-      <p className="text-xs text-gray-400 max-w-xs">
-        There is no active annual contract for this academic year.
-      </p>
-    </div>
-    <div className="flex items-center gap-2 flex-wrap justify-center">
-      {YEARS.filter((y) => y !== year)
-        .slice(0, 4)
-        .map((y) => (
-          <button
-            key={y}
-            type="button"
-            onClick={() => onChangeYear(y)}
-            className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            Try {y}
-          </button>
-        ))}
-    </div>
-  </motion.div>
-);
+}) => {
+  const { t } = useLanguage();
+
+  return (
+    <motion.div
+      {...fadeUp(0.05)}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
+    >
+      <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+        <FileX size={28} className="text-gray-300" />
+      </div>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <p className="text-sm font-semibold text-gray-700">
+          {t("No settlement data for")} {year}
+        </p>
+        <p className="text-xs text-gray-400 max-w-xs">
+          {t("There is no active annual contract for this academic year.")}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        {YEARS.filter((y) => y !== year)
+          .slice(0, 4)
+          .map((y) => (
+            <button
+              key={y}
+              type="button"
+              onClick={() => onChangeYear(y)}
+              className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              {t("Try")} {y}
+            </button>
+          ))}
+      </div>
+    </motion.div>
+  );
+};
 
 // ─── Custom Pie Tooltip ───────────────────────────────────────────────────────
 
 const PieTooltip = ({ active, payload }: any) => {
+  const { t } = useLanguage();
+
   if (!active || !payload?.length) return null;
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm px-3 py-2 text-xs">
-      <p className="font-semibold text-gray-700">{payload[0].name}</p>
+      <p className="font-semibold text-gray-700">{t(payload[0].name)}</p>
       <p className="text-gray-500">{egp(payload[0].value)}</p>
       <p className="text-gray-400">{payload[0].payload.percentage}%</p>
     </div>
@@ -203,6 +213,7 @@ const PieTooltip = ({ active, payload }: any) => {
 
 const SettlementSummaryPage = () => {
   const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
+  const { t } = useLanguage();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["settlement-summary", academicYear],
@@ -212,7 +223,8 @@ const SettlementSummaryPage = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Institution Settlement Summary" />
+      <DashboardPageTitle text={t("Institution Settlement Summary")} />
+
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Breadcrumb + Year ── */}
         <motion.div
@@ -224,13 +236,16 @@ const SettlementSummaryPage = () => {
               to="/dashboard/home"
               className="hover:text-gray-600 transition-colors"
             >
-              Dashboard
+              {t("Dashboard")}
             </Link>
+
             <ChevronRight size={13} />
+
             <span className="text-gray-600 font-medium">
-              Settlement Summary
+              {t("Settlement Summary")}
             </span>
           </nav>
+
           <YearDropdown value={academicYear} onChange={setAcademicYear} />
         </motion.div>
 
@@ -242,6 +257,7 @@ const SettlementSummaryPage = () => {
                 <Sk key={i} className="h-20" />
               ))}
             </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <Sk className="h-64" />
               <Sk className="h-64" />
@@ -256,8 +272,9 @@ const SettlementSummaryPage = () => {
             className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
           >
             <AlertCircle size={32} className="text-red-300" />
+
             <p className="text-sm text-red-400">
-              Something went wrong. Please try again.
+              {t("Something went wrong. Please try again.")}
             </p>
           </motion.div>
         )}
@@ -328,8 +345,9 @@ const SettlementSummaryPage = () => {
                       className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex flex-col gap-1"
                     >
                       <p className="text-xs text-gray-400 font-medium">
-                        {label}
+                        {t(label)}
                       </p>
+
                       <p
                         className={`text-xl font-bold leading-tight ${color || "text-gray-800"}`}
                       >
@@ -348,7 +366,7 @@ const SettlementSummaryPage = () => {
                   >
                     <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
                       <h3 className="text-sm font-semibold text-gray-800">
-                        Payment Status
+                        {t("Payment Status")}
                       </h3>
                     </div>
 
@@ -386,6 +404,7 @@ const SettlementSummaryPage = () => {
                                 <Cell key={idx} fill={entry.color} />
                               ))}
                             </Pie>
+
                             <Tooltip content={<PieTooltip />} />
                           </PieChart>
                         </ResponsiveContainer>
@@ -415,10 +434,12 @@ const SettlementSummaryPage = () => {
                               className="w-2.5 h-2.5 rounded-full mt-0.5 flex-shrink-0"
                               style={{ backgroundColor: color }}
                             />
+
                             <div className="flex flex-col gap-0">
                               <p className="text-xs font-semibold text-gray-700">
-                                {label}
+                                {t(label)}
                               </p>
+
                               <p className="text-xs text-gray-400">
                                 {d.percentage}% ({egp(d.amount)})
                               </p>
@@ -437,7 +458,7 @@ const SettlementSummaryPage = () => {
                     <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
                       <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                         <Users size={13} className="text-gray-400" />
-                        Students Summary
+                        {t("Students Summary")}
                       </h3>
                     </div>
 
@@ -458,9 +479,12 @@ const SettlementSummaryPage = () => {
                       ].map(({ label, value }, i, arr) => (
                         <div
                           key={label}
-                          className={`flex items-center justify-between py-3 ${i < arr.length - 1 ? "border-b border-gray-50" : ""}`}
+                          className={`flex items-center justify-between py-3 ${
+                            i < arr.length - 1 ? "border-b border-gray-50" : ""
+                          }`}
                         >
-                          <p className="text-sm text-gray-500">{label}</p>
+                          <p className="text-sm text-gray-500">{t(label)}</p>
+
                           <p className="text-sm font-bold text-gray-800">
                             {value}
                           </p>
@@ -471,17 +495,22 @@ const SettlementSummaryPage = () => {
                       <div className="flex flex-col gap-2 pt-3">
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
-                            Usage Percentage
+                            {t("Usage Percentage")}
                           </p>
+
                           <p className="text-sm font-bold text-gray-800">
                             {students.usagePercentage}%
                           </p>
                         </div>
+
                         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{
-                              width: `${Math.min(students.usagePercentage, 100)}%`,
+                              width: `${Math.min(
+                                students.usagePercentage,
+                                100,
+                              )}%`,
                             }}
                             transition={{
                               delay: 0.5,
@@ -502,9 +531,11 @@ const SettlementSummaryPage = () => {
                   className="bg-blue-50 border border-blue-100 rounded-xl px-5 py-3.5 flex items-center gap-2.5"
                 >
                   <Info size={14} className="text-blue-400 flex-shrink-0" />
+
                   <p className="text-sm text-blue-700">
-                    Please keep your payments up to date to avoid any service
-                    interruption.
+                    {t(
+                      "Please keep your payments up to date to avoid any service interruption.",
+                    )}
                   </p>
                 </motion.div>
               </>

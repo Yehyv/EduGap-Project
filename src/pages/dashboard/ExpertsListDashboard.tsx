@@ -14,6 +14,7 @@ import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { ExpertTypeForDashboard } from "@/features/Dashboard/types/dashboardTypes";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -39,101 +40,9 @@ const customStyles = {
   },
 };
 
-const columns = [
-  {
-    name: "Num",
-    selector: (_: unknown, index: number) => index + 1,
-    width: "60px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Image",
-    selector: (row: ExpertTypeForDashboard) => (
-      <img
-        src={row.image}
-        alt={row.user.full_name}
-        className="w-12 h-12 rounded-full"
-      />
-    ),
-    minWidth: "80px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Name",
-    selector: (row: ExpertTypeForDashboard) => (
-      <Link className="underline text-sm" to={`/dashboard/experts/${row.id}`}>
-        {row.user.full_name}
-      </Link>
-    ),
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Title",
-    selector: (row: ExpertTypeForDashboard) => row.title,
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Created At",
-    selector: (row: ExpertTypeForDashboard) => row.created_at,
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Status",
-    style: { justifyContent: "center" },
-    cell: (row: ExpertTypeForDashboard) => {
-      const isActive = row.is_active;
-      return (
-        <button
-          className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
-            isActive
-              ? "border-green-500 text-green-500"
-              : "border-red-500 text-red-500"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-          <span
-            className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 ${
-              isActive ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-        </button>
-      );
-    },
-    sortable: true,
-  },
-  {
-    name: "Edit",
-    style: { justifyContent: "center" },
-    cell: (row: ExpertTypeForDashboard) => (
-      <Link to={`/dashboard/experts/edit/${row.id}`} className="cursor-pointer">
-        <EditIcon />
-      </Link>
-    ),
-    ignoreRowClick: true,
-    button: true,
-    minWidth: "50px",
-  },
-  {
-    name: "Delete",
-    style: { justifyContent: "center" },
-    cell: (row: ExpertTypeForDashboard) => (
-      <DeleteButton
-        deleteApi={() => deleteExpert(row.id)}
-        successMessage="تم حذف الخبير بنجاح"
-        errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getExpertsForDashboard"
-      />
-    ),
-    ignoreRowClick: true,
-    button: true,
-    minWidth: "60px",
-  },
-];
-
 const ExpertsListDashboard = () => {
+  const { t } = useLanguage();
+
   const { data, isLoading } = useQuery({
     queryKey: ["getExpertsForDashboard"],
     queryFn: () => getExpertsForDashboard(),
@@ -143,10 +52,116 @@ const ExpertsListDashboard = () => {
 
   const filteredItems = useMemo(() => {
     if (!data?.data?.items) return [];
+
     return data?.data.items?.filter((item: ExpertTypeForDashboard) =>
       item.title?.toLowerCase().includes(filterText.toLowerCase()),
     );
   }, [filterText, data]);
+
+  const columns = useMemo(
+    () => [
+      {
+        name: t("num"),
+        selector: (_: unknown, index: number) => index + 1,
+        width: "60px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("image"),
+        selector: (row: ExpertTypeForDashboard) => (
+          <img
+            src={row.image}
+            alt={row.user.full_name}
+            className="w-12 h-12 rounded-full"
+          />
+        ),
+        minWidth: "80px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("name"),
+        selector: (row: ExpertTypeForDashboard) => (
+          <Link
+            className="underline text-sm"
+            to={`/dashboard/experts/${row.id}`}
+          >
+            {row.user.full_name}
+          </Link>
+        ),
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("title"),
+        selector: (row: ExpertTypeForDashboard) => row.title,
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("createdAt"),
+        selector: (row: ExpertTypeForDashboard) => row.created_at,
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("status"),
+        style: { justifyContent: "center" },
+        cell: (row: ExpertTypeForDashboard) => {
+          const isActive = row.is_active;
+
+          return (
+            <button
+              className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
+                isActive
+                  ? "border-green-500 text-green-500"
+                  : "border-red-500 text-red-500"
+              }`}
+            >
+              {isActive ? t("active") : t("inactive")}
+
+              <span
+                className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 ${
+                  isActive ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+            </button>
+          );
+        },
+        sortable: true,
+      },
+      {
+        name: t("edit"),
+        style: { justifyContent: "center" },
+        cell: (row: ExpertTypeForDashboard) => (
+          <Link
+            to={`/dashboard/experts/edit/${row.id}`}
+            className="cursor-pointer"
+          >
+            <EditIcon />
+          </Link>
+        ),
+        ignoreRowClick: true,
+        button: true,
+        minWidth: "50px",
+      },
+      {
+        name: t("delete"),
+        style: { justifyContent: "center" },
+        cell: (row: ExpertTypeForDashboard) => (
+          <DeleteButton
+            deleteApi={() => deleteExpert(row.id)}
+            successMessage={t("expertDeletedSuccess")}
+            errorMessage={t("expertDeletedError")}
+            refetchFunction="getExpertsForDashboard"
+          />
+        ),
+        ignoreRowClick: true,
+        button: true,
+        minWidth: "60px",
+      },
+    ],
+    [t],
+  );
 
   const subHeaderComponent = useMemo(() => {
     return (
@@ -154,32 +169,35 @@ const ExpertsListDashboard = () => {
         <div className="relative w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Search by name"
+            placeholder={t("searchByName")}
             className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
           />
+
           <span className="absolute start-2 top-1/2 -translate-y-1/2">
             <SearchIcon className="w-7 h-7" />
           </span>
         </div>
+
         <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm">
           <FilterIcon />
-          <span>Filter</span>
+          <span>{t("filter")}</span>
         </div>
       </div>
     );
-  }, [filterText]);
+  }, [filterText, t]);
 
   return (
     <>
       <DashboardPageTitle
-        text="Experts"
+        text={t("experts")}
         button
         buttonText={
           <Link to="/dashboard/experts/add" className="center">
             <PlusIcon className="mt-1.5 h-8" />
-            <span className="me-4 text-white">Add New Expert</span>
+
+            <span className="me-4 text-white">{t("addNewExpert")}</span>
           </Link>
         }
       />

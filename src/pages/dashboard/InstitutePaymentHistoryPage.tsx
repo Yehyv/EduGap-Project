@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,13 +106,6 @@ const fmtDate = (iso: string) => iso?.split("T")[0] ?? iso;
 const yearStart = (y: number) => `${y}-01-01`;
 const yearEnd = (y: number) => `${y}-12-31`;
 
-const METHOD_LABEL: Record<string, string> = {
-  BANK_TRANSFER: "Bank Transfer",
-  CASH: "Cash",
-  CHEQUE: "Cheque",
-  ONLINE: "Online",
-};
-
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 14 },
   animate: { opacity: 1, y: 0 },
@@ -124,23 +118,28 @@ const inputCls =
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<string, { cls: string; label: string }> = {
-  CONFIRMED: {
-    cls: "bg-green-50 text-green-600 border-green-200",
-    label: "Confirmed",
-  },
-  PENDING: {
-    cls: "bg-amber-50 text-amber-600 border-amber-200",
-    label: "Pending",
-  },
-  REJECTED: { cls: "bg-red-50 text-red-500 border-red-200", label: "Rejected" },
-  CANCELLED: {
-    cls: "bg-gray-100 text-gray-500 border-gray-200",
-    label: "Cancelled",
-  },
-};
-
 const StatusBadge = ({ status }: { status: string }) => {
+  const { t } = useLanguage();
+
+  const STATUS_CFG: Record<string, { cls: string; label: string }> = {
+    CONFIRMED: {
+      cls: "bg-green-50 text-green-600 border-green-200",
+      label: t("statusConfirmed"),
+    },
+    PENDING: {
+      cls: "bg-amber-50 text-amber-600 border-amber-200",
+      label: t("statusPending"),
+    },
+    REJECTED: {
+      cls: "bg-red-50 text-red-500 border-red-200",
+      label: t("statusRejected"),
+    },
+    CANCELLED: {
+      cls: "bg-gray-100 text-gray-500 border-gray-200",
+      label: t("statusCancelled"),
+    },
+  };
+
   const cfg = STATUS_CFG[status] ?? {
     cls: "bg-gray-100 text-gray-500 border-gray-200",
     label: status,
@@ -229,38 +228,41 @@ const NoContractState = ({
 }: {
   year: number;
   onChangeYear: (y: number) => void;
-}) => (
-  <motion.div
-    {...fadeUp(0.05)}
-    className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
-  >
-    <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-      <FileX size={28} className="text-gray-300" />
-    </div>
-    <div className="flex flex-col items-center gap-1 text-center">
-      <p className="text-sm font-semibold text-gray-700">
-        No payments found for {year}
-      </p>
-      <p className="text-xs text-gray-400 max-w-xs">
-        There is no active annual contract for this academic year.
-      </p>
-    </div>
-    <div className="flex items-center gap-2 flex-wrap justify-center">
-      {YEARS.filter((y) => y !== year)
-        .slice(0, 4)
-        .map((y) => (
-          <button
-            key={y}
-            type="button"
-            onClick={() => onChangeYear(y)}
-            className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            Try {y}
-          </button>
-        ))}
-    </div>
-  </motion.div>
-);
+}) => {
+  const { t } = useLanguage();
+  return (
+    <motion.div
+      {...fadeUp(0.05)}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
+    >
+      <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+        <FileX size={28} className="text-gray-300" />
+      </div>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <p className="text-sm font-semibold text-gray-700">
+          {t("noPaymentsFoundPrefix")} {year}
+        </p>
+        <p className="text-xs text-gray-400 max-w-xs">
+          {t("noActiveContractMsg")}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        {YEARS.filter((y) => y !== year)
+          .slice(0, 4)
+          .map((y) => (
+            <button
+              key={y}
+              type="button"
+              onClick={() => onChangeYear(y)}
+              className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              {t("tryYearPrefix")} {y}
+            </button>
+          ))}
+      </div>
+    </motion.div>
+  );
+};
 
 // ─── DataTable styles ─────────────────────────────────────────────────────────
 
@@ -315,20 +317,26 @@ const customStyles = {
   },
 };
 
-// ─── Status options ────────────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-  { value: "", label: "All Status" },
-  { value: "CONFIRMED", label: "Confirmed" },
-  { value: "PENDING", label: "Pending" },
-  { value: "REJECTED", label: "Rejected" },
-  { value: "CANCELLED", label: "Cancelled" },
-];
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const InstitutePaymentHistoryPage = () => {
+  const { t } = useLanguage();
   const currentYear = new Date().getFullYear();
+
+  const METHOD_LABEL: Record<string, string> = {
+    BANK_TRANSFER: t("paymentMethodBankTransfer"),
+    CASH: t("paymentMethodCash"),
+    CHEQUE: t("paymentMethodCheque"),
+    ONLINE: t("paymentMethodOnline"),
+  };
+
+  const STATUS_OPTIONS = [
+    { value: "", label: t("statusAll") },
+    { value: "CONFIRMED", label: t("statusConfirmed") },
+    { value: "PENDING", label: t("statusPending") },
+    { value: "REJECTED", label: t("statusRejected") },
+    { value: "CANCELLED", label: t("statusCancelled") },
+  ];
 
   // Draft filter state
   const [academicYear, setAcademicYear] = useState(currentYear);
@@ -364,7 +372,7 @@ const InstitutePaymentHistoryPage = () => {
   // ── Columns ──
   const columns = [
     {
-      name: "#",
+      name: t("columnNumber"),
       width: "56px",
       cell: (_row: PaymentRow, idx: number) => (
         <span className="text-gray-400 text-xs font-medium">
@@ -373,14 +381,14 @@ const InstitutePaymentHistoryPage = () => {
       ),
     },
     {
-      name: "Payment ID",
+      name: t("columnPaymentId"),
       selector: (row: PaymentRow) => row.paymentNo,
       cell: (row: PaymentRow) => (
         <span className="font-mono text-xs text-gray-600">{row.paymentNo}</span>
       ),
     },
     {
-      name: "Installment",
+      name: t("columnInstallment"),
       selector: (row: PaymentRow) => row.installmentLabel,
       cell: (row: PaymentRow) => (
         <span className="font-medium text-gray-800">
@@ -390,14 +398,14 @@ const InstitutePaymentHistoryPage = () => {
       grow: 1,
     },
     {
-      name: "Payment Date",
+      name: t("columnPaymentDate"),
       selector: (row: PaymentRow) => row.paymentDate,
       cell: (row: PaymentRow) => (
         <span className="text-gray-600">{fmtDate(row.paymentDate)}</span>
       ),
     },
     {
-      name: "Amount",
+      name: t("columnAmount"),
       selector: (row: PaymentRow) => row.amount,
       cell: (row: PaymentRow) => (
         <span className="font-semibold text-gray-800">{egp(row.amount)}</span>
@@ -405,7 +413,7 @@ const InstitutePaymentHistoryPage = () => {
       right: true,
     },
     {
-      name: "Method",
+      name: t("columnMethod"),
       selector: (row: PaymentRow) => row.paymentMethod,
       cell: (row: PaymentRow) => (
         <span className="text-gray-600">
@@ -414,7 +422,7 @@ const InstitutePaymentHistoryPage = () => {
       ),
     },
     {
-      name: "Receipt No.",
+      name: t("columnReceiptNo"),
       selector: (row: PaymentRow) => row.receiptNo ?? "",
       cell: (row: PaymentRow) => (
         <span className="font-mono text-xs text-gray-500">
@@ -423,18 +431,18 @@ const InstitutePaymentHistoryPage = () => {
       ),
     },
     {
-      name: "Status",
+      name: t("columnStatus"),
       center: true,
       cell: (row: PaymentRow) => <StatusBadge status={row.status} />,
     },
     {
-      name: "Action",
+      name: t("columnAction"),
       center: true,
       cell: (row: PaymentRow) => (
         <Link
           to={`/dashboard/payments-history/invoice/${row.installmentId}`}
           className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 transition-colors"
-          title="View Details"
+          title={t("viewDetailsTooltip")}
         >
           <Eye size={14} />
         </Link>
@@ -446,7 +454,7 @@ const InstitutePaymentHistoryPage = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Payments History Page" />
+      <DashboardPageTitle text={t("paymentHistoryPageTitle")} />
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Breadcrumb + Year ── */}
         <motion.div
@@ -458,10 +466,12 @@ const InstitutePaymentHistoryPage = () => {
               to="/dashboard/home"
               className="hover:text-gray-600 transition-colors"
             >
-              Dashboard
+              {t("dashboardBreadcrumb")}
             </Link>
             <ChevronRight size={13} />
-            <span className="text-gray-600 font-medium">Payments</span>
+            <span className="text-gray-600 font-medium">
+              {t("paymentsBreadcrumb")}
+            </span>
           </nav>
           <YearDropdown value={academicYear} onChange={handleYearChange} />
         </motion.div>
@@ -475,7 +485,7 @@ const InstitutePaymentHistoryPage = () => {
             {/* From Date */}
             <div className="flex flex-col gap-1 min-w-[150px]">
               <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                <CalendarDays size={11} /> From Date
+                <CalendarDays size={11} /> {t("fromDateLabel")}
               </label>
               <input
                 type="date"
@@ -488,7 +498,7 @@ const InstitutePaymentHistoryPage = () => {
             {/* To Date */}
             <div className="flex flex-col gap-1 min-w-[150px]">
               <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                <CalendarDays size={11} /> To Date
+                <CalendarDays size={11} /> {t("toDateLabel")}
               </label>
               <input
                 type="date"
@@ -501,7 +511,7 @@ const InstitutePaymentHistoryPage = () => {
             {/* Status */}
             <div className="flex flex-col gap-1 min-w-[140px]">
               <label className="text-xs font-medium text-gray-500">
-                Status
+                {t("statusLabel")}
               </label>
               <select
                 value={status}
@@ -528,7 +538,7 @@ const InstitutePaymentHistoryPage = () => {
               ) : (
                 <Filter size={14} />
               )}
-              Filter
+              {t("filterLabel")}
             </button>
           </div>
         </motion.div>
@@ -552,9 +562,7 @@ const InstitutePaymentHistoryPage = () => {
             className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
           >
             <AlertCircle size={32} className="text-red-300" />
-            <p className="text-sm text-red-400">
-              Something went wrong. Please try again.
-            </p>
+            <p className="text-sm text-red-400">{t("somethingWentWrongMsg")}</p>
           </motion.div>
         )}
 
@@ -585,7 +593,7 @@ const InstitutePaymentHistoryPage = () => {
                 className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
               >
                 <p className="text-xs text-gray-400 font-medium mb-1">
-                  Total Payments
+                  {t("totalPaymentsLabel")}
                 </p>
                 <p className="text-2xl font-bold text-gray-800">
                   {summary!.totalPayments}
@@ -597,7 +605,7 @@ const InstitutePaymentHistoryPage = () => {
                 className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
               >
                 <p className="text-xs text-gray-400 font-medium mb-1">
-                  Total Paid
+                  {t("totalPaidLabel")}
                 </p>
                 <p className="text-2xl font-bold text-green-600">
                   {egp(summary!.totalPaid)}
@@ -609,7 +617,7 @@ const InstitutePaymentHistoryPage = () => {
                 className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4"
               >
                 <p className="text-xs text-gray-400 font-medium mb-1">
-                  Remaining Amount
+                  {t("remainingAmountLabel2")}
                 </p>
                 <p className="text-2xl font-bold text-red-400">
                   {egp(summary!.remainingAmount)}
@@ -639,7 +647,9 @@ const InstitutePaymentHistoryPage = () => {
                 noDataComponent={
                   <div className="flex flex-col items-center gap-2 py-14">
                     <FileX size={28} className="text-gray-200" />
-                    <p className="text-sm text-gray-400">No payments found.</p>
+                    <p className="text-sm text-gray-400">
+                      {t("noPaymentsFound")}
+                    </p>
                   </div>
                 }
                 pagination

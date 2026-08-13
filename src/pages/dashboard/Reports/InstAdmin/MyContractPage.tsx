@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -137,13 +138,22 @@ const STATUS_CFG: Record<string, { cls: string; label: string }> = {
     cls: "bg-green-50 text-green-600 border-green-200",
     label: "Active",
   },
-  CLOSED: { cls: "bg-gray-100 text-gray-500 border-gray-200", label: "Closed" },
+  CLOSED: {
+    cls: "bg-gray-100 text-gray-500 border-gray-200",
+    label: "Closed",
+  },
   PENDING: {
     cls: "bg-amber-50 text-amber-600 border-amber-200",
     label: "Pending",
   },
-  OVERDUE: { cls: "bg-red-50 text-red-500 border-red-200", label: "Overdue" },
-  PAID: { cls: "bg-green-50 text-green-600 border-green-200", label: "Paid" },
+  OVERDUE: {
+    cls: "bg-red-50 text-red-500 border-red-200",
+    label: "Overdue",
+  },
+  PAID: {
+    cls: "bg-green-50 text-green-600 border-green-200",
+    label: "Paid",
+  },
   PARTIALLY_PAID: {
     cls: "bg-blue-50 text-blue-500 border-blue-200",
     label: "Partially Paid",
@@ -152,20 +162,6 @@ const STATUS_CFG: Record<string, { cls: string; label: string }> = {
     cls: "bg-green-50 text-green-600 border-green-200",
     label: "Confirmed",
   },
-};
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const cfg = STATUS_CFG[status] ?? {
-    cls: "bg-gray-100 text-gray-500 border-gray-200",
-    label: status,
-  };
-  return (
-    <span
-      className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border ${cfg.cls}`}
-    >
-      {cfg.label}
-    </span>
-  );
 };
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -201,69 +197,6 @@ const InfoRow = ({
   </div>
 );
 
-// ─── Year Dropdown ────────────────────────────────────────────────────────────
-
-const YEARS = [2027, 2026, 2025, 2024, 2023, 2022];
-
-const YearDropdown = ({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (y: number) => void;
-}) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="h-9 px-4 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
-      >
-        {value}
-        <ChevronDown
-          size={14}
-          className={`text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-1.5 w-32 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-20"
-          >
-            {YEARS.map((y) => (
-              <button
-                key={y}
-                type="button"
-                onClick={() => {
-                  onChange(y);
-                  setOpen(false);
-                }}
-                className={`w-full px-4 py-2.5 text-sm text-left transition-colors
-                  ${
-                    y === value
-                      ? "bg-blue-50 text-blue-600 font-semibold"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-              >
-                {y}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-      )}
-    </div>
-  );
-};
-
 // ─── No Contract state ────────────────────────────────────────────────────────
 
 const NoContractState = ({
@@ -272,43 +205,66 @@ const NoContractState = ({
 }: {
   year: number;
   onChangeYear: (y: number) => void;
-}) => (
-  <motion.div
-    {...fadeUp(0.05)}
-    className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
-  >
-    <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-      <FileX size={28} className="text-gray-300" />
-    </div>
-    <div className="flex flex-col items-center gap-1 text-center">
-      <p className="text-sm font-semibold text-gray-700">
-        No contract found for {year}
-      </p>
-      <p className="text-xs text-gray-400 max-w-xs">
-        There is no active annual contract for this academic year. Try selecting
-        a different year.
-      </p>
-    </div>
-    <div className="flex items-center gap-2 flex-wrap justify-center">
-      {YEARS.filter((y) => y !== year)
-        .slice(0, 4)
-        .map((y) => (
-          <button
-            key={y}
-            type="button"
-            onClick={() => onChangeYear(y)}
-            className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-          >
-            Try {y}
-          </button>
-        ))}
-    </div>
-  </motion.div>
-);
+}) => {
+  const { t } = useLanguage();
 
+  return (
+    <motion.div
+      {...fadeUp(0.05)}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
+    >
+      <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+        <FileX size={28} className="text-gray-300" />
+      </div>
+
+      <div className="flex flex-col items-center gap-1 text-center">
+        <p className="text-sm font-semibold text-gray-700">
+          {t("No contract found for")} {year}
+        </p>
+
+        <p className="text-xs text-gray-400 max-w-xs">
+          {t(
+            "There is no active annual contract for this academic year. Try selecting a different year.",
+          )}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        {YEARS.filter((y) => y !== year)
+          .slice(0, 4)
+          .map((y) => (
+            <button
+              key={y}
+              type="button"
+              onClick={() => onChangeYear(y)}
+              className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+            >
+              {t("Try")} {y}
+            </button>
+          ))}
+      </div>
+    </motion.div>
+  );
+};
+const StatusBadge = ({ status }: { status: string }) => {
+  const cfg = STATUS_CFG[status] ?? {
+    cls: "bg-gray-100 text-gray-500 border-gray-200",
+    label: status,
+  };
+  return (
+    <span
+      className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border ${cfg.cls}`}
+    >
+      {" "}
+      {cfg.label}{" "}
+    </span>
+  );
+};
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const MyContractPage = () => {
+  const { t } = useLanguage();
+
   const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
 
   const { data, isLoading, isError } = useQuery({
@@ -319,18 +275,22 @@ const MyContractPage = () => {
 
   return (
     <>
-      <DashboardPageTitle text="My Contract" />
+      <DashboardPageTitle text={t("My Contract")} />
+
       {/* ── Breadcrumb ── */}
       <motion.nav className="flex items-center gap-1.5 text-sm text-gray-400 mb-4">
         <Link
           to="/dashboard/home"
           className="hover:text-gray-600 transition-colors"
         >
-          Dashboard
+          {t("Dashboard")}
         </Link>
+
         <ChevronRight size={13} />
-        <span className="text-gray-600 font-medium">My Contract</span>
+
+        <span className="text-gray-600 font-medium">{t("My Contract")}</span>
       </motion.nav>
+
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Loading ── */}
         {isLoading && (
@@ -348,8 +308,9 @@ const MyContractPage = () => {
             className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 gap-3"
           >
             <AlertCircle size={32} className="text-red-300" />
+
             <p className="text-sm text-red-400">
-              Something went wrong. Please try again.
+              {t("Something went wrong. Please try again.")}
             </p>
           </motion.div>
         )}
@@ -370,6 +331,7 @@ const MyContractPage = () => {
               paymentSummary,
               collectionProgress,
             } = data;
+
             return (
               <>
                 {/* ── Contract header card ── */}
@@ -386,12 +348,14 @@ const MyContractPage = () => {
                     {/* Contract No + Status */}
                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                       <p className="text-xs text-gray-400 font-medium">
-                        Contract No.
+                        {t("Contract No.")}
                       </p>
+
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-lg font-bold text-gray-800 font-mono">
                           {contract.contractNo}
                         </p>
+
                         <StatusBadge status={contract.status} />
                       </div>
                     </div>
@@ -402,8 +366,9 @@ const MyContractPage = () => {
                     {/* Academic Year */}
                     <div className="flex flex-col gap-1 flex-shrink-0">
                       <p className="text-xs text-gray-400 font-medium">
-                        Academic Year
+                        {t("Academic Year")}
                       </p>
+
                       <p className="text-lg font-bold text-gray-800">
                         {contract.academicYear}
                       </p>
@@ -414,7 +379,10 @@ const MyContractPage = () => {
 
                     {/* Plan */}
                     <div className="flex flex-col gap-1 flex-shrink-0">
-                      <p className="text-xs text-gray-400 font-medium">Plan</p>
+                      <p className="text-xs text-gray-400 font-medium">
+                        {t("Plan")}
+                      </p>
+
                       <p className="text-lg font-bold text-gray-800">
                         {contract.planName}
                       </p>
@@ -429,7 +397,7 @@ const MyContractPage = () => {
                 >
                   <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 bg-gray-50/60">
                     <p className="text-sm font-semibold text-gray-800">
-                      Contract Information
+                      {t("Contract Information")}
                     </p>
                   </div>
 
@@ -437,31 +405,37 @@ const MyContractPage = () => {
                     {/* Left — contract details */}
                     <div className="px-6 py-4">
                       <InfoRow
-                        label="Start Date"
+                        label={t("Start Date")}
                         value={fmtDate(contract.contractStartDate)}
                       />
+
                       <InfoRow
-                        label="End Date"
+                        label={t("End Date")}
                         value={fmtDate(contract.contractEndDate)}
                       />
+
                       <InfoRow
-                        label="Max Students"
+                        label={t("Max Students")}
                         value={contractSummary.maxStudentsAllowed.toLocaleString()}
                       />
+
                       <InfoRow
-                        label="Price Per Student"
+                        label={t("Price Per Student")}
                         value={egp(contractSummary.pricePerStudent)}
                       />
+
                       <InfoRow
-                        label="Installments"
+                        label={t("Installments")}
                         value={paymentSummary.totalInstallments}
                       />
+
                       <InfoRow
-                        label="Tax (14%)"
+                        label={t("Tax (14%)")}
                         value={egp(contractSummary.taxAmount)}
                       />
+
                       <InfoRow
-                        label="Administrative Fees"
+                        label={t("Administrative Fees")}
                         value={egp(contractSummary.administrativeFees)}
                       />
                     </div>
@@ -469,11 +443,12 @@ const MyContractPage = () => {
                     {/* Right — financial summary */}
                     <div className="px-6 py-4">
                       <InfoRow
-                        label="Contract Value"
+                        label={t("Contract Value")}
                         value={egp(contractSummary.packageAmount)}
                       />
+
                       <InfoRow
-                        label="Discount"
+                        label={t("Discount")}
                         value={
                           contractSummary.discountAmount > 0
                             ? `- ${egp(contractSummary.discountAmount)}`
@@ -481,31 +456,39 @@ const MyContractPage = () => {
                         }
                         valueColor="text-blue-500"
                       />
+
                       <InfoRow
-                        label="Total Contract Value"
+                        label={t("Total Contract Value")}
                         value={egp(contractSummary.netAmount)}
                         bold
                       />
+
                       <InfoRow
-                        label="Total Paid"
+                        label={t("Total Paid")}
                         value={egp(data.totalPaid)}
                         valueColor="text-green-600"
                       />
+
                       <InfoRow
-                        label="Remaining Amount"
+                        label={t("Remaining Amount")}
                         value={egp(data.totalRemaining)}
                         valueColor="text-red-400"
                       />
+
                       <div className="flex items-center justify-between py-2.5">
                         <p className="text-sm text-gray-500">
-                          Payment Percentage
+                          {t("Payment Percentage")}
                         </p>
+
                         <div className="flex items-center gap-3">
                           <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{
-                                width: `${Math.min(collectionProgress.percentage, 100)}%`,
+                                width: `${Math.min(
+                                  collectionProgress.percentage,
+                                  100,
+                                )}%`,
                               }}
                               transition={{
                                 delay: 0.5,
@@ -515,6 +498,7 @@ const MyContractPage = () => {
                               className="h-full bg-blue-500 rounded-full"
                             />
                           </div>
+
                           <p className="text-sm font-semibold text-gray-800">
                             {collectionProgress.percentage}%
                           </p>
@@ -534,20 +518,24 @@ const MyContractPage = () => {
                       size={15}
                       className="text-blue-400 flex-shrink-0 mt-0.5"
                     />
+
                     <p className="text-sm text-secondary">
-                      You can add students until you reach your plan limit.{" "}
+                      {t(
+                        "You can add students until you reach your plan limit.",
+                      )}{" "}
                       <span className="font-semibold">
                         {contractSummary.remainingStudents.toLocaleString()}{" "}
-                        spots remaining.
+                        {t("spots remaining.")}
                       </span>
                     </p>
                   </div>
+
                   <Link
                     to={`/dashboard/installment-schedule`}
                     className="h-9 px-5 rounded-lg bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2 flex-shrink-0"
                   >
                     <ListChecks size={14} />
-                    View Installments
+                    {t("View Installments")}
                   </Link>
                 </motion.div>
               </>

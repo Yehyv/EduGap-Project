@@ -8,10 +8,7 @@ import {
   ChevronRight,
   Building2,
   CalendarDays,
-  FileText,
-  Hash,
   CreditCard,
-  Receipt,
   Info,
   AlertCircle,
   CheckCircle2,
@@ -24,6 +21,7 @@ import {
   fetchContractById,
   generateInstallments,
 } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,32 +38,9 @@ interface PreviewInstallment {
   percentage: number;
 }
 
-// ─── Validation schema ────────────────────────────────────────────────────────
-
-const validationSchema = Yup.object({
-  numberOfInstallments: Yup.number()
-    .min(1, "Must be at least 1")
-    .max(24, "Max 24 installments")
-    .required("Required"),
-  firstDueDate: Yup.string().required("First due date is required"),
-  intervalMonths: Yup.number()
-    .min(1, "Must be at least 1 month")
-    .required("Required"),
-  force: Yup.boolean(),
-});
-
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const INSTALLMENT_COUNT_OPTIONS = [1, 2, 3, 4, 6, 8, 12];
-
-const FREQUENCY_OPTIONS = [
-  { label: "Every Month", value: 1 },
-  { label: "Every 2 Months", value: 2 },
-  { label: "Every 3 Months", value: 3 },
-  { label: "Every 4 Months", value: 4 },
-  { label: "Every 6 Months", value: 6 },
-  { label: "Every 12 Months", value: 12 },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -174,12 +149,34 @@ const Skeleton = ({ className }: { className?: string }) => (
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const GenerateInstallments = () => {
+  const { t } = useLanguage();
   const { contractId } = useParams<{ contractId: string }>();
   const navigate = useNavigate();
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
+
+  const validationSchema = Yup.object({
+    numberOfInstallments: Yup.number()
+      .min(1, t("mustBeAtLeastOne"))
+      .max(24, t("max24Installments"))
+      .required(t("required")),
+    firstDueDate: Yup.string().required(t("firstDueDateRequired")),
+    intervalMonths: Yup.number()
+      .min(1, t("mustBeAtLeastOneMonth"))
+      .required(t("required")),
+    force: Yup.boolean(),
+  });
+
+  const FREQUENCY_OPTIONS = [
+    { label: t("everyMonth"), value: 1 },
+    { label: t("every2Months"), value: 2 },
+    { label: t("every3Months"), value: 3 },
+    { label: t("every4Months"), value: 4 },
+    { label: t("every6Months"), value: 6 },
+    { label: t("every12Months"), value: 12 },
+  ];
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -200,7 +197,7 @@ const GenerateInstallments = () => {
     mutationFn: (payload: GenerateInstallmentsPayload) =>
       generateInstallments(contractId!, payload),
     onSuccess: () => {
-      showToast("success", "Installments generated successfully!");
+      showToast("success", t("installmentsGeneratedSuccessfully"));
       setTimeout(
         () => navigate(`/dashboard/institutions-contracts/${contractId}`),
         1500,
@@ -209,8 +206,7 @@ const GenerateInstallments = () => {
     onError: (error: unknown) => {
       const msg =
         (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message ??
-        "Failed to generate installments. Please try again.";
+          ?.data?.message ?? t("failedToGenerateInstallmentsTryAgain");
       showToast("error", msg);
     },
   });
@@ -251,7 +247,7 @@ const GenerateInstallments = () => {
       </AnimatePresence>
 
       <div className="flex flex-col gap-5 pb-8">
-        <DashboardPageTitle text="Generate Installments" />
+        <DashboardPageTitle text={t("generateInstallments")} />
 
         {/* Breadcrumb */}
         <motion.nav
@@ -263,17 +259,17 @@ const GenerateInstallments = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={14} />
           <Link
             to="/dashboard/institutions-contracts"
             className="hover:text-gray-600 transition-colors"
           >
-            Contracts
+            {t("contracts")}
           </Link>
           <ChevronRight size={14} />
-          <span className="text-gray-600">Generate Installments</span>
+          <span className="text-gray-600">{t("generateInstallments")}</span>
         </motion.nav>
 
         <Formik
@@ -324,25 +320,25 @@ const GenerateInstallments = () => {
                     <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
                       <Building2 size={15} className="text-gray-400" />
                       <h3 className="text-sm font-semibold text-gray-800">
-                        Contract Information
+                        {t("contractInformation")}
                       </h3>
                     </div>
                     <div className="px-5 py-5 flex flex-col gap-4">
-                      <InfoField label="Contract No." value={contractNo} />
+                      <InfoField label={t("contractNo")} value={contractNo} />
                       <div className="border-t border-gray-50" />
-                      <InfoField label="Institute" value={instituteName} />
+                      <InfoField label={t("institute")} value={instituteName} />
                       <div className="border-t border-gray-50" />
-                      <InfoField label="Year" value={year} />
+                      <InfoField label={t("year")} value={year} />
                       <div className="border-t border-gray-50" />
-                      <InfoField label="Plan" value={planName} />
+                      <InfoField label={t("plan")} value={planName} />
                       <div className="border-t border-gray-50" />
                       <InfoField
-                        label="Total Amount (EGP)"
+                        label={t("totalAmountEgp")}
                         value={egp(totalAmount)}
                       />
                       <div className="border-t border-gray-50" />
                       <InfoField
-                        label="Installments"
+                        label={t("installments")}
                         value={installmentsCount}
                       />
                     </div>
@@ -360,7 +356,7 @@ const GenerateInstallments = () => {
                       <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
                         <Zap size={15} className="text-gray-400" />
                         <h3 className="text-sm font-semibold text-gray-800">
-                          Generate Installments
+                          {t("generateInstallments")}
                         </h3>
                       </div>
 
@@ -370,7 +366,7 @@ const GenerateInstallments = () => {
                           {/* Number of installments */}
                           <div className="flex flex-col gap-1.5">
                             <FieldLabel required>
-                              Number of Installments
+                              {t("numberOfInstallments")}
                             </FieldLabel>
                             <div className="relative">
                               <Field
@@ -386,7 +382,10 @@ const GenerateInstallments = () => {
                               >
                                 {INSTALLMENT_COUNT_OPTIONS.map((n) => (
                                   <option key={n} value={n}>
-                                    {n} Installment{n > 1 ? "s" : ""}
+                                    {n}{" "}
+                                    {n > 1
+                                      ? t("installments")
+                                      : t("installment")}
                                   </option>
                                 ))}
                               </Field>
@@ -408,7 +407,7 @@ const GenerateInstallments = () => {
                           {/* First due date */}
                           <div className="flex flex-col gap-1.5">
                             <FieldLabel required>
-                              First Installment Due Date
+                              {t("firstInstallmentDueDate")}
                             </FieldLabel>
                             <div className="relative">
                               <Field
@@ -439,7 +438,7 @@ const GenerateInstallments = () => {
                         {/* Row 2 — Frequency */}
                         <div className="flex flex-col gap-1.5">
                           <FieldLabel required>
-                            Installment Frequency
+                            {t("installmentFrequency")}
                           </FieldLabel>
                           <div className="relative">
                             <Field
@@ -479,8 +478,7 @@ const GenerateInstallments = () => {
                             className="text-blue-400 flex-shrink-0"
                           />
                           <p className="text-xs text-blue-600">
-                            Installments will be generated automatically with
-                            equal amounts.
+                            {t("installmentsGeneratedAutomaticallyEqual")}
                           </p>
                         </div>
 
@@ -510,12 +508,10 @@ const GenerateInstallments = () => {
                           </div>
                           <div>
                             <p className="text-xs font-semibold text-amber-700">
-                              Force Regenerate
+                              {t("forceRegenerate")}
                             </p>
                             <p className="text-xs text-amber-600 mt-0.5">
-                              If installments already exist, enabling force will
-                              regenerate them. Note: installments with existing
-                              payments cannot be overwritten even with force.
+                              {t("forceRegenerateDescription")}
                             </p>
                           </div>
                         </div>
@@ -535,7 +531,7 @@ const GenerateInstallments = () => {
                           <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
                             <CreditCard size={15} className="text-gray-400" />
                             <h3 className="text-sm font-semibold text-gray-800">
-                              Preview
+                              {t("preview")}
                             </h3>
                             <span className="ml-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-600">
                               {preview.length}
@@ -548,9 +544,9 @@ const GenerateInstallments = () => {
                                 <tr className="bg-gray-50 border-b border-gray-100">
                                   {[
                                     "#",
-                                    "Due Date",
-                                    "Installment Amount (EGP)",
-                                    "Percentage",
+                                    t("dueDate"),
+                                    t("installmentAmountEgp"),
+                                    t("percentage"),
                                   ].map((h) => (
                                     <th
                                       key={h}
@@ -608,7 +604,7 @@ const GenerateInstallments = () => {
                         className="h-10 px-5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
                       >
                         <X size={15} />
-                        Cancel
+                        {t("cancel")}
                       </Link>
 
                       <motion.button
@@ -620,12 +616,12 @@ const GenerateInstallments = () => {
                         {isPending ? (
                           <>
                             <Loader2 size={15} className="animate-spin" />
-                            Generating...
+                            {t("generating")}
                           </>
                         ) : (
                           <>
                             <Zap size={15} />
-                            Generate Installments
+                            {t("generateInstallments")}
                           </>
                         )}
                       </motion.button>

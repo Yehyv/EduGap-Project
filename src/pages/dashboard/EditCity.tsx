@@ -8,13 +8,17 @@ import Swal from "sweetalert2";
 import { useParams } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import AddOrEditCity from "@/features/Dashboard/components/AddOrEditCity";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const EditCity = () => {
   const { cityId } = useParams();
+  const { t } = useLanguage();
+
   const { data, isLoading } = useQuery({
     queryKey: ["findOneCity"],
     queryFn: () => findCity(cityId ?? ""),
   });
+
   const queryClient = useQueryClient();
 
   const initialValues = {
@@ -38,28 +42,31 @@ const EditCity = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "City created successfully",
+        title: t("success"),
+        text: t("city_created_successfully"),
       });
+
       queryClient.invalidateQueries({ queryKey: ["findOneCity"] });
     },
 
     onError: (error: any) => {
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: t("error"),
         text:
-          error?.response?.data?.message[0] ||
-          "Something went wrong, please try again",
+          error?.response?.data?.message[0] || t("somethingWentWrongTryAgain"),
       });
     },
   });
+
   const cityName = data?.data?.name;
 
   if (isLoading) return <CircleLoader />;
+
   return (
     <>
-      <DashboardPageTitle text={`Edit City ${cityName}`} />
+      <DashboardPageTitle text={`${t("edit_city")} ${cityName}`} />
+
       <AddOrEditCity
         initialValues={initialValues}
         isPending={isPending}

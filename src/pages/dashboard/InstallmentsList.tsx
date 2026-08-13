@@ -25,6 +25,7 @@ import {
   fetchInstallmentsSummary,
   fetchContracts,
 } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,52 +68,57 @@ type StatusFilter =
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
-const STATUS_OPTIONS: { value: StatusFilter; label: string; dot: string }[] = [
-  { value: "all", label: "All Status", dot: "bg-gray-400" },
-  { value: "PAID", label: "Paid", dot: "bg-green-500" },
-  { value: "PARTIAL", label: "Partial", dot: "bg-blue-400" },
-  { value: "PENDING", label: "Pending", dot: "bg-amber-400" },
-  { value: "UPCOMING", label: "Upcoming", dot: "bg-orange-400" },
-  { value: "OVERDUE", label: "Overdue", dot: "bg-red-500" },
+const STATUS_OPTIONS: {
+  value: StatusFilter;
+  labelKey: string;
+  dot: string;
+}[] = [
+  { value: "all", labelKey: "all_status", dot: "bg-gray-400" },
+  { value: "PAID", labelKey: "paid", dot: "bg-green-500" },
+  { value: "PARTIAL", labelKey: "partial", dot: "bg-blue-400" },
+  { value: "PENDING", labelKey: "pending", dot: "bg-amber-400" },
+  { value: "UPCOMING", labelKey: "upcoming", dot: "bg-orange-400" },
+  { value: "OVERDUE", labelKey: "overdue", dot: "bg-red-500" },
 ];
 
-const statusConfig: Record<
-  string,
-  { class: string; dot: string; label: string }
-> = {
-  PAID: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Paid",
-  },
-  PARTIAL: {
-    class: "bg-blue-50 text-blue-500 border-blue-200",
-    dot: "bg-blue-400",
-    label: "Partial",
-  },
-  PENDING: {
-    class: "bg-amber-50 text-amber-600 border-amber-200",
-    dot: "bg-amber-400",
-    label: "Pending",
-  },
-  UPCOMING: {
-    class: "bg-orange-50 text-orange-500 border-orange-200",
-    dot: "bg-orange-400",
-    label: "Upcoming",
-  },
-  OVERDUE: {
-    class: "bg-red-50 text-red-500 border-red-200",
-    dot: "bg-red-500",
-    label: "Overdue",
-  },
-};
+const getStatusCfg = (status: string, t: (key: string) => string) => {
+  const config: Record<string, { class: string; dot: string; label: string }> =
+    {
+      PAID: {
+        class: "bg-green-50 text-green-600 border-green-200",
+        dot: "bg-green-500",
+        label: t("paid"),
+      },
+      PARTIAL: {
+        class: "bg-blue-50 text-blue-500 border-blue-200",
+        dot: "bg-blue-400",
+        label: t("partial"),
+      },
+      PENDING: {
+        class: "bg-amber-50 text-amber-600 border-amber-200",
+        dot: "bg-amber-400",
+        label: t("pending"),
+      },
+      UPCOMING: {
+        class: "bg-orange-50 text-orange-500 border-orange-200",
+        dot: "bg-orange-400",
+        label: t("upcoming"),
+      },
+      OVERDUE: {
+        class: "bg-red-50 text-red-500 border-red-200",
+        dot: "bg-red-500",
+        label: t("overdue"),
+      },
+    };
 
-const getStatusCfg = (status: string) =>
-  statusConfig[status] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: status,
-  };
+  return (
+    config[status] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: status,
+    }
+  );
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -125,17 +131,34 @@ const egp = (val: number | string) =>
 const ordinal = (n: number) => {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]) + " Installment";
+
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
 
 // ─── Custom Styles ────────────────────────────────────────────────────────────
 
 const customStyles = {
-  rows: { style: { minHeight: "56px", borderBottom: "1px solid #f3f4f6" } },
-  subHeader: {
-    style: { paddingLeft: "0", paddingRight: "0", paddingBottom: "0" },
+  rows: {
+    style: {
+      minHeight: "56px",
+      borderBottom: "1px solid #f3f4f6",
+    },
   },
-  headRow: { style: { backgroundColor: "#f9fafb" } },
+
+  subHeader: {
+    style: {
+      paddingLeft: "0",
+      paddingRight: "0",
+      paddingBottom: "0",
+    },
+  },
+
+  headRow: {
+    style: {
+      backgroundColor: "#f9fafb",
+    },
+  },
+
   headCells: {
     style: {
       fontSize: "13px",
@@ -144,11 +167,20 @@ const customStyles = {
       justifyContent: "center",
     },
   },
+
   cells: {
-    style: { fontSize: "13px", color: "#374151", justifyContent: "center" },
+    style: {
+      fontSize: "13px",
+      color: "#374151",
+      justifyContent: "center",
+    },
   },
+
   pagination: {
-    style: { borderTop: "1px solid #f3f4f6", borderRadius: "0 0 12px 12px" },
+    style: {
+      borderTop: "1px solid #f3f4f6",
+      borderRadius: "0 0 12px 12px",
+    },
   },
 };
 
@@ -178,8 +210,10 @@ const StatCard = ({
     className={`flex items-center gap-3 px-4 py-3.5 rounded-xl bg-white border-l-4 border border-gray-100 shadow-sm ${borderColor}`}
   >
     <div className="flex-shrink-0 text-gray-400">{icon}</div>
+
     <div className="min-w-0">
       <p className="text-xs text-gray-400 mb-0.5">{label}</p>
+
       <div className="flex items-center gap-2 flex-wrap">
         <motion.p
           key={value}
@@ -189,6 +223,7 @@ const StatCard = ({
         >
           {value}
         </motion.p>
+
         {sub && (
           <span
             className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${subColor}`}
@@ -210,15 +245,16 @@ const Skeleton = ({ className }: { className?: string }) => (
 const ContractSelect = ({
   value,
   onChange,
+  t,
 }: {
   value: ContractOption | null;
   onChange: (c: ContractOption | null) => void;
+  t: (key: string) => string;
 }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
-  // Fetch all contracts with a big limit to avoid pagination
   const { data: contractsData } = useQuery({
     queryKey: ["contracts-select"],
     queryFn: () => fetchContracts({ page: 1, limit: 1000 }),
@@ -249,7 +285,9 @@ const ContractSelect = ({
         setSearch("");
       }
     };
+
     document.addEventListener("mousedown", handler);
+
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
@@ -266,9 +304,11 @@ const ContractSelect = ({
         }`}
       >
         <Building2 size={14} />
+
         <span className="truncate max-w-[140px]">
-          {value ? `${value.contractNo}` : "Select Contract"}
+          {value ? value.contractNo : t("select_contract")}
         </span>
+
         {value ? (
           <X
             size={13}
@@ -299,17 +339,17 @@ const ContractSelect = ({
             transition={{ duration: 0.15 }}
             className="absolute top-full mt-1 left-0 w-64 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden"
           >
-            {/* Search */}
             <div className="p-2 border-b border-gray-50">
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search contract or institute..."
+                  placeholder={t("search_contract_or_institute")}
                   autoFocus
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full h-8 pl-8 pr-3 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
+
                 <Search
                   size={12}
                   className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -317,11 +357,10 @@ const ContractSelect = ({
               </div>
             </div>
 
-            {/* Options */}
             <div className="max-h-52 overflow-y-auto py-1">
               {filtered.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-4">
-                  No contracts found
+                  {t("no_contracts_found")}
                 </p>
               ) : (
                 filtered.map((c) => (
@@ -339,10 +378,12 @@ const ContractSelect = ({
                         <p className="text-xs font-semibold text-gray-800 truncate">
                           {c.contractNo}
                         </p>
+
                         <p className="text-[11px] text-gray-400 truncate">
                           {c.instituteName}
                         </p>
                       </div>
+
                       {value?.id === c.id && (
                         <Check
                           size={13}
@@ -366,9 +407,11 @@ const ContractSelect = ({
 const StatusDropdown = ({
   value,
   onChange,
+  t,
 }: {
   value: StatusFilter;
   onChange: (v: StatusFilter) => void;
+  t: (key: string) => string;
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -378,7 +421,9 @@ const StatusDropdown = ({
       if (ref.current && !ref.current.contains(e.target as Node))
         setOpen(false);
     };
+
     document.addEventListener("mousedown", handler);
+
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
@@ -397,11 +442,16 @@ const StatusDropdown = ({
         {value !== "all" && (
           <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />
         )}
+
         <span>
           {value === "all"
-            ? "All Status"
-            : STATUS_OPTIONS.find((o) => o.value === value)?.label}
+            ? t("all_status")
+            : t(
+                STATUS_OPTIONS.find((o) => o.value === value)?.labelKey ??
+                  "all_status",
+              )}
         </span>
+
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
@@ -430,8 +480,9 @@ const StatusDropdown = ({
               >
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${opt.dot}`} />
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </div>
+
                 {value === opt.value && (
                   <Check size={13} className="text-blue-500" />
                 )}
@@ -447,21 +498,25 @@ const StatusDropdown = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const InstallmentsScheduleList = () => {
-  const { contractId: urlContractId } = useParams<{ contractId?: string }>();
+  const { t } = useLanguage();
 
-  // ── Filter state ───────────────────────────────────────────────────────────
+  const { contractId: urlContractId } = useParams<{
+    contractId?: string;
+  }>();
+
   const [selectedContract, setSelectedContract] =
     useState<ContractOption | null>(null);
+
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
   const [dueFrom, setDueFrom] = useState("");
   const [dueTo, setDueTo] = useState("");
+
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
 
-  // Resolve which contractId to use (from URL or selected dropdown)
   const activeContractId = urlContractId ?? String(selectedContract?.id ?? "");
 
-  // Active filter count for clear button
   const activeFilterCount = [
     selectedContract && !urlContractId,
     statusFilter !== "all",
@@ -471,6 +526,7 @@ const InstallmentsScheduleList = () => {
 
   const clearFilters = () => {
     if (!urlContractId) setSelectedContract(null);
+
     setStatusFilter("all");
     setDueFrom("");
     setDueTo("");
@@ -480,6 +536,7 @@ const InstallmentsScheduleList = () => {
   const resetPage = () => setPage(1);
 
   // ── Installments query ─────────────────────────────────────────────────────
+
   const {
     data: installmentsData,
     isLoading,
@@ -494,6 +551,7 @@ const InstallmentsScheduleList = () => {
       page,
       perPage,
     ],
+
     queryFn: () =>
       fetchInstallments({
         contractId: activeContractId,
@@ -511,14 +569,18 @@ const InstallmentsScheduleList = () => {
   const pagination: ApiPagination | undefined = installmentsData?.meta;
 
   // ── Summary query ──────────────────────────────────────────────────────────
+
   const { data: summaryData } = useQuery({
     queryKey: ["installments-summary", activeContractId],
     queryFn: () => fetchInstallmentsSummary(activeContractId),
     enabled: !!activeContractId,
   });
-  const summary = summaryData ? summaryData : installmentsData?.summary;
+
+  const summary = summaryData ?? installmentsData?.summary;
 
   // ── Columns ────────────────────────────────────────────────────────────────
+  // IMPORTANT: Same columns/order as your original component.
+
   const columns = [
     {
       name: "#",
@@ -526,108 +588,136 @@ const InstallmentsScheduleList = () => {
       width: "60px",
       center: true,
     },
+
     {
-      name: "Installment No.",
+      name: t("installment_no"),
       selector: (row: InstallmentItem) => row.installmentNo,
+
       cell: (row: InstallmentItem) => (
         <span className="font-medium text-gray-800">
           {ordinal(row.installmentNo)}
         </span>
       ),
+
       sortable: true,
       minWidth: "160px",
     },
+
     {
-      name: "Due Date",
+      name: t("due_date"),
       selector: (row: InstallmentItem) => row.dueDate,
+
       cell: (row: InstallmentItem) => (
         <span className="text-gray-600 font-medium">{row.dueDate}</span>
       ),
+
       sortable: true,
       center: true,
       minWidth: "130px",
     },
+
     {
-      name: "Installment Amount",
+      name: t("installment_amount"),
       selector: (row: InstallmentItem) => Number(row.installmentAmount),
+
       cell: (row: InstallmentItem) => (
         <span className="font-semibold text-gray-800">
           {egp(row.installmentAmount)}
         </span>
       ),
+
       sortable: true,
       center: true,
       minWidth: "170px",
     },
+
     {
-      name: "Paid Amount",
+      name: t("paid_amount_column"),
       selector: (row: InstallmentItem) => Number(row.paidAmount),
+
       cell: (row: InstallmentItem) => (
         <span className="font-semibold text-green-600">
           {egp(row.paidAmount)}
         </span>
       ),
+
       sortable: true,
       center: true,
       minWidth: "140px",
     },
+
     {
-      name: "Remaining Amount",
+      name: t("remaining_amount_column"),
       selector: (row: InstallmentItem) => Number(row.remainingAmount),
+
       cell: (row: InstallmentItem) => (
         <span
-          className={`font-semibold ${Number(row.remainingAmount) > 0 ? "text-red-500" : "text-gray-400"}`}
+          className={`font-semibold ${
+            Number(row.remainingAmount) > 0 ? "text-red-500" : "text-gray-400"
+          }`}
         >
           {egp(row.remainingAmount)}
         </span>
       ),
+
       sortable: true,
       center: true,
       minWidth: "160px",
     },
+
     {
-      name: "Status",
+      name: t("status"),
+
       cell: (row: InstallmentItem) => {
-        const cfg = getStatusCfg(row.status);
+        const cfg = getStatusCfg(row.status, t);
+
         return (
           <span
             className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${cfg.class}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+
             {cfg.label}
           </span>
         );
       },
+
       sortable: true,
       center: true,
       minWidth: "120px",
     },
+
     {
-      name: "Edit",
+      name: t("edit"),
+
       cell: (row: InstallmentItem) => (
         <Link
           to={`/dashboard/installments/edit/${row.id}`}
           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          title="Edit"
+          title={t("edit")}
         >
           <Pencil size={16} className="text-secondary" />
         </Link>
       ),
+
       ignoreRowClick: true,
       center: true,
       width: "60px",
     },
+
     {
-      name: "Details",
+      name: t("details"),
+
       cell: (row: InstallmentItem) => (
         <Link
           to={`/dashboard/installments/${row.id}`}
           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          title="View"
+          title={t("view")}
         >
           <Eye size={16} className="text-gray-500" />
         </Link>
       ),
+
       ignoreRowClick: true,
       center: true,
       width: "60px",
@@ -635,11 +725,11 @@ const InstallmentsScheduleList = () => {
   ];
 
   // ── Sub-header ─────────────────────────────────────────────────────────────
+
   const subHeaderComponent = (
     <div className="flex flex-col gap-2 w-full px-1 py-2">
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div className="flex flex-wrap gap-2 items-center">
-          {/* Contract dropdown — hidden if contractId is in URL */}
           {!urlContractId && (
             <ContractSelect
               value={selectedContract}
@@ -647,23 +737,25 @@ const InstallmentsScheduleList = () => {
                 setSelectedContract(c);
                 resetPage();
               }}
+              t={t}
             />
           )}
 
-          {/* Status */}
           <StatusDropdown
             value={statusFilter}
             onChange={(v) => {
               setStatusFilter(v);
               resetPage();
             }}
+            t={t}
           />
 
           {/* Due From */}
           <div className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-gray-200 bg-white text-sm text-gray-500">
             <span className="text-xs text-gray-400 whitespace-nowrap">
-              From
+              {t("from")}
             </span>
+
             <input
               type="date"
               value={dueFrom}
@@ -673,6 +765,7 @@ const InstallmentsScheduleList = () => {
               }}
               className="text-sm text-gray-700 focus:outline-none bg-transparent w-32"
             />
+
             {dueFrom && (
               <button
                 onClick={() => {
@@ -687,7 +780,10 @@ const InstallmentsScheduleList = () => {
 
           {/* Due To */}
           <div className="flex items-center gap-1.5 h-9 px-3 rounded-2xl border border-gray-200 bg-white text-sm text-gray-500">
-            <span className="text-xs text-gray-400 whitespace-nowrap">To</span>
+            <span className="text-xs text-gray-400 whitespace-nowrap">
+              {t("to")}
+            </span>
+
             <input
               type="date"
               value={dueTo}
@@ -697,6 +793,7 @@ const InstallmentsScheduleList = () => {
               }}
               className="text-sm text-gray-700 focus:outline-none bg-transparent w-32"
             />
+
             {dueTo && (
               <button
                 onClick={() => {
@@ -713,15 +810,24 @@ const InstallmentsScheduleList = () => {
           <AnimatePresence>
             {activeFilterCount > 0 && (
               <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
+                initial={{
+                  opacity: 0,
+                  scale: 0.9,
+                }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                }}
+                exit={{
+                  opacity: 0,
+                  scale: 0.9,
+                }}
                 whileTap={{ scale: 0.95 }}
                 onClick={clearFilters}
                 className="h-9 px-3 rounded-2xl border border-red-200 text-red-500 text-sm hover:bg-red-50 transition-colors flex items-center gap-1.5"
               >
                 <X size={13} />
-                Clear ({activeFilterCount})
+                {t("clear")} ({activeFilterCount})
               </motion.button>
             )}
           </AnimatePresence>
@@ -731,16 +837,19 @@ const InstallmentsScheduleList = () => {
   );
 
   // ── Loading ────────────────────────────────────────────────────────────────
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-5">
         <Skeleton className="h-10 w-72" />
         <Skeleton className="h-4 w-64" />
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-20" />
           ))}
         </div>
+
         <Skeleton className="h-64 w-full" />
       </div>
     );
@@ -749,21 +858,30 @@ const InstallmentsScheduleList = () => {
   if (listError) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Installments Schedule List" />
+        <DashboardPageTitle text={t("installments_schedule_list")} />
+
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
           className="flex flex-col items-center justify-center py-20 gap-3"
         >
           <XCircle size={36} className="text-red-300" />
+
           <p className="text-sm font-medium text-red-400">
-            Failed to load installments.
+            {t("failed_to_load_installments")}
           </p>
+
           <Link
             to="/dashboard/institutions-contracts"
             className="text-sm text-blue-500 hover:underline"
           >
-            Back to Contracts
+            {t("back_to_contracts")}
           </Link>
         </motion.div>
       </div>
@@ -772,7 +890,7 @@ const InstallmentsScheduleList = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      <DashboardPageTitle text="Installments Schedule List" />
+      <DashboardPageTitle text={t("installments_schedule_list")} />
 
       {/* Breadcrumb */}
       <motion.nav
@@ -784,39 +902,47 @@ const InstallmentsScheduleList = () => {
           to="/dashboard/home"
           className="hover:text-gray-600 transition-colors"
         >
-          Dashboard
+          {t("dashboard")}
         </Link>
 
         <ChevronRight size={14} />
+
         {activeContractId && (
           <>
             <Link
               to={`/dashboard/institutions-contracts/${activeContractId}`}
               className="hover:text-gray-600 transition-colors"
             >
-              Contract #{selectedContract?.contractNo ?? activeContractId}
+              {t("contract")} #
+              {selectedContract?.contractNo ?? activeContractId}
             </Link>
+
             <ChevronRight size={14} />
           </>
         )}
-        <span className="text-gray-600">Installments</span>
+
+        <span className="text-gray-600">{t("installments")}</span>
       </motion.nav>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
-          label="Total Amount"
+          label={t("total_amount")}
           value={summary ? egp(summary.totalInstallmentsAmount) : "-"}
           icon={<Receipt size={20} />}
           borderColor="border-l-blue-400"
           delay={0.05}
         />
+
         <StatCard
-          label="Paid Amount"
+          label={t("paid_amount")}
           value={summary ? egp(summary.paidAmount) : "-"}
           sub={
             summary
-              ? `${((summary.paidAmount / summary.totalInstallmentsAmount) * 100).toFixed(2)}%`
+              ? `${(
+                  (summary.paidAmount / summary.totalInstallmentsAmount) *
+                  100
+                ).toFixed(2)}%`
               : "0"
           }
           subColor="bg-green-100 text-green-700"
@@ -824,12 +950,17 @@ const InstallmentsScheduleList = () => {
           borderColor="border-l-green-400"
           delay={0.1}
         />
+
         <StatCard
-          label="Remaining Amount"
+          label={t("remaining_amount")}
           value={summary ? egp(summary.remainingAmount) : "-"}
           sub={
             summary
-              ? `${Math.round((summary.remainingAmount / (summary.totalInstallmentsAmount || 1)) * 100)}%`
+              ? `${Math.round(
+                  (summary.remainingAmount /
+                    (summary.totalInstallmentsAmount || 1)) *
+                    100,
+                )}%`
               : undefined
           }
           subColor="bg-red-100 text-red-600"
@@ -837,8 +968,9 @@ const InstallmentsScheduleList = () => {
           borderColor="border-l-red-400"
           delay={0.15}
         />
+
         <StatCard
-          label="Total Installments"
+          label={t("total_installments")}
           value={summary ? String(summary.totalInstallments) : "-"}
           icon={<CalendarClock size={20} className="text-violet-400" />}
           borderColor="border-l-violet-400"
@@ -846,43 +978,51 @@ const InstallmentsScheduleList = () => {
         />
       </div>
 
-      {/* Mini breakdown + Generate button */}
+      {/* Mini breakdown */}
       {summary && (
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          initial={{
+            opacity: 0,
+            y: 8,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            delay: 0.25,
+          }}
           className="flex justify-between max-lg:flex-col max-lg:gap-4"
         >
           <div className="flex flex-wrap gap-2">
             {[
               {
-                label: "Paid",
+                labelKey: "paid",
                 count: summary.paidInstallments,
                 color: "bg-green-50 text-green-600 border-green-200",
               },
               {
-                label: "Partial",
+                labelKey: "partial",
                 count: summary.partialInstallments,
                 color: "bg-blue-50 text-blue-500 border-blue-200",
               },
               {
-                label: "Pending",
+                labelKey: "pending",
                 count: summary.pendingInstallments,
                 color: "bg-amber-50 text-amber-600 border-amber-200",
               },
               {
-                label: "Overdue",
+                labelKey: "overdue",
                 count: summary.overdueInstallments,
                 color: "bg-red-50 text-red-500 border-red-200",
               },
             ].map((item) => (
               <span
-                key={item.label}
+                key={item.labelKey}
                 className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border ${item.color}`}
               >
                 <CreditCard size={11} />
-                {item.label}: {item.count}
+                {t(item.labelKey)}: {item.count}
               </span>
             ))}
           </div>
@@ -891,9 +1031,18 @@ const InstallmentsScheduleList = () => {
 
       {/* Table */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.4 }}
+        initial={{
+          opacity: 0,
+          y: 20,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          delay: 0.3,
+          duration: 0.4,
+        }}
         className="rounded-xl border border-gray-100 shadow-sm bg-white"
       >
         <DataTable

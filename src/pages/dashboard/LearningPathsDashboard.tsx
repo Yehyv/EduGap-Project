@@ -14,6 +14,7 @@ import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { Link } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { LearningPathType } from "@/features/Dashboard/types/dashboardTypes";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -39,97 +40,9 @@ const customStyles = {
   },
 };
 
-const columns = [
-  {
-    name: "Num",
-    selector: (_: unknown, index: number) => index + 1,
-    width: "60px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Image",
-    selector: (row: LearningPathType) => (
-      <img src={row.image} alt={row.name} className="w-12 h-12 rounded-full" />
-    ),
-    minWidth: "80px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Name",
-    selector: (row: LearningPathType) => (
-      <Link
-        className="underline text-sm"
-        to={`/dashboard/learning-paths/${row.id}`}
-      >
-        {row.title}
-      </Link>
-    ),
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Created At",
-    selector: (row: LearningPathType) => row.createdAt,
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Status",
-    style: { justifyContent: "center" },
-    cell: (row: LearningPathType) => {
-      const isActive = row.isActive;
-      return (
-        <button
-          className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
-            isActive
-              ? "border-green-500 text-green-500"
-              : "border-red-500 text-red-500"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-          <span
-            className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 ${
-              isActive ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-        </button>
-      );
-    },
-    sortable: true,
-  },
-  {
-    name: "Edit",
-    style: { justifyContent: "center" },
-    cell: (row: LearningPathType) => (
-      <Link
-        to={`/dashboard/learning-paths/edit/${row.id}`}
-        className="cursor-pointer"
-      >
-        <EditIcon />
-      </Link>
-    ),
-    ignoreRowClick: true,
-    button: true,
-    minWidth: "50px",
-  },
-  {
-    name: "Delete",
-    style: { justifyContent: "center" },
-    cell: (row: LearningPathType) => (
-      <DeleteButton
-        deleteApi={() => deleteLearningPath(row.id)}
-        successMessage="تم حذف المسار التعليمي بنجاح"
-        errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getLearningPathsForDashboard"
-      />
-    ),
-    ignoreRowClick: true,
-    button: true,
-    minWidth: "60px",
-  },
-];
-
 const LearningPathsDashboardPage = () => {
+  const { t } = useLanguage();
+
   const { data, isLoading } = useQuery({
     queryKey: ["getLearningPathsForDashboard"],
     queryFn: () => getLearningPathsForDashboard(),
@@ -144,38 +57,140 @@ const LearningPathsDashboardPage = () => {
     );
   }, [filterText, data]);
 
+  const columns = useMemo(
+    () => [
+      {
+        name: t("num"),
+        selector: (_: unknown, index: number) => index + 1,
+        width: "60px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("image"),
+        selector: (row: LearningPathType) => (
+          <img
+            src={row.image}
+            alt={row.title}
+            className="w-12 h-12 rounded-full"
+          />
+        ),
+        minWidth: "80px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("name"),
+        selector: (row: LearningPathType) => (
+          <Link
+            className="underline text-sm"
+            to={`/dashboard/learning-paths/${row.id}`}
+          >
+            {row.title}
+          </Link>
+        ),
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("createdAt"),
+        selector: (row: LearningPathType) => row.createdAt,
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("status"),
+        style: { justifyContent: "center" },
+        cell: (row: LearningPathType) => {
+          const isActive = row.isActive;
+
+          return (
+            <button
+              className={`px-6 py-1 text-nowrap rounded-full border font-medium text-sm relative ${
+                isActive
+                  ? "border-green-500 text-green-500"
+                  : "border-red-500 text-red-500"
+              }`}
+            >
+              {isActive ? t("active") : t("inactive")}
+
+              <span
+                className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 ${
+                  isActive ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+            </button>
+          );
+        },
+        sortable: true,
+      },
+      {
+        name: t("edit"),
+        style: { justifyContent: "center" },
+        cell: (row: LearningPathType) => (
+          <Link
+            to={`/dashboard/learning-paths/edit/${row.id}`}
+            className="cursor-pointer"
+          >
+            <EditIcon />
+          </Link>
+        ),
+        ignoreRowClick: true,
+        button: true,
+        minWidth: "50px",
+      },
+      {
+        name: t("delete"),
+        style: { justifyContent: "center" },
+        cell: (row: LearningPathType) => (
+          <DeleteButton
+            deleteApi={() => deleteLearningPath(row.id)}
+            successMessage={t("learningPathDeletedSuccess")}
+            errorMessage={t("learningPathDeletedError")}
+            refetchFunction="getLearningPathsForDashboard"
+          />
+        ),
+        ignoreRowClick: true,
+        button: true,
+        minWidth: "60px",
+      },
+    ],
+    [t],
+  );
+
   const subHeaderComponent = useMemo(() => {
     return (
       <div className="flex gap-2 max-md:justify-center max-md:w-full">
         <div className="relative w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Search by name"
+            placeholder={t("searchByName")}
             className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
           />
+
           <span className="absolute start-2 top-1/2 -translate-y-1/2">
             <SearchIcon className="w-7 h-7" />
           </span>
         </div>
+
         <div className="border text-[#ACACAC] gap-1 center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm">
           <FilterIcon />
-          <span>Filter</span>
+          <span>{t("filter")}</span>
         </div>
       </div>
     );
-  }, [filterText]);
+  }, [filterText, t]);
 
   return (
     <>
       <DashboardPageTitle
-        text="Learning Paths"
+        text={t("learningPaths")}
         button
         buttonText={
           <Link to="/dashboard/learning-paths/add" className="center">
             <PlusIcon className="mt-1.5 h-8" />
-            <span className="me-4 text-white">Add New Learning Path</span>
+
+            <span className="me-4 text-white">{t("addNewLearningPath")}</span>
           </Link>
         }
       />

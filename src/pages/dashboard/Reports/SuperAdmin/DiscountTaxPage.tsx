@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -174,19 +175,13 @@ const customStyles = {
   },
 };
 
-// ─── Options ──────────────────────────────────────────────────────────────────
-
-const PLAN_OPTIONS = [
-  { value: "", label: "All Plans" },
-  { value: "1", label: "Starter" },
-  { value: "2", label: "Growth" },
-  { value: "3", label: "Enterprise" },
-  { value: "4", label: "Custom" },
-];
-
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
-const buildColumns = (page: number, limit: number) => [
+const buildColumns = (
+  page: number,
+  limit: number,
+  t: (k: string) => string,
+) => [
   {
     name: "#",
     width: "56px",
@@ -197,7 +192,7 @@ const buildColumns = (page: number, limit: number) => [
     ),
   },
   {
-    name: "Plan",
+    name: t("plan"),
     selector: (row: DiscountTaxRow) => row.planName,
     cell: (row: DiscountTaxRow) => (
       <span className="font-medium text-gray-800">{row.planName}</span>
@@ -205,7 +200,7 @@ const buildColumns = (page: number, limit: number) => [
     grow: 1,
   },
   {
-    name: "Contract Value (EGP)",
+    name: t("contractValueEgp"),
     selector: (row: DiscountTaxRow) => row.contractValue,
     cell: (row: DiscountTaxRow) => (
       <span className="text-gray-700">{egp(row.contractValue)}</span>
@@ -213,7 +208,7 @@ const buildColumns = (page: number, limit: number) => [
     right: true,
   },
   {
-    name: "Discount (EGP)",
+    name: t("discountEgp"),
     selector: (row: DiscountTaxRow) => row.discountAmount,
     cell: (row: DiscountTaxRow) => (
       <span className="font-medium text-blue-600">
@@ -223,7 +218,7 @@ const buildColumns = (page: number, limit: number) => [
     right: true,
   },
   {
-    name: "Discount %",
+    name: t("discountPercentSign"),
     selector: (row: DiscountTaxRow) => row.discountPercentage,
     cell: (row: DiscountTaxRow) => (
       <span className="text-gray-600">
@@ -233,7 +228,7 @@ const buildColumns = (page: number, limit: number) => [
     center: true,
   },
   {
-    name: "Tax (14%) (EGP)",
+    name: t("taxPercentEgp"),
     selector: (row: DiscountTaxRow) => row.taxAmount,
     cell: (row: DiscountTaxRow) => (
       <span className="text-gray-700">{egp(row.taxAmount)}</span>
@@ -241,7 +236,7 @@ const buildColumns = (page: number, limit: number) => [
     right: true,
   },
   {
-    name: "After Discount (EGP)",
+    name: t("afterDiscountEgp"),
     selector: (row: DiscountTaxRow) => row.amountAfterDiscount,
     cell: (row: DiscountTaxRow) => (
       <span className="font-medium text-gray-800">
@@ -251,7 +246,7 @@ const buildColumns = (page: number, limit: number) => [
     right: true,
   },
   {
-    name: "After Tax (EGP)",
+    name: t("afterTaxEgp"),
     selector: (row: DiscountTaxRow) => row.amountAfterTax,
     cell: (row: DiscountTaxRow) => (
       <span className="font-semibold text-gray-800">
@@ -265,6 +260,16 @@ const buildColumns = (page: number, limit: number) => [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const DiscountTaxPage = () => {
+  const { t } = useLanguage();
+
+  const PLAN_OPTIONS = [
+    { value: "", label: t("allPlans") },
+    { value: "1", label: t("starter") },
+    { value: "2", label: t("growth") },
+    { value: "3", label: t("enterprise") },
+    { value: "4", label: t("custom") },
+  ];
+
   const [fromDate, setFromDate] = useState(yearStart());
   const [toDate, setToDate] = useState(yearEnd());
   const [planId, setPlanId] = useState("");
@@ -306,11 +311,11 @@ const DiscountTaxPage = () => {
   };
 
   const summary = data?.summary;
-  const columns = buildColumns(applied.page, applied.limit);
+  const columns = buildColumns(applied.page, applied.limit, t);
 
   return (
     <>
-      <DashboardPageTitle text="Discount & Tax Report" />
+      <DashboardPageTitle text={t("discountAndTaxReport")} />
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Breadcrumb ── */}
         <motion.nav
@@ -321,12 +326,14 @@ const DiscountTaxPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Reports</span>
+          <span className="text-gray-600 font-medium">{t("reports")}</span>
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Discounts & Taxes</span>
+          <span className="text-gray-600 font-medium">
+            {t("discountsAndTaxes")}
+          </span>
         </motion.nav>
 
         {/* ── Filters + Export row ── */}
@@ -340,7 +347,7 @@ const DiscountTaxPage = () => {
               {/* From Date */}
               <div className="flex flex-col gap-1 min-w-[150px]">
                 <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                  <CalendarDays size={11} /> From Date
+                  <CalendarDays size={11} /> {t("fromDate")}
                 </label>
                 <input
                   type="date"
@@ -353,7 +360,7 @@ const DiscountTaxPage = () => {
               {/* To Date */}
               <div className="flex flex-col gap-1 min-w-[150px]">
                 <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                  <CalendarDays size={11} /> To Date
+                  <CalendarDays size={11} /> {t("toDate")}
                 </label>
                 <input
                   type="date"
@@ -366,7 +373,7 @@ const DiscountTaxPage = () => {
               {/* Plan */}
               <div className="flex flex-col gap-1 min-w-[140px]">
                 <label className="text-xs font-medium text-gray-500">
-                  Plan
+                  {t("plan")}
                 </label>
                 <select
                   value={planId}
@@ -393,7 +400,7 @@ const DiscountTaxPage = () => {
                 ) : (
                   <Filter size={14} />
                 )}
-                Filter
+                {t("filter")}
               </button>
             </div>
 
@@ -409,7 +416,7 @@ const DiscountTaxPage = () => {
               ) : (
                 <Download size={14} className="text-gray-400" />
               )}
-              {isExporting ? "Exporting…" : "Export"}
+              {isExporting ? t("exporting") : t("export")}
             </button>
           </div>
         </motion.div>
@@ -434,7 +441,7 @@ const DiscountTaxPage = () => {
                 <div className="flex items-center gap-1.5 mb-1">
                   <Tag size={12} className="text-blue-400" />
                   <p className="text-xs text-gray-400 font-medium">
-                    Total Discounts
+                    {t("totalDiscounts")}
                   </p>
                 </div>
                 <p className="text-xl font-bold text-gray-800">
@@ -449,7 +456,7 @@ const DiscountTaxPage = () => {
                 <div className="flex items-center gap-1.5 mb-1">
                   <Receipt size={12} className="text-amber-400" />
                   <p className="text-xs text-gray-400 font-medium">
-                    Total Tax Amount
+                    {t("totalTaxAmount")}
                   </p>
                 </div>
                 <p className="text-xl font-bold text-gray-800">
@@ -464,7 +471,7 @@ const DiscountTaxPage = () => {
                 <div className="flex items-center gap-1.5 mb-1">
                   <TrendingUp size={12} className="text-green-400" />
                   <p className="text-xs text-gray-400 font-medium">
-                    Total Amount After Discount
+                    {t("totalAmountAfterDiscount")}
                   </p>
                 </div>
                 <p className="text-xl font-bold text-gray-800">
@@ -479,7 +486,7 @@ const DiscountTaxPage = () => {
                 <div className="flex items-center gap-1.5 mb-1">
                   <TrendingUp size={12} className="text-purple-400" />
                   <p className="text-xs text-gray-400 font-medium">
-                    Total Amount After Tax
+                    {t("totalAmountAfterTax")}
                   </p>
                 </div>
                 <p className="text-xl font-bold text-gray-800">
@@ -499,7 +506,7 @@ const DiscountTaxPage = () => {
             <div className="flex flex-col items-center justify-center py-16 gap-2">
               <AlertCircle size={28} className="text-red-300" />
               <p className="text-sm text-red-400">
-                Failed to load discount & tax data.
+                {t("failedToLoadDiscountTaxData")}
               </p>
             </div>
           ) : (
@@ -521,7 +528,7 @@ const DiscountTaxPage = () => {
                 <div className="flex flex-col items-center gap-2 py-14">
                   <Tag size={28} className="text-gray-200" />
                   <p className="text-sm text-gray-400">
-                    No discount & tax data found.
+                    {t("noDiscountTaxDataFound")}
                   </p>
                 </div>
               }

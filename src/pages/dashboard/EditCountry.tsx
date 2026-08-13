@@ -1,6 +1,5 @@
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import {
-  createCountry,
   editCountry,
   findCountry,
 } from "@/features/Dashboard/services/dashboardApis";
@@ -9,9 +8,11 @@ import Swal from "sweetalert2";
 import AddOrEditCountry from "@/features/Dashboard/components/AddOrEditCountry";
 import { useParams } from "react-router-dom";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const EditCountry = () => {
   const { countryId } = useParams();
+  const { t, lang } = useLanguage();
   const { data, isLoading } = useQuery({
     queryKey: ["findOneCountry"],
     queryFn: () => findCountry(countryId ?? ""),
@@ -22,11 +23,11 @@ const EditCountry = () => {
     countryId: countryId,
     translations: [
       {
-        name: data?.data?.name,
+        name: data?.data?.translations[0]?.name,
         languageId: 1, // Arabic
       },
       {
-        name: "",
+        name: data?.data?.translations[1]?.name,
         languageId: 2, // English
       },
     ],
@@ -55,12 +56,15 @@ const EditCountry = () => {
       });
     },
   });
-  const countryName = data?.data?.name;
+  const countryName =
+    lang == "en"
+      ? data?.data?.translations[1]?.name
+      : data?.data?.translations[0]?.name;
 
   if (isLoading) return <CircleLoader />;
   return (
     <>
-      <DashboardPageTitle text={`Edit Country ${countryName}`} />
+      <DashboardPageTitle text={`${t("editCountry")} ${countryName}`} />
       <AddOrEditCountry
         initialValues={initialValues}
         isPending={isPending}

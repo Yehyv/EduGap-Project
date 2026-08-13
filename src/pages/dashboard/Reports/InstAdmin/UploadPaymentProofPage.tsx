@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 async function fetchNextInstallment(academicYear: number) {
   const res = await dashboardApi.get(
@@ -52,13 +53,6 @@ const fmtEGP = (n: number) =>
   `EGP ${n.toLocaleString("en-EG", { minimumFractionDigits: 0 })}`;
 
 const fmtDate = (iso: string) => new Date(iso).toISOString().slice(0, 10);
-
-const PAYMENT_METHODS = [
-  { value: "BANK_TRANSFER", label: "Bank Transfer" },
-  { value: "CASH", label: "Cash" },
-  { value: "CHEQUE", label: "Cheque" },
-  { value: "ONLINE", label: "Online Payment" },
-];
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/gif", "application/pdf"];
 const MAX_MB = 5;
@@ -113,6 +107,15 @@ const YEAR_OPTIONS = Array.from(
 );
 
 export default function UploadPaymentProofPage() {
+  const { t } = useLanguage();
+
+  const PAYMENT_METHODS = [
+    { value: "BANK_TRANSFER", label: t("paymentMethodBankTransfer") },
+    { value: "CASH", label: t("paymentMethodCash") },
+    { value: "CHEQUE", label: t("paymentMethodCheque") },
+    { value: "ONLINE", label: t("paymentMethodOnline") },
+  ];
+
   const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
 
   // form state
@@ -142,7 +145,7 @@ export default function UploadPaymentProofPage() {
   const mutation = useMutation({
     mutationFn: uploadPaymentProof,
     onSuccess: () => {
-      showToast("success", "Payment proof uploaded successfully.");
+      showToast("success", t("uploadSuccessToast"));
       setFile(null);
       setReceiptNo("");
       setAmount("");
@@ -151,7 +154,7 @@ export default function UploadPaymentProofPage() {
     onError: (e) => {
       showToast(
         "error",
-        e?.response?.data?.message?.[0] || "Upload failed. Please try again.",
+        e?.response?.data?.message?.[0] || t("uploadErrorToast"),
       );
     },
   });
@@ -162,18 +165,21 @@ export default function UploadPaymentProofPage() {
   };
 
   // file handling
-  const validateAndSet = useCallback((f: File) => {
-    setFileError("");
-    if (!ACCEPTED.includes(f.type)) {
-      setFileError("Only JPG, PNG, GIF and PDF files are accepted.");
-      return;
-    }
-    if (f.size > MAX_MB * 1024 * 1024) {
-      setFileError(`File size must not exceed ${MAX_MB}MB.`);
-      return;
-    }
-    setFile(f);
-  }, []);
+  const validateAndSet = useCallback(
+    (f: File) => {
+      setFileError("");
+      if (!ACCEPTED.includes(f.type)) {
+        setFileError(t("onlyAcceptedFilesError"));
+        return;
+      }
+      if (f.size > MAX_MB * 1024 * 1024) {
+        setFileError(`${t("fileSizeExceedsError")} ${MAX_MB}${t("mbSuffix")}`);
+        return;
+      }
+      setFile(f);
+    },
+    [t],
+  );
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -208,7 +214,7 @@ export default function UploadPaymentProofPage() {
 
   return (
     <>
-      <DashboardPageTitle text="Upload Payment Proof" />
+      <DashboardPageTitle text={t("uploadProofPageTitle")} />
       <div className="min-h-screen bg-slate-50">
         <div className="mx-auto space-y-5">
           {/* Breadcrumb */}
@@ -217,7 +223,7 @@ export default function UploadPaymentProofPage() {
             animate={{ opacity: 1 }}
             className="flex items-center gap-1.5 text-sm text-slate-400"
           >
-            {["Dashboard"].map((c) => (
+            {[t("dashboardBreadcrumb")].map((c) => (
               <span key={c} className="flex items-center gap-1.5">
                 <span className="hover:text-slate-600 cursor-pointer transition-colors">
                   {c}
@@ -225,7 +231,9 @@ export default function UploadPaymentProofPage() {
                 <ChevronRight size={13} className="text-slate-300" />
               </span>
             ))}
-            <span className="text-slate-700 font-semibold">Upload Proof</span>
+            <span className="text-slate-700 font-semibold">
+              {t("uploadProofBreadcrumb")}
+            </span>
           </motion.nav>
 
           {/* Year selector */}
@@ -237,7 +245,7 @@ export default function UploadPaymentProofPage() {
             className="bg-white border border-slate-200 rounded-xl shadow-sm px-4 py-3 flex items-center gap-3"
           >
             <span className="text-sm font-semibold text-slate-500 shrink-0">
-              Academic Year
+              {t("academicYearLabel")}
             </span>
             <div className="relative">
               <select
@@ -287,11 +295,9 @@ export default function UploadPaymentProofPage() {
                 <AlertCircle size={28} className="text-slate-300" />
               </div>
               <p className="text-base font-semibold text-slate-600">
-                No installment found for {academicYear}
+                {t("noInstallmentFoundPrefix")} {academicYear}
               </p>
-              <p className="text-sm text-slate-400">
-                Try selecting a different year from the dropdown above.
-              </p>
+              <p className="text-sm text-slate-400">{t("tryDifferentYear")}</p>
             </motion.div>
           )}
 
@@ -306,18 +312,21 @@ export default function UploadPaymentProofPage() {
               <div className="grid grid-cols-1 md:grid-cols-[260px_1fr]">
                 {/* ── Left Panel — Installment Info ── */}
                 <div className="border-b md:border-b-0 md:border-r border-slate-100 p-6 flex flex-col gap-5 bg-slate-50/60">
-                  <InfoRow label="Installment" value={installment.label} />
                   <InfoRow
-                    label="Due Date"
+                    label={t("installmentLabel")}
+                    value={installment.label}
+                  />
+                  <InfoRow
+                    label={t("dueDateLabel")}
                     value={fmtDate(installment.dueDate)}
                   />
                   <InfoRow
-                    label="Amount"
+                    label={t("amountLabel")}
                     value={fmtEGP(installment.amount)}
                     highlight
                   />
                   <InfoRow
-                    label="Remaining Amount"
+                    label={t("remainingAmountLabel")}
                     value={fmtEGP(installment.remainingAmount)}
                   />
 
@@ -340,14 +349,14 @@ export default function UploadPaymentProofPage() {
                             : "bg-secondary"
                       }`}
                     />
-                    {installment.daysLeft} days left
+                    {installment.daysLeft} {t("daysLeftSuffix")}
                   </div>
                 </div>
 
                 {/* ── Right Panel — Upload Form ── */}
                 <div className="p-6 space-y-5">
                   <h2 className="text-lg font-bold text-slate-800 text-center">
-                    Upload Payment Proof
+                    {t("uploadProofFormTitle")}
                   </h2>
 
                   {/* Drop Zone */}
@@ -388,9 +397,11 @@ export default function UploadPaymentProofPage() {
                             <CloudUpload size={26} className="text-secondary" />
                           </div>
                           <p className="text-sm font-semibold text-slate-700">
-                            Drag & drop your file here
+                            {t("dragDropText")}
                           </p>
-                          <p className="text-xs text-slate-400">or</p>
+                          <p className="text-xs text-slate-400">
+                            {t("orLabel")}
+                          </p>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -399,11 +410,11 @@ export default function UploadPaymentProofPage() {
                             }}
                             className="h-8 px-4 bg-secondary hover:bg-secondary/90 text-white text-xs font-semibold rounded-lg transition-colors"
                           >
-                            Choose File
+                            {t("chooseFileButton")}
                           </button>
                           <p className="text-[11px] text-slate-400 mt-1">
-                            Accepted formats: JPG, PNG, GIF, PDF (Max {MAX_MB}
-                            MB)
+                            {t("acceptedFormatsPrefix")} {MAX_MB}
+                            {t("acceptedFormatsSuffix")}
                           </p>
                         </motion.div>
                       ) : (
@@ -458,7 +469,7 @@ export default function UploadPaymentProofPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        Payment Method
+                        {t("paymentMethodLabel")}
                       </label>
                       <div className="relative">
                         <select
@@ -489,11 +500,11 @@ export default function UploadPaymentProofPage() {
 
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        Receipt No.
+                        {t("receiptNoLabel")}
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. REC-20250601"
+                        placeholder={t("receiptNoPlaceholder")}
                         value={receiptNo}
                         onChange={(e) => setReceiptNo(e.target.value)}
                         className="h-10 px-3 rounded-lg border border-slate-200 text-sm text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
@@ -504,7 +515,7 @@ export default function UploadPaymentProofPage() {
                   {/* Amount */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Amount (EGP)
+                      {t("amountEgpLabel")}
                     </label>
                     <input
                       type="number"
@@ -514,19 +525,18 @@ export default function UploadPaymentProofPage() {
                       className="h-10 px-3 rounded-lg border border-slate-200 text-sm text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
                     />
                     <p className="text-[11px] text-slate-400">
-                      Leave empty to use the installment amount:{" "}
-                      {fmtEGP(installment.amount)}
+                      {t("leaveEmptyAmountHint")} {fmtEGP(installment.amount)}
                     </p>
                   </div>
 
                   {/* Notes */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Notes (Optional)
+                      {t("notesOptionalLabel")}
                     </label>
                     <textarea
                       rows={3}
-                      placeholder="Add any notes about this payment…"
+                      placeholder={t("notesPlaceholder")}
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       className="px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 placeholder-slate-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
@@ -541,7 +551,7 @@ export default function UploadPaymentProofPage() {
                   onClick={handleCancel}
                   className="h-10 px-6 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 transition-colors"
                 >
-                  Cancel
+                  {t("cancelLabel")}
                 </button>
                 <button
                   onClick={handleSubmit}
@@ -553,7 +563,7 @@ export default function UploadPaymentProofPage() {
                   ) : (
                     <Upload size={14} />
                   )}
-                  {mutation.isPending ? "Uploading…" : "Upload"}
+                  {mutation.isPending ? t("uploadingLabel") : t("uploadButton")}
                 </button>
               </div>
             </motion.div>

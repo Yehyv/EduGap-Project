@@ -3,8 +3,10 @@ import { createSystemUser } from "@/features/Dashboard/services/dashboardApis";
 import { useMutation } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import AddOrEditSystemUser from "@/features/Dashboard/components/AddOrEditSystemUser";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const AddNewSystemUser = () => {
+  const { t } = useLanguage();
   const initialValues = {
     full_name: "",
     email: "",
@@ -22,25 +24,24 @@ const AddNewSystemUser = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "User created successfully",
+        title: t("success"),
+        text: t("userCreatedSuccessfully"),
       });
     },
 
     onError: (error: any) => {
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: t("error"),
         text:
-          error?.response?.data?.message[0] ||
-          "Something went wrong, please try again",
+          error?.response?.data?.message[0] || t("somethingWentWrongTryAgain"),
       });
     },
   });
 
   return (
     <>
-      <DashboardPageTitle text="Add New System User" />
+      <DashboardPageTitle text={t("addNewSystemUser")} />
       <AddOrEditSystemUser
         initialValues={initialValues}
         isPending={isPending}

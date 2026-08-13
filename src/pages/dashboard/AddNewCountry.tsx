@@ -3,8 +3,10 @@ import { createCountry } from "@/features/Dashboard/services/dashboardApis";
 import { useMutation } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import AddOrEditCountry from "@/features/Dashboard/components/AddOrEditCountry";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const AddNewCountry = () => {
+  const { t } = useLanguage();
   const initialValues = {
     translations: [
       {
@@ -25,8 +27,8 @@ const AddNewCountry = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "Country created successfully",
+        title: t("success"),
+        text: t("CountryCreatedSuccessfully"),
       });
     },
 
@@ -34,16 +36,14 @@ const AddNewCountry = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text:
-          error?.response?.data?.message[0] ||
-          "Something went wrong, please try again",
+        text: error?.response?.data?.message[0] || t("somethingWentWrong"),
       });
     },
   });
 
   return (
     <>
-      <DashboardPageTitle text="Add New Country" />
+      <DashboardPageTitle text={t("add_new_country")} />
       <AddOrEditCountry
         initialValues={initialValues}
         isPending={isPending}

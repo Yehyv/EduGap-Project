@@ -3,6 +3,7 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import ButtonLoader from "@/shared/components/ButtonLoader";
 import Swal from "sweetalert2";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const AddOrEditCountry = ({
   initialValues,
@@ -10,6 +11,7 @@ const AddOrEditCountry = ({
   isPending,
   isForEdit = false,
 }) => {
+  const { t } = useLanguage();
   const topicSchema = Yup.object({
     translations: Yup.array().of(
       Yup.object({
@@ -27,8 +29,8 @@ const AddOrEditCountry = ({
         if (JSON.stringify(initialValues) === JSON.stringify(values)) {
           Swal.fire({
             icon: "warning",
-            title: "Warning",
-            text: "You didn't change the data",
+            title: t("warning"),
+            text: t("noDataChanged"),
           });
           return;
         }
@@ -46,12 +48,12 @@ const AddOrEditCountry = ({
           <div className="bg-white rounded-xl p-4">
             <div className="grid grid-cols-1 gap-4">
               <TextField
-                label="Name (AR)"
+                label={t("nameAr")}
                 name="translations[0].name"
                 moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
               />
               <TextField
-                label="Name (EN)"
+                label={t("nameEn")}
                 name="translations[1].name"
                 moreStyle="!border-[#ACACAC] !rounded-xl bg-[#F9F8F8]"
               />
@@ -64,7 +66,7 @@ const AddOrEditCountry = ({
               type="submit"
               className="hover:bg-secondary-dark text-white px-10 py-1.5 rounded-xl bg-secondary"
             >
-              {isPending ? <ButtonLoader /> : "Save Country"}
+              {isPending ? <ButtonLoader /> : t("save")}
             </button>
           </div>
         </Form>

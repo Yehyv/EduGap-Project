@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
 import { fetchUpgradeRequests } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,34 +43,6 @@ interface ApiPagination {
   total: number;
   pages: number;
 }
-
-const statusConfig: Record<
-  string,
-  { class: string; dot: string; label: string }
-> = {
-  PENDING: {
-    class: "bg-amber-50 text-amber-600 border-amber-200 text-nowrap",
-    dot: "bg-amber-400",
-    label: "Pending",
-  },
-  APPROVED: {
-    class: "bg-green-50 text-green-600 border-green-200 text-nowrap",
-    dot: "bg-green-500",
-    label: "Approved",
-  },
-  REJECTED: {
-    class: "bg-red-50 text-red-500 border-red-200 text-nowrap",
-    dot: "bg-red-400",
-    label: "Rejected",
-  },
-};
-
-const getStatusCfg = (status: string) =>
-  statusConfig[status] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: status,
-  };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -160,6 +133,36 @@ const Skeleton = ({ className }: { className?: string }) => (
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const UpgradePlanRequests = () => {
+  const { t } = useLanguage();
+
+  const statusConfig: Record<
+    string,
+    { class: string; dot: string; label: string }
+  > = {
+    PENDING: {
+      class: "bg-amber-50 text-amber-600 border-amber-200 text-nowrap",
+      dot: "bg-amber-400",
+      label: t("contractPending"),
+    },
+    APPROVED: {
+      class: "bg-green-50 text-green-600 border-green-200 text-nowrap",
+      dot: "bg-green-500",
+      label: t("approved"),
+    },
+    REJECTED: {
+      class: "bg-red-50 text-red-500 border-red-200 text-nowrap",
+      dot: "bg-red-400",
+      label: t("rejected"),
+    },
+  };
+
+  const getStatusCfg = (status: string) =>
+    statusConfig[status] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: status,
+    };
+
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
 
@@ -188,7 +191,7 @@ const UpgradePlanRequests = () => {
       center: true,
     },
     {
-      name: "Institute",
+      name: t("institute"),
       selector: (row: UpgradeRequest) => row.instituteName,
       cell: (row: UpgradeRequest) => (
         <div className="text-center">
@@ -200,7 +203,7 @@ const UpgradePlanRequests = () => {
       minWidth: "160px",
     },
     {
-      name: "Plan Change",
+      name: t("planChange"),
       cell: (row: UpgradeRequest) => (
         <div className="flex items-center gap-1.5 text-sm">
           <span className="text-gray-500">{row.currentPlanName}</span>
@@ -214,7 +217,7 @@ const UpgradePlanRequests = () => {
       center: true,
     },
     {
-      name: "Additional Students",
+      name: t("additionalStudents"),
       selector: (row: UpgradeRequest) => row.additionalStudentsNeeded,
       cell: (row: UpgradeRequest) => (
         <span className="font-semibold text-gray-800">
@@ -226,7 +229,7 @@ const UpgradePlanRequests = () => {
       minWidth: "100px",
     },
     {
-      name: "Reason",
+      name: t("reason"),
       selector: (row: UpgradeRequest) => row.reason,
       cell: (row: UpgradeRequest) => (
         <span
@@ -240,7 +243,7 @@ const UpgradePlanRequests = () => {
       center: true,
     },
     {
-      name: "Status",
+      name: t("status"),
       cell: (row: UpgradeRequest) => {
         const cfg = getStatusCfg(row.status);
         return (
@@ -257,7 +260,7 @@ const UpgradePlanRequests = () => {
       minWidth: "120px",
     },
     {
-      name: "Submitted",
+      name: t("submitted"),
       selector: (row: UpgradeRequest) => row.createdAt,
       cell: (row: UpgradeRequest) => (
         <span className="text-gray-600">{fmtDate(row.createdAt)}</span>
@@ -267,7 +270,7 @@ const UpgradePlanRequests = () => {
       minWidth: "110px",
     },
     {
-      name: "Details",
+      name: t("details"),
       selector: (row: UpgradeRequest) => row.createdAt,
       cell: (row: UpgradeRequest) => (
         <Link to={`/dashboard/upgrade-plan-requests/${row.id}`}>
@@ -279,8 +282,6 @@ const UpgradePlanRequests = () => {
       minWidth: "110px",
     },
   ];
-
-  // ── Sub-header ─────────────────────────────────────────────────────────────
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -301,7 +302,7 @@ const UpgradePlanRequests = () => {
   if (listError) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Plan Upgrade Requests" />
+        <DashboardPageTitle text={t("planUpgradeRequests")} />
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -309,13 +310,13 @@ const UpgradePlanRequests = () => {
         >
           <XCircle size={36} className="text-red-300" />
           <p className="text-sm font-medium text-red-400">
-            Failed to load upgrade requests.
+            {t("failedToLoadUpgradeRequests")}
           </p>
           <Link
             to="/dashboard/home"
             className="text-sm text-blue-500 hover:underline"
           >
-            Back to Dashboard
+            {t("backToDashboard")}
           </Link>
         </motion.div>
       </div>
@@ -324,7 +325,7 @@ const UpgradePlanRequests = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      <DashboardPageTitle text="Plan Upgrade Requests" />
+      <DashboardPageTitle text={t("planUpgradeRequests")} />
 
       {/* Breadcrumb */}
       <motion.nav
@@ -336,25 +337,25 @@ const UpgradePlanRequests = () => {
           to="/dashboard/home"
           className="hover:text-gray-600 transition-colors"
         >
-          Dashboard
+          {t("dashboard")}
         </Link>
 
         <ChevronRight size={14} />
 
-        <span className="text-gray-600">Plan Upgrade Requests</span>
+        <span className="text-gray-600">{t("planUpgradeRequests")}</span>
       </motion.nav>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
-          label="Total Requests"
+          label={t("totalRequests")}
           value={pagination ? String(pagination.total) : "-"}
           icon={<ClipboardList size={20} />}
           borderColor="border-l-blue-400"
           delay={0.05}
         />
         <StatCard
-          label="Pending on This Page"
+          label={t("pendingOnThisPage")}
           value={String(pendingCount)}
           subColor="bg-amber-100 text-amber-700"
           icon={<Clock size={20} className="text-amber-500" />}

@@ -21,7 +21,7 @@ const EditProgramDetailsForm = ({
         if (JSON.stringify(initialValues) === JSON.stringify(values)) {
           Swal.fire({
             icon: "warning",
-            title: "Warning",
+            title: t("warning"),
             text: t("nothing_change"),
             confirmButtonText: "OK",
           });

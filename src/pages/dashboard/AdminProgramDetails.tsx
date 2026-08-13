@@ -10,8 +10,10 @@ import CoursesTab from "@/features/Dashboard/components/programs/CoursesTab";
 import InstitutesTab from "@/features/Dashboard/components/programs/InstitutesTab";
 import { useProgramData } from "@/features/Dashboard/components/programs/hooks/useProgramData";
 import type { TabType } from "@/features/Dashboard/components/programs/types";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const AdminProgramDetails = () => {
+  const { t } = useLanguage();
   const { programId } = useParams();
   const [activeTab, setActiveTab] = useState<TabType>("information");
   const [assignCourseModalOpen, setAssignCourseModalOpen] = useState(false);
@@ -34,13 +36,13 @@ const AdminProgramDetails = () => {
   if (error) {
     return (
       <ErrorMessage
-        message={error?.message || "Error while fetching program details"}
+        message={error?.message || t("errorWhileFetchingProgramDetails")}
       />
     );
   }
 
   if (!programData) {
-    return <ErrorMessage message="Program not found" />;
+    return <ErrorMessage message={t("programNotFound")} />;
   }
 
   /* ================= HANDLERS ================= */

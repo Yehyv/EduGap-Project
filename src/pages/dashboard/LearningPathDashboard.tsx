@@ -40,7 +40,8 @@ const LearningPathDashboard = () => {
     <>
       {/* ================= HEADER ================= */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-1 ">
-        <h2 className="mb-5">{t("learning_path")}</h2>
+        <h2 className="mb-5">{t("learningPath")}</h2>
+
         <div className="flex items-center gap-2">
           <button
             className={`px-6 py-1 rounded-full border font-medium text-sm relative ${
@@ -52,19 +53,22 @@ const LearningPathDashboard = () => {
             {learningPathData?.isActive
               ? t("courseActive")
               : t("courseInactive")}
+
             <span
               className={`absolute w-1 h-1 rounded-full start-3 top-1/2 -translate-y-1/2 inline-block ${
                 learningPathData?.isActive ? "bg-green-500" : "bg-red-500"
               }`}
             ></span>
           </button>
+
           <Link
             to={`/dashboard/learning-paths/edit/${learningPathData?.id}`}
             className="bg-gradient-to-r cursor-pointer !from-[#F6F6F6] !to-[#F6F6F6] border border-secondary py-0.5 text-white px-4 rounded-xl shadow-md flex items-center"
           >
             <EditIcon className="h-8 mx-2" />
+
             <span className="inline-block me-4 text-secondary">
-              Edit learning path
+              {t("editLearningPath")}
             </span>
           </Link>
         </div>
@@ -76,13 +80,14 @@ const LearningPathDashboard = () => {
           className={tabClass("data")}
           onClick={() => setActiveTab("data")}
         >
-          بيانات مسار التعلم
+          {t("learningPathDataTab")}
         </button>
+
         <button
           className={tabClass("sessions")}
           onClick={() => setActiveTab("sessions")}
         >
-          الدورات التدريبية الخاصة بمسار التعلم
+          {t("learningPathCoursesTab")}
         </button>
       </div>
 
@@ -95,18 +100,21 @@ const LearningPathDashboard = () => {
                 {t("learningDataTitle")}
               </h5>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h6 className="text-[#444444] text-sm font-bold">
-                  اسم مسار التعلم{" "}
+                  {t("learningPathName")}
                 </h6>
+
                 <p>{learningPathDataEn?.title}</p>
               </div>
 
               <div className="row-span-2">
                 <h6 className="text-[#444444] text-sm mb-3 font-bold">
-                  صورة مسار التعلم
+                  {t("learningPathImage")}
                 </h6>
+
                 {learningPathData?.image && (
                   <img
                     className="max-h-30 rounded-2xl"
@@ -120,6 +128,7 @@ const LearningPathDashboard = () => {
                 <h6 className="text-[#444444] text-sm font-bold">
                   {t("fieldDescription")}
                 </h6>
+
                 <p>{learningPathDataEn?.description}</p>
               </div>
 
@@ -127,6 +136,7 @@ const LearningPathDashboard = () => {
                 <h6 className="text-[#444444] text-sm font-bold">
                   {t("fieldWhatToLearn")}
                 </h6>
+
                 <ul className="list-disc ps-4">
                   {learningPathDataEn?.learning_outcoms
                     ?.split(",")
@@ -140,6 +150,7 @@ const LearningPathDashboard = () => {
                 <h6 className="text-[#444444] text-sm font-bold">
                   {t("fieldCreatedAt")}
                 </h6>
+
                 <p>{learningPathData?.createdAt ?? "-"}</p>
               </div>
 
@@ -147,21 +158,25 @@ const LearningPathDashboard = () => {
                 <h6 className="text-[#444444] text-sm font-bold">
                   {t("fieldCreatedBy")}
                 </h6>
+
                 <p>{learningPathData?.createdBy?.name ?? "-"}</p>
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-lg p-5 mt-3">
             <div className="flex justify-between border-b border-[#ACACAC] pb-3 mb-4">
               <h5 className="text-secondary font-bold">
-                {t("learningDataTitle")} {"(Arabic)"}
+                {t("learningDataTitle")} ({t("arabic")})
               </h5>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h6 className="text-[#444444] text-sm font-bold">
-                  اسم مسار التعلم{" "}
+                  {t("learningPathName")}
                 </h6>
+
                 <p>{learningPathDataAr?.title}</p>
               </div>
 
@@ -169,6 +184,7 @@ const LearningPathDashboard = () => {
                 <h6 className="text-[#444444] text-sm font-bold">
                   {t("fieldDescription")}
                 </h6>
+
                 <p>{learningPathDataAr?.description}</p>
               </div>
 
@@ -176,6 +192,7 @@ const LearningPathDashboard = () => {
                 <h6 className="text-[#444444] text-sm font-bold">
                   {t("fieldWhatToLearn")}
                 </h6>
+
                 <ul className="list-disc ps-4">
                   {learningPathDataAr?.learning_outcoms
                     ?.split(",")

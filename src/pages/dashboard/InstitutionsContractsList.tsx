@@ -20,6 +20,7 @@ import {
   fetchContracts,
   fetchCreateContractOptions,
 } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,54 +52,6 @@ interface Pagination {
 }
 
 type StatusFilter = "all" | "ACTIVE" | "INACTIVE";
-
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const STATUS_OPTIONS: { value: StatusFilter; label: string; dot: string }[] = [
-  { value: "all", label: "All Status", dot: "bg-gray-600" },
-  { value: "ACTIVE", label: "Active", dot: "bg-green-500" },
-  { value: "DRAFT", label: "Draft", dot: "bg-secondary" },
-  { value: "CLOSED", label: "Closed", dot: "bg-gray-400" },
-  { value: "CANCELLED", label: "Cancelled", dot: "bg-red-400" },
-];
-
-const statusConfig: Record<
-  string,
-  { class: string; dot: string; label: string }
-> = {
-  ACTIVE: {
-    class: "bg-green-50 text-green-600",
-    dot: "bg-green-500",
-    label: "Active",
-  },
-  DRAFT: {
-    class: "bg-blue-50 text-blue-500",
-    dot: "bg-blue-400",
-    label: "Draft",
-  },
-  CLOSED: {
-    class: "bg-gray-100 text-gray-500",
-    dot: "bg-gray-400",
-    label: "Closed",
-  },
-  PENDING: {
-    class: "bg-amber-50 text-amber-600",
-    dot: "bg-amber-400",
-    label: "Pending",
-  },
-  INACTIVE: {
-    class: "bg-gray-100 text-gray-500",
-    dot: "bg-gray-400",
-    label: "Inactive",
-  },
-};
-
-const getStatusCfg = (status: string) =>
-  statusConfig[status] ?? {
-    class: "bg-gray-100 text-gray-500",
-    dot: "bg-gray-400",
-    label: status,
-  };
 
 // ─── Custom Styles ────────────────────────────────────────────────────────────
 
@@ -138,6 +91,7 @@ const InstituteSelect = ({
   value: { id: number; name: string } | null;
   onChange: (inst: { id: number; name: string } | null) => void;
 }) => {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -176,7 +130,7 @@ const InstituteSelect = ({
       >
         <Building2 size={14} />
         <span className="truncate max-w-[120px]">
-          {value ? value.name : "Select Institute"}
+          {value ? value.name : t("selectInstitute")}
         </span>
         {value ? (
           <X
@@ -213,7 +167,7 @@ const InstituteSelect = ({
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search institute..."
+                  placeholder={t("searchInstituteEllipsis")}
                   autoFocus
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -230,7 +184,7 @@ const InstituteSelect = ({
             <div className="max-h-48 overflow-y-auto py-1">
               {filtered.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-3">
-                  No institutes found
+                  {t("noInstitutesFound")}
                 </p>
               ) : (
                 filtered.map((inst) => (
@@ -270,8 +224,18 @@ const StatusSelect = ({
   value: StatusFilter;
   onChange: (v: StatusFilter) => void;
 }) => {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const STATUS_OPTIONS: { value: StatusFilter; label: string; dot: string }[] =
+    [
+      { value: "all", label: t("contractAllStatus"), dot: "bg-gray-600" },
+      { value: "ACTIVE", label: t("contractActive"), dot: "bg-green-500" },
+      { value: "DRAFT", label: t("contractDraft"), dot: "bg-secondary" },
+      { value: "CLOSED", label: t("contractClosed"), dot: "bg-gray-400" },
+      { value: "CANCELLED", label: t("contractCancelled"), dot: "bg-red-400" },
+    ];
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -345,6 +309,46 @@ const StatusSelect = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const InstitutionsContractsList = () => {
+  const { t } = useLanguage();
+
+  const statusConfig: Record<
+    string,
+    { class: string; dot: string; label: string }
+  > = {
+    ACTIVE: {
+      class: "bg-green-50 text-green-600",
+      dot: "bg-green-500",
+      label: t("contractActive"),
+    },
+    DRAFT: {
+      class: "bg-blue-50 text-blue-500",
+      dot: "bg-blue-400",
+      label: t("contractDraft"),
+    },
+    CLOSED: {
+      class: "bg-gray-100 text-gray-500",
+      dot: "bg-gray-400",
+      label: t("contractClosed"),
+    },
+    PENDING: {
+      class: "bg-amber-50 text-amber-600",
+      dot: "bg-amber-400",
+      label: t("contractPending"),
+    },
+    INACTIVE: {
+      class: "bg-gray-100 text-gray-500",
+      dot: "bg-gray-400",
+      label: t("contractInactive"),
+    },
+  };
+
+  const getStatusCfg = (status: string) =>
+    statusConfig[status] ?? {
+      class: "bg-gray-100 text-gray-500",
+      dot: "bg-gray-400",
+      label: status,
+    };
+
   const [searchText, setSearchText] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [selectedInstitute, setSelectedInstitute] = useState<{
@@ -358,8 +362,8 @@ const InstitutionsContractsList = () => {
 
   // Debounce search input
   useEffect(() => {
-    const t = setTimeout(() => setSearchText(searchInput), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setSearchText(searchInput), 400);
+    return () => clearTimeout(timer);
   }, [searchInput]);
 
   const resetPage = () => setPage(1);
@@ -416,7 +420,7 @@ const InstitutionsContractsList = () => {
     },
 
     {
-      name: "Institute",
+      name: t("institute"),
       selector: (row: ContractItem) => row.instituteName,
       cell: (row: ContractItem) => (
         <span className="font-medium text-gray-800">{row.instituteName}</span>
@@ -425,21 +429,21 @@ const InstitutionsContractsList = () => {
       minWidth: "180px",
     },
     {
-      name: "Year",
+      name: t("contractYear"),
       selector: (row: ContractItem) => row.academicYear,
       sortable: true,
       center: true,
       width: "80px",
     },
     {
-      name: "Plan",
+      name: t("contractPlan"),
       selector: (row: ContractItem) => row.planName,
       sortable: true,
       center: true,
       minWidth: "120px",
     },
     {
-      name: "Max Students",
+      name: t("maxStudents"),
       selector: (row: ContractItem) => row.maxStudents,
       cell: (row: ContractItem) => row.maxStudents.toLocaleString(),
       sortable: true,
@@ -447,7 +451,7 @@ const InstitutionsContractsList = () => {
       minWidth: "120px",
     },
     {
-      name: "Total Amount (EGP)",
+      name: t("contractTotalAmountEGP"),
       selector: (row: ContractItem) => row.totalAmount,
       cell: (row: ContractItem) => (
         <span className="font-semibold text-gray-800">
@@ -459,7 +463,7 @@ const InstitutionsContractsList = () => {
       minWidth: "170px",
     },
     {
-      name: "Paid (EGP)",
+      name: t("contractPaidEGP"),
       selector: (row: ContractItem) => row.paidAmount,
       cell: (row: ContractItem) => (
         <span className="font-semibold text-green-600">
@@ -471,7 +475,7 @@ const InstitutionsContractsList = () => {
       minWidth: "150px",
     },
     {
-      name: "Remaining (EGP)",
+      name: t("contractRemainingEGP"),
       selector: (row: ContractItem) => row.totalRemaining,
       cell: (row: ContractItem) => (
         <span
@@ -485,7 +489,7 @@ const InstitutionsContractsList = () => {
       minWidth: "160px",
     },
     {
-      name: "Status",
+      name: t("status"),
       cell: (row: ContractItem) => {
         const cfg = getStatusCfg(row.status);
         return (
@@ -502,12 +506,12 @@ const InstitutionsContractsList = () => {
       minWidth: "130px",
     },
     {
-      name: "Edit",
+      name: t("edit"),
       cell: (row: ContractItem) => (
         <Link
           to={`/dashboard/institutions-contracts/edit/${row.id}`}
           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          title="Edit"
+          title={t("edit")}
         >
           <EditIcon className="text-secondary" />
         </Link>
@@ -517,12 +521,12 @@ const InstitutionsContractsList = () => {
       minWidth: "100px",
     },
     {
-      name: "View",
+      name: t("view"),
       cell: (row: ContractItem) => (
         <Link
           to={`/dashboard/institutions-contracts/${row.id}`}
           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          title="View"
+          title={t("view")}
         >
           <Eye size={25} className="text-gray-500" />
         </Link>
@@ -538,15 +542,6 @@ const InstitutionsContractsList = () => {
     <div className="flex flex-col gap-2 w-full px-1 py-2">
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div className="flex flex-wrap gap-2 items-center">
-          {/* Institute searchable dropdown */}
-          <InstituteSelect
-            value={selectedInstitute}
-            onChange={(inst) => {
-              setSelectedInstitute(inst);
-              resetPage();
-            }}
-          />
-
           {/* Year */}
           <div className="relative">
             <select
@@ -561,7 +556,7 @@ const InstitutionsContractsList = () => {
                 resetPage();
               }}
             >
-              <option value="">Select Year</option>
+              <option value="">{t("contractSelectYear")}</option>
               {YEARS.map((y) => (
                 <option key={y} value={y}>
                   {y}
@@ -576,6 +571,15 @@ const InstitutionsContractsList = () => {
             />
           </div>
 
+          {/* Institute searchable dropdown */}
+          <InstituteSelect
+            value={selectedInstitute}
+            onChange={(inst) => {
+              setSelectedInstitute(inst);
+              resetPage();
+            }}
+          />
+
           {/* Status */}
           <StatusSelect
             value={statusFilter}
@@ -589,7 +593,7 @@ const InstitutionsContractsList = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search by contract, institute..."
+              placeholder={t("contractSearchPlaceholder")}
               className="border border-gray-200 h-9 px-9 rounded-2xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 w-56"
               value={searchInput}
               onChange={(e) => {
@@ -625,7 +629,7 @@ const InstitutionsContractsList = () => {
                 className="h-9 px-3 rounded-2xl border border-red-200 text-red-500 text-sm hover:bg-red-50 transition-colors flex items-center gap-1.5"
               >
                 <X size={13} />
-                Clear ({activeFilterCount})
+                {t("clear")} ({activeFilterCount})
               </motion.button>
             )}
           </AnimatePresence>
@@ -637,7 +641,7 @@ const InstitutionsContractsList = () => {
   return (
     <div className="flex flex-col gap-5">
       <DashboardPageTitle
-        text="Institutions Contracts List"
+        text={t("institutionsContractsList")}
         button
         buttonText={
           <Link
@@ -645,7 +649,7 @@ const InstitutionsContractsList = () => {
             className="flex items-center py-1.5"
           >
             <Plus size={16} className="mx-2" color="white" />
-            <span className="me-3 text-white">Create New Contract</span>
+            <span className="me-3 text-white">{t("createNewContract")}</span>
           </Link>
         }
       />
@@ -660,14 +664,12 @@ const InstitutionsContractsList = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-16 gap-2 text-gray-400">
             <Loader2 size={20} className="animate-spin" />
-            <span className="text-sm">Loading contracts...</span>
+            <span className="text-sm">{t("contractLoadingContracts")}</span>
           </div>
         ) : isError ? (
           <div className="flex items-center justify-center py-16 gap-2 text-red-400">
             <XCircle size={20} />
-            <span className="text-sm">
-              Failed to load contracts. Try again.
-            </span>
+            <span className="text-sm">{t("contractFailedToLoadTryAgain")}</span>
           </div>
         ) : (
           <DataTable

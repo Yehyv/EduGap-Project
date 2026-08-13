@@ -22,6 +22,7 @@ import { DownloadIcon, EyeIcon, Share2Icon, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { formatDate, ROLES } from "@/shared/utils/globals";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ── Animation Variants ────────────────────────────────────────────────────────
 const pageVariants = {
@@ -340,29 +341,38 @@ const ExamCard = ({
   totalQuestions: number;
   date: string;
   passed: boolean;
-}) => (
-  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-    <div className="flex justify-between items-start mb-1.5 gap-2">
-      <h5 className="font-bold text-gray-800 text-sm leading-snug">{title}</h5>
-      <span
-        className={`text-white text-xs font-semibold px-3 py-0.5 rounded-full flex-shrink-0 ${
-          passed ? "bg-green-600" : "bg-red-500"
-        }`}
-      >
-        {passed ? "Pass" : "Fail"}
-      </span>
-    </div>
-    <div className="flex justify-between text-xs text-gray-500 mt-1">
-      <div>
-        <span>Pass Percent: {passPercent}</span>
-        <span className="inline-block ms-2">Date: {date}</span>
+}) => {
+  const { t } = useLanguage();
+  return (
+    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+      <div className="flex justify-between items-start mb-1.5 gap-2">
+        <h5 className="font-bold text-gray-800 text-sm leading-snug">
+          {title}
+        </h5>
+        <span
+          className={`text-white text-xs font-semibold px-3 py-0.5 rounded-full flex-shrink-0 ${
+            passed ? "bg-green-600" : "bg-red-500"
+          }`}
+        >
+          {passed ? t("pass") : t("fail")}
+        </span>
       </div>
-      <span className="font-semibold text-gray-700">
-        Total Questions: {totalQuestions}
-      </span>
+      <div className="flex justify-between text-xs text-gray-500 mt-1">
+        <div>
+          <span>
+            {t("passPercent")}: {passPercent}
+          </span>
+          <span className="inline-block ms-2">
+            {t("date")}: {date}
+          </span>
+        </div>
+        <span className="font-semibold text-gray-700">
+          {t("totalQuestions")}: {totalQuestions}
+        </span>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ── Info Field Item ───────────────────────────────────────────────────────────
 const InfoFieldItem = ({ label, value, breakAll }: InfoField) => (
@@ -380,6 +390,7 @@ const InfoFieldItem = ({ label, value, breakAll }: InfoField) => (
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const StudentInInstitute = () => {
+  const { t } = useLanguage();
   const { studentId, instituteId } = useParams();
 
   const { role } = useAuth();
@@ -448,21 +459,21 @@ const StudentInInstitute = () => {
 
   // ── Info fields — always shown ────────────────────────────────────────────
   const commonFields: InfoField[] = [
-    { label: "User Name", value: userData?.full_name },
-    { label: "E-mail", value: userData?.email, breakAll: true },
-    { label: "User Role", value: userData?.role?.role_title },
-    { label: "National ID", value: userData?.national_id },
-    { label: "Institute", value: userData?.institute?.name },
-    { label: "Phone Key", value: `+${userData?.phone_key ?? ""}` },
-    { label: "Phone Number", value: userData?.phone },
-    { label: "Created at", value: userData?.createdAt },
-    { label: "Created by", value: userData?.createdBy?.full_name },
+    { label: t("userName"), value: userData?.full_name },
+    { label: t("email"), value: userData?.email, breakAll: true },
+    { label: t("userRole"), value: userData?.role?.role_title },
+    { label: t("nationalId"), value: userData?.national_id },
+    { label: t("institute"), value: userData?.institute?.name },
+    { label: t("phoneKey"), value: `+${userData?.phone_key ?? ""}` },
+    { label: t("phoneNumber"), value: userData?.phone },
+    { label: t("created_at"), value: userData?.createdAt },
+    { label: t("created_by"), value: userData?.createdBy?.full_name },
   ];
 
   // ── Info fields — only shown when user IS a student ───────────────────────
   const studentOnlyFields: InfoField[] = [
-    { label: "Student ID", value: userData?.studentId },
-    { label: "Program", value: userData?.program },
+    { label: t("studentId"), value: userData?.studentId },
+    { label: t("program"), value: userData?.program },
   ];
   const infoFields: InfoField[] = isUserStudent
     ? [
@@ -479,14 +490,14 @@ const StudentInInstitute = () => {
       {isImageModalOpen && (
         <ImageModal
           src={userData?.user_image}
-          alt="User Image"
+          alt={t("userImage")}
           onClose={() => setIsImageModalOpen(false)}
         />
       )}
 
       {/* Page Title */}
       <motion.h2 variants={slideDown}>
-        {isUserStudent ? "Student" : "User"}
+        {isUserStudent ? t("student") : t("user")}
       </motion.h2>
 
       {/* Stats Grid — only meaningful for students */}
@@ -496,18 +507,18 @@ const StudentInInstitute = () => {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6"
         >
           <StatCard
-            title="Overall Progress"
+            title={t("overallProgress")}
             value={overallProgress}
-            subLabel="Enrolled Courses"
+            subLabel={t("enrolledCourses")}
             borderColor="border-secondary"
             textColor="text-secondary"
             bgColor="bg-primary"
             icon={<LineChartIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
           />
           <StatCard
-            title="Passed Exams"
+            title={t("passedExams")}
             value={passedExam}
-            subLabel="of 0 total"
+            subLabel={t("ofZeroTotal")}
             borderColor="border-green-600"
             textColor="text-green-600"
             bgColor="bg-green-100"
@@ -522,7 +533,7 @@ const StudentInInstitute = () => {
         className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
       >
         <SectionHeader
-          title={isUserStudent ? "Student Information" : "User Information"}
+          title={isUserStudent ? t("studentInformation") : t("userInformation")}
           action={
             role === ROLES.SUPER_ADMIN ? (
               <motion.div
@@ -537,8 +548,8 @@ const StudentInInstitute = () => {
                   <EditIcon className="h-6 w-5 rotate-270 flex-shrink-0" />
                   <span className="text-secondary font-bold text-sm whitespace-nowrap">
                     {isUserStudent
-                      ? "Edit Student Information"
-                      : "Edit User Information"}
+                      ? t("editStudentInformation")
+                      : t("editUserInformation")}
                   </span>
                 </Link>
               </motion.div>
@@ -565,7 +576,7 @@ const StudentInInstitute = () => {
             >
               <div className="flex flex-col gap-0.5">
                 <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
-                  Account Status
+                  {t("accountStatus")}
                 </span>
                 <div className="w-fit mt-1">
                   <ActiveStatusButton
@@ -582,7 +593,7 @@ const StudentInInstitute = () => {
 
               <div className="flex flex-col gap-1.5 flex-1">
                 <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
-                  User Image
+                  {t("userImage")}
                 </span>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
@@ -592,7 +603,7 @@ const StudentInInstitute = () => {
                 >
                   <img
                     src={userData?.user_image}
-                    alt="User Image"
+                    alt={t("userImage")}
                     className="w-30 object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all duration-200 flex items-center justify-center">
@@ -615,11 +626,13 @@ const StudentInInstitute = () => {
           className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
         >
           <SectionHeader
-            title={`Student Courses (${studentContentsProgressData?.data?.count ?? 0})`}
+            title={`${t("studentCourses")} (${studentContentsProgressData?.data?.count ?? 0})`}
           />
           <div className="p-4">
             {studentContentsProgressData?.data?.items?.length === 0 && (
-              <p className="text-gray-400 text-center">No Data Available</p>
+              <p className="text-gray-400 text-center">
+                {t("noDataAvailable")}
+              </p>
             )}
             <motion.div
               variants={infoGridVariants}
@@ -632,7 +645,7 @@ const StudentInInstitute = () => {
                 <ProgressRow
                   key={item?.name}
                   title={item?.name}
-                  subtitle={`Start: ${formatDate(item?.startDate) ?? "-"}`}
+                  subtitle={`${t("start")}: ${formatDate(item?.startDate) ?? "-"}`}
                   percentage={item?.percentage}
                 />
               ))}
@@ -646,11 +659,13 @@ const StudentInInstitute = () => {
           className="rounded-xl bg-white overflow-hidden mt-4 shadow-custom"
         >
           <SectionHeader
-            title={`Learning Paths (${studentLearningPathsData?.data?.length ?? 0})`}
+            title={`${t("learningPaths")} (${studentLearningPathsData?.data?.length ?? 0})`}
           />
           <div className="p-4">
             {studentLearningPathsData?.data?.length === 0 && (
-              <p className="text-gray-400 text-center">No Data Available</p>
+              <p className="text-gray-400 text-center">
+                {t("noDataAvailable")}
+              </p>
             )}
             <motion.div
               variants={infoGridVariants}
@@ -662,8 +677,8 @@ const StudentInInstitute = () => {
               {studentLearningPathsData?.data?.map((item, index) => (
                 <ProgressRow
                   key={index}
-                  title={item?.name ?? "Learning Path"}
-                  subtitle={`Start: ${item?.startDate ?? "-"}`}
+                  title={item?.name ?? t("learningPath")}
+                  subtitle={`${t("start")}: ${item?.startDate ?? "-"}`}
                   percentage={item?.percentage ?? 0}
                 />
               ))}
@@ -674,34 +689,34 @@ const StudentInInstitute = () => {
         {/* Chart Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
           <ChartCard
-            title="Student's Courses Out of Total Program Courses"
+            title={t("studentCoursesOutOfProgramCourses")}
             percentage={studentCoursesProgressSummary?.data?.percentage ?? 0}
             color="var(--color-tertiary, #0ea5e9)"
             trackColor="#E5E7EB"
             legends={[
               {
                 color: "var(--color-tertiary, #0ea5e9)",
-                label: `Student Courses: ${studentCoursesProgressSummary?.data?.studentCourses ?? 0}`,
+                label: `${t("studentCourses")}: ${studentCoursesProgressSummary?.data?.studentCourses ?? 0}`,
               },
               {
                 color: "#D1D5DB",
-                label: `Program Courses: ${studentCoursesProgressSummary?.data?.totalProgramCourses ?? 0}`,
+                label: `${t("programCourses")}: ${studentCoursesProgressSummary?.data?.totalProgramCourses ?? 0}`,
               },
             ]}
           />
           <ChartCard
-            title="Progress Distribution"
+            title={t("progressDistribution")}
             percentage={overallProgress}
             color="#16a34a"
             trackColor="#E5E7EB"
             legends={[
               {
                 color: "#16a34a",
-                label: `Completed: ${overallProgress}%`,
+                label: `${t("completed")}: ${overallProgress}%`,
               },
               {
                 color: "#D1D5DB",
-                label: `Remaining: ${100 - overallProgress}%`,
+                label: `${t("remaining")}: ${100 - overallProgress}%`,
               },
             ]}
           />
@@ -713,10 +728,12 @@ const StudentInInstitute = () => {
             variants={fadeUp}
             className="rounded-xl bg-white shadow-custom overflow-hidden"
           >
-            <SectionHeader title="Exam Results" />
+            <SectionHeader title={t("examResults")} />
             <div className="p-4 flex flex-col gap-2 max-h-[200px] overflow-auto">
               {examResultsData?.data?.items?.length === 0 && (
-                <p className="text-gray-400 text-center">No Data Available</p>
+                <p className="text-gray-400 text-center">
+                  {t("noDataAvailable")}
+                </p>
               )}
               {examResultsData?.data?.items?.map((exam) => (
                 <ExamCard
@@ -736,11 +753,13 @@ const StudentInInstitute = () => {
             className="rounded-xl bg-white shadow-custom overflow-hidden"
           >
             <SectionHeader
-              title={`Certificates (${certificatesData?.data?.count ?? 0})`}
+              title={`${t("certificates")} (${certificatesData?.data?.count ?? 0})`}
             />
             <div className="p-4 flex flex-col gap-2 max-h-[250px] overflow-auto">
               {certificatesData?.data?.items?.length === 0 && (
-                <p className="text-gray-400 text-center">No Data Available</p>
+                <p className="text-gray-400 text-center">
+                  {t("noDataAvailable")}
+                </p>
               )}
               {certificatesData?.data?.items?.map((cert) => (
                 <div
@@ -758,7 +777,7 @@ const StudentInInstitute = () => {
                   <div className="flex justify-between items-center gap-2 flex-wrap mt-1">
                     <div className="flex flex-col gap-0.5">
                       <p className="text-xs text-gray-500">
-                        Issued:{" "}
+                        {t("issued")}:{" "}
                         {new Date(cert.issueDate).toLocaleDateString("en-GB", {
                           day: "2-digit",
                           month: "short",
@@ -772,16 +791,16 @@ const StudentInInstitute = () => {
                     <div className="flex gap-1.5">
                       {(
                         [
-                          { Icon: EyeIcon, label: "View" },
-                          { Icon: DownloadIcon, label: "Download" },
-                          { Icon: Share2Icon, label: "Share" },
+                          { Icon: EyeIcon, labelKey: "view" },
+                          { Icon: DownloadIcon, labelKey: "download" },
+                          { Icon: Share2Icon, labelKey: "share" },
                         ] as const
-                      ).map(({ Icon, label }) => (
+                      ).map(({ Icon, labelKey }) => (
                         <motion.button
-                          key={label}
+                          key={labelKey}
                           whileHover={{ scale: 1.15 }}
                           whileTap={{ scale: 0.9 }}
-                          title={label}
+                          title={t(labelKey)}
                           className="p-1.5 rounded-lg hover:bg-white transition-colors duration-150 border border-transparent hover:border-gray-200"
                         >
                           <Icon className="text-secondary w-4 h-4" />

@@ -16,6 +16,7 @@ import CircleLoader from "@/shared/components/ui/CircleLoader";
 import type { SystemUsers } from "@/features/Dashboard/types/dashboardTypes";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 /* ------------------ styles ------------------ */
 const customStyles = {
@@ -37,135 +38,136 @@ const customStyles = {
   },
 };
 
-/* ------------------ columns ------------------ */
-const columns = [
-  {
-    name: "Num",
-    selector: (_: unknown, index: number) => index + 1,
-    width: "60px",
-    center: true,
-  },
-  {
-    name: "Image",
-    selector: (row: SystemUsers) => (
-      <img
-        src={row?.user_image}
-        alt={row?.full_name}
-        className="w-12 h-12 rounded-full"
-      />
-    ),
-    minWidth: "80px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Full Name",
-    selector: (row: SystemUsers) => (
-      <Link className="underline" to={`/dashboard/system-users/${row.id}`}>
-        {row?.full_name}
-      </Link>
-    ),
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Email",
-    selector: (row: SystemUsers) => row?.email,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "National ID",
-    selector: (row: SystemUsers) => row?.national_id,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Phone",
-    selector: (row: SystemUsers) => row?.phone,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Role",
-    selector: (row: SystemUsers) => row?.SysUserrole?.role_title,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Institute",
-    selector: (row: SystemUsers) =>
-      row?.institute?.translations?.[0]?.name ?? "-",
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Created At",
-    selector: (row: SystemUsers) => row.created_at,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Updated At",
-    selector: (row: SystemUsers) => row.updated_at,
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Is Active",
-    selector: (row: SystemUsers) => (
-      <ActiveStatusButton
-        isActive={row?.is_active}
-        itemId={row?.id}
-        itemName={row?.full_name}
-        activateApi={systemUserActiveToggle}
-        deactivateApi={systemUserActiveToggle}
-        refetchKey={["getSystemUsersList"]}
-        showModal={false}
-        onSuccess={(isActivating) => {
-          console.log(
-            `Course ${isActivating ? "activated" : "deactivated"} successfully`,
-          );
-        }}
-        onError={(error, isActivating) => {
-          console.error(
-            `Failed to ${isActivating ? "activate" : "deactivate"}:`,
-            error,
-          );
-        }}
-      />
-    ),
-    sortable: true,
-    center: true,
-  },
-  {
-    name: "Edit",
-    cell: (row: SystemUsers) => (
-      <Link to={`/dashboard/system-users/edit-user/${row.id}`}>
-        <EditIcon />
-      </Link>
-    ),
-    button: true,
-    center: true,
-  },
-  {
-    name: "Delete",
-    style: { justifyContent: "center" },
-    cell: (row: SystemUsers) => (
-      <DeleteButton
-        deleteApi={() => deleteSystemUser(row.id)}
-        successMessage="تم حذف المستخدم بنجاح"
-        errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getSystemUsersList"
-      />
-    ),
-    ignoreRowClick: true,
-    button: true,
-    minWidth: "60px",
-  },
-];
-
 const SystemUsersList = () => {
+  const { t } = useLanguage();
   const [filterText, setFilterText] = useState("");
+
+  /* ------------------ columns ------------------ */
+  const columns = [
+    {
+      name: t("num"),
+      selector: (_: unknown, index: number) => index + 1,
+      width: "60px",
+      center: true,
+    },
+    {
+      name: t("image"),
+      selector: (row: SystemUsers) => (
+        <img
+          src={row?.user_image}
+          alt={row?.full_name}
+          className="w-12 h-12 rounded-full"
+        />
+      ),
+      minWidth: "80px",
+      style: { justifyContent: "center" },
+    },
+    {
+      name: t("fullName"),
+      selector: (row: SystemUsers) => (
+        <Link className="underline" to={`/dashboard/system-users/${row.id}`}>
+          {row?.full_name}
+        </Link>
+      ),
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("email"),
+      selector: (row: SystemUsers) => row?.email,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("nationalId"),
+      selector: (row: SystemUsers) => row?.national_id,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("phone"),
+      selector: (row: SystemUsers) => row?.phone,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("role"),
+      selector: (row: SystemUsers) => row?.SysUserrole?.role_title,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("institute"),
+      selector: (row: SystemUsers) =>
+        row?.institute?.translations?.[0]?.name ?? "-",
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("createdAt"),
+      selector: (row: SystemUsers) => row.created_at,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("updatedAt"),
+      selector: (row: SystemUsers) => row.updated_at,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("isActive"),
+      selector: (row: SystemUsers) => (
+        <ActiveStatusButton
+          isActive={row?.is_active}
+          itemId={row?.id}
+          itemName={row?.full_name}
+          activateApi={systemUserActiveToggle}
+          deactivateApi={systemUserActiveToggle}
+          refetchKey={["getSystemUsersList"]}
+          showModal={false}
+          onSuccess={(isActivating) => {
+            console.log(
+              `Course ${isActivating ? "activated" : "deactivated"} successfully`,
+            );
+          }}
+          onError={(error, isActivating) => {
+            console.error(
+              `Failed to ${isActivating ? "activate" : "deactivate"}:`,
+              error,
+            );
+          }}
+        />
+      ),
+      sortable: true,
+      center: true,
+    },
+    {
+      name: t("edit"),
+      cell: (row: SystemUsers) => (
+        <Link to={`/dashboard/system-users/edit-user/${row.id}`}>
+          <EditIcon />
+        </Link>
+      ),
+      button: true,
+      center: true,
+    },
+    {
+      name: t("delete"),
+      style: { justifyContent: "center" },
+      cell: (row: SystemUsers) => (
+        <DeleteButton
+          deleteApi={() => deleteSystemUser(row.id)}
+          successMessage={t("userDeletedSuccessfully")}
+          errorMessage={t("errorOccurredDuringDeletion")}
+          refetchFunction="getSystemUsersList"
+        />
+      ),
+      ignoreRowClick: true,
+      button: true,
+      minWidth: "60px",
+    },
+  ];
 
   /* ------------------ query ------------------ */
   const { data, isLoading } = useQuery({
@@ -187,7 +189,7 @@ const SystemUsersList = () => {
       <div className="relative">
         <input
           type="text"
-          placeholder="Search by title"
+          placeholder={t("searchByTitle")}
           className="border border-[#ACACAC] h-9 px-10 rounded-2xl text-sm"
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
@@ -199,7 +201,7 @@ const SystemUsersList = () => {
 
       <div className="border border-[#ACACAC] h-9 px-4 rounded-2xl flex items-center gap-1 text-sm">
         <FilterIcon />
-        Filter
+        {t("filter")}
       </div>
     </div>
   );
@@ -207,12 +209,12 @@ const SystemUsersList = () => {
   return (
     <>
       <DashboardPageTitle
-        text="System Users"
+        text={t("systemUsers")}
         button
         buttonText={
           <Link to="/dashboard/system-users/add-new-user" className="center">
             <PlusIcon className="mt-1.5 h-8" />
-            <span className="me-4 text-white">Add New System User</span>
+            <span className="me-4 text-white">{t("addNewSystemUser")}</span>
           </Link>
         }
       />

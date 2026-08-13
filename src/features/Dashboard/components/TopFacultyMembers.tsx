@@ -2,6 +2,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTopFaculty } from "../services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,7 @@ interface TopFacultyData {
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 const FacultyRow = ({ role, index }: { role: RoleStats; index: number }) => {
+  const { t } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref as React.RefObject<Element>, {
     once: true,
@@ -49,7 +51,7 @@ const FacultyRow = ({ role, index }: { role: RoleStats; index: number }) => {
           {role.roleTitle}
         </span>
         <span className="text-xs text-gray-400">
-          {role.enrolledStaffCount} / {role.totalStaff} enrolled
+          {role.enrolledStaffCount} / {role.totalStaff} {t("enrolledLabel")}
         </span>
       </div>
 
@@ -64,7 +66,7 @@ const FacultyRow = ({ role, index }: { role: RoleStats; index: number }) => {
         }}
         className="flex-shrink-0 text-xs font-semibold text-white bg-secondary px-4 py-1.5 rounded-full whitespace-nowrap"
       >
-        {role.engagementPercentage}% engagement
+        {role.engagementPercentage}% {t("engagementSuffix")}
       </motion.span>
     </motion.div>
   );
@@ -88,6 +90,7 @@ const SkeletonRow = ({ index }: { index: number }) => (
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const TopFacultyMembers = () => {
+  const { t } = useLanguage();
   const {
     data: TopFacultyMembersData,
     isLoading,
@@ -109,11 +112,9 @@ const TopFacultyMembers = () => {
         className="mb-5"
       >
         <h5 className="text-lg font-semibold text-gray-900 mb-0.5">
-          Top Faculty Members
+          {t("topFacultyTitle")}
         </h5>
-        <p className="text-sm text-gray-400">
-          Most active instructors and reviewers.
-        </p>
+        <p className="text-sm text-gray-400">{t("topFacultySubtitle")}</p>
       </motion.div>
 
       {/* Overall summary pill (visible once loaded) */}
@@ -125,17 +126,17 @@ const TopFacultyMembers = () => {
           className="flex items-center gap-2 mb-4 text-xs text-gray-500"
         >
           <span className="font-medium text-gray-700">{data?.totalStaff}</span>{" "}
-          total staff
+          {t("totalStaffLabel")}
           <span className="text-gray-300">·</span>
           <span className="font-medium text-gray-700">
             {data.enrolledStaffCount}
           </span>{" "}
-          enrolled
+          {t("enrolledLabel")}
           <span className="text-gray-300">·</span>
           <span className="font-medium text-gray-700">
             {data.engagementPercentage}%
           </span>{" "}
-          overall engagement
+          {t("overallEngagementLabel")}
         </motion.div>
       )}
 
@@ -149,7 +150,7 @@ const TopFacultyMembers = () => {
             animate={{ opacity: 1 }}
             className="text-sm text-red-500 py-2"
           >
-            Failed to load data: {error.message}
+            {t("failedToLoadDataPrefix")} {error.message}
           </motion.p>
         )}
 
@@ -158,7 +159,7 @@ const TopFacultyMembers = () => {
         ))}
 
         {data?.roles?.length === 0 && (
-          <p className="text-sm text-gray-400 py-2">No roles found.</p>
+          <p className="text-sm text-gray-400 py-2">{t("noRolesFound")}</p>
         )}
       </div>
     </div>

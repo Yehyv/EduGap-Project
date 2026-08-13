@@ -17,6 +17,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import type { User } from "@/features/Dashboard/types/dashboardTypes";
 import CircleLoader from "@/shared/components/ui/CircleLoader";
 import ActiveStatusButton from "@/features/Dashboard/components/ActiveStatusButton";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const customStyles = {
   rows: { style: { minHeight: "48px" } },
@@ -42,114 +43,8 @@ const customStyles = {
   },
 };
 
-const columns = [
-  {
-    name: "Num",
-    selector: (_: User, index: number) => index + 1,
-    sortable: false,
-    width: "60px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Photo",
-    selector: (row: User) => (
-      <img
-        src={row.user_image}
-        alt={row.full_name}
-        className="w-12 h-12 rounded-full"
-      />
-    ),
-    sortable: false,
-    minWidth: "80px",
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Name",
-    selector: (row: User) => (
-      <Link
-        className="underline text-sm"
-        to={`/dashboard/users/${row?.id}/institutes/${row?.instituteId}`}
-      >
-        {row?.name}
-      </Link>
-    ),
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "User Role",
-    selector: (row: User) => row?.role?.role_title ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Institute",
-    selector: (row: User) => row?.institute ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Phone",
-    selector: (row: User) => row?.phone ?? 0,
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Created At",
-    selector: (row: User) => row.createdAt ?? "-",
-    sortable: true,
-    style: { justifyContent: "center" },
-  },
-  {
-    name: "Is Active",
-    style: { justifyContent: "center" },
-    cell: (row: User) => {
-      const isActive = row?.is_active;
-      return (
-        <ActiveStatusButton
-          itemId={row?.id}
-          activateApi={activateStudent}
-          deactivateApi={deactivateStudent}
-          isActive={isActive ?? false}
-          refetchKey={"getStudents"}
-          showModal={true}
-        />
-      );
-    },
-    sortable: true,
-  },
-  {
-    name: "Edit",
-    style: { justifyContent: "center" },
-    cell: (row: User) => (
-      <Link to={`/dashboard/users/edit/${row.id}`} className="cursor-pointer">
-        <EditIcon />
-      </Link>
-    ),
-    ignoreRowClick: true,
-    allowOverflow: true,
-    button: true,
-    minWidth: "50px",
-  },
-  {
-    name: "Delete",
-    style: { justifyContent: "center" },
-    cell: (row: User) => (
-      <DeleteButton
-        deleteApi={() => deleteStudent(row.id)}
-        successMessage="تم حذف الطالب بنجاح"
-        errorMessage="حدث خطأ أثناء الحذف"
-        refetchFunction="getStudents"
-      />
-    ),
-    ignoreRowClick: true,
-    allowOverflow: true,
-    button: true,
-    minWidth: "60px",
-  },
-];
-
 const StudentsPage = () => {
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filterText, setFilterText] = useState("");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -193,16 +88,132 @@ const StudentsPage = () => {
     keepPreviousData: true,
   });
 
-  const rolesData = [
-    {
-      name: "Portal",
-      value: 0,
-    },
-    {
-      name: "Dashboard",
-      value: 1,
-    },
-  ];
+  const columns = useMemo(
+    () => [
+      {
+        name: t("num"),
+        selector: (_: User, index: number) => index + 1,
+        sortable: false,
+        width: "60px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("photo"),
+        selector: (row: User) => (
+          <img
+            src={row.user_image}
+            alt={row.full_name}
+            className="w-12 h-12 rounded-full"
+          />
+        ),
+        sortable: false,
+        minWidth: "80px",
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("name"),
+        selector: (row: User) => (
+          <Link
+            className="underline text-sm"
+            to={`/dashboard/users/${row?.id}/institutes/${row?.instituteId}`}
+          >
+            {row?.name}
+          </Link>
+        ),
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("userRole"),
+        selector: (row: User) => row?.role?.role_title ?? "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("institute"),
+        selector: (row: User) => row?.institute ?? "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("phone"),
+        selector: (row: User) => row?.phone ?? 0,
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("createdAt"),
+        selector: (row: User) => row.createdAt ?? "-",
+        sortable: true,
+        style: { justifyContent: "center" },
+      },
+      {
+        name: t("isActive"),
+        style: { justifyContent: "center" },
+        cell: (row: User) => {
+          const isActive = row?.is_active;
+          return (
+            <ActiveStatusButton
+              itemId={row?.id}
+              activateApi={activateStudent}
+              deactivateApi={deactivateStudent}
+              isActive={isActive ?? false}
+              refetchKey={"getStudents"}
+              showModal={true}
+            />
+          );
+        },
+        sortable: true,
+      },
+      {
+        name: t("edit"),
+        style: { justifyContent: "center" },
+        cell: (row: User) => (
+          <Link
+            to={`/dashboard/users/edit/${row.id}`}
+            className="cursor-pointer"
+          >
+            <EditIcon />
+          </Link>
+        ),
+        ignoreRowClick: true,
+        allowOverflow: true,
+        button: true,
+        minWidth: "50px",
+      },
+      {
+        name: t("delete"),
+        style: { justifyContent: "center" },
+        cell: (row: User) => (
+          <DeleteButton
+            deleteApi={() => deleteStudent(row.id)}
+            successMessage={t("studentDeletedSuccess")}
+            errorMessage={t("instituteDeletedError")}
+            refetchFunction="getStudents"
+          />
+        ),
+        ignoreRowClick: true,
+        allowOverflow: true,
+        button: true,
+        minWidth: "60px",
+      },
+    ],
+    [t],
+  );
+
+  const rolesData = useMemo(
+    () => [
+      {
+        name: t("portal"),
+        value: 0,
+      },
+      {
+        name: t("dashboard"),
+        value: 1,
+      },
+    ],
+    [t],
+  );
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -233,7 +244,7 @@ const StudentsPage = () => {
         <div className="relative w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Search by name"
+            placeholder={t("searchByName")}
             className="border py-2 border-[#ACACAC] w-full h-9 px-10 rounded-2xl text-sm focus:outline-none"
             value={filterText}
             onChange={(e) => {
@@ -256,7 +267,7 @@ const StudentsPage = () => {
             className="border text-[#ACACAC] gap-1 flex items-center justify-center py-2 border-[#ACACAC] h-9 px-4 rounded-2xl text-sm focus:outline-none"
           >
             <FilterIcon />
-            <span>Filter</span>
+            <span>{t("filter")}</span>
           </button>
 
           {showFilterDropdown && (
@@ -270,14 +281,14 @@ const StudentsPage = () => {
                   {/* Role Category Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Role Category
+                      {t("roleCategory")}
                     </label>
                     <select
                       value={tempRoleCategory}
                       onChange={(e) => setTempRoleCategory(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary"
                     >
-                      <option value="">All Roles</option>
+                      <option value="">{t("allRoles")}</option>
                       {rolesData?.map((role: any) => (
                         <option key={role.value} value={role.value}>
                           {role.name}
@@ -293,14 +304,14 @@ const StudentsPage = () => {
                       onClick={handleClearFilters}
                       className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
-                      Clear
+                      {t("clear")}
                     </button>
                     <button
                       type="button"
                       onClick={handleApplyFilters}
                       className="flex-1 px-3 py-1.5 text-sm bg-secondary text-white rounded-lg hover:bg-secondary-dark"
                     >
-                      Apply
+                      {t("apply")}
                     </button>
                   </div>
                 </div>
@@ -310,17 +321,19 @@ const StudentsPage = () => {
         </div>
       </div>
     );
-  }, [filterText, showFilterDropdown, tempRoleCategory, rolesData]);
+  }, [filterText, showFilterDropdown, tempRoleCategory, rolesData, t]);
 
   return (
     <>
       <DashboardPageTitle
-        text="Users"
+        text={t("users")}
         button
         buttonText={
           <Link to={"/dashboard/users/add"} className="center">
             <PlusIcon className="mt-1.5 h-8" />
-            <span className="inline-block me-4 text-white">Add New User</span>
+            <span className="inline-block me-4 text-white">
+              {t("addNewUser")}
+            </span>
           </Link>
         }
       />

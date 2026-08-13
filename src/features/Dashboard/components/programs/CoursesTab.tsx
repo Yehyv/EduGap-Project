@@ -3,6 +3,7 @@ import PlusIcon from "@/assets/svgs/PlusSign.svg?react";
 import DeleteButton from "@/features/Dashboard/components/DeleteButton";
 import { deleteCourseFromProgram } from "@/features/Dashboard/services/dashboardApis";
 import type { CourseInProgram } from "./types";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 interface CoursesTabProps {
   coursesInProgram: CourseInProgram[];
@@ -15,6 +16,7 @@ const CoursesTab = ({
   programId,
   onAddCourse,
 }: CoursesTabProps) => {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
 
   const handleDeleteCourse = (courseId: string) => {
@@ -29,14 +31,14 @@ const CoursesTab = ({
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
         <h5 className="text-lg font-semibold text-secondary">
-          المقررات الدراسية المرتبطة بالبرنامج
+          {t("coursesLinkedToProgram")}
         </h5>
         <button
           onClick={onAddCourse}
           className="bg-gradient-to-r from-[#FCB737] to-[#BB831A] flex items-center gap-2 py-2 px-4 rounded-xl shadow-md hover:to-[#FCB737] transition text-white text-sm font-medium"
         >
           <PlusIcon className="h-5" />
-          <span>Add Course To Program</span>
+          <span>{t("addCourseToProgram")}</span>
         </button>
       </div>
 
@@ -58,8 +60,8 @@ const CoursesTab = ({
 
               <DeleteButton
                 deleteApi={() => handleDeleteCourse(course.id)}
-                successMessage="Course removed successfully"
-                errorMessage="Error while deleting the course"
+                successMessage={t("courseRemovedSuccessfully")}
+                errorMessage={t("errorWhileDeletingCourse")}
                 refetchFunction="coursesInProgram"
               />
             </div>
@@ -67,12 +69,12 @@ const CoursesTab = ({
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-gray-400 mb-4">No courses available</p>
+          <p className="text-gray-400 mb-4">{t("noCoursesAvailable")}</p>
           <button
             onClick={onAddCourse}
             className="text-secondary hover:underline text-sm"
           >
-            Add your first course
+            {t("addYourFirstCourse")}
           </button>
         </div>
       )}

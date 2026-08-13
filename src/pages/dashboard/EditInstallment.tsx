@@ -6,7 +6,6 @@ import * as Yup from "yup";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronRight,
-  Building2,
   CalendarDays,
   CreditCard,
   AlertCircle,
@@ -23,6 +22,7 @@ import {
   editInstallment,
   getInstallmentForUpdate,
 } from "@/features/Dashboard/services/dashboardApis";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,20 +32,6 @@ interface EditInstallmentPayload {
   installmentPercentage: number;
   notes: string;
 }
-
-/**
- * Flat shape returned by GET /installments/:id (for update)
- * {
- *   "status": 200,
- *   "data": {
- *     id, installmentId, contractId, contractNo,
- *     instituteId, instituteName, year,
- *     installmentNo, dueDate, installmentPercentage, installmentAmount,
- *     paidAmount, remainingAmount, status, notes,
- *     paymentsCount, paymentHistory, createdAt, updatedAt
- *   }
- * }
- */
 interface InstallmentDetail {
   id: number;
   installmentId: number;
@@ -64,60 +50,6 @@ interface InstallmentDetail {
   notes: string | null;
   paymentsCount: number;
 }
-
-// ─── Validation ───────────────────────────────────────────────────────────────
-
-const validationSchema = Yup.object({
-  dueDate: Yup.string().required("Due date is required"),
-  installmentAmount: Yup.number()
-    .min(1, "Amount must be greater than 0")
-    .required("Amount is required"),
-  installmentPercentage: Yup.number()
-    .min(0, "Must be at least 0")
-    .max(100, "Cannot exceed 100%")
-    .required("Percentage is required"),
-  notes: Yup.string(),
-});
-
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const statusConfig: Record<
-  string,
-  { class: string; dot: string; label: string }
-> = {
-  PAID: {
-    class: "bg-green-50 text-green-600 border-green-200",
-    dot: "bg-green-500",
-    label: "Paid",
-  },
-  PARTIAL: {
-    class: "bg-blue-50 text-blue-500 border-blue-200",
-    dot: "bg-blue-400",
-    label: "Partial",
-  },
-  PENDING: {
-    class: "bg-amber-50 text-amber-600 border-amber-200",
-    dot: "bg-amber-400",
-    label: "Pending",
-  },
-  UPCOMING: {
-    class: "bg-orange-50 text-orange-500 border-orange-200",
-    dot: "bg-orange-400",
-    label: "Upcoming",
-  },
-  OVERDUE: {
-    class: "bg-red-50 text-red-500 border-red-200",
-    dot: "bg-red-500",
-    label: "Overdue",
-  },
-};
-
-const getStatusCfg = (s: string) =>
-  statusConfig[s] ?? {
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    dot: "bg-gray-400",
-    label: s,
-  };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -225,7 +157,59 @@ const InnerForm = ({
   isPending,
   onSubmit,
 }: InnerFormProps) => {
+  const { t } = useLanguage();
   const originalValues = useMemo(() => ({ ...initialValues }), []);
+
+  const statusConfig: Record<
+    string,
+    { class: string; dot: string; label: string }
+  > = {
+    PAID: {
+      class: "bg-green-50 text-green-600 border-green-200",
+      dot: "bg-green-500",
+      label: t("paid"),
+    },
+    PARTIAL: {
+      class: "bg-blue-50 text-blue-500 border-blue-200",
+      dot: "bg-blue-400",
+      label: t("partial"),
+    },
+    PENDING: {
+      class: "bg-amber-50 text-amber-600 border-amber-200",
+      dot: "bg-amber-400",
+      label: t("pending"),
+    },
+    UPCOMING: {
+      class: "bg-orange-50 text-orange-500 border-orange-200",
+      dot: "bg-orange-400",
+      label: t("upcoming"),
+    },
+    OVERDUE: {
+      class: "bg-red-50 text-red-500 border-red-200",
+      dot: "bg-red-500",
+      label: t("overdue"),
+    },
+  };
+
+  const getStatusCfg = (s: string) =>
+    statusConfig[s] ?? {
+      class: "bg-gray-100 text-gray-500 border-gray-200",
+      dot: "bg-gray-400",
+      label: s,
+    };
+
+  const validationSchema = Yup.object({
+    dueDate: Yup.string().required(t("dueDateRequired")),
+    installmentAmount: Yup.number()
+      .min(1, t("amountGreaterThanZero"))
+      .required(t("amountRequired")),
+    installmentPercentage: Yup.number()
+      .min(0, t("mustBeAtLeastZero"))
+      .max(100, t("cannotExceed100"))
+      .required(t("percentageRequired")),
+    notes: Yup.string(),
+  });
+
   const statusCfg = getStatusCfg(data.status);
 
   // Derive paid percentage from available fields
@@ -272,7 +256,7 @@ const InnerForm = ({
                   <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
                     <CreditCard size={15} className="text-gray-400" />
                     <h3 className="text-sm font-semibold text-gray-800">
-                      Installment #{data.installmentNo}
+                      {t("installment")} #{data.installmentNo}
                     </h3>
                     <span
                       className={`ml-auto inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${statusCfg.class}`}
@@ -286,42 +270,50 @@ const InnerForm = ({
 
                   <div className="px-5 py-5 flex flex-col gap-3.5">
                     <InfoField
-                      label="Installment No"
+                      label={t("installmentNo")}
                       value={ordinal(data.installmentNo)}
                     />
                     <div className="border-t border-gray-50" />
 
-                    <InfoField label="Contract No." value={data.contractNo} />
+                    <InfoField
+                      label={t("contractNo")}
+                      value={data.contractNo}
+                    />
                     <div className="border-t border-gray-50" />
-                    <InfoField label="Institute" value={data.instituteName} />
+                    <InfoField
+                      label={t("institute")}
+                      value={data.instituteName}
+                    />
                     <div className="border-t border-gray-50" />
-                    <InfoField label="Year" value={data.year} />
+                    <InfoField label={t("year")} value={data.year} />
 
                     <div className="border-t border-gray-50" />
                     <InfoField
-                      label="Current Due Date"
+                      label={t("currentDueDate")}
                       value={fmtDate(data.dueDate)}
                     />
                     <div className="border-t border-gray-50" />
                     <InfoField
-                      label="Installment Amount"
+                      label={t("installmentAmount")}
                       value={egp(data.installmentAmount)}
                     />
                     <div className="border-t border-gray-50" />
                     <InfoField
-                      label="Percentage"
+                      label={t("percentage")}
                       value={`${data.installmentPercentage}%`}
                     />
                     <div className="border-t border-gray-50" />
                     <div className="flex flex-col gap-1">
-                      <p className="text-xs text-gray-400">Paid Amount</p>
+                      <p className="text-xs text-gray-400">{t("paidAmount")}</p>
                       <p className="text-sm font-bold text-green-600">
                         {egp(data.paidAmount)}
                       </p>
                     </div>
                     <div className="border-t border-gray-50" />
                     <div className="flex flex-col gap-1">
-                      <p className="text-xs text-gray-400">Remaining Amount</p>
+                      <p className="text-xs text-gray-400">
+                        {t("remainingAmount")}
+                      </p>
                       <p
                         className={`text-sm font-bold ${
                           data.remainingAmount > 0
@@ -336,7 +328,9 @@ const InnerForm = ({
                     {/* Paid progress bar */}
                     <div className="flex flex-col gap-1.5 pt-1">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-400">Paid Progress</p>
+                        <p className="text-xs text-gray-400">
+                          {t("paidProgress")}
+                        </p>
                         <p className="text-xs font-semibold text-gray-600">
                           {paidPercentage}%
                         </p>
@@ -364,10 +358,10 @@ const InnerForm = ({
                           className="text-amber-500 flex-shrink-0 mt-0.5"
                         />
                         <p className="text-xs text-amber-700">
-                          This installment has {data.paymentsCount} recorded
-                          payment
-                          {data.paymentsCount > 1 ? "s" : ""}. Amount changes
-                          may affect settlement.
+                          {t("installmentHasRecordedPayments").replace(
+                            "{count}",
+                            String(data.paymentsCount),
+                          )}
                         </p>
                       </div>
                     )}
@@ -387,7 +381,7 @@ const InnerForm = ({
                       className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium overflow-hidden"
                     >
                       <AlertCircle size={15} className="flex-shrink-0" />
-                      You have unsaved changes
+                      {t("youHaveUnsavedChanges")}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -402,7 +396,7 @@ const InnerForm = ({
                   <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
                     <Save size={15} className="text-gray-400" />
                     <h3 className="text-sm font-semibold text-gray-800">
-                      Edit Installment
+                      {t("editInstallment")}
                     </h3>
                   </div>
 
@@ -412,7 +406,7 @@ const InnerForm = ({
                       <div className="flex flex-col gap-1.5">
                         <FieldLabel required>
                           <CalendarDays size={14} className="text-gray-400" />
-                          Due Date
+                          {t("dueDate")}
                         </FieldLabel>
                         <Field
                           type="date"
@@ -434,12 +428,12 @@ const InnerForm = ({
                       <div className="flex flex-col gap-1.5">
                         <FieldLabel required>
                           <DollarSign size={14} className="text-gray-400" />
-                          Installment Amount (EGP)
+                          {t("installmentAmountEgp")}
                         </FieldLabel>
                         <Field
                           type="number"
                           name="installmentAmount"
-                          placeholder="e.g. 4000"
+                          placeholder={t("egAmountPlaceholder")}
                           min={0}
                           className={inputCls(
                             !!(
@@ -463,13 +457,13 @@ const InnerForm = ({
                     <div className="flex flex-col gap-1.5">
                       <FieldLabel required>
                         <Percent size={14} className="text-gray-400" />
-                        Installment Percentage (%)
+                        {t("installmentPercentageEgp")}
                       </FieldLabel>
                       <div className="relative">
                         <Field
                           type="number"
                           name="installmentPercentage"
-                          placeholder="e.g. 25"
+                          placeholder={t("egPercentagePlaceholder")}
                           min={0}
                           max={100}
                           className={inputCls(
@@ -479,7 +473,7 @@ const InnerForm = ({
                             ),
                           )}
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
                           %
                         </span>
                       </div>
@@ -497,13 +491,13 @@ const InnerForm = ({
                     <div className="flex flex-col gap-1.5">
                       <FieldLabel>
                         <FileText size={14} className="text-gray-400" />
-                        Notes
+                        {t("notes")}
                       </FieldLabel>
                       <Field
                         as="textarea"
                         name="notes"
                         rows={3}
-                        placeholder="Add any notes about this installment..."
+                        placeholder={t("addNotesAboutInstallment")}
                         className={`${inputCls()} h-auto py-2.5 resize-none`}
                       />
                     </div>
@@ -518,19 +512,19 @@ const InnerForm = ({
                           className="rounded-xl border border-blue-100 bg-blue-50 overflow-hidden"
                         >
                           <p className="px-4 py-2.5 text-xs font-semibold text-blue-700 border-b border-blue-100">
-                            Changes Preview
+                            {t("changesPreview")}
                           </p>
                           <div className="px-4 py-3 grid grid-cols-2 gap-3">
                             {[
                               {
-                                label: "Due Date",
+                                label: t("dueDate"),
                                 before: fmtDate(data.dueDate),
                                 after: values.dueDate || "-",
                                 changed:
                                   values.dueDate !== originalValues.dueDate,
                               },
                               {
-                                label: "Amount",
+                                label: t("amount"),
                                 before: egp(data.installmentAmount),
                                 after: values.installmentAmount
                                   ? egp(Number(values.installmentAmount))
@@ -540,7 +534,7 @@ const InnerForm = ({
                                   Number(originalValues.installmentAmount),
                               },
                               {
-                                label: "Percentage",
+                                label: t("percentage"),
                                 before: `${data.installmentPercentage}%`,
                                 after: `${values.installmentPercentage || 0}%`,
                                 changed:
@@ -548,7 +542,7 @@ const InnerForm = ({
                                   Number(originalValues.installmentPercentage),
                               },
                               {
-                                label: "Notes",
+                                label: t("notes"),
                                 before: data.notes || "-",
                                 after: values.notes || "-",
                                 changed: values.notes !== originalValues.notes,
@@ -590,7 +584,7 @@ const InnerForm = ({
                     className="h-10 px-5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
                   >
                     <X size={15} />
-                    Cancel
+                    {t("cancel")}
                   </Link>
                   <motion.button
                     type="submit"
@@ -605,12 +599,12 @@ const InnerForm = ({
                     {isPending ? (
                       <>
                         <Loader2 size={15} className="animate-spin" />
-                        Saving...
+                        {t("saving")}
                       </>
                     ) : (
                       <>
                         <Save size={15} />
-                        Save Changes
+                        {t("saveChanges")}
                       </>
                     )}
                   </motion.button>
@@ -627,6 +621,7 @@ const InnerForm = ({
 // ─── Page Wrapper ─────────────────────────────────────────────────────────────
 
 const EditInstallmentPage = () => {
+  const { t } = useLanguage();
   const { installmentId } = useParams<{ installmentId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -659,7 +654,7 @@ const EditInstallmentPage = () => {
     mutationFn: (payload: EditInstallmentPayload) =>
       editInstallment(installmentId!, payload),
     onSuccess: () => {
-      showToast("success", "Installment updated successfully!");
+      showToast("success", t("installmentUpdatedSuccessfully"));
       queryClient.invalidateQueries({
         queryKey: ["installment-details", installmentId],
       });
@@ -668,7 +663,7 @@ const EditInstallmentPage = () => {
     onError: (error: unknown) => {
       const msg =
         (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message ?? "Failed to update installment. Please try again.";
+          ?.data?.message ?? t("failedToUpdateInstallmentTryAgain");
       showToast("error", msg);
     },
   });
@@ -696,15 +691,15 @@ const EditInstallmentPage = () => {
   if (isError || !installment) {
     return (
       <div className="flex flex-col gap-5">
-        <DashboardPageTitle text="Edit Installment" />
+        <DashboardPageTitle text={t("editInstallment")} />
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <AlertCircle size={36} className="text-red-300" />
-          <p className="text-sm text-red-400">Failed to load installment.</p>
+          <p className="text-sm text-red-400">{t("failedToLoadInstallment")}</p>
           <Link
             to="/dashboard/institutions-contracts"
             className="text-sm text-blue-500 hover:underline"
           >
-            Back to Contracts
+            {t("backToContracts")}
           </Link>
         </div>
       </div>
@@ -732,7 +727,7 @@ const EditInstallmentPage = () => {
       </AnimatePresence>
 
       <div className="flex flex-col gap-5 pb-8">
-        <DashboardPageTitle text="Edit Installment" />
+        <DashboardPageTitle text={t("editInstallment")} />
 
         {/* Breadcrumb */}
         <motion.nav
@@ -744,14 +739,14 @@ const EditInstallmentPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={14} />
           <Link
             to="/dashboard/institutions-contracts"
             className="hover:text-gray-600 transition-colors"
           >
-            Contracts
+            {t("contracts")}
           </Link>
           <ChevronRight size={14} />
           <Link
@@ -765,11 +760,11 @@ const EditInstallmentPage = () => {
             to={`/dashboard/installments`}
             className="hover:text-gray-600 transition-colors"
           >
-            Installments
+            {t("installments")}
           </Link>
           <ChevronRight size={14} />
           <span className="text-gray-600">
-            Edit Installment #{installment.installmentNo}
+            {t("editInstallment")} #{installment.installmentNo}
           </span>
         </motion.nav>
 

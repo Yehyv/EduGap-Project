@@ -21,7 +21,7 @@ const AssignContentToCourse = ({
   setReviewModalOpen,
 }: AssignContentToCourseProps) => {
   const [currentChoice, setCurrentChoice] = useState<number | null>(null);
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const { courseId } = useParams();
 
   // Fetch all courses
@@ -43,8 +43,8 @@ const AssignContentToCourse = ({
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Content Assigned!",
-        text: "The content has been successfully added to the course.",
+        title: t("success"),
+        text: t("success_add_content"),
       });
       setCurrentChoice(null);
       setReviewModalOpen(false);
@@ -56,7 +56,7 @@ const AssignContentToCourse = ({
       Swal.fire({
         icon: "error",
         title: "Failed!",
-        text: err?.response?.data?.message || "Something went wrong.",
+        text: err?.response?.data?.message || t("somethingWentWrong"),
       });
     },
   });
@@ -65,8 +65,8 @@ const AssignContentToCourse = ({
     if (!currentChoice) {
       Swal.fire({
         icon: "warning",
-        title: "No Course Selected",
-        text: "Please select a course to assign.",
+        title: t("noCourseSelected"),
+        text: t("pleaseSelectCourseToAssign"),
       });
       return;
     }
@@ -93,7 +93,7 @@ const AssignContentToCourse = ({
             </button>
           </div>
           <Dialog.Title className={`text-center text-sm m-0 text-secondary`}>
-            Add Content To Course
+            {t("addContentToCourse")}
           </Dialog.Title>
         </div>
       }
@@ -121,13 +121,13 @@ const AssignContentToCourse = ({
           disabled={isLoading}
           className="rounded-2xl bg-secondary text-white px-8 cursor-pointer disabled:opacity-50"
         >
-          {isLoading ? "Assigning..." : "Confirm Add"}
+          {isLoading ? t("assigning") : t("confirm")}
         </button>
         <button
           onClick={() => setReviewModalOpen(false)}
           className="rounded-2xl border border-[#808080] text-[#808080] px-8 cursor-pointer"
         >
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </AddModal>

@@ -1,5 +1,6 @@
 import DataField from "../DataField";
 import type { ProgramData, Translation } from "./types";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 interface InformationTabProps {
   programData: ProgramData;
@@ -12,20 +13,22 @@ const InformationTab = ({
   programDataAr,
   programDataEn,
 }: InformationTabProps) => {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-6">
       {/* Arabic Data Section */}
       <div className="bg-white rounded-lg p-6 shadow-sm">
         <h5 className="text-lg font-semibold text-secondary border-b border-gray-200 pb-3 mb-4">
-          بيانات البرنامج
+          {t("programDataArabic")}
         </h5>
 
         <div className="grid grid-cols-1 md:grid-cols-2 md:auto-rows-min gap-6">
-          <DataField label="اسم البرنامج" value={programDataAr?.name} />
+          <DataField label={t("programName")} value={programDataAr?.name} />
 
           <div className="md:row-span-2 self-start">
             <h6 className="text-sm font-bold text-gray-700 mb-3">
-              لوجو البرنامج
+              {t("programLogo")}
             </h6>
             {programData?.logo && (
               <img
@@ -36,15 +39,18 @@ const InformationTab = ({
             )}
           </div>
 
-          <DataField label="الوصف" value={programDataAr?.description} />
+          <DataField
+            label={t("description")}
+            value={programDataAr?.description}
+          />
 
           <DataField
-            label="تاريخ الاضافة"
+            label={t("dateAdded")}
             value={programData?.createdAt || "-"}
           />
 
           <DataField
-            label="تم الإنشاء بواسطة"
+            label={t("createdBy")}
             value={programData.createdBy?.full_name || "-"}
           />
         </div>
@@ -53,12 +59,15 @@ const InformationTab = ({
       {/* English Data Section */}
       <div className="bg-white rounded-lg p-6 shadow-sm">
         <h5 className="text-lg font-semibold text-secondary border-b border-gray-200 pb-3 mb-4">
-          بيانات البرنامج باللغة الإنجليزية
+          {t("programDataEnglish")}
         </h5>
 
         <div className="grid grid-cols-1 gap-6">
-          <DataField label="اسم البرنامج" value={programDataEn?.name} />
-          <DataField label="الوصف" value={programDataEn?.description} />
+          <DataField label={t("programName")} value={programDataEn?.name} />
+          <DataField
+            label={t("description")}
+            value={programDataEn?.description}
+          />
         </div>
       </div>
     </div>

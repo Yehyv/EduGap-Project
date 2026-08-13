@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   PieChart,
@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -134,23 +135,6 @@ const inputCls =
 
 const YEARS = [2026, 2025, 2024, 2023, 2022];
 
-const STATUS_OPTIONS = [
-  { value: "", label: "All Status" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "CLOSED", label: "Closed" },
-  { value: "PENDING", label: "Pending" },
-];
-
-// Plan options – you can extend or fetch dynamically
-const PLAN_OPTIONS = [
-  { value: "", label: "All Plans" },
-  { value: "1", label: "Starter Plan" },
-  { value: "2", label: "Growth Plan" },
-  { value: "3", label: "Enterprise Plan" },
-  { value: "4", label: "Custom Plan" },
-];
-
-const today = () => new Date().toISOString().split("T")[0];
 const yearStart = (y: number) => `${y}-01-01`;
 const yearEnd = (y: number) => `${y}-12-31`;
 
@@ -223,7 +207,24 @@ const BarTooltip = ({ active, payload, label }: any) => {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const CollectionSummaryPage = () => {
+  const { t } = useLanguage();
   const currentYear = new Date().getFullYear();
+
+  const STATUS_OPTIONS = [
+    { value: "", label: t("allStatus") },
+    { value: "ACTIVE", label: t("active") },
+    { value: "CLOSED", label: t("closed") },
+    { value: "PENDING", label: t("pending") },
+  ];
+
+  // Plan options – you can extend or fetch dynamically
+  const PLAN_OPTIONS = [
+    { value: "", label: t("allPlans") },
+    { value: "1", label: t("starterPlan") },
+    { value: "2", label: t("growthPlan") },
+    { value: "3", label: t("enterprisePlan") },
+    { value: "4", label: t("customPlan") },
+  ];
 
   const [fromDate, setFromDate] = useState(yearStart(currentYear));
   const [toDate, setToDate] = useState(yearEnd(currentYear));
@@ -269,13 +270,13 @@ const CollectionSummaryPage = () => {
       data.collectionOverview.remaining.amount > 0)
       ? [
           {
-            name: "Collected",
+            name: t("collected"),
             value: data.collectionOverview.collected.amount,
             percentage: data.collectionOverview.collected.percentage,
             color: "#22c55e",
           },
           {
-            name: "Remaining",
+            name: t("remaining"),
             value: data.collectionOverview.remaining.amount,
             percentage: data.collectionOverview.remaining.percentage,
             color: "#ef4444",
@@ -285,7 +286,7 @@ const CollectionSummaryPage = () => {
 
   return (
     <>
-      <DashboardPageTitle text="Collection Summary Report" />
+      <DashboardPageTitle text={t("collectionSummaryReport")} />
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Breadcrumb ── */}
         <motion.nav
@@ -296,12 +297,14 @@ const CollectionSummaryPage = () => {
             to="/dashboard/home"
             className="hover:text-gray-600 transition-colors"
           >
-            Dashboard
+            {t("dashboard")}
           </Link>
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Reports</span>
+          <span className="text-gray-600 font-medium">{t("reports")}</span>
           <ChevronRight size={13} />
-          <span className="text-gray-600 font-medium">Collection Summary</span>
+          <span className="text-gray-600 font-medium">
+            {t("collectionSummary")}
+          </span>
         </motion.nav>
 
         {/* ── Export button (top right) ── */}
@@ -320,7 +323,7 @@ const CollectionSummaryPage = () => {
             ) : (
               <Download size={14} className="text-gray-400" />
             )}
-            {isExporting ? "Exporting…" : "Export"}
+            {isExporting ? t("exporting") : t("export")}
           </button>
         </motion.div>
 
@@ -334,7 +337,7 @@ const CollectionSummaryPage = () => {
             <div className="flex flex-col gap-1 min-w-[140px]">
               <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
                 <CalendarDays size={11} />
-                From Date
+                {t("fromDate")}
               </label>
               <input
                 type="date"
@@ -348,7 +351,7 @@ const CollectionSummaryPage = () => {
             <div className="flex flex-col gap-1 min-w-[140px]">
               <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
                 <CalendarDays size={11} />
-                To Date
+                {t("toDate")}
               </label>
               <input
                 type="date"
@@ -360,7 +363,9 @@ const CollectionSummaryPage = () => {
 
             {/* Year */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-500">Year</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("year")}
+              </label>
               <select
                 value={academicYear}
                 onChange={(e) => {
@@ -379,7 +384,9 @@ const CollectionSummaryPage = () => {
 
             {/* Plan */}
             <div className="flex flex-col gap-1 min-w-[140px]">
-              <label className="text-xs font-medium text-gray-500">Plan</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("plan")}
+              </label>
               <select
                 value={planId}
                 onChange={(e) => setPlanId(e.target.value)}
@@ -396,7 +403,7 @@ const CollectionSummaryPage = () => {
             {/* Status */}
             <div className="flex flex-col gap-1 min-w-[130px]">
               <label className="text-xs font-medium text-gray-500">
-                Status
+                {t("status")}
               </label>
               <select
                 value={status}
@@ -423,7 +430,7 @@ const CollectionSummaryPage = () => {
               ) : (
                 <Filter size={14} />
               )}
-              Filter
+              {t("filter")}
             </button>
           </div>
         </motion.div>
@@ -448,7 +455,9 @@ const CollectionSummaryPage = () => {
         {isError && !isLoading && (
           <div className="flex flex-col items-center justify-center py-16 gap-2">
             <AlertCircle size={32} className="text-red-300" />
-            <p className="text-sm text-red-400">Failed to load report data.</p>
+            <p className="text-sm text-red-400">
+              {t("failedToLoadReportData")}
+            </p>
           </div>
         )}
 
@@ -458,24 +467,24 @@ const CollectionSummaryPage = () => {
             {/* Summary KPIs */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <SummaryCard
-                label="Total Contracts"
+                label={t("totalContracts")}
                 value={data.summary.totalContracts}
                 delay={0.1}
               />
               <SummaryCard
-                label="Total Contract Value"
+                label={t("totalContractValue")}
                 value={egp(data.summary.totalContractValue)}
                 delay={0.14}
               />
               <SummaryCard
-                label="Total Collected"
+                label={t("totalCollected")}
                 value={egp(data.summary.totalCollected)}
                 sub={`${data.summary.collectedPercentage}%`}
                 subColor="text-blue-500"
                 delay={0.18}
               />
               <SummaryCard
-                label="Total Remaining"
+                label={t("totalRemaining")}
                 value={egp(data.summary.totalRemaining)}
                 sub={`${data.summary.remainingPercentage}%`}
                 subColor="text-red-400"
@@ -493,7 +502,7 @@ const CollectionSummaryPage = () => {
                 <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
                   <TrendingUp size={13} className="text-gray-400" />
                   <h3 className="text-sm font-semibold text-gray-800">
-                    Collection Overview
+                    {t("collectionOverview")}
                   </h3>
                 </div>
                 <div className="p-5 flex items-center gap-4">
@@ -545,7 +554,7 @@ const CollectionSummaryPage = () => {
                     <div className="flex-1 flex flex-col items-center justify-center py-10 gap-2">
                       <TrendingUp size={28} className="text-gray-200" />
                       <p className="text-xs text-gray-400">
-                        No collection data for this period.
+                        {t("noCollectionDataForPeriod")}
                       </p>
                     </div>
                   )}
@@ -560,7 +569,7 @@ const CollectionSummaryPage = () => {
                 <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
                   <TrendingUp size={13} className="text-gray-400" />
                   <h3 className="text-sm font-semibold text-gray-800">
-                    Collection Trend (EGP)
+                    {t("collectionTrendEgp")}
                   </h3>
                 </div>
                 <div className="p-4">
@@ -603,13 +612,13 @@ const CollectionSummaryPage = () => {
                         />
                         <Bar
                           dataKey="collected"
-                          name="Collected"
+                          name={t("collected")}
                           fill="#22c55e"
                           radius={[3, 3, 0, 0]}
                         />
                         <Bar
                           dataKey="remaining"
-                          name="Remaining"
+                          name={t("remaining")}
                           fill="#ef4444"
                           radius={[3, 3, 0, 0]}
                         />
@@ -619,7 +628,7 @@ const CollectionSummaryPage = () => {
                     <div className="flex flex-col items-center justify-center h-48 gap-2">
                       <TrendingUp size={28} className="text-gray-200" />
                       <p className="text-xs text-gray-400">
-                        No trend data for this period.
+                        {t("noTrendDataForPeriod")}
                       </p>
                     </div>
                   )}
@@ -635,14 +644,14 @@ const CollectionSummaryPage = () => {
               <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
                 <TrendingUp size={13} className="text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-800">
-                  Collection by Plan
+                  {t("collectionByPlan")}
                 </h3>
               </div>
               {data.collectionByPlan.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-2">
                   <TrendingUp size={28} className="text-gray-200" />
                   <p className="text-xs text-gray-400">
-                    No plan data available for this period.
+                    {t("noPlanDataForPeriod")}
                   </p>
                 </div>
               ) : (
@@ -651,16 +660,16 @@ const CollectionSummaryPage = () => {
                     <thead>
                       <tr className="border-b border-gray-100">
                         {[
-                          "Plan",
-                          "Contracts",
-                          "Contract Value",
-                          "Collected",
-                          "Remaining",
-                          "Collection %",
+                          t("plan"),
+                          t("contracts"),
+                          t("contractValue"),
+                          t("collected"),
+                          t("remaining"),
+                          t("collectionPercentSign"),
                         ].map((h) => (
                           <th
                             key={h}
-                            className="text-left px-5 py-3 text-xs font-semibold text-gray-400 whitespace-nowrap"
+                            className="text-start px-5 py-3 text-xs font-semibold text-gray-400 whitespace-nowrap"
                           >
                             {h}
                           </th>

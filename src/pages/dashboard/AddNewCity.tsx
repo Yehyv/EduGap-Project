@@ -1,13 +1,13 @@
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
-import {
-  createCity,
-  createCountry,
-} from "@/features/Dashboard/services/dashboardApis";
+import { createCity } from "@/features/Dashboard/services/dashboardApis";
 import { useMutation } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import AddOrEditCity from "@/features/Dashboard/components/AddOrEditCity";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 const AddNewCity = () => {
+  const { t } = useLanguage();
+
   const initialValues = {
     countryId: "",
     translations: [
@@ -29,25 +29,24 @@ const AddNewCity = () => {
     onSuccess: () => {
       Swal.fire({
         icon: "success",
-        title: "Success",
-        text: "City created successfully",
+        title: t("success"),
+        text: t("city_created_successfully"),
       });
     },
 
     onError: (error: any) => {
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text:
-          error?.response?.data?.message[0] ||
-          "Something went wrong, please try again",
+        title: t("error"),
+        text: error?.response?.data?.message[0] || t("somethingWentWrong"),
       });
     },
   });
 
   return (
     <>
-      <DashboardPageTitle text="Add New City" />
+      <DashboardPageTitle text={t("add_new_city")} />
+
       <AddOrEditCity
         initialValues={initialValues}
         isPending={isPending}

@@ -2,13 +2,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   ChevronRight,
   ChevronDown,
   AlertCircle,
   FileX,
-  Eye,
   CreditCard,
   CheckCircle2,
   Clock,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { dashboardApi } from "@/shared/services/dashboardApi";
 import DashboardPageTitle from "@/features/Dashboard/components/DashboardPageTitle";
+import { useLanguage } from "@/shared/localization/useLanguage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,38 +100,43 @@ const fadeUp = (delay = 0) => ({
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<
-  string,
-  { cls: string; label: string; Icon: React.ElementType }
-> = {
-  PAID: {
-    cls: "bg-green-50 text-green-600 border-green-200",
-    label: "Paid",
-    Icon: CheckCircle2,
-  },
-  PENDING: {
-    cls: "bg-amber-50 text-amber-600 border-amber-200",
-    label: "Pending",
-    Icon: Clock,
-  },
-  OVERDUE: {
-    cls: "bg-red-50 text-red-500 border-red-200",
-    label: "Overdue",
-    Icon: AlertCircle,
-  },
-  PARTIAL: {
-    cls: "bg-blue-50 text-blue-500 border-blue-200",
-    label: "Partial",
-    Icon: Clock,
-  },
-  CLOSED: {
-    cls: "bg-gray-100 text-gray-500 border-gray-200",
-    label: "Closed",
-    Icon: XCircle,
-  },
-};
-
-const StatusBadge = ({ status }: { status: string }) => {
+const StatusBadge = ({
+  status,
+  t,
+}: {
+  status: string;
+  t: (k: string) => string;
+}) => {
+  const STATUS_CFG: Record<
+    string,
+    { cls: string; label: string; Icon: React.ElementType }
+  > = {
+    PAID: {
+      cls: "bg-green-50 text-green-600 border-green-200",
+      label: t("paid"),
+      Icon: CheckCircle2,
+    },
+    PENDING: {
+      cls: "bg-amber-50 text-amber-600 border-amber-200",
+      label: t("pending"),
+      Icon: Clock,
+    },
+    OVERDUE: {
+      cls: "bg-red-50 text-red-500 border-red-200",
+      label: t("overdue"),
+      Icon: AlertCircle,
+    },
+    PARTIAL: {
+      cls: "bg-blue-50 text-blue-500 border-blue-200",
+      label: t("partial"),
+      Icon: Clock,
+    },
+    CLOSED: {
+      cls: "bg-gray-100 text-gray-500 border-gray-200",
+      label: t("closed"),
+      Icon: XCircle,
+    },
+  };
   const cfg = STATUS_CFG[status] ?? {
     cls: "bg-gray-100 text-gray-500 border-gray-200",
     label: status,
@@ -221,38 +226,41 @@ const NoContractState = ({
 }: {
   year: number;
   onChangeYear: (y: number) => void;
-}) => (
-  <motion.div
-    {...fadeUp(0.05)}
-    className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
-  >
-    <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
-      <FileX size={28} className="text-gray-300" />
-    </div>
-    <div className="flex flex-col items-center gap-1 text-center">
-      <p className="text-sm font-semibold text-gray-700">
-        No installments for {year}
-      </p>
-      <p className="text-xs text-gray-400 max-w-xs">
-        There is no active annual contract for this academic year.
-      </p>
-    </div>
-    <div className="flex items-center gap-2 flex-wrap justify-center">
-      {YEARS.filter((y) => y !== year)
-        .slice(0, 4)
-        .map((y) => (
-          <button
-            key={y}
-            type="button"
-            onClick={() => onChangeYear(y)}
-            className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            Try {y}
-          </button>
-        ))}
-    </div>
-  </motion.div>
-);
+}) => {
+  const { t } = useLanguage();
+  return (
+    <motion.div
+      {...fadeUp(0.05)}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 gap-4"
+    >
+      <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+        <FileX size={28} className="text-gray-300" />
+      </div>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <p className="text-sm font-semibold text-gray-700">
+          {t("noInstallmentsForYear").replace("{year}", String(year))}
+        </p>
+        <p className="text-xs text-gray-400 max-w-xs">
+          {t("noActiveAnnualContractForYear")}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap justify-center">
+        {YEARS.filter((y) => y !== year)
+          .slice(0, 4)
+          .map((y) => (
+            <button
+              key={y}
+              type="button"
+              onClick={() => onChangeYear(y)}
+              className="h-8 px-4 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              {t("tryYear").replace("{year}", String(y))}
+            </button>
+          ))}
+      </div>
+    </motion.div>
+  );
+};
 
 // ─── DataTable styles ─────────────────────────────────────────────────────────
 
@@ -310,7 +318,7 @@ const customStyles = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const InstituteInstallmentsPage = () => {
-  const navigate = useNavigate();
+  const { t } = useLanguage();
   const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -339,7 +347,7 @@ const InstituteInstallmentsPage = () => {
       ),
     },
     {
-      name: "Installment No.",
+      name: t("installmentNoDot"),
       selector: (row: InstallmentRow) => row.label,
       cell: (row: InstallmentRow) => (
         <span className="font-medium text-gray-800">{row.label}</span>
@@ -347,14 +355,14 @@ const InstituteInstallmentsPage = () => {
       grow: 1,
     },
     {
-      name: "Due Date",
+      name: t("dueDate"),
       selector: (row: InstallmentRow) => row.dueDate,
       cell: (row: InstallmentRow) => (
         <span className="text-gray-600">{fmtDate(row.dueDate)}</span>
       ),
     },
     {
-      name: "Installment Amount",
+      name: t("installmentAmount"),
       selector: (row: InstallmentRow) => row.installmentAmount,
       cell: (row: InstallmentRow) => (
         <span className="text-gray-700">{egp(row.installmentAmount)}</span>
@@ -362,7 +370,7 @@ const InstituteInstallmentsPage = () => {
       right: true,
     },
     {
-      name: "Paid Amount",
+      name: t("paidAmount"),
       selector: (row: InstallmentRow) => row.paidAmount,
       cell: (row: InstallmentRow) => (
         <span
@@ -374,9 +382,9 @@ const InstituteInstallmentsPage = () => {
       right: true,
     },
     {
-      name: "Status",
+      name: t("status"),
       center: true,
-      cell: (row: InstallmentRow) => <StatusBadge status={row.status} />,
+      cell: (row: InstallmentRow) => <StatusBadge status={row.status} t={t} />,
     },
     // {
     //   name: "Action",
@@ -402,17 +410,19 @@ const InstituteInstallmentsPage = () => {
   return (
     <>
       {/* ── Page header ── */}
-      <DashboardPageTitle text="Institution Installment Schedule" />
+      <DashboardPageTitle text={t("institutionInstallmentSchedule")} />
       {/* ── Breadcrumb ── */}
       <motion.nav className="flex items-center gap-1.5 text-sm text-gray-400 mb-4">
         <Link
           to="/dashboard/home"
           className="hover:text-gray-600 transition-colors"
         >
-          Dashboard
+          {t("dashboard")}
         </Link>
         <ChevronRight size={13} />
-        <span className="text-gray-600 font-medium">Installment Schedule</span>
+        <span className="text-gray-600 font-medium">
+          {t("installmentSchedule")}
+        </span>
       </motion.nav>
       <div className="flex flex-col gap-5 pb-8">
         {/* ── Loading skeleton ── */}
@@ -436,7 +446,7 @@ const InstituteInstallmentsPage = () => {
           >
             <AlertCircle size={32} className="text-red-300" />
             <p className="text-sm text-red-400">
-              Something went wrong. Please try again.
+              {t("somethingWentWrongTryAgain")}
             </p>
           </motion.div>
         )}
@@ -456,22 +466,22 @@ const InstituteInstallmentsPage = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 {
-                  label: "Total Installments",
+                  label: t("totalInstallments"),
                   value: summary!.totalInstallments,
                   color: "",
                 },
                 {
-                  label: "Paid Installments",
+                  label: t("paidInstallments"),
                   value: summary!.paidInstallments,
                   color: "text-green-600",
                 },
                 {
-                  label: "Remaining Installments",
+                  label: t("remainingInstallments"),
                   value: summary!.remainingInstallments,
                   color: "text-amber-600",
                 },
                 {
-                  label: "Total Amount",
+                  label: t("totalAmount"),
                   value: egp(summary!.totalAmount),
                   color: "",
                 },
@@ -514,7 +524,7 @@ const InstituteInstallmentsPage = () => {
                   <div className="flex flex-col items-center gap-2 py-14">
                     <FileX size={28} className="text-gray-200" />
                     <p className="text-sm text-gray-400">
-                      No installments found.
+                      {t("noInstallmentsFound")}
                     </p>
                   </div>
                 }
@@ -548,10 +558,10 @@ const InstituteInstallmentsPage = () => {
               >
                 <div className="flex flex-col gap-0.5">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                    Next Installment
+                    {t("nextInstallment")}
                   </p>
                   <p className="text-sm font-semibold text-gray-800">
-                    {nextInstallment.label} is due on{" "}
+                    {nextInstallment.label} {t("isDueOn")}{" "}
                     <span className="text-secondary">
                       {fmtDate(nextInstallment.dueDate)}
                     </span>
@@ -567,7 +577,7 @@ const InstituteInstallmentsPage = () => {
                   className="h-10 px-6 rounded-xl bg-secondary hover:bg-secondary/90 text-white text-sm font-semibold transition-colors flex items-center gap-2 flex-shrink-0"
                 >
                   <CreditCard size={14} />
-                  Pay Now
+                  {t("payNow")}
                 </Link>
               </motion.div>
             )}
